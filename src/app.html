@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en" data-app="phosphor-os">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Phosphor OS</title>
+  <meta name="theme-color" content="#D9CDB4">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="OS">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <style>
+/*@@PHOSPHOR_CSS@@*/
+    /* === tool-specific styles below === */
+
+    /* Boot screen: covers the CRT on a cold start, tap to skip */
+    .boot-screen {
+      position: absolute; inset: 0; z-index: 5; padding: 56px var(--sp-5) var(--sp-5);
+      background: rgba(3, 7, 3, .88); color: var(--text-dim); font-size: var(--fs-sm); line-height: 1.7;
+      white-space: pre-wrap; cursor: pointer;
+    }
+    .boot-screen b { color: var(--accent); text-shadow: var(--glow-lg); font-weight: 700; }
+    .boot-screen[hidden] { display: none; }
+
+    /* Home: clock + tile grid */
+    .home-clock { text-align: center; padding: var(--sp-3) 0 var(--sp-5); }
+    .home-clock .readout { font-size: 56px; letter-spacing: .06em; line-height: 1; }
+    .home-clock .readout small { font-size: var(--fs-md); color: var(--text-dim); text-shadow: none; margin-left: 4px; letter-spacing: .1em; }
+    .home-clock .date { margin-top: var(--sp-2); color: var(--text-dim); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: var(--tracking-label); }
+    .grid { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: var(--sp-4) var(--sp-3); padding: 0 var(--sp-1); }
+    .tile {
+      appearance: none; -webkit-appearance: none; background: none; border: 0; padding: 0; margin: 0;
+      display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0;
+      color: var(--text); text-decoration: none; cursor: pointer;
+      -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
+    }
+    .tile .ico {
+      width: 100%; aspect-ratio: 1; max-width: 68px; display: grid; place-items: center;
+      background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--radius);
+      color: var(--accent); transition: background var(--dur-fast) var(--ease-steps);
+    }
+    .tile .ico svg { width: 46%; height: 46%; filter: drop-shadow(0 0 3px rgba(57, 255, 106, .45)); }
+    .tile.kind-shortcut .ico { color: var(--amber); }
+    .tile.kind-shortcut .ico svg { filter: drop-shadow(0 0 3px rgba(255, 177, 59, .4)); }
+    .tile:active .ico, .tile.is-held .ico { background: var(--surface-3); box-shadow: var(--glow-box); }
+    .tile .lbl { max-width: 100%; font-size: var(--fs-xs); color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tile.add .ico { border-style: dashed; color: var(--text-faint); background: none; }
+    .home-hint { margin-top: var(--sp-5); text-align: center; color: var(--text-faint); font-size: var(--fs-xs); }
+
+    /* Glyphs */
+    .gl { display: inline-block; width: 22px; height: 22px; flex: none; }
+    .menu-item .gl { color: var(--accent); }
+
+    /* Tile list (edit) */
+    .tile-row { display: flex; align-items: center; gap: var(--sp-2); }
+    .tile-row .menu-item { flex: 1 1 auto; min-width: 0; }
+    .tile-row .btn-icon { flex: none; }
+    .glyph-pick { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--sp-2); }
+    .glyph-pick button {
+      appearance: none; -webkit-appearance: none; aspect-ratio: 1; display: grid; place-items: center;
+      background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--text-dim); padding: 0;
+    }
+    .glyph-pick button svg { width: 55%; height: 55%; }
+    .glyph-pick button[aria-checked="true"] { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+    .form { display: flex; flex-direction: column; gap: var(--sp-4); }
+    .form .actions { display: flex; gap: var(--sp-3); }
+    .form .actions .btn { flex: 1; }
+
+    /* Phone + calculator readouts */
+    .lcd { display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; gap: var(--sp-1); padding: var(--sp-5) var(--sp-3) var(--sp-3); min-height: 120px; }
+    .lcd .sub { color: var(--text-dim); font-size: var(--fs-sm); min-height: 1.5em; max-width: 100%; overflow-wrap: anywhere; text-align: right; }
+    .lcd .readout { max-width: 100%; overflow-wrap: anywhere; text-align: right; line-height: 1.1; }
+    .lcd .readout.long { font-size: var(--fs-xl); }
+    .view.fill .scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    /* Number pads on the plastic, tighter than the default 52px so the screen keeps its size */
+    .keypad .key { min-height: 44px; }
+    .keypad.k4 { grid-template-columns: repeat(4, 1fr); gap: var(--sp-2); }  /* calculator needs a 4th column for operators */
+    .keypad { gap: var(--sp-2) var(--sp-3); padding: var(--sp-2) var(--sp-2) 0; }
+    .keypad .key.op { color: var(--ink-dim); }
+
+    /* Notes */
+    .note-edit { flex: 1 1 auto; min-height: 0; resize: none; font-size: var(--fs-md); line-height: var(--lh); }
+    .note-bar { display: flex; justify-content: space-between; align-items: center; color: var(--text-faint); font-size: var(--fs-xs); }
+    .note-bar .btn { min-height: 36px; }
+    .empty pre { color: var(--text-faint); }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1 class="app-title" data-view-title>Phosphor OS</h1>
+      <span class="app-meta">v1.0</span>
+    </header>
+    <div class="screen">
+      <canvas class="rain" aria-hidden="true" hidden></canvas>
+      <div class="boot-screen" id="boot" hidden aria-hidden="true"></div>
+      <nav class="path" data-path aria-label="Location"></nav>
+      <div class="screen-body">
+
+      <!-- ===== Home ===== -->
+      <section class="view" data-route="/" data-title="Phosphor OS">
+        <div class="home-clock" aria-live="off">
+          <div class="readout" id="clock">--:--</div>
+          <div class="date" id="date"></div>
+        </div>
+        <div class="grid" id="grid"></div>
+        <p class="home-hint" id="home-hint">Hold a tile to edit it.</p>
+      </section>
+
+      <!-- ===== Tiles editor ===== -->
+      <section class="view" data-route="/tiles" data-title="Tiles">
+        <div class="menu-group">
+          <span class="label">Home screen</span>
+          <div class="menu" id="tile-list"></div>
+          <p class="menu-note">Tap a tile to change it. Arrows move it around the grid.</p>
+        </div>
+        <div class="menu-group">
+          <div class="menu">
+            <button class="menu-item" data-act="add-tile"><span class="mi-glyph" aria-hidden="true">+</span><span class="mi-label">Add tile</span></button>
+            <button class="menu-item danger" data-act="reset-tiles"><span class="mi-label">Reset to default tiles</span></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-route="/tiles/edit" data-title="Edit tile">
+        <form class="form" id="tile-form" autocomplete="off">
+          <div class="field">
+            <label class="label" for="tf-label">Name</label>
+            <input class="input" id="tf-label" maxlength="16" enterkeyhint="next" required>
+          </div>
+          <div class="field">
+            <label class="label" for="tf-kind">Opens</label>
+            <select class="select" id="tf-kind">
+              <option value="link">App link or website</option>
+              <option value="shortcut">Shortcut (any app)</option>
+              <option value="app">Built-in app</option>
+            </select>
+          </div>
+          <div class="field" id="tf-target-field">
+            <label class="label" for="tf-target" id="tf-target-label">Link</label>
+            <input class="input" id="tf-target" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done">
+            <span class="hint" id="tf-hint"></span>
+          </div>
+          <div class="field" id="tf-app-field" hidden>
+            <label class="label" for="tf-app">App</label>
+            <select class="select" id="tf-app"></select>
+          </div>
+          <div class="field">
+            <span class="label">Icon</span>
+            <div class="glyph-pick" id="tf-glyphs" role="radiogroup" aria-label="Icon"></div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn-ghost" data-act="test-tile">Test</button>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+          <button type="button" class="btn btn-danger btn-block" data-act="delete-tile" id="tf-delete">Delete tile</button>
+        </form>
+      </section>
+
+      <!-- ===== Phone (dialer) ===== -->
+      <section class="view fill" data-route="/phone" data-title="Phone">
+        <div class="lcd">
+          <div class="sub" id="dial-name"></div>
+          <div class="readout" id="dial-num" aria-live="polite"></div>
+        </div>
+        <div class="scroll">
+          <div class="menu-group">
+            <span class="label">Favorites</span>
+            <div class="menu" id="fav-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Calculator ===== -->
+      <section class="view fill" data-route="/calc" data-title="Calculator">
+        <div class="lcd" style="flex:1 1 auto">
+          <div class="sub" id="calc-expr"></div>
+          <div class="readout" id="calc-out" aria-live="polite">0</div>
+        </div>
+      </section>
+
+      <!-- ===== Notes ===== -->
+      <section class="view" data-route="/notes" data-title="Notes">
+        <div class="search" id="note-search-wrap" hidden><input class="input" type="search" id="note-search" placeholder="Search notes" enterkeyhint="search"></div>
+        <ul class="list" id="note-list"></ul>
+        <div class="empty" id="note-empty" hidden>
+          <pre aria-hidden="true">  ┌──────┐
+  │ _    │
+  │      │
+  └──────┘</pre>
+          <p>No notes yet.</p>
+          <button class="btn btn-primary" data-act="new-note">New note</button>
+        </div>
+      </section>
+
+      <section class="view fill" data-route="/notes/edit" data-title="Note">
+        <textarea class="textarea note-edit" id="note-text" placeholder="Start typing. It saves as you go." aria-label="Note"></textarea>
+        <div class="note-bar">
+          <span id="note-stamp"></span>
+          <button class="btn btn-ghost" data-act="delete-note">Delete</button>
+        </div>
+      </section>
+
+      <!-- ===== Settings ===== -->
+      <section class="view" data-route="/settings" data-title="Settings">
+        <div class="menu-group">
+          <span class="label">General</span>
+          <div class="menu">
+            <a class="menu-item" href="#/tiles"><span class="mi-label">Tiles</span><span class="mi-value" id="tile-count"></span></a>
+            <a class="menu-item" href="#/settings/clock"><span class="mi-label">Clock</span><span class="mi-value" data-setting-value="clock"></span></a>
+            <a class="menu-item" href="#/settings/columns"><span class="mi-label">Grid columns</span><span class="mi-value" data-setting-value="cols"></span></a>
+            <label class="menu-item"><span class="mi-label">Boot screen<small>Short start-up text when the app cold starts</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="boot"></label>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Appearance</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/display"><span class="mi-label">Display</span><span class="mi-value">CRT <span data-setting-value="crt"></span></span></a>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Data</span>
+          <div class="menu">
+            <button class="menu-item" id="export"><span class="mi-label">Export data</span></button>
+            <button class="menu-item" id="import"><span class="mi-label">Import data</span></button>
+            <button class="menu-item danger" id="erase"><span class="mi-label">Erase all data</span></button>
+          </div>
+          <p class="menu-note">Tiles, notes and favorites stay on this phone.</p>
+          <input type="file" id="import-file" accept="application/json,.json" hidden>
+        </div>
+        <div class="menu-group">
+          <span class="label">About</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.0</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/clock" data-title="Clock">
+        <div class="menu" role="radiogroup" aria-label="Clock">
+          <button class="menu-item" role="radio" data-setting="clock" data-value="12" data-back-on-pick><span class="mi-label">12-hour</span></button>
+          <button class="menu-item" role="radio" data-setting="clock" data-value="24" data-back-on-pick><span class="mi-label">24-hour</span></button>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/columns" data-title="Columns">
+        <div class="menu" role="radiogroup" aria-label="Grid columns">
+          <button class="menu-item" role="radio" data-setting="cols" data-value="3" data-back-on-pick><span class="mi-label">3 across<small>Bigger tiles</small></span></button>
+          <button class="menu-item" role="radio" data-setting="cols" data-value="4" data-back-on-pick><span class="mi-label">4 across</span></button>
+          <button class="menu-item" role="radio" data-setting="cols" data-value="5" data-back-on-pick><span class="mi-label">5 across<small>More tiles per screen</small></span></button>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/display" data-title="Display">
+        <div class="menu">
+          <label class="menu-item"><span class="mi-label">CRT scanlines</span><input type="checkbox" role="switch" class="mi-switch" data-setting="crt"></label>
+          <label class="menu-item"><span class="mi-label">Matrix rain<small>Behind the boot screen</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="rain"></label>
+          <button class="menu-item" data-act="reset-display"><span class="mi-label">Reset display to defaults</span></button>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/about" data-title="About">
+        <section class="panel" data-title="Phosphor OS">
+          <div class="kv"><span>Version</span><span>1.0</span></div>
+          <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
+          <div class="kv"><span>Storage</span><span>This phone</span></div>
+        </section>
+        <div class="menu-group" style="margin-top:var(--sp-5)">
+          <div class="menu">
+            <a class="menu-item" href="#/settings/about/launching"><span class="mi-label">How tiles open apps</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/about/launching" data-title="Launching">
+        <section class="panel" data-title="App links">
+          <p>Phone, Messages, Mail, Maps and Spotify open through app links such as <code>sms:</code> or <code>maps://</code>. If an app isn't installed, nothing happens.</p>
+        </section>
+        <section class="panel" data-title="Shortcuts" style="margin-top:var(--sp-4)">
+          <p>Any other app (Camera, FaceTime, Settings) opens through the Shortcuts app. Shortcut tiles are amber.</p>
+          <ul class="list plain" style="margin-top:var(--sp-3)">
+            <li>1. In Shortcuts, tap +, add the "Open App" action and pick the app.</li>
+            <li>2. Name it exactly what the tile says, for example "Open Camera".</li>
+            <li>3. Tap the tile. iOS may ask once for permission.</li>
+          </ul>
+        </section>
+        <section class="panel" data-title="Limits" style="margin-top:var(--sp-4)">
+          <p>This is an app on your home screen, not a replacement for it. iOS doesn't let a web app list your apps, and it may reload when you come back, so everything is saved as you go.</p>
+        </section>
+      </section>
+
+      </div><!-- /.screen-body -->
+    </div><!-- /.screen -->
+
+    <section class="keypad" id="dial-pad" data-show-on="/phone" hidden aria-label="Dial pad">
+      <button class="key" data-dial="1">1</button><button class="key" data-dial="2">2</button><button class="key" data-dial="3">3</button>
+      <button class="key" data-dial="4">4</button><button class="key" data-dial="5">5</button><button class="key" data-dial="6">6</button>
+      <button class="key" data-dial="7">7</button><button class="key" data-dial="8">8</button><button class="key" data-dial="9">9</button>
+      <button class="key" data-dial="*">*</button><button class="key" data-dial="0">0</button><button class="key" data-dial="#">#</button>
+      <button class="key" data-act="dial-sms">Text</button><button class="key key-dark" data-act="dial-call">Call</button><button class="key" data-act="dial-del" aria-label="Delete">⌫</button>
+    </section>
+
+    <section class="keypad k4" id="calc-pad" data-show-on="/calc" hidden aria-label="Calculator keys">
+      <button class="key op" data-calc="C">C</button><button class="key op" data-calc="±">±</button><button class="key op" data-calc="%">%</button><button class="key op" data-calc="÷">÷</button>
+      <button class="key" data-calc="7">7</button><button class="key" data-calc="8">8</button><button class="key" data-calc="9">9</button><button class="key op" data-calc="×">×</button>
+      <button class="key" data-calc="4">4</button><button class="key" data-calc="5">5</button><button class="key" data-calc="6">6</button><button class="key op" data-calc="−">−</button>
+      <button class="key" data-calc="1">1</button><button class="key" data-calc="2">2</button><button class="key" data-calc="3">3</button><button class="key op" data-calc="+">+</button>
+      <button class="key" data-calc="0">0</button><button class="key" data-calc=".">.</button><button class="key" data-calc="⌫" aria-label="Delete">⌫</button><button class="key key-dark" data-calc="=">=</button>
+    </section>
+
+    <nav class="app-controls" aria-label="Controls">
+      <button class="key key-sm" data-back aria-label="Back">‹</button>
+      <button class="key key-sm" data-open-sheet="menu" aria-label="Menu">☰</button>
+      <button class="key key-sm" data-route="/" data-hide-on="/ /tiles /notes" aria-label="Home">■</button>
+      <div class="page-keys" data-show-on="/" hidden><button class="key key-sm" data-route="/tiles" aria-label="Edit tiles">✎</button></div>
+      <div class="page-keys" data-show-on="/tiles" id="pk-add" hidden><button class="key key-sm" data-act="add-tile" aria-label="Add tile">+</button></div>
+      <div class="page-keys" data-show-on="/tiles/edit" hidden><button class="key key-sm word" data-act="save-tile">Save</button></div>
+      <div class="page-keys" data-show-on="/notes" hidden><button class="key key-sm" data-act="new-note" aria-label="New note">+</button></div>
+    </nav>
+  </main>
+
+  <dialog class="sheet dropdown" id="menu" aria-label="Menu">
+    <div class="sheet-title">Go to</div>
+    <div class="menu" data-sections>
+      <button class="menu-item" data-route="/"><span class="mi-glyph" aria-hidden="true">■</span><span class="mi-label">Home</span></button>
+      <button class="menu-item" data-route="/phone"><span class="mi-glyph" aria-hidden="true">#</span><span class="mi-label">Phone</span></button>
+      <button class="menu-item" data-route="/notes"><span class="mi-glyph" aria-hidden="true">≡</span><span class="mi-label">Notes</span><span class="mi-count" id="note-count" hidden></span></button>
+      <button class="menu-item" data-route="/calc"><span class="mi-glyph" aria-hidden="true">±</span><span class="mi-label">Calculator</span></button>
+      <button class="menu-item" data-route="/settings"><span class="mi-glyph" aria-hidden="true">⚙</span><span class="mi-label">Settings</span></button>
+    </div>
+    <div class="sheet-title">Actions</div>
+    <div class="menu">
+      <button class="menu-item" data-action="new-note"><span class="mi-glyph" aria-hidden="true">+</span><span class="mi-label">New note</span></button>
+      <button class="menu-item" data-action="add-tile"><span class="mi-glyph" aria-hidden="true">+</span><span class="mi-label">Add tile</span></button>
+      <button class="menu-item" data-action="edit-tiles"><span class="mi-glyph" aria-hidden="true">✎</span><span class="mi-label">Edit tiles</span></button>
+    </div>
+  </dialog>
+
+  <div class="toast-host" aria-live="polite"></div>
+  <script>
+/*@@PHOSPHOR_JS@@*/
+  </script>
+  <script>
+/*@@APP_JS@@*/
+  </script>
+</body>
+</html>
