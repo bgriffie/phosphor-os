@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.4';
+  const VERSION = '1.5';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -47,7 +47,7 @@
     arcade: ['Arcade', null, 'apps/arcade/'], workout: ['Workout Log', null, 'apps/workout/'], kitchen: ['Kitchen Log', null, 'apps/kitchen/'] };
   const DEFAULT_TILES = () => [
     ['Phone', 'phone', 'app', 'phone'],
-    ['Messages', 'chat', 'link', 'sms:'],
+    ['Messages', 'chat', 'link', 'messages://'],
     ['Mail', 'mail', 'link', 'message://'],
     ['FaceTime', 'video', 'shortcut', 'Open FaceTime'],
     ['Maps', 'map', 'link', 'maps://'],
@@ -69,6 +69,8 @@
     if (m && BUNDLED[m[1].toLowerCase()]) { t.kind = 'app'; t.target = BUNDLED[m[1].toLowerCase()]; }
     // v1.2: the Spotify tile opens the built-in remote (an app link can't leave Guided Access)
     if (t.kind === 'link' && /^spotify:\/*$/i.test(t.target)) { t.kind = 'app'; t.target = 'music'; }
+    // v1.5: Messages opens the app itself, not a blank new message
+    if (t.kind === 'link' && /^sms:\/*$/i.test(t.target)) t.target = 'messages://';
   });
   save('tiles', tiles);
   const saveTiles = () => { save('tiles', tiles); renderGrid(); renderTileList(); };
@@ -296,7 +298,7 @@
     $('#tf-target-field').hidden = k === 'app';
     $('#tf-app-field').hidden = k !== 'app';
     $('#tf-target-label').textContent = k === 'shortcut' ? 'Shortcut name' : 'Link';
-    $('#tf-target').placeholder = k === 'shortcut' ? 'Open Camera' : 'sms:  maps://  https://…';
+    $('#tf-target').placeholder = k === 'shortcut' ? 'Open Camera' : 'messages://  maps://  https://…';
     $('#tf-target').setAttribute('inputmode', k === 'shortcut' ? 'text' : 'url');
     $('#tf-hint').textContent = k === 'shortcut'
       ? 'Must match the shortcut\'s name in the Shortcuts app exactly.'
@@ -328,7 +330,7 @@
     $('#tf-label').setAttribute('aria-invalid', String(!t.label)); if (!t.label) ok = false;
     const badTarget = t.kind !== 'app' && (!t.target || (t.kind === 'link' && !/^[a-z][\w+.-]*:/i.test(t.target)));
     $('#tf-target').setAttribute('aria-invalid', String(badTarget)); if (badTarget) ok = false;
-    if (!ok) PH.toast(badTarget && t.label ? 'Links start with a scheme, like sms: or https://' : 'Fill in the highlighted fields.', 'warn');
+    if (!ok) PH.toast(badTarget && t.label ? 'Links start with a scheme, like maps:// or https://' : 'Fill in the highlighted fields.', 'warn');
     return ok;
   }
   function saveTile() {
@@ -510,7 +512,7 @@
       }
     },
     'dial-call': () => { if (dial) location.href = 'tel:' + dial; else PH.toast('Enter a number first.'); },
-    'dial-sms': () => { location.href = 'sms:' + dial; },
+    'dial-sms': () => { location.href = dial ? 'sms:' + dial : 'messages://'; },
     'dial-del': () => { dial = dial.slice(0, -1); renderDial(); },
     'fav-add': () => {
       const name = (prompt('Name for ' + fmt(dial)) || '').trim(); if (!name) return;
@@ -563,9 +565,10 @@
     }
   };
 
-  /* ---------- Bundled apps: full-screen frame over the OS (#/app/<id>) ---------- */
+  /* ---------- Bundled apps: run inside the screen (#/app/<id>); the case and keys never move ---------- */
   let frame = null, frameId = null;
   const routeKey = id => 'route:' + id;
+  const home = () => location.href.split('#')[0] + '#/';   // absolute: a relative URL would resolve against a calling app's page
   function openApp(id) { location.replace('#/app/' + id); }   // replace: the frame's own pages fill the history
   function showFrame(id) {
     if (frameId === id) return;
@@ -575,31 +578,97 @@
     frame.className = 'app-frame'; frame.title = a[0]; frame.allow = 'web-share; clipboard-write';
     const last = load(routeKey(id), '/');
     frame.src = a[2] + '#' + (typeof last === 'string' && last.startsWith('/') ? last : '/');
-    document.body.appendChild(frame); frameId = id;
-    frame.addEventListener('load', () => { try { frame.contentWindow.focus(); } catch {} });
+    $('.screen').appendChild(frame); $('.screen').classList.add('has-frame'); frameId = id;
+    frame.addEventListener('load', () => { frame.classList.add('is-ready'); try { frame.contentWindow.focus(); } catch {} renderKeys(); });
+    renderKeys();
   }
-  function hideFrame() { if (frame) { frame.remove(); frame = null; frameId = null; } }
+  function hideFrame() { if (frame) { frame.remove(); frame = null; frameId = null; $('.screen').classList.remove('has-frame'); renderKeys(); } }
+  const child = () => { try { return frame && frame.contentWindow.OSChild; } catch { return null; } };
   // Read by the bundled apps (src/embed.js)
   window.PhosphorOS = {
-    // absolute URL: a relative one would resolve against the calling app's page, not the OS
-    closeApp: () => { hideFrame(); location.replace(location.href.split('#')[0] + '#/'); },
+    closeApp: () => { hideFrame(); location.replace(home()); },
     saveRoute: r => { if (frameId) save(routeKey(frameId), r); },
-    insets: () => {
-      const p = document.createElement('div');
-      p.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
-      document.body.appendChild(p); const c = getComputedStyle(p);
-      const v = { top: parseFloat(c.paddingTop) || 0, right: parseFloat(c.paddingRight) || 0, bottom: parseFloat(c.paddingBottom) || 0, left: parseFloat(c.paddingLeft) || 0 };
-      p.remove(); return v;
-    },
+    keysChanged: () => renderKeys(),
   };
   const syncFrame = () => { const m = /^#\/app\/([\w-]+)/.exec(location.hash); if (m) showFrame(m[1]); else hideFrame(); };
   addEventListener('hashchange', syncFrame);
+
+  /* ---------- Keys under the screen: Back, Home, and a right key picked in Settings ---------- */
+  const KI = {
+    back: '<path d="M15 4 7 12l8 8"/>',
+    home: '<path d="M3 11 12 3l9 8M6 9v11h12V9"/>',
+    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    plus: '<path d="M12 4v16M4 12h16"/>',
+    retry: '<path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/>',
+    flag: '<path d="M6 21V4M6 4h12l-3 4 3 4H6"/>',
+    music: G.music, notes: G.note, phone: G.phone, calc: G.calc, settings: G.gear,
+  };
+  const keySvg = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">${KI[n]}</svg>`;
+  const FILLED = {   // solid shapes, so they read cleanly at key size (text glyphs like "II" don't)
+    play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16"/><rect x="14" y="4" width="5" height="16"/></svg>',
+  };
+  const RKEY = { menu: ['Menu'], play: ['Play or pause'], music: ['Spotify', '/music'], notes: ['Notes', '/notes'], phone: ['Phone', '/phone'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'] };
+  const APP_GLYPH = { 'II': 'pause', '▸': 'play', '▶': 'play', '+': 'plus', '⟳': 'retry', '▲': 'flag' };
+  const curRoute = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
+  function rightKey() {
+    const c = child();
+    if (frameId && c && PH.store.get('rkeyApp')) { const k = c.pageKey(); if (k) return { app: k }; }
+    const m = PH.store.get('rkey');
+    return { mode: RKEY[m] ? m : 'menu' };
+  }
+  function renderKeys() {
+    const back = $('#k-back'), hm = $('#k-home'), right = $('#k-right');
+    if (!back.dataset.icon) { back.innerHTML = keySvg('back'); hm.innerHTML = keySvg('home'); back.dataset.icon = hm.dataset.icon = '1'; }
+    back.disabled = !frameId && curRoute() === '/';
+    const r = rightKey(); let html, label, word = false;
+    if (r.app) {
+      const g = APP_GLYPH[r.app.text];
+      html = g ? (FILLED[g] || keySvg(g)) : null; label = r.app.label || r.app.text;
+      if (!html) { html = ''; word = true; }
+      if (r.app.pressed == null) right.removeAttribute('aria-pressed'); else right.setAttribute('aria-pressed', r.app.pressed);
+    } else {
+      right.removeAttribute('aria-pressed');
+      if (r.mode === 'play') { const on = !!(window.PhosphorMusic && PhosphorMusic.playing()); html = on ? FILLED.pause : FILLED.play; label = on ? 'Pause' : 'Play'; }
+      else { html = keySvg(r.mode); label = RKEY[r.mode][0]; }
+    }
+    const sig = (word ? 'w:' + r.app.text : html);
+    if (right.dataset.icon !== sig) { right.dataset.icon = sig; if (word) right.textContent = r.app.text; else right.innerHTML = html; }
+    right.classList.toggle('word', word);
+    right.setAttribute('aria-label', label);
+  }
+  function closeDialogs() { $$('dialog[open]').forEach(d => d.close()); }
+  $('#k-back').addEventListener('click', () => {
+    if (frameId) { const c = child(); if (c && !c.atHome()) c.back(); else PhosphorOS.closeApp(); return; }
+    closeDialogs(); PH.back();
+  });
+  $('#k-home').addEventListener('click', () => {
+    closeDialogs();
+    if (frameId) { PhosphorOS.closeApp(); return; }
+    if (curRoute() !== '/') location.replace(home());
+  });
+  $('#k-right').addEventListener('click', () => {
+    const r = rightKey(), c = child();
+    if (r.app) { c.pressKey(); return; }
+    if (r.mode === 'menu') {
+      if (frameId && c) { c.openMenu(); return; }
+      const m = $('#menu'); if (m.open) m.close(); else m.showModal(); return;
+    }
+    if (r.mode === 'play') { PhosphorMusic.toggle(); return; }
+    closeDialogs();
+    const to = RKEY[r.mode][1];
+    if (frameId) { hideFrame(); location.replace(location.href.split('#')[0] + '#' + to); }
+    else PH.go(to);
+  });
+  addEventListener('hashchange', renderKeys);
+  addEventListener('os-music', renderKeys);
+  PH.on('rkey', renderKeys); PH.on('rkeyApp', renderKeys);
 
   /* ---------- Routes ---------- */
   let prevRoute = null;
   PH.on('route', r => {
     if (prevRoute === '/notes/edit' && r !== '/notes/edit') closeEmptyNote();
-    if (r === '/tiles/edit') { $('#pk-add').hidden = true; if (!editing) { location.replace('#/tiles'); return; } }
+    if (r === '/tiles/edit' && !editing) { location.replace('#/tiles'); return; }
     if (r === '/notes/edit') { if (!notes.some(n => n.id === openNote)) { location.replace('#/notes'); return; } loadNoteEditor(); }
     if (r === '/phone') renderDial();
     if (r === '/calc') renderCalc();
@@ -642,8 +711,8 @@
 
   /* ---------- Start ---------- */
   renderGrid(); renderTileList(); renderNotes(); renderDial(); renderCalc();
-  PH.init({ clock: '12', cols: '4', boot: true, home: 'sphere' });
-  renderGrid();
+  PH.init({ clock: '12', cols: '4', boot: true, home: 'sphere', rkey: 'menu', rkeyApp: true });
+  renderGrid(); renderKeys();
   startClock();
   if (/^#\/app\//.test(location.hash)) syncFrame(); else boot();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');

@@ -19,6 +19,11 @@
     /* No title on the case (Floyd, v1.4): the screen starts right under the iOS clock.
        Phosphor OS only; the breadcrumb at the top of the screen still says where you are. */
     .app-header { display: none; }
+    /* Pages and apps swap instantly; nothing slides (Floyd, v1.5) */
+    .view.enter-fwd, .view.enter-back { animation: none; }
+    /* Case keys carry drawn icons, not text glyphs, so they stay crisp */
+    .app-controls .key svg { width: 20px; height: 20px; }
+    .app-controls .key.word { font-size: var(--fs-sm); }
     .app { padding-top: max(var(--sp-2), calc(var(--safe-top) - 4px)); }
 
     /* Boot screen: covers the CRT on a cold start, tap to skip */
@@ -111,21 +116,32 @@
     .lcd .readout.long { font-size: var(--fs-xl); }
     .view.fill .scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     /* Number pads on the plastic, tighter than the default 52px so the screen keeps its size */
-    .keypad .key { min-height: 44px; }
-    .keypad.k4 { grid-template-columns: repeat(4, 1fr); gap: var(--sp-2); }  /* calculator needs a 4th column for operators */
-    .keypad { gap: var(--sp-2) var(--sp-3); padding: var(--sp-2) var(--sp-2) 0; }
-    .keypad .key.op { color: var(--ink-dim); }
-
-    /* Bundled apps run in a frame that covers the whole phone, case and keys included */
-    .app-frame {
-      position: fixed; top: 0; left: 0; z-index: 50; width: 100%; height: var(--app-h, 100%);
-      border: 0; background: var(--plastic); animation: app-open var(--dur) var(--ease-steps) both;
+    /* Number pads live on the screen (Floyd, v1.5): nothing but the three keys on the case */
+    .pad { flex: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+    .pad.k4 { grid-template-columns: repeat(4, 1fr); }
+    .pad button {
+      appearance: none; -webkit-appearance: none; margin: 0; min-height: 48px; padding: 0;
+      border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-2);
+      color: var(--text); font: inherit; font-size: var(--fs-lg); font-weight: 700; touch-action: manipulation;
     }
-    @keyframes app-open { from { opacity: 0; transform: scale(.94); } }
-    @media (prefers-reduced-motion: reduce) { .app-frame { animation: none; } }
+    .pad button:active { background: var(--surface-3); box-shadow: var(--glow-box); }
+    .pad .op { color: var(--accent); font-size: var(--fs-md); }
+    .pad .go { background: var(--accent); border-color: var(--accent); color: var(--on-accent); box-shadow: var(--glow-box); }
+
+    /* Bundled apps run inside the screen: the case, clock and keys never move */
+    .app-frame {
+      position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%;
+      border: 0; border-radius: inherit; background: var(--bg); opacity: 0;
+    }
+    .app-frame.is-ready { opacity: 1; }
+    .screen.has-frame > :not(.app-frame) { visibility: hidden; }
 
     /* Spotify remote */
-    .mu-art { display: block; width: min(100%, 240px); aspect-ratio: 1; margin: 0 auto var(--sp-4); object-fit: cover; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-2); }
+    .mu-now { display: flex; flex-direction: column; }
+    .mu-now .mu-track, .mu-now .mu-artist, .mu-now .mu-note { text-align: center; }
+    .mu-links { margin-top: var(--sp-6); }
+    .segmented { margin-bottom: var(--sp-2); }
+    .mu-art { display: block; width: min(100%, 240px, 30vh); aspect-ratio: 1; margin: 0 auto var(--sp-4); object-fit: cover; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-2); }
     .mu-art[hidden] { display: none; }
     .mu-row { gap: var(--sp-3); }
     .mu-row .mi-thumb { flex: none; width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); }
@@ -147,8 +163,9 @@
     .mu-now .meter { margin-top: var(--sp-5); }
     .mu-times { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--text-dim); font-variant-numeric: tabular-nums; }
     .mu-times .badge { max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .mu-ctrl { display: flex; justify-content: space-between; align-items: center; margin-top: var(--sp-5); }
-    .mu-ctrl .btn svg { width: 20px; height: 20px; }
+    .mu-ctrl { display: flex; justify-content: center; gap: var(--sp-6); align-items: center; margin-top: var(--sp-5); }
+    .mu-ctrl .btn-icon { width: 56px; height: 56px; }
+    .mu-ctrl .btn svg { width: 32px; height: 32px; }
     .mu-ctrl .mu-play { width: 64px; height: 64px; }
     .mu-ctrl .mu-play svg { width: 26px; height: 26px; }
     .mu-ctrl [aria-pressed="true"] { color: var(--accent); border-color: var(--accent); text-shadow: var(--glow); }
@@ -169,7 +186,7 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.4</span>
+      <span class="app-meta">v1.5</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -200,71 +217,33 @@
           <p>Control Spotify from here, even under Guided Access. It needs Spotify Premium and a one-time setup.</p>
           <button class="btn btn-primary" data-route="/music/setup">Set up Spotify</button>
         </div>
-        <div id="mu-on" hidden>
-          <section class="panel mu-now" data-title="Now playing">
-            <img class="mu-art" id="mu-art" alt="" hidden referrerpolicy="no-referrer">
-            <div class="mu-track" id="mu-track">Nothing playing</div>
-            <div class="mu-artist" id="mu-artist"></div>
-            <div class="mu-note" id="mu-note" hidden></div>
-            <div class="meter" role="progressbar" aria-label="Song position" aria-valuemin="0" aria-valuemax="100"><span id="mu-bar" style="--value:0%"></span></div>
-            <div class="mu-times"><span id="mu-pos">0:00</span><span class="badge dim" id="mu-dev">No device</span><span id="mu-dur">0:00</span></div>
-            <div class="mu-ctrl">
-              <button class="btn btn-icon btn-ghost" id="mu-shuffle" data-mu="shuffle" aria-label="Shuffle" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 6h4l10 12h4M3 18h4l3-3.6M14 9.6 17 6h4M18 3l3 3-3 3M18 15l3 3-3 3"/></svg></button>
-              <button class="btn btn-icon" data-mu="prev" aria-label="Previous"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 4h3v16H5zM20 4v16L9 12z"/></svg></button>
-              <button class="btn btn-primary mu-play" data-mu="toggle" aria-label="Play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg></button>
-              <button class="btn btn-icon" data-mu="next" aria-label="Next"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 4h3v16h-3zM4 4v16l11-8z"/></svg></button>
-              <button class="btn btn-icon btn-ghost" id="mu-repeat" data-mu="repeat" aria-label="Repeat" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 11V8h14M15 5l3 3-3 3M20 13v3H6M9 19l-3-3 3-3"/></svg><i></i></button>
-            </div>
-          </section>
-          <div class="menu-group" style="margin-top:var(--sp-5)">
-            <div class="menu">
-              <a class="menu-item" href="#/music/podcasts"><span class="mi-glyph" aria-hidden="true">◉</span><span class="mi-label">Podcasts<small>Your shows, search, episodes</small></span></a>
-            </div>
+        <div class="mu-now" id="mu-on" hidden>
+          <img class="mu-art" id="mu-art" alt="" hidden referrerpolicy="no-referrer">
+          <div class="mu-track" id="mu-track">Nothing playing</div>
+          <div class="mu-artist" id="mu-artist"></div>
+          <div class="mu-note" id="mu-note" hidden></div>
+          <div class="meter" role="progressbar" aria-label="Position" aria-valuemin="0" aria-valuemax="100"><span id="mu-bar" style="--value:0%"></span></div>
+          <div class="mu-times"><span id="mu-pos">0:00</span><span id="mu-dur">0:00</span></div>
+          <div class="mu-ctrl">
+            <button class="btn btn-icon btn-ghost" id="mu-left" data-mu="left" aria-label="Back 15 seconds"></button>
+            <button class="btn btn-primary mu-play" data-mu="toggle" aria-label="Play"></button>
+            <button class="btn btn-icon btn-ghost" id="mu-right" data-mu="right" aria-label="Forward 30 seconds"></button>
           </div>
-          <div class="menu-group">
-            <span class="label">Playlists</span>
-            <div class="menu" id="mu-lists"></div>
-          </div>
-          <div class="menu-group">
-            <div class="menu">
-              <a class="menu-item" href="#/music/devices"><span class="mi-label">Play on</span><span class="mi-value" id="mu-devname"></span></a>
-              <a class="menu-item" href="#/music/setup"><span class="mi-label">Spotify setup</span></a>
-            </div>
-            <p class="menu-note">Use the phone's volume buttons for volume. Spotify doesn't let apps change an iPhone's volume.</p>
+          <div class="menu mu-links">
+            <a class="menu-item" href="#/music/episodes"><span class="mi-label">Stuff You Should Know<small id="mu-sysk-sub">Episodes</small></span></a>
+            <a class="menu-item" href="#/music/devices"><span class="mi-label">Play on</span><span class="mi-value" id="mu-devname"></span></a>
           </div>
         </div>
       </section>
 
-      <section class="view" data-route="/music/list" data-title="Playlist">
-        <div class="mu-head" id="pl-head"><img class="mu-cover none" alt=""><div><h2 id="pl-name"></h2><p id="pl-sub"></p></div></div>
-        <div class="mu-btns"><button class="btn btn-primary" data-mu-act="pl-play">Play</button><button class="btn btn-ghost" data-mu-act="pl-shuffle">Shuffle</button></div>
-        <div class="menu" id="pl-items"></div>
-        <button class="btn btn-ghost btn-block" id="pl-more" data-mu-act="pl-more" style="margin-top:var(--sp-4)" hidden>Load more</button>
-      </section>
-
-      <section class="view" data-route="/music/podcasts" data-title="Podcasts">
-        <div class="search"><input class="input" type="search" id="mp-q" placeholder="Search podcasts" enterkeyhint="search" autocapitalize="off" autocorrect="off"></div>
-        <div class="menu-group" id="mp-results-group" hidden style="margin-top:var(--sp-4)">
-          <span class="label">Results</span>
-          <div class="menu" id="mp-results"></div>
+      <section class="view" data-route="/music/episodes" data-title="Episodes">
+        <div class="segmented" role="radiogroup" aria-label="Show">
+          <button role="radio" data-ep-filter="new" aria-checked="true">Unplayed</button>
+          <button role="radio" data-ep-filter="all" aria-checked="false">All</button>
         </div>
-        <div class="menu-group" style="margin-top:var(--sp-4)">
-          <div class="menu">
-            <button class="menu-item" data-mu-act="sysk"><span class="mi-glyph" aria-hidden="true">★</span><span class="mi-label">Stuff You Should Know<small>Latest episodes</small></span></button>
-          </div>
-        </div>
-        <div class="menu-group">
-          <span class="label">Your shows</span>
-          <div class="menu" id="mp-shows"></div>
-          <button class="btn btn-ghost btn-block" id="mp-reconnect" data-mu-act="reconnect" style="margin-top:var(--sp-3)" hidden>Reconnect Spotify</button>
-        </div>
-      </section>
-
-      <section class="view" data-route="/music/podcasts/show" data-title="Show">
-        <div class="mu-head" id="sh-head"><img class="mu-cover none" alt=""><div><h2 id="sh-name"></h2><p id="sh-sub"></p></div></div>
-        <div class="mu-btns"><button class="btn btn-primary" data-mu-act="sh-play">Play latest unplayed</button></div>
-        <div class="menu" id="sh-items"></div>
-        <button class="btn btn-ghost btn-block" id="sh-more" data-mu-act="sh-more" style="margin-top:var(--sp-4)" hidden>Load more</button>
+        <div class="menu" id="ep-items"></div>
+        <button class="btn btn-ghost btn-block" id="ep-more" hidden>Load more</button>
+        <p class="menu-note" id="ep-scope" hidden>Reconnect Spotify in Settings › Spotify to see which episodes you've played.</p>
       </section>
 
       <section class="view" data-route="/music/devices" data-title="Play on">
@@ -373,6 +352,13 @@
             <div class="menu" id="fav-list"></div>
           </div>
         </div>
+        <div class="pad" id="dial-pad" aria-label="Dial pad">
+          <button data-dial="1">1</button><button data-dial="2">2</button><button data-dial="3">3</button>
+          <button data-dial="4">4</button><button data-dial="5">5</button><button data-dial="6">6</button>
+          <button data-dial="7">7</button><button data-dial="8">8</button><button data-dial="9">9</button>
+          <button data-dial="*">*</button><button data-dial="0">0</button><button data-dial="#">#</button>
+          <button class="op" data-act="dial-sms">Text</button><button class="go" data-act="dial-call">Call</button><button class="op" data-act="dial-del" aria-label="Delete">DEL</button>
+        </div>
       </section>
 
       <!-- ===== Calculator ===== -->
@@ -381,11 +367,19 @@
           <div class="sub" id="calc-expr"></div>
           <div class="readout" id="calc-out" aria-live="polite">0</div>
         </div>
+        <div class="pad k4" id="calc-pad" aria-label="Calculator keys">
+          <button class="op" data-calc="C">C</button><button class="op" data-calc="±">±</button><button class="op" data-calc="%">%</button><button class="op" data-calc="÷">÷</button>
+          <button data-calc="7">7</button><button data-calc="8">8</button><button data-calc="9">9</button><button class="op" data-calc="×">×</button>
+          <button data-calc="4">4</button><button data-calc="5">5</button><button data-calc="6">6</button><button class="op" data-calc="−">−</button>
+          <button data-calc="1">1</button><button data-calc="2">2</button><button data-calc="3">3</button><button class="op" data-calc="+">+</button>
+          <button data-calc="0">0</button><button data-calc=".">.</button><button class="op" data-calc="⌫" aria-label="Delete">DEL</button><button class="go" data-calc="=">=</button>
+        </div>
       </section>
 
       <!-- ===== Notes ===== -->
       <section class="view" data-route="/notes" data-title="Notes">
         <div class="search" id="note-search-wrap" hidden><input class="input" type="search" id="note-search" placeholder="Search notes" enterkeyhint="search"></div>
+        <button class="btn btn-primary btn-block" data-act="new-note" id="note-new">New note</button>
         <ul class="list" id="note-list"></ul>
         <div class="empty" id="note-empty" hidden>
           <pre aria-hidden="true">  ┌──────┐
@@ -413,6 +407,8 @@
             <a class="menu-item" href="#/tiles"><span class="mi-label">Tiles</span><span class="mi-value" id="tile-count"></span></a>
             <a class="menu-item" href="#/music/setup"><span class="mi-label">Spotify</span><span class="mi-value" id="set-spotify"></span></a>
             <a class="menu-item" href="#/settings/clock"><span class="mi-label">Clock</span><span class="mi-value" data-setting-value="clock"></span></a>
+            <a class="menu-item" href="#/settings/rkey"><span class="mi-label">Right button</span><span class="mi-value" data-setting-value="rkey"></span></a>
+            <label class="menu-item"><span class="mi-label">App buttons first<small>In Arcade and Kitchen, show the app's own button (like Pause) instead</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="rkeyApp"></label>
             <a class="menu-item" href="#/settings/home"><span class="mi-label">Home screen</span><span class="mi-value" data-setting-value="home"></span></a>
             <a class="menu-item" href="#/settings/columns"><span class="mi-label">Grid columns</span><span class="mi-value" data-setting-value="cols"></span></a>
             <label class="menu-item"><span class="mi-label">Boot screen<small>Short start-up text when the app cold starts</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="boot"></label>
@@ -437,7 +433,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.4</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.5</span></a>
           </div>
         </div>
       </section>
@@ -446,6 +442,18 @@
         <div class="menu" role="radiogroup" aria-label="Clock">
           <button class="menu-item" role="radio" data-setting="clock" data-value="12" data-back-on-pick><span class="mi-label">12-hour</span></button>
           <button class="menu-item" role="radio" data-setting="clock" data-value="24" data-back-on-pick><span class="mi-label">24-hour</span></button>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/rkey" data-title="Right button">
+        <div class="menu" role="radiogroup" aria-label="Right button">
+          <button class="menu-item" role="radio" data-setting="rkey" data-value="menu" data-back-on-pick><span class="mi-label">Menu<small>Sections and quick actions</small></span></button>
+          <button class="menu-item" role="radio" data-setting="rkey" data-value="play" data-back-on-pick><span class="mi-label">Play / pause<small>Spotify, from anywhere</small></span></button>
+          <button class="menu-item" role="radio" data-setting="rkey" data-value="music" data-back-on-pick><span class="mi-label">Spotify</span></button>
+          <button class="menu-item" role="radio" data-setting="rkey" data-value="notes" data-back-on-pick><span class="mi-label">Notes</span></button>
+          <button class="menu-item" role="radio" data-setting="rkey" data-value="phone" data-back-on-pick><span class="mi-label">Phone</span></button>
+          <button class="menu-item" role="radio" data-setting="rkey" data-value="calc" data-back-on-pick><span class="mi-label">Calculator</span></button>
+          <button class="menu-item" role="radio" data-setting="rkey" data-value="settings" data-back-on-pick><span class="mi-label">Settings</span></button>
         </div>
       </section>
 
@@ -474,7 +482,7 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.4</span></div>
+          <div class="kv"><span>Version</span><span>1.5</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
@@ -490,7 +498,7 @@
 
       <section class="view" data-route="/settings/about/launching" data-title="Launching">
         <section class="panel" data-title="App links">
-          <p>Phone, Messages, Mail and Maps open through app links such as <code>sms:</code> or <code>maps://</code>. If an app isn't installed, nothing happens.</p>
+          <p>Phone, Messages, Mail and Maps open through app links such as <code>messages://</code> or <code>maps://</code>. If an app isn't installed, nothing happens.</p>
         </section>
         <section class="panel" data-title="Shortcuts" style="margin-top:var(--sp-4)">
           <p>Any other app (Camera, FaceTime, Settings) opens through the Shortcuts app. Shortcut tiles are amber.</p>
@@ -508,31 +516,10 @@
       </div><!-- /.screen-body -->
     </div><!-- /.screen -->
 
-    <section class="keypad" id="dial-pad" data-show-on="/phone" hidden aria-label="Dial pad">
-      <button class="key" data-dial="1">1</button><button class="key" data-dial="2">2</button><button class="key" data-dial="3">3</button>
-      <button class="key" data-dial="4">4</button><button class="key" data-dial="5">5</button><button class="key" data-dial="6">6</button>
-      <button class="key" data-dial="7">7</button><button class="key" data-dial="8">8</button><button class="key" data-dial="9">9</button>
-      <button class="key" data-dial="*">*</button><button class="key" data-dial="0">0</button><button class="key" data-dial="#">#</button>
-      <button class="key" data-act="dial-sms">Text</button><button class="key key-dark" data-act="dial-call">Call</button><button class="key" data-act="dial-del" aria-label="Delete">⌫</button>
-    </section>
-
-    <section class="keypad k4" id="calc-pad" data-show-on="/calc" hidden aria-label="Calculator keys">
-      <button class="key op" data-calc="C">C</button><button class="key op" data-calc="±">±</button><button class="key op" data-calc="%">%</button><button class="key op" data-calc="÷">÷</button>
-      <button class="key" data-calc="7">7</button><button class="key" data-calc="8">8</button><button class="key" data-calc="9">9</button><button class="key op" data-calc="×">×</button>
-      <button class="key" data-calc="4">4</button><button class="key" data-calc="5">5</button><button class="key" data-calc="6">6</button><button class="key op" data-calc="−">−</button>
-      <button class="key" data-calc="1">1</button><button class="key" data-calc="2">2</button><button class="key" data-calc="3">3</button><button class="key op" data-calc="+">+</button>
-      <button class="key" data-calc="0">0</button><button class="key" data-calc=".">.</button><button class="key" data-calc="⌫" aria-label="Delete">⌫</button><button class="key key-dark" data-calc="=">=</button>
-    </section>
-
     <nav class="app-controls" aria-label="Controls">
-      <button class="key key-sm" data-back aria-label="Back">‹</button>
-      <button class="key key-sm" data-open-sheet="menu" aria-label="Menu">☰</button>
-      <button class="key key-sm" data-route="/" data-hide-on="/ /tiles /notes /music" aria-label="Home">■</button>
-      <div class="page-keys" data-show-on="/music" hidden><button class="key key-sm" data-mu="toggle" aria-label="Play">▸</button></div>
-      <div class="page-keys" data-show-on="/" hidden><button class="key key-sm" data-route="/tiles" aria-label="Edit tiles">✎</button></div>
-      <div class="page-keys" data-show-on="/tiles" id="pk-add" hidden><button class="key key-sm" data-act="add-tile" aria-label="Add tile">+</button></div>
-      <div class="page-keys" data-show-on="/tiles/edit" hidden><button class="key key-sm word" data-act="save-tile">Save</button></div>
-      <div class="page-keys" data-show-on="/notes" hidden><button class="key key-sm" data-act="new-note" aria-label="New note">+</button></div>
+      <button class="key key-sm" id="k-back" aria-label="Back"></button>
+      <button class="key key-sm" id="k-home" aria-label="Home"></button>
+      <button class="key key-sm" id="k-right" aria-label="Menu"></button>
     </nav>
   </main>
 

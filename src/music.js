@@ -10,7 +10,7 @@
 
   const REDIRECT = new URL('./', location.href.split(/[?#]/)[0]).href;   // https://bgriffie.github.io/phosphor-os/
   const SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative user-library-read user-read-playback-position';
-  const PODCAST_SCOPE = 'user-library-read';   // added in v1.3: logins from v1.2 need a reconnect for followed shows
+  const RESUME_SCOPE = 'user-read-playback-position';   // added in v1.3: older logins can't see which episodes were played
   const standalone = () => navigator.standalone || matchMedia('(display-mode: standalone)').matches;
   let auth = load('spotify', {});          // { clientId, access, expires, refresh, user }
   const saveAuth = () => save('spotify', auth);
@@ -69,7 +69,7 @@
     } catch (e) { PH.toast('Couldn\'t connect: ' + e.message, 'error'); }
   }
   function disconnect(quiet) {
-    auth = { clientId: auth.clientId }; saveAuth(); state = null; lists = null; shows = null;
+    auth = { clientId: auth.clientId }; saveAuth(); state = null; eps = null;
     renderAll(); if (!quiet) PH.toast('Spotify disconnected.', 'warn');
   }
 
@@ -117,11 +117,14 @@
   };
 
   /* ---------- Player state ---------- */
-  let state = null, stamp = 0, lists = null, devices = [], shows = null;
-  // Open playlist / podcast show: { id, uri, name, sub, images, items: [], total, next }
-  let pl = load('mu-pl', null), sh = load('mu-sh', null);
+  let state = null, stamp = 0, devices = [], misses = 0;
+  // Stuff You Should Know episodes: { items: [], next, loaded, loading }
+  let eps = null, epFilter = load('mu-ep-filter', 'new');
   const fmt = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
-  let misses = 0;
+  const isEpisode = () => !!(state && state.item && state.item.type === 'episode');
+  const playing = () => !!(state && state.is_playing);
+  const changed = () => dispatchEvent(new CustomEvent('os-music', { detail: { playing: playing() } }));
+
   async function poll() {
     if (!connected() || Date.now() < backoffUntil) return;
     try {
@@ -130,7 +133,7 @@
       renderNow(); note('');
     } catch (e) {
       if (e.status === 429) return;
-      // keep showing the last song through a blip; only clear after a few misses in a row
+      // keep showing the last item through a blip; only clear after a few misses in a row
       if (++misses >= 3) { state = null; renderNow(); }
       note(e.offline ? 'Offline. Retrying…' : 'Reconnecting to Spotify…');
     }
@@ -139,33 +142,37 @@
   const later = () => setTimeout(poll, 450);
   async function cmd(fn) { try { await fn(); later(); } catch (e) { say(e); } }
 
-  async function pickDevice() {   // when nothing is active: wake this phone (or the first device Spotify knows)
+  async function pickDevice() {   // when nothing is active: wake this phone (or the best device Spotify knows)
     const d = await api('/me/player/devices'); devices = (d && d.devices) || [];
     const last = load('mu-last-device', null), ok = devices.filter(x => !x.is_restricted);
     return ok.find(x => x.is_active) || ok.find(x => x.id === last) || ok.find(x => x.type === 'Smartphone') || ok[0] || null;
   }
+  const pos = () => state && state.item ? Math.min(state.item.duration_ms, state.progress_ms + (state.is_playing ? Date.now() - stamp : 0)) : 0;
+  const seekBy = ms => cmd(async () => {
+    const to = Math.max(0, Math.min(state.item.duration_ms - 1000, pos() + ms));
+    await api('/me/player/seek', { method: 'PUT', query: { position_ms: Math.round(to) } });
+    state.progress_ms = to; stamp = Date.now(); tickBar();
+  });
   const actions = {
     toggle: () => cmd(async () => {
       if (state && state.device) {
-        try { await api('/me/player/' + (state.is_playing ? 'pause' : 'play'), { method: 'PUT' }); if (state) { state.is_playing = !state.is_playing; renderNow(); } return; }
+        try { await api('/me/player/' + (state.is_playing ? 'pause' : 'play'), { method: 'PUT' }); if (state) { state.progress_ms = pos(); stamp = Date.now(); state.is_playing = !state.is_playing; renderNow(); } return; }
         catch (e) { if (!(e.reason === 'NO_ACTIVE_DEVICE' || e.status === 404)) throw e; }   // fall through and wake a device
       }
       const dev = await pickDevice(); if (!dev) throw Object.assign(new Error(''), { reason: 'NO_ACTIVE_DEVICE' });
       await api('/me/player', { method: 'PUT', body: { device_ids: [dev.id], play: true } });
     }),
-    next: () => cmd(() => api('/me/player/next', { method: 'POST' })),
-    prev: () => cmd(() => (state && state.progress_ms > 3000) ? api('/me/player/seek', { method: 'PUT', query: { position_ms: 0 } }) : api('/me/player/previous', { method: 'POST' })),
-    shuffle: () => cmd(() => api('/me/player/shuffle', { method: 'PUT', query: { state: !(state && state.shuffle_state) } })),
-    repeat: () => cmd(() => api('/me/player/repeat', { method: 'PUT', query: { state: { off: 'context', context: 'track', track: 'off' }[(state && state.repeat_state) || 'off'] } })),
+    // Episodes skip 15 s back / 30 s ahead; songs go to the previous / next track
+    left: () => isEpisode() ? seekBy(-15000)
+      : cmd(() => (state && state.progress_ms > 3000) ? api('/me/player/seek', { method: 'PUT', query: { position_ms: 0 } }) : api('/me/player/previous', { method: 'POST' })),
+    right: () => isEpisode() ? seekBy(30000) : cmd(() => api('/me/player/next', { method: 'POST' })),
   };
-  // body: { context_uri, offset } or { uris, position_ms }
-  async function play(body, { shuffle } = {}) {
+  // body: { uris, position_ms }
+  async function play(body) {
     try {
       let device_id;
       if (!state || !state.device) { const dev = await pickDevice(); if (!dev) throw Object.assign(new Error(''), { reason: 'NO_ACTIVE_DEVICE' }); device_id = dev.id; }
-      let query = device_id ? { device_id } : undefined;
-      if (shuffle != null) await api('/me/player/shuffle', { method: 'PUT', query: { state: shuffle, ...(query || {}) } }).catch(() => {});
-      try { await api('/me/player/play', { method: 'PUT', body, query }); }
+      try { await api('/me/player/play', { method: 'PUT', body, query: device_id ? { device_id } : undefined }); }
       catch (e) {   // the device we thought was active went to sleep: wake the best one and try once more
         if (!(e.reason === 'NO_ACTIVE_DEVICE' || e.status === 404) || device_id) throw e;
         const dev = await pickDevice(); if (!dev) throw e;
@@ -175,166 +182,93 @@
     } catch (e) { say(e); }
   }
 
-  /* Playlist songs. Spotify renamed /tracks to /items for newer apps, so try both. */
-  let itemsPath = load('mu-items-path', 'items');
-  async function playlistPage(id, offset) {
-    const q = { query: { limit: 100, offset, additional_types: 'track,episode' } };
-    const tryPath = itemsPath;
-    try { return await api(`/playlists/${id}/${tryPath}`, q); }
-    catch (e) {
-      if (e.status === 401 || e.status === 429) throw e;
-      const alt = tryPath === 'items' ? 'tracks' : 'items';
-      const d = await api(`/playlists/${id}/${alt}`, q);
-      itemsPath = alt; save('mu-items-path', alt);
-      return d;
-    }
+  /* Stuff You Should Know: find the show once, then page through its episodes (newest first) */
+  const hasResume = () => !auth.scope || auth.scope.split(' ').includes(RESUME_SCOPE);
+  async function syskId() {
+    let id = load('mu-sysk', null); if (id) return id;
+    const d = await api('/search', { query: { q: 'Stuff You Should Know', type: 'show', limit: 5, market: 'from_token' } });
+    const found = ((d && d.shows && d.shows.items) || []).filter(Boolean);
+    const s = found.find(x => /^stuff you should know$/i.test(x.name)) || found[0];
+    if (!s) throw new Error('Couldn\'t find Stuff You Should Know on Spotify.');
+    save('mu-sysk', s.id); return s.id;
   }
-  async function loadPlaylist(more) {
-    if (!pl || pl.loading) return;
-    pl.loading = true;
+  const day = d => { if (!d) return ''; const t = new Date(d + 'T12:00:00'); return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(t.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
+  async function loadEpisodes(more) {
+    if (eps && eps.loading) return;
+    if (!eps || !more) eps = { items: [], next: false, loaded: false };
+    eps.loading = true; if (!more) renderEpisodes();
     try {
-      const d = await playlistPage(pl.id, more ? pl.items.length : 0);
-      const got = ((d && d.items) || []).map(x => x && (x.track || x.item)).filter(t => t && t.uri && !t.is_local).map(t => ({
-        uri: t.uri, name: t.name, sub: t.artists ? t.artists.map(a => a.name).join(', ') : t.show ? t.show.name : '',
-        ms: t.duration_ms, images: (t.album && t.album.images) || t.images }));
-      pl.items = more ? pl.items.concat(got) : got;
-      pl.total = d ? d.total : pl.items.length; pl.next = !!(d && d.next); pl.loaded = true;
-      renderCollection('pl', pl);
-    } catch (e) { say(e); pl.loaded = true; renderCollection('pl', pl); }
-    finally { pl.loading = false; }
-  }
-  function openPlaylist(p) {
-    pl = { id: p.id, uri: p.uri, name: p.name, images: p.images, sub: ((p.tracks && p.tracks.total) ?? (p.items && p.items.total) ?? '') + ' songs', items: [], loaded: false };
-    save('mu-pl', { ...pl, items: [] }); renderCollection('pl', pl); PH.go('/music/list'); loadPlaylist();
-  }
-
-  /* Podcasts: followed shows, search, episodes */
-  const hasPodcastScope = () => !auth.scope || auth.scope.split(' ').includes(PODCAST_SCOPE);
-  const showRow = s => ({ id: s.id, uri: s.uri, name: s.name, sub: s.publisher, images: s.images });
-  async function loadShows() {
-    if (auth.scope && !hasPodcastScope()) { shows = []; renderShows(); return; }
-    try { const d = await api('/me/shows', { query: { limit: 50 } }); shows = ((d && d.items) || []).map(x => x && x.show).filter(Boolean).map(showRow); }
-    catch (e) { shows = []; if (e.status === 403 || e.status === 401) { auth.scope = (auth.scope || 'x').replace(PODCAST_SCOPE, ''); saveAuth(); } else say(e); }
-    renderShows();
-  }
-  let searchT = null, searchSeq = 0;
-  async function searchShows(q, open) {
-    const seq = ++searchSeq;
-    if (!q) { $('#mp-results').textContent = ''; $('#mp-results-group').hidden = true; return; }
-    try {
-      const d = await api('/search', { query: { q, type: 'show', limit: open ? 1 : 20, market: 'from_token' } });
-      if (seq !== searchSeq) return;
-      const found = ((d && d.shows && d.shows.items) || []).filter(Boolean).map(showRow);
-      if (open) { if (found[0]) openShow(found[0]); else PH.toast('Couldn\'t find that show.', 'warn'); return; }
-      lastResults = found; fillRows($('#mp-results'), found, 'show', 'No shows found.'); $('#mp-results-group').hidden = false;
-    } catch (e) { say(e); }
-  }
-  const ago = d => { if (!d) return ''; const t = new Date(d + 'T12:00:00'); return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(t.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
-  async function loadShow(more) {
-    if (!sh || sh.loading) return;
-    sh.loading = true;
-    try {
-      const d = await api(`/shows/${sh.id}/episodes`, { query: { limit: 50, offset: more ? sh.items.length : 0, market: 'from_token' } });
+      const id = await syskId();
+      let d;
+      try { d = await api(`/shows/${id}/episodes`, { query: { limit: 50, offset: eps.items.length, market: 'from_token' } }); }
+      catch (e) { if (e.status === 404 || e.status === 400) drop('mu-sysk'); throw e; }
       const got = ((d && d.items) || []).filter(Boolean).map(ep => {
-        const rp = ep.resume_point || {}, left = ep.duration_ms - (rp.resume_position_ms || 0);
-        const status = rp.fully_played ? 'Played' : rp.resume_position_ms > 0 ? Math.max(1, Math.round(left / 60000)) + ' min left' : Math.round(ep.duration_ms / 60000) + ' min';
-        return { uri: ep.uri, name: ep.name, sub: ago(ep.release_date) + ' · ' + status, ms: ep.duration_ms, images: ep.images,
-          resume: rp.fully_played ? 0 : (rp.resume_position_ms || 0), played: !!rp.fully_played };
+        const rp = ep.resume_point || {}, at = rp.resume_position_ms || 0, left = ep.duration_ms - at;
+        const status = rp.fully_played ? 'Played' : at > 0 ? Math.max(1, Math.round(left / 60000)) + ' min left' : Math.round(ep.duration_ms / 60000) + ' min';
+        return { uri: ep.uri, name: ep.name, sub: day(ep.release_date) + ' · ' + status, played: !!rp.fully_played, resume: rp.fully_played ? 0 : at };
       });
-      sh.items = more ? sh.items.concat(got) : got;
-      sh.total = d ? d.total : sh.items.length; sh.next = !!(d && d.next); sh.loaded = true;
-      renderCollection('sh', sh);
-    } catch (e) { say(e); sh.loaded = true; renderCollection('sh', sh); }
-    finally { sh.loading = false; }
-  }
-  function openShow(s) {
-    sh = { ...s, items: [], loaded: false }; save('mu-sh', { ...sh, items: [] });
-    renderCollection('sh', sh); PH.go('/music/podcasts/show'); loadShow();
-  }
-  async function loadLists() {
-    try { const d = await api('/me/playlists', { query: { limit: 50 } }); lists = (d && d.items || []).filter(Boolean); renderLists(); }
-    catch (e) { say(e); }
+      eps.items = eps.items.concat(got); eps.next = !!(d && d.next);
+    } catch (e) { say(e); }
+    finally { eps.loading = false; eps.loaded = true; renderEpisodes(); }
   }
   async function loadDevices() {
     try { const d = await api('/me/player/devices'); devices = (d && d.devices) || []; renderDevices(); } catch (e) { say(e); }
   }
 
   /* ---------- Rendering ---------- */
-  // Album art: smallest image at least `size` px, else the biggest there is
+  const ICON = {
+    play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.2-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5.5" y="4" width="4.5" height="16" rx="1"/><rect x="14" y="4" width="4.5" height="16" rx="1"/></svg>',
+    prev: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="4" y="5" width="2.5" height="14" rx="1"/><path d="M20 5.7v12.6a.8.8 0 0 1-1.2.7L8.6 12.7a.8.8 0 0 1 0-1.4L18.8 5a.8.8 0 0 1 1.2.7z"/></svg>',
+    next: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="17.5" y="5" width="2.5" height="14" rx="1"/><path d="M4 5.7v12.6a.8.8 0 0 0 1.2.7l10.2-6.3a.8.8 0 0 0 0-1.4L5.2 5A.8.8 0 0 0 4 5.7z"/></svg>',
+    back15: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 3v4h4"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-family="inherit" font-weight="700" fill="currentColor" stroke="none">15</text></svg>',
+    fwd30: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 3v4h-4"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-family="inherit" font-weight="700" fill="currentColor" stroke="none">30</text></svg>',
+  };
   const art = (imgs, size) => { if (!imgs || !imgs.length) return ''; const s = [...imgs].sort((a, b) => (a.width || 0) - (b.width || 0)); return (s.find(i => (i.width || 0) >= size) || s[s.length - 1]).url; };
-  const img = (src, cls) => { const i = document.createElement('img'); i.className = cls; i.alt = ''; i.loading = 'lazy'; i.decoding = 'async'; i.referrerPolicy = 'no-referrer'; if (src) i.src = src; else i.classList.add('none'); return i; };
-  // rows: [{ uri|id, name, sub, images }] rendered as menu rows with a thumbnail
-  function fillRows(box, rows, kind, empty) {
-    box.textContent = '';
-    if (!rows.length) { const p = document.createElement('p'); p.className = 'menu-note'; p.textContent = empty; box.appendChild(p); return; }
-    rows.forEach((r, i) => {
-      const b = document.createElement('button'); b.className = 'menu-item mu-row'; b.dataset.kind = kind; b.dataset.i = i;
-      if (r.uri) b.dataset.uri = r.uri;
-      b.appendChild(img(art(r.images, 64), 'mi-thumb'));
-      const l = document.createElement('span'); l.className = 'mi-label'; l.textContent = r.name;
-      if (r.sub) { const sm = document.createElement('small'); sm.textContent = r.sub; l.appendChild(sm); }
-      b.appendChild(l);
-      if (r.ms && kind !== 'episode') { const v = document.createElement('span'); v.className = 'mi-value'; v.textContent = fmt(r.ms); b.appendChild(v); }
-      if (r.played) b.classList.add('is-played');
-      box.appendChild(b);
-    });
-    markCurrent();
-  }
-  function markCurrent() {
-    const cur = state && state.item && state.item.uri;
-    document.querySelectorAll('.mu-row[data-uri]').forEach(b => b.classList.toggle('is-current', !!cur && b.dataset.uri === cur));
-  }
-  function renderCollection(px, c) {
-    const head = $(`#${px}-head`);
-    if (!c) { $(`#${px}-name`).textContent = 'Nothing open'; $(`#${px}-items`).textContent = ''; return; }
-    head.querySelector('.mu-cover').replaceWith(img(art(c.images, 300), 'mu-cover'));
-    $(`#${px}-name`).textContent = c.name; $(`#${px}-sub`).textContent = c.sub || '';
-    const box = $(`#${px}-items`);
-    if (!c.loaded) { box.innerHTML = '<p class="menu-note">Loading…</p>'; $(`#${px}-more`).hidden = true; return; }
-    fillRows(box, c.items, px === 'pl' ? 'track' : 'episode', px === 'pl' ? 'This playlist is empty, or Spotify won\'t share its songs.' : 'No episodes.');
-    $(`#${px}-more`).hidden = !c.next;
-  }
-  function renderShows() {
-    const box = $('#mp-shows');
-    $('#mp-reconnect').hidden = hasPodcastScope();
-    if (!hasPodcastScope()) { box.innerHTML = '<p class="menu-note">Reconnect Spotify once so Phosphor OS can see the shows you follow. Search works already.</p>'; return; }
-    if (!shows) { box.innerHTML = '<p class="menu-note">Loading your shows…</p>'; return; }
-    fillRows(box, shows, 'show', 'You don\'t follow any shows yet. Search above.');
-  }
   function renderNow() {
-    const it = state && state.item, playing = !!(state && state.is_playing);
+    const it = state && state.item, ep = isEpisode();
     $('#mu-track').textContent = it ? it.name : 'Nothing playing';
+    $('#mu-artist').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : it.show ? it.show.name : '') : 'Pick an episode below, or start something in Spotify.';
     const src = it ? art((it.album && it.album.images) || it.images || (it.show && it.show.images), 300) : '';
     const cover = $('#mu-art');
     if (cover.dataset.src !== src) { cover.dataset.src = src; cover.hidden = !src; if (src) cover.src = src; else cover.removeAttribute('src'); }
-    markCurrent();
-    $('#mu-artist').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : it.show ? it.show.name : '') : 'Start a song in Spotify, or pick a playlist below.';
-    $('#mu-dev').textContent = state && state.device ? state.device.name : 'No device';
     $('#mu-devname').textContent = state && state.device ? state.device.name : 'None';
-    $('#mu-shuffle').setAttribute('aria-pressed', String(!!(state && state.shuffle_state)));
-    const rep = (state && state.repeat_state) || 'off';
-    $('#mu-repeat').setAttribute('aria-pressed', String(rep !== 'off'));
-    $('#mu-repeat').querySelector('i').textContent = rep === 'track' ? '1' : '';
-    document.querySelectorAll('[data-mu="toggle"]').forEach(b => {
-      b.setAttribute('aria-label', playing ? 'Pause' : 'Play');
-      if (b.closest('.page-keys')) b.textContent = playing ? 'II' : '▸';
-      else b.innerHTML = playing ? ICON.pause : ICON.play;
-    });
-    tickBar();
+    const set = (b, html, label) => { if (b.dataset.icon !== html) { b.innerHTML = html; b.dataset.icon = html; } b.setAttribute('aria-label', label); };
+    set($('#mu-left'), ep ? ICON.back15 : ICON.prev, ep ? 'Back 15 seconds' : 'Previous');
+    set($('#mu-right'), ep ? ICON.fwd30 : ICON.next, ep ? 'Forward 30 seconds' : 'Next');
+    document.querySelectorAll('[data-mu="toggle"]').forEach(b => set(b, playing() ? ICON.pause : ICON.play, playing() ? 'Pause' : 'Play'));
+    document.querySelectorAll('#ep-items [data-uri]').forEach(b => b.classList.toggle('is-current', !!it && b.dataset.uri === it.uri));
+    tickBar(); changed();
   }
   function tickBar() {
-    const it = state && state.item; if (!it) { $('#mu-bar').style.setProperty('--value', '0%'); $('#mu-pos').textContent = $('#mu-dur').textContent = '0:00'; return; }
-    const pos = Math.min(it.duration_ms, state.progress_ms + (state.is_playing ? Date.now() - stamp : 0));
-    $('#mu-bar').style.setProperty('--value', (100 * pos / it.duration_ms).toFixed(1) + '%');
-    $('#mu-bar').parentElement.setAttribute('aria-valuenow', Math.round(100 * pos / it.duration_ms));
-    $('#mu-pos').textContent = fmt(pos); $('#mu-dur').textContent = fmt(it.duration_ms);
-    if (state.is_playing && pos >= it.duration_ms && Date.now() - stamp > 1500) { stamp = Date.now(); later(); }
+    const it = state && state.item;
+    if (!it) { $('#mu-bar').style.setProperty('--value', '0%'); $('#mu-pos').textContent = $('#mu-dur').textContent = '0:00'; return; }
+    const p = pos();
+    $('#mu-bar').style.setProperty('--value', (100 * p / it.duration_ms).toFixed(1) + '%');
+    $('#mu-bar').parentElement.setAttribute('aria-valuenow', Math.round(100 * p / it.duration_ms));
+    $('#mu-pos').textContent = fmt(p); $('#mu-dur').textContent = fmt(it.duration_ms);
+    if (state.is_playing && p >= it.duration_ms && Date.now() - stamp > 1500) { stamp = Date.now(); later(); }
   }
-  function renderLists() {
-    const box = $('#mu-lists');
-    if (!lists) { box.innerHTML = '<p class="menu-note">Loading playlists…</p>'; return; }
-    fillRows(box, lists.map(p => ({ id: p.id, name: p.name, images: p.images,
-      sub: (((p.tracks && p.tracks.total) ?? (p.items && p.items.total)) ?? '') + ' songs' })), 'playlist', 'No playlists in your library yet.');
+  function renderEpisodes() {
+    document.querySelectorAll('[data-ep-filter]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.epFilter === epFilter)));
+    $('#ep-scope').hidden = hasResume();
+    const box = $('#ep-items'); box.textContent = '';
+    const msg = t => { const p = document.createElement('p'); p.className = 'menu-note'; p.textContent = t; box.appendChild(p); };
+    if (!eps || !eps.loaded) { msg('Loading episodes…'); $('#ep-more').hidden = true; return; }
+    const cur = state && state.item && state.item.uri;
+    const rows = eps.items.map((x, i) => [x, i]).filter(([x]) => epFilter === 'all' || !x.played);
+    if (!rows.length) msg(eps.items.length ? 'You\'ve played everything loaded. Tap Load more or All.' : 'No episodes yet.');
+    rows.forEach(([x, i]) => {
+      const b = document.createElement('button'); b.className = 'menu-item mu-ep'; b.dataset.i = i; b.dataset.uri = x.uri;
+      const l = document.createElement('span'); l.className = 'mi-label'; l.textContent = x.name;
+      const sm = document.createElement('small'); sm.textContent = x.sub; l.appendChild(sm); b.appendChild(l);
+      b.classList.toggle('is-played', x.played); b.classList.toggle('is-current', x.uri === cur);
+      box.appendChild(b);
+    });
+    $('#ep-more').hidden = !eps.next;
+    $('#ep-more').disabled = !!eps.loading;
+    const fresh = eps.items.filter(x => !x.played).length;
+    $('#mu-sysk-sub').textContent = hasResume() && eps.items.length ? fresh + (eps.next ? '+' : '') + ' unplayed' : 'Episodes';
   }
   function renderDevices() {
     const box = $('#mu-devices'); box.textContent = '';
@@ -354,47 +288,25 @@
     $('#mu-status').textContent = connected() ? (auth.user ? 'Connected as ' + auth.user : 'Connected') : 'Not connected';
     $('#mu-status').className = connected() ? 't-accent' : '';
     $('#mu-disconnect').hidden = !connected();
-    $('#mu-connect').textContent = connected() ? 'Reconnect' : 'Connect Spotify';    $('#set-spotify').textContent = connected() ? 'Connected' : 'Off';
+    $('#mu-connect').textContent = connected() ? 'Reconnect' : 'Connect Spotify';
+    $('#set-spotify').textContent = connected() ? 'Connected' : 'Off';
   }
   function renderAll() {
     $('#mu-off').hidden = connected(); $('#mu-on').hidden = !connected();
-    renderSetup(); renderNow(); renderLists(); renderShows();
-    if (pl && !pl.loaded) renderCollection('pl', pl);
-    if (sh && !sh.loaded) renderCollection('sh', sh);
+    renderSetup(); renderNow(); renderEpisodes();
   }
-
-  const ICON = {
-    play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>',
-    pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>',
-  };
 
   /* ---------- Wiring ---------- */
   document.addEventListener('click', e => {
     const m = e.target.closest('[data-mu]'); if (m && actions[m.dataset.mu]) { e.preventDefault(); actions[m.dataset.mu](); return; }
-    const row = e.target.closest('.mu-row');
-    if (row) {
-      const i = +row.dataset.i, k = row.dataset.kind;
-      if (k === 'playlist') openPlaylist(lists[i]);
-      else if (k === 'show') openShow((row.closest('#mp-results') ? null : shows && shows[i]) || readShow(row));
-      else if (k === 'track') play({ context_uri: pl.uri, offset: { uri: pl.items[i].uri } });
-      else if (k === 'episode') { const ep = sh.items[i]; play({ uris: [ep.uri], ...(ep.resume ? { position_ms: ep.resume } : {}) }); }
-      return;
-    }
-    const a = e.target.closest('[data-mu-act]');
-    if (a) {
-      const k = a.dataset.muAct;
-      if (k === 'pl-play' && pl) play({ context_uri: pl.uri }, { shuffle: false });
-      if (k === 'pl-shuffle' && pl) play({ context_uri: pl.uri }, { shuffle: true });
-      if (k === 'pl-more') loadPlaylist(true);
-      if (k === 'sh-play' && sh && sh.items.length) { const ep = sh.items.find(x => !x.played) || sh.items[0]; play({ uris: [ep.uri], ...(ep.resume ? { position_ms: ep.resume } : {}) }); }
-      if (k === 'sh-more') loadShow(true);
-      if (k === 'sysk') searchShows('Stuff You Should Know', true);
-      if (k === 'reconnect') login();
-      return;
-    }
+    const row = e.target.closest('#ep-items .mu-ep');
+    if (row) { const ep = eps.items[+row.dataset.i]; play({ uris: [ep.uri], ...(ep.resume ? { position_ms: ep.resume } : {}) }); return; }
+    const f = e.target.closest('[data-ep-filter]');
+    if (f) { epFilter = f.dataset.epFilter; save('mu-ep-filter', epFilter); renderEpisodes(); return; }
     const d = e.target.closest('#mu-devices [data-device]');
     if (d) cmd(async () => { await api('/me/player', { method: 'PUT', body: { device_ids: [d.dataset.device], play: true } }); setTimeout(loadDevices, 600); });
   });
+  $('#ep-more').addEventListener('click', () => loadEpisodes(true));
   $('#mu-connect').addEventListener('click', login);
   $('#mu-disconnect').addEventListener('click', async () => {
     if (await PH.confirm('Disconnect Spotify from Phosphor OS?', { title: 'Disconnect', ok: 'Disconnect', danger: true })) disconnect();
@@ -406,10 +318,12 @@
     catch { if (src.select) { src.select(); document.execCommand('copy'); PH.toast('Copied.'); } }
   }));
   $('#mu-dev-refresh').addEventListener('click', loadDevices);
-  let lastResults = [];
-  const readShow = row => lastResults[+row.dataset.i];
-  $('#mp-q').addEventListener('input', () => { clearTimeout(searchT); searchT = setTimeout(() => searchShows($('#mp-q').value.trim()), 400); });
-  $('#mp-q').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchT); searchShows($('#mp-q').value.trim()); e.target.blur(); } });
+
+  // For the OS right key: play/pause from anywhere
+  window.PhosphorMusic = {
+    toggle: async () => { if (!connected()) { PH.toast('Set up Spotify first.', 'warn'); return; } if (!onMusic()) await poll(); actions.toggle(); },
+    playing,
+  };
 
   // Poll only while a music page is on screen and the app is visible
   let pollT = null, barT = null;
@@ -422,10 +336,7 @@
     poll(); pollT = setInterval(poll, 4000); barT = setInterval(tickBar, 1000);
     const h = location.hash;
     if (h.startsWith('#/music/devices')) loadDevices();
-    else if (h.startsWith('#/music/list')) { if (pl && !pl.loaded) loadPlaylist(); }
-    else if (h.startsWith('#/music/podcasts/show')) { if (sh && !sh.loaded) loadShow(); }
-    else if (h.startsWith('#/music/podcasts')) { if (!shows) loadShows(); }
-    else if (!lists) loadLists();
+    else if (!eps || (!eps.loaded && !eps.loading)) loadEpisodes();   // also fills "N unplayed" on the main page
   }
   addEventListener('hashchange', sync);
   document.addEventListener('visibilitychange', sync);

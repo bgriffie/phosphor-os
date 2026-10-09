@@ -13,9 +13,19 @@ h = h.replace('/*@@PHOSPHOR_CSS@@*/', open(B + 'phosphor.css').read()).replace('
 open('index.html', 'w').write(h)
 print('index.html', len(h))
 
-HEAD = ('<script>/* Phosphor OS: iframes report no safe areas on iOS, so use the OS\'s */'
-        '(()=>{const os=window.parent!==window&&window.parent.PhosphorOS;if(!os)return;'
-        'const i=os.insets(),s=document.documentElement.style;for(const k in i)s.setProperty("--safe-"+k,i[k]+"px");})();</script>')
+HEAD = ('<script>/* Phosphor OS: this app runs inside the OS screen, which already clears the notch */'
+        '(()=>{if(window.parent===window||!window.parent.PhosphorOS)return;const d=document.documentElement;d.classList.add("os-embed");'
+        'for(const k of["top","right","bottom","left"])d.style.setProperty("--safe-"+k,"0px");})();</script>')
+# Fill the OS screen: no case, header or keys of its own, no slide between pages (Floyd, OS v1.5)
+EMBED_CSS = """<style>/* Phosphor OS */
+html.os-embed { --app-gap: 0px !important; --app-h: 100% !important; }
+html.os-embed, html.os-embed body { background: var(--bg) !important; height: 100% !important; }
+html.os-embed .app { padding: 0 !important; max-width: none; gap: 0; height: 100% !important; min-height: 0 !important; }
+html.os-embed .app-header, html.os-embed .app-controls { display: none !important; }
+html.os-embed .screen { margin: 0; border-radius: 0; box-shadow: none; }
+html.os-embed .screen::before, html.os-embed .screen::after { display: none; }
+html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none; }
+</style>"""
 embed = open('src/embed.js').read()
 for app_id, src in APPS.items():
     a = open(T + src + '/index.html').read()
@@ -23,8 +33,7 @@ for app_id, src in APPS.items():
     a = re.sub(r'\s*<link rel="(manifest|apple-touch-icon|icon)"[^>]*>', '', a)
     a = re.sub(r'if \(["\']serviceWorker["\'] in navigator\) navigator\.serviceWorker\.register\([^;]*;', '/* service worker: provided by Phosphor OS */', a)
     a = a.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n  ' + HEAD, 1)
-    # same case as the OS: no title, screen right under the clock (Floyd, OS v1.4)
-    a = a.replace('</head>', '<style>/* Phosphor OS */ .app-header { display: none; } .app { padding-top: max(var(--sp-2), calc(var(--safe-top) - 4px)); }</style>\n</head>', 1)
+    a = a.replace('</head>', EMBED_CSS + '\n</head>', 1)
     i = a.rindex('</body>')
     a = a[:i] + '<script>\n' + embed + '</script>\n' + a[i:]
     assert HEAD in a and 'serviceWorker.register' not in a, app_id
