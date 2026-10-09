@@ -1,6 +1,6 @@
 # Phosphor OS
 
-A phone-style launcher in the PHOSPHOR theme: a grid of tiles that open iOS apps (app links and Shortcuts), built-in Phone, Notes and Calculator apps, and Floyd's Arcade, Workout Log and Kitchen Log bundled under `apps/` so they open full-screen inside the OS. Works offline.
+A phone-style launcher in the PHOSPHOR theme: a grid of tiles that open iOS apps (app links and Shortcuts), built-in Phone, Notes, Calculator and a Spotify remote (Web API + PKCE, `src/music.js`), and Floyd's Arcade, Workout Log and Kitchen Log bundled under `apps/` so they open full-screen inside the OS. Works offline.
 
 Live: https://bgriffie.github.io/phosphor-os/
 

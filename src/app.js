@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.1';
+  const VERSION = '1.2';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -43,7 +43,7 @@
 
   /* ---------- Tiles ---------- */
   // Built-in apps: OS pages, or Floyd's other tools bundled under apps/<id>/ and run in a full-screen frame
-  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'],
+  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'],
     arcade: ['Arcade', null, 'apps/arcade/'], workout: ['Workout Log', null, 'apps/workout/'], kitchen: ['Kitchen Log', null, 'apps/kitchen/'] };
   const DEFAULT_TILES = () => [
     ['Phone', 'phone', 'app', 'phone'],
@@ -52,7 +52,7 @@
     ['FaceTime', 'video', 'shortcut', 'Open FaceTime'],
     ['Maps', 'map', 'link', 'maps://'],
     ['Camera', 'camera', 'shortcut', 'Open Camera'],
-    ['Spotify', 'music', 'link', 'spotify:'],
+    ['Spotify', 'music', 'app', 'music'],
     ['Notes', 'note', 'app', 'notes'],
     ['Arcade', 'game', 'app', 'arcade'],
     ['Workout', 'dumbbell', 'app', 'workout'],
@@ -67,6 +67,8 @@
   tiles.forEach(t => {
     const m = t.kind === 'link' && /^https:\/\/bgriffie\.github\.io\/([^/?#]+)\/?$/i.exec(t.target);
     if (m && BUNDLED[m[1].toLowerCase()]) { t.kind = 'app'; t.target = BUNDLED[m[1].toLowerCase()]; }
+    // v1.2: the Spotify tile opens the built-in remote (an app link can't leave Guided Access)
+    if (t.kind === 'link' && /^spotify:\/*$/i.test(t.target)) { t.kind = 'app'; t.target = 'music'; }
   });
   save('tiles', tiles);
   const saveTiles = () => { save('tiles', tiles); renderGrid(); renderTileList(); };

@@ -89,6 +89,23 @@
     @keyframes app-open { from { opacity: 0; transform: scale(.94); } }
     @media (prefers-reduced-motion: reduce) { .app-frame { animation: none; } }
 
+    /* Spotify remote */
+    .mu-track { font-size: var(--fs-xl); font-weight: 700; line-height: var(--lh-tight); color: var(--text); overflow-wrap: anywhere; }
+    .mu-artist { margin-top: var(--sp-2); color: var(--text-dim); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+    .mu-now .meter { margin-top: var(--sp-5); }
+    .mu-times { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--text-dim); font-variant-numeric: tabular-nums; }
+    .mu-times .badge { max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mu-ctrl { display: flex; justify-content: space-between; align-items: center; margin-top: var(--sp-5); }
+    .mu-ctrl .btn svg { width: 20px; height: 20px; }
+    .mu-ctrl .mu-play { width: 64px; height: 64px; }
+    .mu-ctrl .mu-play svg { width: 26px; height: 26px; }
+    .mu-ctrl [aria-pressed="true"] { color: var(--accent); border-color: var(--accent); text-shadow: var(--glow); }
+    .mu-ctrl .btn i { font-style: normal; font-size: 10px; margin-left: -2px; align-self: flex-end; }
+    .mu-redirect { display: flex; gap: var(--sp-2); align-items: center; }
+    .mu-redirect code { flex: 1; min-width: 0; overflow-wrap: anywhere; padding: var(--sp-2); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--accent); font-size: var(--fs-sm); }
+    .steps { display: flex; flex-direction: column; gap: var(--sp-2); padding-left: 1.4em; color: var(--text); }
+    .steps li::marker { color: var(--text-dim); }
+
     /* Notes */
     .note-edit { flex: 1 1 auto; min-height: 0; resize: none; font-size: var(--fs-md); line-height: var(--lh); }
     .note-bar { display: flex; justify-content: space-between; align-items: center; color: var(--text-faint); font-size: var(--fs-xs); }
@@ -100,7 +117,7 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.1</span>
+      <span class="app-meta">v1.2</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -120,6 +137,86 @@
 
       <!-- ===== Bundled app (the frame covers this) ===== -->
       <section class="view" data-route="/app" data-title="Phosphor OS"></section>
+
+      <!-- ===== Spotify remote ===== -->
+      <section class="view" data-route="/music" data-title="Spotify">
+        <div class="empty" id="mu-off" hidden>
+          <pre aria-hidden="true">  ┌──────────┐
+  │ ▸  ♪ ♪ ♪ │
+  └──────────┘</pre>
+          <p>Control Spotify from here, even under Guided Access. It needs Spotify Premium and a one-time setup.</p>
+          <button class="btn btn-primary" data-route="/music/setup">Set up Spotify</button>
+        </div>
+        <div id="mu-on" hidden>
+          <section class="panel mu-now" data-title="Now playing">
+            <div class="mu-track" id="mu-track">Nothing playing</div>
+            <div class="mu-artist" id="mu-artist"></div>
+            <div class="meter" role="progressbar" aria-label="Song position" aria-valuemin="0" aria-valuemax="100"><span id="mu-bar" style="--value:0%"></span></div>
+            <div class="mu-times"><span id="mu-pos">0:00</span><span class="badge dim" id="mu-dev">No device</span><span id="mu-dur">0:00</span></div>
+            <div class="mu-ctrl">
+              <button class="btn btn-icon btn-ghost" id="mu-shuffle" data-mu="shuffle" aria-label="Shuffle" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 6h4l10 12h4M3 18h4l3-3.6M14 9.6 17 6h4M18 3l3 3-3 3M18 15l3 3-3 3"/></svg></button>
+              <button class="btn btn-icon" data-mu="prev" aria-label="Previous"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 4h3v16H5zM20 4v16L9 12z"/></svg></button>
+              <button class="btn btn-primary mu-play" data-mu="toggle" aria-label="Play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg></button>
+              <button class="btn btn-icon" data-mu="next" aria-label="Next"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 4h3v16h-3zM4 4v16l11-8z"/></svg></button>
+              <button class="btn btn-icon btn-ghost" id="mu-repeat" data-mu="repeat" aria-label="Repeat" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 11V8h14M15 5l3 3-3 3M20 13v3H6M9 19l-3-3 3-3"/></svg><i></i></button>
+            </div>
+          </section>
+          <div class="menu-group" style="margin-top:var(--sp-5)">
+            <span class="label">Playlists</span>
+            <div class="menu" id="mu-lists"></div>
+          </div>
+          <div class="menu-group">
+            <div class="menu">
+              <a class="menu-item" href="#/music/devices"><span class="mi-label">Play on</span><span class="mi-value" id="mu-devname"></span></a>
+              <a class="menu-item" href="#/music/setup"><span class="mi-label">Spotify setup</span></a>
+            </div>
+            <p class="menu-note">Use the phone's volume buttons for volume. Spotify doesn't let apps change an iPhone's volume.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-route="/music/devices" data-title="Play on">
+        <div class="menu" id="mu-devices"></div>
+        <button class="btn btn-ghost btn-block" id="mu-dev-refresh" style="margin-top:var(--sp-4)">Refresh</button>
+      </section>
+
+      <section class="view" data-route="/music/setup" data-title="Spotify setup">
+        <section class="panel" data-title="Status">
+          <div class="kv"><span>Spotify</span><span id="mu-status">Not connected</span></div>
+        </section>
+        <section class="panel" data-title="1 · Make a Spotify app (once)" style="margin-top:var(--sp-5)">
+          <ol class="steps">
+            <li>Open <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">developer.spotify.com/dashboard</a>, log in, and tap Create app.</li>
+            <li>Any name and description. Under Redirect URI, add this exactly:</li>
+          </ol>
+          <div class="mu-redirect" style="margin:var(--sp-3) 0"><code id="mu-redirect"></code><button class="btn btn-ghost" data-copy="mu-redirect">Copy</button></div>
+          <ol class="steps" start="3">
+            <li>Tick Web API, agree, and Save.</li>
+            <li>Open the app's Settings and copy its Client ID.</li>
+          </ol>
+        </section>
+        <section class="panel" data-title="2 · Connect" style="margin-top:var(--sp-5)">
+          <div class="field">
+            <label class="label" for="mu-client">Client ID</label>
+            <input class="input" id="mu-client" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="32" enterkeyhint="go" placeholder="32 letters and numbers">
+          </div>
+          <button class="btn btn-primary btn-block" id="mu-connect" style="margin-top:var(--sp-4)">Connect Spotify</button>
+          <button class="btn btn-danger btn-block" id="mu-disconnect" style="margin-top:var(--sp-3)" hidden>Disconnect</button>
+        </section>
+        <section class="panel" data-title="Pairing code" id="mu-pair-out" style="margin-top:var(--sp-5)" hidden>
+          <p>This login finished in Safari. Copy the code, open Phosphor OS from your home screen, and paste it under "Login opened in Safari?" in Spotify setup.</p>
+          <textarea class="textarea" id="mu-pair-code" readonly style="margin-top:var(--sp-3);min-height:72px"></textarea>
+          <button class="btn btn-primary btn-block" data-copy="mu-pair-code" style="margin-top:var(--sp-3)">Copy code</button>
+        </section>
+        <div class="menu-group" style="margin-top:var(--sp-5)">
+          <span class="label">Login opened in Safari?</span>
+          <div class="field">
+            <input class="input" id="mu-pair-in" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Paste the PHOS- pairing code" aria-label="Pairing code">
+          </div>
+          <button class="btn btn-ghost btn-block" id="mu-pair-use" style="margin-top:var(--sp-3)">Use pairing code</button>
+          <p class="menu-note">Only needed if iOS finished the Spotify login in Safari instead of coming back here.</p>
+        </div>
+      </section>
 
       <!-- ===== Tiles editor ===== -->
       <section class="view" data-route="/tiles" data-title="Tiles">
@@ -221,6 +318,7 @@
           <span class="label">General</span>
           <div class="menu">
             <a class="menu-item" href="#/tiles"><span class="mi-label">Tiles</span><span class="mi-value" id="tile-count"></span></a>
+            <a class="menu-item" href="#/music/setup"><span class="mi-label">Spotify</span><span class="mi-value" id="set-spotify"></span></a>
             <a class="menu-item" href="#/settings/clock"><span class="mi-label">Clock</span><span class="mi-value" data-setting-value="clock"></span></a>
             <a class="menu-item" href="#/settings/columns"><span class="mi-label">Grid columns</span><span class="mi-value" data-setting-value="cols"></span></a>
             <label class="menu-item"><span class="mi-label">Boot screen<small>Short start-up text when the app cold starts</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="boot"></label>
@@ -245,7 +343,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.1</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.2</span></a>
           </div>
         </div>
       </section>
@@ -275,7 +373,7 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.1</span></div>
+          <div class="kv"><span>Version</span><span>1.2</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
@@ -291,7 +389,7 @@
 
       <section class="view" data-route="/settings/about/launching" data-title="Launching">
         <section class="panel" data-title="App links">
-          <p>Phone, Messages, Mail, Maps and Spotify open through app links such as <code>sms:</code> or <code>maps://</code>. If an app isn't installed, nothing happens.</p>
+          <p>Phone, Messages, Mail and Maps open through app links such as <code>sms:</code> or <code>maps://</code>. If an app isn't installed, nothing happens.</p>
         </section>
         <section class="panel" data-title="Shortcuts" style="margin-top:var(--sp-4)">
           <p>Any other app (Camera, FaceTime, Settings) opens through the Shortcuts app. Shortcut tiles are amber.</p>
@@ -328,7 +426,8 @@
     <nav class="app-controls" aria-label="Controls">
       <button class="key key-sm" data-back aria-label="Back">‹</button>
       <button class="key key-sm" data-open-sheet="menu" aria-label="Menu">☰</button>
-      <button class="key key-sm" data-route="/" data-hide-on="/ /tiles /notes" aria-label="Home">■</button>
+      <button class="key key-sm" data-route="/" data-hide-on="/ /tiles /notes /music" aria-label="Home">■</button>
+      <div class="page-keys" data-show-on="/music" hidden><button class="key key-sm" data-mu="toggle" aria-label="Play">▸</button></div>
       <div class="page-keys" data-show-on="/" hidden><button class="key key-sm" data-route="/tiles" aria-label="Edit tiles">✎</button></div>
       <div class="page-keys" data-show-on="/tiles" id="pk-add" hidden><button class="key key-sm" data-act="add-tile" aria-label="Add tile">+</button></div>
       <div class="page-keys" data-show-on="/tiles/edit" hidden><button class="key key-sm word" data-act="save-tile">Save</button></div>
@@ -343,6 +442,7 @@
       <button class="menu-item" data-route="/phone"><span class="mi-glyph" aria-hidden="true">#</span><span class="mi-label">Phone</span></button>
       <button class="menu-item" data-route="/notes"><span class="mi-glyph" aria-hidden="true">≡</span><span class="mi-label">Notes</span><span class="mi-count" id="note-count" hidden></span></button>
       <button class="menu-item" data-route="/calc"><span class="mi-glyph" aria-hidden="true">±</span><span class="mi-label">Calculator</span></button>
+      <button class="menu-item" data-route="/music"><span class="mi-glyph" aria-hidden="true">♪</span><span class="mi-label">Spotify</span></button>
       <button class="menu-item" data-route="/settings"><span class="mi-glyph" aria-hidden="true">⚙</span><span class="mi-label">Settings</span></button>
     </div>
     <div class="sheet-title">Actions</div>
