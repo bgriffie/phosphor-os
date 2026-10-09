@@ -1,0 +1,1978 @@
+<!doctype html>
+<html lang="en" data-app="kitchen-log">
+<head>
+  <meta charset="utf-8">
+  <script>/* Phosphor OS: iframes report no safe areas on iOS, so use the OS's */(()=>{const os=window.parent!==window&&window.parent.PhosphorOS;if(!os)return;const i=os.insets(),s=document.documentElement.style;for(const k in i)s.setProperty("--safe-"+k,i[k]+"px");})();</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Kitchen Log</title>
+  <meta name="theme-color" content="#D9CDB4">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kitchen Log">
+  <style>
+/* ==========================================================================
+   PHOSPHOR v1.9 — base stylesheet for Floyd's home-screen tools
+   Spec: brand-guidelines.md (same folder). Paste this whole file into a
+   <style> block in index.html. No external fonts, images or network calls.
+   ========================================================================== */
+
+/* ---------- 1. Tokens ---------- */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces (darkest -> lightest) */
+  --bg:        #030703;
+  --surface-1: #08110A;
+  --surface-2: #0D1A10;
+  --surface-3: #132418;
+
+  /* Lines */
+  --line:        #1F3D26;  /* dividers, panel outlines (decorative) */
+  --line-strong: #3F7A4B;  /* input / control borders (>=3:1 on bg) */
+
+  /* Text */
+  --text:       #C9F5D3;   /* body, 16.9:1 on bg */
+  --text-dim:   #86C295;   /* secondary, labels, 9.8:1 */
+  --text-faint: #4F7F5B;   /* placeholders, disabled ONLY, 4.4:1 */
+
+  /* Signal colors */
+  --accent:     #39FF6A;   /* phosphor green: primary actions, focus, key numbers */
+  --accent-dim: #1E9E42;   /* pressed / secondary fills */
+  --on-accent:  #021A08;   /* text on accent/amber fills */
+  --amber:      #FFB13B;   /* warnings, pending, "attention" */
+  --red:        #FF5C5C;   /* errors, destructive */
+  --cyan:       #5CE1FF;   /* info, links, neutral highlight */
+
+  /* Case plastic (vintage beige computer housing) */
+  --plastic:       #D9CDB4;  /* main housing */
+  --plastic-light: #E8DFCB;  /* top-lit edges, keycap tops */
+  --plastic-shade: #BFB193;  /* recesses, bezel slope */
+  --plastic-dark:  #9C8E70;  /* keycap sides, seams */
+  --trim:          #2B261E;  /* dark brown trim band, status-bar strip */
+  --plastic-band:  #D9CDB4;  /* v1.8: no separate band, the case is one colour up to the top edge */
+  /* iOS status bar: style "black-translucent" so the app draws under the clock; the
+     case continues behind the clock in one colour. theme-color #D9CDB4. */
+  --ink:           #2B261E;  /* text on plastic, 9.5:1 */
+  --ink-dim:       #5E5442;  /* labels on plastic, 4.7:1 */
+  --ink-red:       #8A3A1A;  /* destructive label on plastic, 4.9:1 */
+  --plastic-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .3 0 0 0 0 .2 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  --key-shadow: 0 3px 0 var(--plastic-dark), 0 4px 6px rgba(43, 38, 30, .35), inset 0 1px 0 rgba(255, 255, 255, .7);
+  --key-shadow-pressed: 0 1px 0 var(--plastic-dark), 0 1px 2px rgba(43, 38, 30, .3), inset 0 1px 2px rgba(43, 38, 30, .2);
+  --screen-radius: 38px;   /* follows the iPhone's own rounded display corners (v1.5) */
+
+  /* Glow (accent only, never body text) */
+  --glow:    0 0 6px rgba(57, 255, 106, .55);
+  --glow-lg: 0 0 4px rgba(57, 255, 106, .6), 0 0 16px rgba(57, 255, 106, .3);
+  --glow-box: 0 0 0 1px var(--accent), 0 0 12px rgba(57, 255, 106, .35);
+
+  /* Type */
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco,
+               "Cascadia Mono", Consolas, "Liberation Mono", "Courier New", monospace;
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-md: 16px;   /* base; inputs must never go below this (iOS zoom) */
+  --fs-lg: 20px;
+  --fs-xl: 28px;
+  --fs-2xl: 40px;  /* hero readouts */
+  --lh-tight: 1.15;
+  --lh: 1.5;
+  --tracking-label: .12em;
+
+  /* Space (4px grid) */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+
+  /* Shape */
+  --radius-sm: 2px;
+  --radius: 4px;
+  --tap: 44px;          /* min touch target */
+  --maxw: 560px;
+
+  /* Motion */
+  --dur-fast: 90ms;
+  --dur: 160ms;
+  --dur-slow: 280ms;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --ease-steps: steps(4, end);   /* "digital" transitions */
+
+  /* Safe areas */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ---------- 2. Reset & base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* The case never moves: html/body are locked to the viewport and only
+   .screen-body scrolls. */
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }
+html { background: var(--plastic); }
+body {
+  background: var(--plastic-noise), var(--plastic);
+  height: var(--app-h, 100dvh);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  line-height: var(--lh);
+  font-variant-numeric: tabular-nums slashed-zero;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+img, svg, canvas { display: block; max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+::selection { background: var(--accent); color: var(--on-accent); }
+
+/* ---------- 3. Case + CRT screen ---------- */
+/* (v1.6) No separate status-bar strip: the header band itself runs up behind the clock. */
+
+/* The screen: a fixed CRT frame. Structure:
+   <div class="screen">
+     <canvas class="rain">            (optional, stays put)
+     <nav class="path" data-path>     (status line, stays put)
+     <div class="screen-body">        (the ONLY scrolling area)  */
+.screen {
+  position: relative; isolation: isolate;
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+  border-radius: var(--screen-radius);
+  /* slim bezel: shaded slope, seam, lit lip below, deep glass inset */
+  box-shadow:
+    0 0 0 3px var(--plastic-shade),
+    0 0 0 4px var(--plastic-dark),
+    0 3px 0 4px var(--plastic-light),
+    inset 0 0 0 2px #000,
+    inset 0 0 28px rgba(0, 0, 0, .9);
+  margin: 4px;
+}
+.screen-body {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-3) var(--sp-6);
+  scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent;
+}
+.screen-body::-webkit-scrollbar { width: 4px; }
+.screen-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 2px; }
+/* glass reflection */
+.screen::before {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(120% 60% at 30% 0%, rgba(201, 245, 211, .06), rgba(0,0,0,0) 60%);
+}
+/* scanlines + vignette */
+.screen::after {
+  content: "";
+  position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+  background:
+    repeating-linear-gradient(to bottom,
+      rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, .22) 3px, rgba(0, 0, 0, 0) 4px),
+    radial-gradient(ellipse at center, rgba(0,0,0,0) 60%, rgba(0,0,0,.45) 100%);
+}
+.no-crt .screen::after { display: none; }
+
+/* ---------- 4. Layout ---------- */
+/* Pinned to the real screen edges: on iOS home-screen apps 100%/100dvh can come
+   up short and leave a strip of empty plastic at the bottom (v1.4 fix). */
+.app {
+  position: fixed; top: 0; right: 0; left: 0;
+  /* --app-h is set by phosphor.js to the real screen height in home-screen apps: with a
+     black-translucent status bar iOS reports a viewport one status bar too short and
+     leaves an empty strip at the bottom (v1.7 fix). */
+  height: var(--app-h, 100%);
+  max-width: var(--maxw);
+  margin: 0 auto;
+  /* keys sit low: the space under them matches the space above them (v1.9) */
+  padding: 0 calc(2px + var(--safe-right)) max(var(--sp-3), calc(var(--safe-bottom) - 20px)) calc(2px + var(--safe-left));
+  display: flex; flex-direction: column; gap: 6px;
+}
+.app > :not(.screen) { flex: none; }
+.stack   { display: flex; flex-direction: column; gap: var(--sp-3); }
+.row     { display: flex; align-items: center; gap: var(--sp-3); }
+.row.between { justify-content: space-between; }
+.grid-2  { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.grow    { flex: 1 1 auto; min-width: 0; }
+.divider { border: 0; border-top: 1px dashed var(--line); margin: var(--sp-2) 0; }
+
+/* ---------- 5. Type ---------- */
+h1, h2, h3 { margin: 0; font-weight: 700; line-height: var(--lh-tight); }
+h1 { font-size: var(--fs-xl); }
+h2 { font-size: var(--fs-lg); }
+h3 { font-size: var(--fs-md); }
+p  { margin: 0; }
+.label {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-dim);
+}
+.dim   { color: var(--text-dim); }
+.faint { color: var(--text-faint); }
+.small { font-size: var(--fs-sm); }
+.glow  { color: var(--accent); text-shadow: var(--glow); }
+.readout {
+  font-size: var(--fs-2xl); font-weight: 700; line-height: 1;
+  color: var(--accent); text-shadow: var(--glow-lg);
+  letter-spacing: -.02em;
+}
+.t-accent { color: var(--accent); }
+.t-amber  { color: var(--amber); }
+.t-red    { color: var(--red); }
+.t-cyan   { color: var(--cyan); }
+a { color: var(--cyan); text-underline-offset: 3px; }
+
+/* Blinking block cursor: <span class="cursor" aria-hidden="true"></span> */
+.cursor {
+  display: inline-block; width: .6em; height: 1.05em;
+  background: var(--accent); vertical-align: -.15em; margin-left: 2px;
+  box-shadow: var(--glow);
+  animation: blink 1.06s steps(1, end) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ---------- 6. Header (title only) + bottom controls (on the plastic case) ---------- */
+.app-header {   /* the top band: runs edge to edge and up behind the iOS clock */
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2);
+  margin: 0 calc(-2px - var(--safe-right)) 0 calc(-2px - var(--safe-left));
+  /* title tucked right under the clock row (v1.9) */
+  padding: max(0px, calc(var(--safe-top) - 10px)) calc(var(--sp-4) + var(--safe-right)) 0 calc(var(--sp-4) + var(--safe-left));
+  min-height: calc(max(0px, calc(var(--safe-top) - 10px)) + 26px);
+  background: none;   /* v1.8: same plastic as the rest of the case, no band */
+}
+.app-header .app-title { color: var(--ink); text-shadow: 0 1px 0 rgba(255, 255, 255, .45); font-size: 18px; }
+.app-header .app-meta { color: var(--ink-dim); }
+/* Three keys, centered under the screen, in thumb reach (v1.6):
+   <nav class="app-controls"> ‹ back · ☰ menu · page action (or ■ home) </nav> */
+.app-controls { display: flex; align-items: center; justify-content: center; gap: var(--sp-5); min-height: 44px; padding-top: 4px; }
+.app-controls > .grow { display: none; }
+.app-controls .key { min-width: 76px; min-height: 40px; font-size: var(--fs-lg); }
+.app-controls .key.word { font-size: var(--fs-sm); }
+.app-controls .page-keys { display: contents; }
+.app-title {
+  display: flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--fs-lg); font-weight: 700; text-transform: uppercase;
+  letter-spacing: .14em; color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .55);   /* moulded / debossed */
+}
+.app-title::before {  /* power LED */
+  content: ""; width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent), inset 0 -1px 1px rgba(0,0,0,.3);
+}
+.app-meta { font-size: var(--fs-xs); color: var(--ink-dim); text-transform: uppercase; letter-spacing: var(--tracking-label); text-shadow: 0 1px 0 rgba(255,255,255,.45); }
+.app-title .cursor { display: none; }
+
+/* Vent slots: <div class="vents" aria-hidden="true"></div> */
+.vents {
+  height: 14px; margin: 0 var(--sp-2);
+  background: repeating-linear-gradient(90deg,
+    var(--plastic-dark) 0 2px, var(--trim) 2px 4px, var(--plastic-light) 4px 5px, transparent 5px 12px);
+  opacity: .55; border-radius: 2px;
+}
+
+/* Embossed label on plastic, e.g. under a keypad */
+.emboss { color: var(--ink-dim); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+
+/* Keycap button, for controls ON the plastic (tab bar, keypads, header) */
+.key {
+  appearance: none; -webkit-appearance: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: var(--tap); min-width: var(--tap); padding: 0 var(--sp-3);
+  border: 1px solid var(--plastic-dark); border-radius: 6px;
+  background: linear-gradient(180deg, var(--plastic-light), #DDD2BB 70%, var(--plastic-shade));
+  color: var(--ink); font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  box-shadow: var(--key-shadow);
+  cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation;
+  transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.key:active, .key.is-pressed, .key[aria-pressed="true"], .key[aria-selected="true"] {
+  transform: translateY(3px); box-shadow: var(--key-shadow-pressed);
+  background: linear-gradient(180deg, #DDD2BB, var(--plastic-shade));
+}
+.key:disabled { opacity: .45; cursor: default; transform: translateY(3px); box-shadow: var(--key-shadow-pressed); }
+.key-dark {   /* "Return"-style accent key */
+  background: linear-gradient(180deg, #4A4236, var(--trim));
+  border-color: #17140F; color: var(--plastic-light);
+  box-shadow: 0 3px 0 #17140F, 0 4px 6px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15);
+}
+.key-danger { color: var(--ink-red); }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); padding: var(--sp-2) var(--sp-1) var(--sp-3); }
+.keypad .key { min-height: 52px; font-size: var(--fs-lg); }
+
+/* ---------- 7. Panels ---------- */
+.panel {
+  position: relative;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+}
+.panel[data-title] { padding-top: calc(var(--sp-4) + 4px); }
+.panel[data-title]::before {
+  content: "[ " attr(data-title) " ]";
+  position: absolute; top: -.75em; left: var(--sp-3);
+  padding: 0 var(--sp-1);
+  background: var(--bg);
+  font-size: var(--fs-xs); letter-spacing: var(--tracking-label);
+  text-transform: uppercase; color: var(--text-dim);
+}
+.panel.raised { background: var(--surface-2); }
+.panel.active { border-color: var(--accent); box-shadow: var(--glow-box); }
+
+/* ---------- 8. Buttons ---------- */
+.btn {
+  appearance: none; -webkit-appearance: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: var(--tap); padding: 0 var(--sp-4);
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  background: transparent; color: var(--accent);
+  font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+.btn:active { transform: translateY(1px); background: var(--surface-3); }
+.btn-primary {
+  background: var(--accent); color: var(--on-accent);
+  border-color: var(--accent); box-shadow: var(--glow);
+}
+.btn-primary:active { background: var(--accent-dim); border-color: var(--accent-dim); }
+.btn-ghost { border-color: transparent; color: var(--text-dim); }
+.btn-danger { color: var(--red); border-color: var(--red); }
+.btn-danger:active { background: rgba(255, 92, 92, .12); }
+.btn-block { width: 100%; }
+.btn-icon { width: var(--tap); padding: 0; }
+.btn:disabled, .btn[aria-disabled="true"] {
+  color: var(--text-faint); border-color: var(--line); background: transparent;
+  box-shadow: none; cursor: not-allowed; transform: none;
+}
+
+/* ---------- 9. Focus ---------- */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: var(--glow);
+}
+
+/* ---------- 10. Form fields ---------- */
+.field { display: flex; flex-direction: column; gap: var(--sp-1); }
+.field > .label { padding-left: 2px; }
+.input, .select, .textarea {
+  appearance: none; -webkit-appearance: none;
+  width: 100%; min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg);
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  color: var(--text); font-size: var(--fs-md); /* >=16px: stops iOS zoom */
+  caret-color: var(--accent);
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.textarea { min-height: 96px; resize: vertical; }
+.input::placeholder, .textarea::placeholder { color: var(--text-faint); }
+.input:focus, .select:focus, .textarea:focus {
+  border-color: var(--accent); box-shadow: var(--glow-box); outline: none;
+}
+.input[aria-invalid="true"] { border-color: var(--red); }
+.select {
+  padding-right: var(--sp-6);
+  background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+                    linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+.hint  { font-size: var(--fs-xs); color: var(--text-dim); }
+.error { font-size: var(--fs-xs); color: var(--red); }
+.error::before { content: "ERR: "; font-weight: 700; }
+
+/* Prefix/suffix input: <div class="input-group"><span>$</span><input class="input"></div> */
+.input-group { display: flex; align-items: stretch; }
+.input-group > span {
+  display: flex; align-items: center; padding: 0 var(--sp-3);
+  border: 1px solid var(--line-strong); border-right: 0;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  color: var(--text-dim); background: var(--surface-1);
+}
+.input-group > .input { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+
+/* Checkbox / radio */
+.check { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); cursor: pointer; }
+.check input {
+  appearance: none; -webkit-appearance: none; margin: 0;
+  width: 22px; height: 22px; flex: none;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+  display: grid; place-content: center;
+}
+.check input[type="radio"] { border-radius: 50%; }
+.check input::before {
+  content: ""; width: 12px; height: 12px; background: var(--accent);
+  transform: scale(0); transition: transform var(--dur-fast) var(--ease-steps);
+  box-shadow: var(--glow);
+}
+.check input[type="radio"]::before { border-radius: 50%; }
+.check input:checked { border-color: var(--accent); }
+.check input:checked::before { transform: scale(1); }
+
+/* Toggle switch: <label class="switch"><input type="checkbox" role="switch"><span>Label</span></label> */
+.switch { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--tap); cursor: pointer; }
+.switch input {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 52px; height: 28px; position: relative;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+  order: 2;
+}
+.switch input::before {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; background: var(--text-faint);
+  transition: transform var(--dur) var(--ease-steps), background var(--dur) var(--ease);
+}
+.switch input:checked { border-color: var(--accent); }
+.switch input:checked::before { transform: translateX(24px); background: var(--accent); box-shadow: var(--glow); }
+
+/* Segmented control: <div class="segmented" role="radiogroup"><button aria-pressed="true">A</button>...</div> */
+.segmented {
+  display: flex; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); overflow: hidden;
+}
+.segmented > button {
+  flex: 1; min-height: var(--tap); border: 0; background: transparent;
+  color: var(--text-dim); font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em; cursor: pointer;
+}
+.segmented > button + button { border-left: 1px solid var(--line-strong); }
+.segmented > button[aria-pressed="true"], .segmented > button[aria-checked="true"] {
+  background: var(--accent); color: var(--on-accent);
+}
+
+/* ---------- 11. Lists ---------- */
+.list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.list > li {
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 52px; padding: var(--sp-2) var(--sp-1);
+  border-bottom: 1px solid var(--line);
+}
+.list > li::before { content: ">"; color: var(--text-faint); flex: none; }
+.list.plain > li::before { content: none; }
+.list .meta { margin-left: auto; color: var(--text-dim); font-size: var(--fs-sm); white-space: nowrap; }
+
+/* Key/value readout rows */
+.kv { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); padding: var(--sp-1) 0; }
+.kv > :first-child { color: var(--text-dim); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; }
+.kv > :last-child { font-weight: 700; }
+
+/* ---------- 12. Badges / tags ---------- */
+.badge {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  padding: 2px var(--sp-2); border: 1px solid currentColor; border-radius: var(--radius-sm);
+  font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--accent); white-space: nowrap;
+}
+.badge.amber { color: var(--amber); }
+.badge.red   { color: var(--red); }
+.badge.cyan  { color: var(--cyan); }
+.badge.dim   { color: var(--text-dim); }
+
+/* ---------- 13. Progress / meters ---------- */
+.meter {
+  height: 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  padding: 2px; background: var(--bg);
+}
+.meter > span {
+  display: block; height: 100%; width: var(--value, 0%);
+  background: repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 8px);
+  filter: drop-shadow(0 0 3px rgba(57, 255, 106, .6));
+  transition: width var(--dur-slow) var(--ease-steps);
+}
+.meter.amber > span { background: repeating-linear-gradient(90deg, var(--amber) 0 6px, transparent 6px 8px); filter: none; }
+.meter.red   > span { background: repeating-linear-gradient(90deg, var(--red) 0 6px, transparent 6px 8px); filter: none; }
+
+/* ---------- 15. Toast ---------- */
+.toast-host {
+  position: fixed; left: 0; right: 0; z-index: 100;
+  bottom: calc(var(--sp-5) + var(--safe-bottom) + 50px - var(--app-gap, 0px));   /* above the controls row */
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
+  pointer-events: none; padding: 0 var(--sp-4);
+}
+.toast {
+  max-width: var(--maxw); width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-2); border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  color: var(--text); font-size: var(--fs-sm); box-shadow: var(--glow-box);
+  animation: toast-in var(--dur) var(--ease-steps) both;
+}
+.toast::before { content: "SYS> "; color: var(--accent); font-weight: 700; }
+.toast.warn  { border-color: var(--amber); box-shadow: none; }
+.toast.warn::before  { content: "WARN> "; color: var(--amber); }
+.toast.error { border-color: var(--red); box-shadow: none; }
+.toast.error::before { content: "ERR> "; color: var(--red); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* ---------- 16. Dialog (native <dialog>) ---------- */
+dialog.dialog {
+  width: min(92vw, 420px); padding: var(--sp-5);
+  background: var(--surface-1); color: var(--text);
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  box-shadow: var(--glow-box);
+}
+dialog.dialog::backdrop { background: rgba(0, 0, 0, .75); }
+dialog.dialog h2 { margin-bottom: var(--sp-3); color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
+dialog.dialog .actions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-5); }
+
+/* ---------- 17. Empty state ---------- */
+.empty {
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-7) var(--sp-4); text-align: center; color: var(--text-dim);
+  border: 1px dashed var(--line); border-radius: var(--radius);
+}
+.empty pre { margin: 0; color: var(--text-faint); font-size: var(--fs-sm); line-height: 1.2; }
+
+/* ---------- 18. Matrix rain canvas (optional, decorative; inside .screen) ---------- */
+.rain {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  width: 100%; height: 100%; border-radius: inherit;
+  opacity: .14;
+}
+
+/* ---------- 19. Boot/type-on text ---------- */
+.boot { overflow: hidden; white-space: nowrap; border-right: 0; width: 0; animation: type 600ms steps(var(--chars, 16), end) forwards; }
+@keyframes type { to { width: calc(var(--chars, 16) * 1ch); } }
+
+/* Utility: screen-reader only */
+.sr-only {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- 21. Navigation: header keys, views, path ---------- */
+/* Header: <header class="app-header"><h1 class="app-title" data-view-title>Tool</h1><span class="app-meta">v1.0</span></header>
+   Controls (last child of .app): <nav class="app-controls">
+     <button class="key key-sm" data-back hidden aria-label="Back">‹</button><span class="grow"></span>
+     <div class="page-keys" data-show-on="/x" hidden>…</div>
+     <button class="key key-sm" data-open-sheet="menu" aria-label="Menu">☰</button>
+   </nav> */
+.app-header .app-title { flex: 1 1 auto; min-width: 0; }
+.app-title > span, .app-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.key-sm { min-height: 36px; min-width: 44px; padding: 0 var(--sp-2); font-size: var(--fs-lg); line-height: 1; border-radius: 5px; }
+[hidden] { display: none !important; }
+
+/* Views: <section class="view" id="settings" data-title="Settings" data-parent="home"> */
+.view { display: flex; flex-direction: column; gap: var(--sp-4); }
+.view:not(.is-active) { display: none; }
+.view.enter-fwd  { animation: view-fwd  var(--dur) var(--ease-steps) both; }
+.view.enter-back { animation: view-back var(--dur) var(--ease-steps) both; }
+@keyframes view-fwd  { from { opacity: 0; transform: translateX(16px); } }
+@keyframes view-back { from { opacity: 0; transform: translateX(-16px); } }
+
+/* Status line at the top of the screen (does not scroll): ~/settings/display */
+.path {
+  position: relative; z-index: 1; flex: none;
+  display: flex; align-items: center; gap: 0 2px; overflow-x: auto; white-space: nowrap;
+  min-height: 32px; padding: 0 var(--sp-4);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-xs); color: var(--text-dim); letter-spacing: .04em;
+  scrollbar-width: none;
+}
+.path::-webkit-scrollbar { display: none; }
+.path::before { content: "~"; color: var(--accent); }
+.path:empty::after { content: "/"; color: var(--text-faint); }
+.path a, .path span { color: inherit; text-decoration: none; padding: 8px 0; }
+.path a::before, .path span::before { content: "/"; color: var(--text-faint); margin-right: 2px; }
+.path a { color: var(--cyan); }
+.path span:last-child { color: var(--accent); }
+
+/* ---------- 22. Menu lists (settings rows) ---------- */
+/* <div class="menu">
+     <a class="menu-item" href="#/settings/display"><span class="mi-label">Display</span><span class="mi-value">CRT on</span></a>
+     <label class="menu-item"><span class="mi-label">Sound</span><input type="checkbox" role="switch" class="mi-switch"></label>
+   </div> */
+.menu {
+  display: flex; flex-direction: column;
+  background: var(--surface-1);
+  border: 1px solid var(--line); border-radius: var(--radius);
+}
+.menu-item {
+  position: relative;
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 52px; padding: var(--sp-2) var(--sp-4);
+  color: var(--text); text-decoration: none; text-align: left;
+  background: transparent; border: 0; width: 100%;
+  font-size: var(--fs-md); cursor: pointer;
+  -webkit-user-select: none; user-select: none;
+}
+.menu-item + .menu-item { border-top: 1px solid var(--line); }
+.menu-item:active { background: var(--surface-3); }
+.mi-glyph { width: 1.4em; flex: none; text-align: center; color: var(--accent); }
+.mi-label { flex: 1 1 auto; min-width: 0; }
+.mi-label small { display: block; font-size: var(--fs-xs); color: var(--text-dim); line-height: 1.4; }
+.mi-value { color: var(--text-dim); font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
+/* rows that open a sub-page get a chevron */
+a.menu-item::after, .menu-item[data-nav]::after, .menu-item[data-open-sheet]::after {
+  content: "›"; color: var(--text-dim); font-size: var(--fs-lg); line-height: 1; flex: none;
+}
+.menu-item.danger, .menu-item.danger .mi-glyph { color: var(--red); }
+.menu-item.danger::after { content: none; }
+/* inline controls in a row reuse the switch look */
+.mi-switch {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 52px; height: 28px; position: relative; cursor: pointer;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+}
+.mi-switch::before {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+  background: var(--text-faint);
+  transition: transform var(--dur) var(--ease-steps), background var(--dur) var(--ease);
+}
+.mi-switch:checked { border-color: var(--accent); }
+.mi-switch:checked::before { transform: translateX(24px); background: var(--accent); box-shadow: var(--glow); }
+.menu-item select.mi-select {
+  appearance: none; -webkit-appearance: none; border: 0; background: transparent;
+  color: var(--text-dim); font-size: var(--fs-md); text-align: right; text-align-last: right;
+  max-width: 50%; padding: var(--sp-2) 0;
+}
+.menu-note { padding: var(--sp-2) var(--sp-1) 0; font-size: var(--fs-xs); color: var(--text-dim); }
+.menu-group { display: flex; flex-direction: column; gap: var(--sp-2); }
+.menu-group > .label { padding-left: var(--sp-1); }
+
+/* Radio-choice page (pick one): rows with a check on the selected one */
+.menu-item[aria-checked]::after { content: ""; }
+.menu-item[aria-checked="true"]::after { content: "✓"; color: var(--accent); text-shadow: var(--glow); font-weight: 700; }
+
+/* ---------- 23. Bottom sheet (menus, pickers, quick actions) ---------- */
+/* <dialog class="sheet" id="menu"><div class="sheet-title">Menu</div><div class="menu">…</div>
+     <button class="btn btn-ghost btn-block" data-close>Cancel</button></dialog> */
+dialog.sheet {
+  position: fixed; inset: auto 0 calc(0px - var(--app-gap, 0px)) 0; margin: 0 auto;
+  width: 100%; max-width: var(--maxw); max-height: 80dvh; overflow: auto;
+  padding: var(--sp-3) var(--sp-4) calc(var(--sp-4) + var(--safe-bottom));
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--accent); border-bottom: 0;
+  border-radius: var(--screen-radius) var(--screen-radius) 0 0;
+  box-shadow: 0 0 0 6px var(--plastic-shade), 0 0 24px rgba(57, 255, 106, .2);
+}
+dialog.sheet[open] { display: flex; flex-direction: column; gap: var(--sp-3); animation: sheet-up var(--dur) var(--ease-steps) both; }
+dialog.sheet::backdrop { background: rgba(20, 17, 12, .6); }
+dialog.sheet::before {  /* grab handle */
+  content: ""; align-self: center; width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong);
+}
+.sheet-title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--text-dim); text-align: center; }
+@keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } }
+
+/* The app menu, opened by the ☰ key in the bottom controls; it pops up above it:
+   <dialog class="sheet dropdown" id="menu">…</dialog> */
+dialog.sheet.dropdown {
+  inset: auto calc(var(--sp-2) + var(--safe-right)) calc(var(--safe-bottom) + 60px - var(--app-gap, 0px)) auto;
+  width: min(calc(100vw - 16px), 340px); max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 80px);
+  padding: var(--sp-3);
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  box-shadow: 0 0 0 3px var(--plastic-shade), 0 0 0 4px var(--plastic-dark), 0 12px 28px rgba(0, 0, 0, .45), 0 0 18px rgba(57, 255, 106, .18);
+}
+dialog.sheet.dropdown::before { content: none; }
+dialog.sheet.dropdown[open] { animation: drop-down var(--dur) var(--ease-steps) both; }
+dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
+@keyframes drop-down { from { transform: translateY(10px); opacity: 0; } }
+.dropdown .menu-item { min-height: 48px; }
+.dropdown .menu + .sheet-title { margin-top: var(--sp-1); }
+.dropdown .sheet-title { text-align: left; padding-left: var(--sp-1); }
+
+/* Section links in the menu: current one is marked */
+.menu-item[aria-current="page"] { color: var(--accent); text-shadow: var(--glow); }
+.menu-item[aria-current="page"]::after { content: "●"; font-size: 10px; color: var(--accent); }
+
+/* Count pill in a menu row: <span class="mi-count">4</span> */
+.mi-count {
+  min-width: 22px; height: 20px; padding: 0 6px; border-radius: 10px;
+  background: var(--accent); color: var(--on-accent);
+  font-size: 11px; font-weight: 700; line-height: 20px; text-align: center;
+}
+
+/* Search field above long lists */
+.search { position: relative; }
+.search::before { content: "/"; position: absolute; left: var(--sp-3); top: 50%; transform: translateY(-50%); color: var(--accent); font-weight: 700; }
+.search .input { padding-left: var(--sp-6); }
+
+/* ---------- 19b. Full-screen views (games, canvases, maps, timers) ---------- */
+/* <section class="view fill" data-route="/x"> fills the whole screen and never scrolls.
+   Live numbers go in a .hud on the status line; page actions go in small header
+   keys (.page-keys, in .app-controls) shown only on that page. No keypad under the screen. */
+.screen-body:has(> .view.fill.is-active) { padding: var(--sp-2) var(--sp-3) var(--sp-3); overflow: hidden; }  /* 12px keeps content clear of the round corners */
+.view.fill { flex: 1 1 auto; min-height: 0; gap: var(--sp-2); position: relative; }
+.hud {
+  position: absolute; top: 0; right: 0; z-index: 2; height: 32px; max-width: 72%;
+  display: flex; align-items: center; gap: var(--sp-3); padding: 0 var(--sp-4) 0 var(--sp-5);
+  font-size: var(--fs-xs); color: var(--text-dim); white-space: nowrap; pointer-events: none;
+  background: linear-gradient(90deg, rgba(3, 7, 3, 0), var(--bg) var(--sp-4));
+}
+.hud i { font-style: normal; text-transform: uppercase; letter-spacing: var(--tracking-label); }
+.hud b { color: var(--text); font-size: var(--fs-sm); font-weight: 700; }
+.hud b.glow { color: var(--accent); text-shadow: var(--glow); }
+.page-keys, .hdr-keys { display: flex; gap: var(--sp-2); flex: none; }
+.page-keys .key-sm, .hdr-keys .key-sm { font-size: var(--fs-md); }
+.page-keys .key-sm.word, .hdr-keys .key-sm.word { font-size: var(--fs-xs); }
+
+/* ---------- 20. Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+  .cursor { animation: none; }
+  .view.enter-fwd, .view.enter-back, dialog.sheet[open], dialog.sheet.dropdown[open] { animation: none; }
+  .key { transition: none; }
+  .boot { width: auto; animation: none; }
+  .rain { display: none; }
+}
+
+    /* === tool-specific styles below === */
+
+    .ico { width: 18px; height: 18px; flex: none; color: var(--text-dim); }
+
+    /* Plate */
+    .plate-total { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap; }
+    .plate-total .of { color: var(--text-dim); font-size: var(--fs-sm); }
+    .target-meter { position: relative; margin-top: var(--sp-3); }
+    .target-meter .band {
+      position: absolute; top: -4px; bottom: -4px; pointer-events: none;
+      border-left: 1px dashed var(--text-dim); border-right: 1px dashed var(--text-dim);
+    }
+    .target-scale { display: flex; justify-content: space-between; margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--text-dim); }
+    .status { font-size: var(--fs-sm); margin-top: var(--sp-3); }
+    .status.warn { color: var(--amber); }
+    .status.warn::before { content: "WARN> "; font-weight: 700; }
+    .status.good { color: var(--accent); }
+    .status.good::before { content: "✓ "; font-weight: 700; }
+    .plate-items > li { gap: var(--sp-2); }
+    .plate-items .name { flex: 1 1 auto; min-width: 0; font-size: var(--fs-sm); line-height: 1.3; }
+    .name-link { background: none; border: 0; padding: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer; text-decoration: underline dotted var(--line-strong); text-underline-offset: 3px; }
+    .plate-items .p { width: 52px; text-align: right; font-size: var(--fs-sm); font-weight: 700; flex: none; }
+    .qty { display: flex; align-items: center; flex: none; }
+    .qty .btn { width: 36px; min-height: 36px; padding: 0; font-size: var(--fs-md); }
+    .qty .num { width: 40px; text-align: center; font-size: var(--fs-sm); }
+    .macros { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); margin-top: var(--sp-3); text-align: center; }
+    .macros div { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: var(--sp-2) var(--sp-1); }
+    .macros span { display: block; font-size: var(--fs-xs); color: var(--text-dim); text-transform: uppercase; letter-spacing: .08em; }
+    .macros b { font-size: var(--fs-md); }
+    .note { font-size: var(--fs-xs); color: var(--text-dim); margin-top: var(--sp-3); }
+    .panel-actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); }
+    .panel-actions .btn { flex: 1; }
+
+    /* Menu (recipe list) */
+    .chips { display: flex; gap: var(--sp-2); overflow-x: auto; margin: 0 calc(-1 * var(--sp-3)); padding: 2px var(--sp-3); scrollbar-width: none; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chips button {
+      flex: none; display: inline-flex; align-items: center; gap: 6px;
+      min-height: 36px; padding: 0 var(--sp-3);
+      border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: transparent;
+      color: var(--text-dim); font: inherit; font-size: var(--fs-xs); font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em; cursor: pointer;
+    }
+    .chips button .ico { width: 16px; height: 16px; color: inherit; }
+    .chips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+    .list-meta { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); font-size: var(--fs-xs); color: var(--text-dim); text-transform: uppercase; letter-spacing: .08em; }
+    .list-meta button { background: none; border: 0; padding: var(--sp-2) 0; color: var(--cyan); font: inherit; cursor: pointer; text-transform: inherit; letter-spacing: inherit; }
+    .cards { display: flex; flex-direction: column; gap: var(--sp-3); }
+    .card { display: flex; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-1); }
+    .card.on { border-color: var(--line-strong); }
+    .card-open {
+      flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px;
+      padding: var(--sp-3); background: none; border: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer;
+    }
+    .card-open:active { background: var(--surface-2); }
+    .card-top { display: flex; align-items: flex-start; gap: var(--sp-2); }
+    .card-top h3 { flex: 1 1 auto; min-width: 0; font-size: var(--fs-md); line-height: 1.25; }
+    .card-top .pro { flex: none; font-size: var(--fs-lg); font-weight: 700; color: var(--accent); line-height: 1.1; }
+    .card-top .pro small { font-size: var(--fs-xs); color: var(--text-dim); font-weight: 400; }
+    .card .meta { font-size: var(--fs-xs); color: var(--text-dim); line-height: 1.4; }
+    .card .macro-line { font-size: var(--fs-xs); color: var(--text); }
+    .card .macro-line b { font-weight: 700; }
+    .card .badges { display: flex; gap: 6px; flex-wrap: wrap; }
+    .card-add {
+      flex: none; width: 56px; display: grid; place-items: center; align-content: center; gap: 2px;
+      background: transparent; border: 0; border-left: 1px solid var(--line); color: var(--accent);
+      font: inherit; font-size: var(--fs-lg); font-weight: 700; cursor: pointer;
+    }
+    .card-add small { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); font-weight: 400; }
+    .card-add:active { background: var(--surface-2); }
+    .card.on .card-add { color: var(--on-accent); background: var(--accent-dim); }
+    .card.on .card-add small { color: var(--on-accent); }
+    .stars { color: var(--amber); }
+
+    /* Recipe page */
+    .rec-head { display: flex; flex-direction: column; gap: var(--sp-2); }
+    .rec-head .label { display: flex; align-items: center; gap: 6px; }
+    .rec-head h2 { font-size: var(--fs-lg); line-height: 1.25; }
+    .badges { display: flex; gap: 6px; flex-wrap: wrap; }
+    .per-serving { display: flex; align-items: center; gap: var(--sp-4); }
+    .per-serving .readout small { font-size: var(--fs-md); color: var(--text-dim); text-shadow: none; }
+    .per-serving .stack { flex: 1; gap: 0; }
+    .stepper { display: flex; align-items: center; gap: var(--sp-2); }
+    .stepper .btn { width: var(--tap); padding: 0; font-size: var(--fs-lg); }
+    .stepper output { min-width: 3ch; text-align: center; font-size: var(--fs-lg); font-weight: 700; color: var(--text); }
+    .stepper .grow { text-align: right; }
+    .stepper .reset { background: none; border: 0; color: var(--cyan); font: inherit; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .08em; padding: var(--sp-2) 0; cursor: pointer; }
+    .cfe-wrap { overflow-x: auto; margin: 0 calc(-1 * var(--sp-3)); padding: 0 var(--sp-3); }
+    .cfe { border-collapse: collapse; width: 100%; font-size: var(--fs-xs); line-height: 1.35; }
+    .cfe td { border: 1px solid var(--line-strong); padding: 6px 7px; vertical-align: middle; }
+    .cfe td.ing { text-align: left; color: var(--text); min-width: 112px; }
+    .cfe td.ing .amt { color: var(--accent); font-weight: 700; }
+    .cfe td.op { text-align: center; color: var(--text-dim); font-weight: 700; width: 1%; min-width: 78px; max-width: 120px; background: var(--surface-1); }
+    .cfe td.op.final { color: var(--accent); background: var(--surface-2); }
+    .cfe td.step { text-align: center; color: var(--amber); background: var(--surface-1); font-weight: 700; }
+    .pair { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3) 0; border-bottom: 1px solid var(--line); }
+    .pair:first-of-type { padding-top: 0; }
+    .pair:last-child { border-bottom: 0; padding-bottom: 0; }
+    .pair b { font-size: var(--fs-sm); }
+    .pair small { display: block; font-size: var(--fs-xs); color: var(--text-dim); }
+    .pair .row .btn { flex: 1; min-height: 40px; }
+    .source { font-size: var(--fs-xs); color: var(--text-dim); line-height: 1.5; }
+    .source a { color: var(--cyan); }
+    .change { font-size: var(--fs-sm); }
+
+    /* Shopping */
+    .shop-progress { display: flex; flex-direction: column; gap: var(--sp-2); }
+    .shop-group .check { min-height: 44px; font-size: var(--fs-sm); line-height: 1.35; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .shop-group .check:last-child { border-bottom: 0; }
+    .shop-group .check b { color: var(--accent); }
+    .shop-group .check:has(input:checked) span { color: var(--text-faint); text-decoration: line-through; }
+    .shop-group .check:has(input:checked) b { color: var(--text-faint); }
+
+    /* Guide */
+    .temps .kv > :last-child { color: var(--accent); }
+    .guide p { font-size: var(--fs-sm); color: var(--text); }
+    .guide h3 { font-size: var(--fs-sm); color: var(--accent); text-transform: uppercase; letter-spacing: .08em; margin-bottom: var(--sp-1); }
+    .guide .stack { gap: var(--sp-4); }
+  </style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-crockpot" viewBox="0 0 32 32"><path d="M6 13h20v9a5 5 0 0 1-5 5H11a5 5 0 0 1-5-5z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M4 13h24M3 16h3M26 16h3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M9 13c0-3 3-5 7-5s7 2 7 5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 8V6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M12 3.5c.8 1 .8 2 0 3M20 3.5c.8 1 .8 2 0 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-airfryer" viewBox="0 0 32 32"><rect x="7" y="4" width="18" height="24" rx="6" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M7 15h18" stroke="currentColor" stroke-width="2.4"/><circle cx="16" cy="9.5" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 21h6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-grill" viewBox="0 0 32 32"><path d="M5 12h22a11 9 0 0 1-22 0z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M5 12h22" stroke="currentColor" stroke-width="2.4"/><path d="M10 20l-3 9M22 20l3 9M16 21v8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M11 3c1 1.5-1 3 0 4.5M16 2c1 1.5-1 3 0 4.5M21 3c1 1.5-1 3 0 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-griddle" viewBox="0 0 32 32"><ellipse cx="14" cy="17" rx="10" ry="5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M24 17h6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><ellipse cx="14" cy="15" rx="5" ry="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 6c1 1.5-1 3 0 4.5M14 5c1 1.5-1 3 0 4.5M19 6c1 1.5-1 3 0 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-pot" viewBox="0 0 32 32"><path d="M6 12h20v11a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M26 15h4M4 12h24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M11 4c1 1.5-1 3 0 4.5M16 3c1 1.5-1 3 0 4.5M21 4c1 1.5-1 3 0 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-bowl" viewBox="0 0 32 32"><path d="M4 14h24a12 11 0 0 1-24 0z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M11 27h10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M17 11l4-6M20 11l3-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-oven" viewBox="0 0 32 32"><rect x="5" y="5" width="22" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M5 11h22" stroke="currentColor" stroke-width="2.4"/><rect x="10" y="15" width="12" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="8" r="1.2" fill="currentColor"/><circle cx="15" cy="8" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-sweet" viewBox="0 0 32 32"><path d="M7 14h18l-2 13H9z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M8 14a8 7 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="16" cy="5" r="2.2" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+  <main class="app">
+    <header class="app-header">
+      <h1 class="app-title" data-view-title>Kitchen Log</h1>
+      <span class="app-meta">v2.1</span>
+    </header>
+    <div class="screen">
+      <canvas class="rain" aria-hidden="true" hidden></canvas>
+      <nav class="path" data-path aria-label="Location"></nav>
+      <div class="screen-body">
+
+      <!-- ============ TODAY'S PLATE ============ -->
+      <section class="view" data-route="/" data-title="Kitchen Log">
+        <section class="panel" data-title="Today's plate">
+          <div class="plate-total">
+            <span class="readout" id="p-total">0<small> g</small></span>
+            <span class="of">of <span id="p-target">128–176</span> g protein</span>
+          </div>
+          <div class="target-meter">
+            <div class="meter" role="progressbar" aria-label="Protein toward today's target" aria-valuemin="0" id="p-meter"><span id="p-fill"></span></div>
+            <div class="band" id="p-band" aria-hidden="true"></div>
+          </div>
+          <div class="status" id="p-status" role="status"></div>
+          <ul class="list plain plate-items" id="plate-items" style="margin-top: var(--sp-3)"></ul>
+          <div class="macros">
+            <div><span>Calories</span><b id="m-kcal">0</b></div>
+            <div><span>Carbs</span><b id="m-c">0 g</b></div>
+            <div><span>Fat</span><b id="m-f">0 g</b></div>
+          </div>
+          <p class="note" id="example-note">This is an example day. Add or remove dishes to make it yours.</p>
+          <div class="panel-actions">
+            <button type="button" class="btn btn-primary" data-route="/menu">+ Add a dish</button>
+          </div>
+        </section>
+
+        <div class="menu-group">
+          <span class="label">Your numbers</span>
+          <div class="menu">
+            <a class="menu-item" href="#/target"><span class="mi-glyph" aria-hidden="true">○</span><span class="mi-label">Protein target<small id="home-weight">Body weight 176 lb</small></span><span class="mi-value" id="home-target">128–176 g/day</span></a>
+            <a class="menu-item" href="#/shop"><span class="mi-glyph" aria-hidden="true">□</span><span class="mi-label">Shopping list<small>Everything for the dishes on your plate</small></span><span class="mi-value" id="home-shop">—</span></a>
+          </div>
+        </div>
+
+        <div class="menu-group">
+          <span class="label">Quick protein add-ons</span>
+          <div class="menu" id="addons"></div>
+          <p class="menu-note">Tap one to put it on today's plate.</p>
+        </div>
+      </section>
+
+      <!-- ============ PROTEIN TARGET ============ -->
+      <section class="view" data-route="/target" data-title="Target">
+        <section class="panel" data-title="Body weight">
+          <div class="stack">
+            <div class="field">
+              <label class="label" for="weight">Weight</label>
+              <div class="row">
+                <input class="input grow" id="weight" type="number" min="30" max="400" step="1" inputmode="decimal" enterkeyhint="done">
+                <div class="segmented" role="group" aria-label="Weight unit" style="flex: none; width: 120px">
+                  <button type="button" id="unit-lb" aria-pressed="true">lb</button>
+                  <button type="button" id="unit-kg" aria-pressed="false">kg</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="panel" data-title="Your target">
+          <div class="readout" id="t-daily" style="font-size: var(--fs-xl)">128–176 g</div>
+          <p class="dim small" style="margin: var(--sp-1) 0 var(--sp-3)">protein per day (1.6–2.2 g per kg)</p>
+          <div class="kv"><span>Per meal</span><span id="t-meal">32–44 g</span></div>
+          <p class="note" style="margin-top: 0">Over 4 meals.</p>
+          <div class="kv"><span>Before bed</span><span>30–40 g</span></div>
+          <p class="note" style="margin-top: 0">Greek yogurt or cottage cheese.</p>
+        </section>
+        <p class="menu-note">Why these numbers? See the <a href="#/guide">guide</a>.</p>
+      </section>
+
+      <!-- ============ MENU ============ -->
+      <section class="view" data-route="/menu" data-title="Menu">
+        <div class="search"><input class="input" id="search" type="search" placeholder="Search dishes or ingredients" aria-label="Search recipes" autocomplete="off" enterkeyhint="search"></div>
+        <div class="chips" role="group" aria-label="Filter dishes" id="filters">
+          <button type="button" data-filter="all" aria-pressed="true">All</button>
+          <button type="button" data-filter="crockpot" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-crockpot"/></svg>Crockpot</button>
+          <button type="button" data-filter="airfryer" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-airfryer"/></svg>Air fryer</button>
+          <button type="button" data-filter="grill" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-grill"/></svg>Grill</button>
+          <button type="button" data-filter="side" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-bowl"/></svg>Sides</button>
+          <button type="button" data-filter="sweet" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-sweet"/></svg>Breakfast &amp; sweets</button>
+        </div>
+        <div class="list-meta"><span id="menu-count">—</span><button type="button" data-open-sheet="sort-sheet">Sort: <span id="sort-label">Most protein</span></button></div>
+        <div class="cards" id="grid"></div>
+      </section>
+
+      <!-- ============ RECIPE ============ -->
+      <section class="view" data-route="/menu/recipe" data-title="Recipe">
+        <div id="recipe"></div>
+      </section>
+
+      <!-- ============ SHOPPING ============ -->
+      <section class="view" data-route="/shop" data-title="Shopping">
+        <div class="segmented" role="group" aria-label="Measurements">
+          <button type="button" data-units="metric">Grams</button>
+          <button type="button" data-units="us">Cups &amp; spoons</button>
+        </div>
+        <div class="shop-progress" id="shop-progress"></div>
+        <div class="stack" id="shop" style="gap: var(--sp-5)"></div>
+      </section>
+
+      <!-- ============ GUIDE ============ -->
+      <section class="view guide" data-route="/guide" data-title="Guide">
+        <section class="panel" data-title="What the research says">
+          <div class="stack">
+            <div><h3>Daily total matters most</h3><p>Muscle gains level off around 1.6 g/kg a day, with some people still benefiting up to about 2.2 g/kg. Aim higher when older or eating in a calorie deficit.</p></div>
+            <div><h3>Spread it out</h3><p>About 0.4 g/kg per meal over 4 meals works well. A big meal still builds muscle, so don't worry if one runs large.</p></div>
+            <div><h3>Pick quality sources</h3><p>Favor fish, poultry, beans, dairy and lean unprocessed red meat. Keep processed meats rare and eat oily fish about twice a week.</p></div>
+            <div><h3>Grill smarter</h3><p>Charring meat forms HCAs and PAHs. Marinate, flip often, trim fat to cut flare-ups, and skip the blackened bits.</p></div>
+          </div>
+        </section>
+        <section class="panel temps" data-title="Safe internal temps">
+          <div class="kv"><span>Chicken &amp; turkey</span><span>165°F</span></div>
+          <div class="kv"><span>Ground beef</span><span>160°F</span></div>
+          <div class="kv"><span>Pork &amp; steak</span><span>145°F</span></div>
+          <p class="note" style="margin-top: 0">Rest pork and steak 3 min.</p>
+          <div class="kv"><span>Fish</span><span>145°F</span></div>
+        </section>
+        <section class="panel" data-title="Sources">
+          <p class="source">Research: Morton et al., Br J Sports Med 2018; Schoenfeld &amp; Aragon, JISSN 2018; Trommelen et al., Cell Reports Medicine 2023; ISSN Position Stand 2017; National Cancer Institute; USDA FSIS. Ratings are as shown on each source page in October 2026. Macros are our estimates from USDA FoodData Central values for the ingredients as listed here (about ±10%), so they can differ from the source site's numbers.</p>
+        </section>
+      </section>
+
+      <!-- ============ SETTINGS ============ -->
+      <section class="view" data-route="/settings" data-title="Settings">
+        <div class="menu-group">
+          <span class="label">General</span>
+          <div class="menu">
+            <a class="menu-item" href="#/target"><span class="mi-glyph" aria-hidden="true">○</span><span class="mi-label">Body weight</span><span class="mi-value" id="set-weight">176 lb</span></a>
+            <a class="menu-item" href="#/settings/units"><span class="mi-glyph" aria-hidden="true">g</span><span class="mi-label">Measurements<small>How recipe amounts are shown</small></span><span class="mi-value" id="set-units">Grams</span></a>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Appearance</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/display"><span class="mi-glyph" aria-hidden="true">▣</span><span class="mi-label">Display</span><span class="mi-value">CRT <span data-setting-value="crt"></span></span></a>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Data</span>
+          <div class="menu">
+            <button class="menu-item" id="export"><span class="mi-glyph" aria-hidden="true">↑</span><span class="mi-label">Export backup<small>Save to Files or iCloud Drive</small></span></button>
+            <button class="menu-item" id="import"><span class="mi-glyph" aria-hidden="true">↓</span><span class="mi-label">Import backup<small>Restore a kitchen-log-backup file</small></span></button>
+            <button class="menu-item danger" id="erase"><span class="mi-glyph" aria-hidden="true">✕</span><span class="mi-label">Erase all data</span></button>
+          </div>
+          <input type="file" id="import-file" accept="application/json,.json" hidden>
+          <p class="menu-note">Your plate, servings, settings and shopping ticks live only on this phone. Export a backup now and then.</p>
+        </div>
+        <div class="menu-group">
+          <span class="label">About</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/about"><span class="mi-glyph" aria-hidden="true">i</span><span class="mi-label">About</span><span class="mi-value">v2.1</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/units" data-title="Measurements">
+        <div class="menu" role="radiogroup" aria-label="Measurements">
+          <button class="menu-item" role="radio" data-pick-units="metric"><span class="mi-label">Grams<small>Weights in grams, counts for whole items</small></span></button>
+          <button class="menu-item" role="radio" data-pick-units="us"><span class="mi-label">Cups &amp; spoons<small>US cups, tablespoons and teaspoons</small></span></button>
+        </div>
+        <p class="menu-note">You can also switch this on any recipe or on the shopping list.</p>
+      </section>
+
+      <section class="view" data-route="/settings/display" data-title="Display">
+        <div class="menu">
+          <label class="menu-item"><span class="mi-label">CRT scanlines<small>Faint lines and vignette on the screen</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="crt"></label>
+          <label class="menu-item"><span class="mi-label">Matrix rain<small>Falling code behind the screen</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="rain"></label>
+        </div>
+        <p class="menu-note">Animations turn off automatically when Reduce Motion is on.</p>
+        <div class="menu">
+          <button class="menu-item" id="reset-display"><span class="mi-label">Reset display to defaults</span></button>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/about" data-title="About">
+        <section class="panel" data-title="Kitchen Log">
+          <div class="kv"><span>Version</span><span>2.1</span></div>
+          <div class="kv"><span>Main dishes</span><span id="ab-mains">—</span></div>
+          <div class="kv"><span>Sides</span><span id="ab-sides">—</span></div>
+          <div class="kv"><span>Breakfast &amp; sweets</span><span id="ab-sweets">—</span></div>
+          <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
+          <div class="kv"><span>Storage</span><span>This phone</span></div>
+        </section>
+        <p class="menu-note">High-protein recipes from the crockpot, air fryer, grill and stovetop, each based on a well-reviewed recipe online and written as a step table. Research notes and safe temps are in the <a href="#/guide">guide</a>.</p>
+      </section>
+
+      </div><!-- /.screen-body -->
+    </div><!-- /.screen -->
+
+    <nav class="app-controls" aria-label="Controls">
+      <button class="key key-sm" data-back aria-label="Back">‹</button>
+      <button class="key key-sm" data-open-sheet="menu" aria-label="Menu">☰</button>
+      <div class="page-keys" data-show-on="/" hidden><button class="key key-sm" data-route="/menu" aria-label="Add a dish">+</button></div>
+      <div class="page-keys" data-show-on="/menu" id="sort-key" hidden><button class="key key-sm word" data-open-sheet="sort-sheet">Sort</button></div>
+      <div class="page-keys" data-show-on="/menu/recipe" hidden><button class="key key-sm word" data-act="add-recipe">Add</button></div>
+      <div class="page-keys" data-show-on="/shop" hidden><button class="key key-sm" data-act="uncheck" aria-label="Uncheck all">⟳</button></div>
+      <button class="key key-sm" data-route="/settings" data-show-on="/target /guide" hidden aria-label="Settings">⚙</button>
+      <button class="key key-sm" data-route="/" data-show-on="/settings" hidden aria-label="Today's plate">■</button>
+    </nav>
+  </main>
+
+  <dialog class="sheet dropdown" id="menu" aria-label="Menu">
+    <div class="sheet-title">Go to</div>
+    <div class="menu" data-sections>
+      <button class="menu-item" data-route="/"><span class="mi-glyph" aria-hidden="true">■</span><span class="mi-label">Today's plate</span></button>
+      <button class="menu-item" data-route="/menu"><span class="mi-glyph" aria-hidden="true">▸</span><span class="mi-label">Menu</span></button>
+      <button class="menu-item" data-route="/shop"><span class="mi-glyph" aria-hidden="true">□</span><span class="mi-label">Shopping list</span><span class="mi-count" id="shop-count" hidden>0</span></button>
+      <button class="menu-item" data-route="/guide"><span class="mi-glyph" aria-hidden="true">?</span><span class="mi-label">Guide</span></button>
+      <button class="menu-item" data-route="/settings"><span class="mi-glyph" aria-hidden="true">⚙</span><span class="mi-label">Settings</span></button>
+    </div>
+    <div class="sheet-title">Actions</div>
+    <div class="menu">
+      <button class="menu-item" data-action="target"><span class="mi-glyph" aria-hidden="true">○</span><span class="mi-label">Set body weight</span></button>
+      <button class="menu-item" data-action="uncheck"><span class="mi-glyph" aria-hidden="true">⟳</span><span class="mi-label">Uncheck shopping list</span></button>
+      <button class="menu-item danger" data-action="clear"><span class="mi-glyph" aria-hidden="true">✕</span><span class="mi-label">Clear today's plate</span></button>
+    </div>
+  </dialog>
+
+  <dialog class="sheet" id="sort-sheet" aria-label="Sort dishes">
+    <div class="sheet-title">Sort dishes by</div>
+    <div class="menu" role="radiogroup" aria-label="Sort dishes by" id="sort-list">
+      <button class="menu-item" role="radio" data-sort="protein" data-close><span class="mi-label">Most protein</span></button>
+      <button class="menu-item" role="radio" data-sort="density" data-close><span class="mi-label">Leanest<small>Protein per calorie</small></span></button>
+      <button class="menu-item" role="radio" data-sort="kcal" data-close><span class="mi-label">Fewest calories</span></button>
+      <button class="menu-item" role="radio" data-sort="rating" data-close><span class="mi-label">Most reviewed</span></button>
+      <button class="menu-item" role="radio" data-sort="name" data-close><span class="mi-label">A to Z</span></button>
+    </div>
+  </dialog>
+
+  <div class="toast-host" aria-live="polite"></div>
+  <script>
+/* ==========================================================================
+   PHOSPHOR v1.9 runtime: navigation, settings, sheets, toasts, confirm.
+   Spec: brand-guidelines.md section 7. Paste this whole file into a <script>
+   at the end of <body>, after the markup. No dependencies, no network.
+   Set a unique key per tool: <html data-app="tip-calc">
+   ========================================================================== */
+const PH = (() => {
+  const APP = document.documentElement.dataset.app || 'app';
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const subs = {};
+  const on = (key, fn) => ((subs[key] ||= []).push(fn), fn);
+  const emit = (key, v) => (subs[key] || []).concat(subs['*'] || []).forEach(fn => fn(v, key));
+
+  /* ---------- Settings store (localStorage, namespaced per tool) ---------- */
+  const defaults = { crt: true, rain: false };
+  const store = {
+    defaults,
+    get(k) {
+      try { const v = localStorage.getItem(APP + ':' + k); return v === null ? defaults[k] : JSON.parse(v); }
+      catch { return defaults[k]; }
+    },
+    set(k, v) {
+      try { localStorage.setItem(APP + ':' + k, JSON.stringify(v)); } catch {}
+      emit(k, v); syncSettings();
+    },
+    reset() {
+      Object.keys(defaults).forEach(k => { try { localStorage.removeItem(APP + ':' + k); } catch {} emit(k, defaults[k]); });
+      syncSettings();
+    },
+  };
+
+  /* Declarative binding:
+     <input type="checkbox" data-setting="crt">          toggle
+     <select data-setting="units">…</select>             select
+     <button class="menu-item" data-setting="units" data-value="kg">  pick-one row
+     <span data-setting-value="units"></span>           shows the current value's label */
+  function labelFor(key, val) {
+    const row = $(`[data-setting="${key}"][data-value="${CSS.escape(String(val))}"]`);
+    if (row) { const lab = row.querySelector('.mi-label') || row; return (lab.firstChild?.textContent || lab.textContent).trim(); }
+    const sel = $(`select[data-setting="${key}"]`);
+    if (sel) { const o = [...sel.options].find(o => o.value === String(val)); if (o) return o.textContent; }
+    if (typeof val === 'boolean') return val ? 'On' : 'Off';
+    return val ?? '—';
+  }
+  function syncSettings() {
+    $$('[data-setting]').forEach(el => {
+      const v = store.get(el.dataset.setting);
+      if (el.type === 'checkbox') el.checked = !!v;
+      else if ('value' in el.dataset) el.setAttribute('aria-checked', String(el.dataset.value === String(v)));
+      else if ('value' in el) el.value = v ?? '';
+    });
+    $$('[data-setting-value]').forEach(el => { el.textContent = labelFor(el.dataset.settingValue, store.get(el.dataset.settingValue)); });
+  }
+  document.addEventListener('change', e => {
+    const el = e.target.closest('[data-setting]');
+    if (!el || 'value' in el.dataset) return;
+    store.set(el.dataset.setting, el.type === 'checkbox' ? el.checked : el.value);
+  });
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-setting][data-value]');
+    if (!el) return;
+    store.set(el.dataset.setting, el.dataset.value);
+    if (el.hasAttribute('data-back-on-pick')) back();
+  });
+
+  /* Built-in display settings */
+  const applyDisplay = () => {
+    document.documentElement.classList.toggle('no-crt', !store.get('crt'));
+    $$('.rain').forEach(c => { c.hidden = !store.get('rain'); });
+  };
+  on('crt', applyDisplay); on('rain', applyDisplay);
+
+  /* ---------- Router: hash routes -> .view[data-route] ---------- */
+  /* <section class="view" data-route="/settings/display" data-title="Display"> */
+  const views = () => $$('.view');
+  const routeOf = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
+  const parentOf = r => r === '/' ? null : (r.split('/').slice(0, -1).join('/') || '/');
+  const depth = r => r === '/' ? 0 : r.split('/').length - 1;
+  const viewFor = r => views().find(v => v.dataset.route === r);
+  let current = null, pushedByUs = 0;
+
+  function render() {
+    let r = routeOf();
+    while (r && !viewFor(r)) r = parentOf(r);          // unknown route -> nearest ancestor
+    const view = viewFor(r || '/') || views()[0];
+    if (!view) return;
+    r = view.dataset.route;
+    const dir = current === null ? '' : depth(r) >= depth(current) ? 'enter-fwd' : 'enter-back';
+    views().forEach(v => v.classList.remove('is-active', 'enter-fwd', 'enter-back'));
+    view.classList.add('is-active');
+    if (dir && r !== current) view.classList.add(dir);
+    current = r;
+
+    $$('[data-view-title]').forEach(el => { el.textContent = view.dataset.title || el.dataset.viewTitle || ''; });
+    $$('[data-back]').forEach(el => { if (el.closest('.app-controls')) el.disabled = r === '/'; else el.hidden = r === '/'; });
+    $$('.app-controls [data-route]').forEach(el => { el.disabled = el.dataset.route === r; });
+    // per-page chrome: data-show-on="/game /other" shows only there (and below); data-hide-on hides
+    const onAny = (list, rr) => list.split(/\s+/).some(p => p === rr || (p !== '/' && rr.startsWith(p + '/')));
+    $$('[data-show-on]').forEach(el => { el.hidden = !onAny(el.dataset.showOn, r); });
+    $$('[data-hide-on]').forEach(el => { el.hidden = onAny(el.dataset.hideOn, r); });
+    // section links in the menu (<div class="menu" data-sections>) mark the current section
+    $$('[data-sections] [data-route]').forEach(t => {
+      const tr = t.dataset.route, sel = tr === '/' ? r === '/' : (r === tr || r.startsWith(tr + '/'));
+      if (sel) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+    });
+    // breadcrumb path: ~/settings/display
+    $$('[data-path]').forEach(el => {
+      el.textContent = '';
+      const parts = r === '/' ? [] : r.split('/').slice(1);
+      parts.forEach((_, i) => {
+        const pr = '/' + parts.slice(0, i + 1).join('/'), last = i === parts.length - 1;
+        const node = document.createElement(last ? 'span' : 'a');
+        node.textContent = ((viewFor(pr) && viewFor(pr).dataset.title) || parts[i]).toLowerCase();
+        if (!last) node.href = '#' + pr;
+        el.appendChild(node);
+      });
+    });
+    $$('.screen-body').forEach(b => { b.scrollTop = 0; });
+    emit('route', r);
+  }
+  function go(r) { if (r === current) return; pushedByUs++; location.hash = r; }
+  function back() {
+    const parent = parentOf(current || '/');
+    if (pushedByUs > 0 && history.length > 1) { pushedByUs--; history.back(); }
+    else if (parent !== null) location.replace('#' + parent);
+  }
+  addEventListener('hashchange', render);
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-back]'); if (b) { e.preventDefault(); back(); return; }
+    const n = e.target.closest('[data-route]:not(.view)');
+    if (n) { e.preventDefault(); go(n.dataset.route); return; }
+    if (e.target.closest('a[href^="#/"]')) pushedByUs++;
+  });
+
+  /* Home-screen apps fill the whole physical screen. iOS under-reports the viewport by the
+     status bar height there, so size the case from the screen itself. */
+  function fitApp() {
+    const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+    const st = document.documentElement.style;
+    if (!standalone) { st.removeProperty('--app-h'); st.removeProperty('--app-gap'); return; }
+    const land = matchMedia('(orientation: landscape)').matches;
+    const h = land ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
+    const full = Math.max(h, innerHeight);
+    st.setProperty('--app-h', full + 'px');
+    st.setProperty('--app-gap', (full - innerHeight) + 'px');   // how far the real bottom is below the reported one
+  }
+  fitApp(); addEventListener('resize', fitApp); addEventListener('orientationchange', () => setTimeout(fitApp, 300));
+
+  /* Keycap press animation: every tap visibly sinks the key, even a quick one */
+  document.addEventListener('pointerdown', e => {
+    const k = e.target.closest('.key'); if (!k || k.disabled) return;
+    k.classList.add('is-pressed'); const t = performance.now();
+    const up = () => { setTimeout(() => k.classList.remove('is-pressed'), Math.max(0, 130 - (performance.now() - t)));
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(n => k.removeEventListener(n, up)); };
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(n => k.addEventListener(n, up));
+  });
+
+  /* Edge-swipe back (installed web apps have no browser back gesture) */
+  let sx = null, sy = 0;
+  addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX < 24 ? t.clientX : null; sy = t.clientY; }, { passive: true });
+  addEventListener('touchend', e => {
+    if (sx === null || (current || '/') === '/') return; const t = e.changedTouches[0];
+    if (t.clientX - sx > 70 && Math.abs(t.clientY - sy) < 60 && !$('dialog[open]')) back();
+    sx = null;
+  }, { passive: true });
+
+  /* ---------- Sheets & dialogs ---------- */
+  /* <button data-open-sheet="menu">  opens <dialog class="sheet" id="menu">
+     [data-close] inside closes it; tapping the backdrop closes it; picking a link closes it. */
+  document.addEventListener('click', e => {
+    const o = e.target.closest('[data-open-sheet]');
+    if (o) { const d = document.getElementById(o.dataset.openSheet); if (d && !d.open) d.showModal(); return; }
+    const c = e.target.closest('[data-close]');
+    if (c) { c.closest('dialog')?.close(); return; }
+    if (e.target.tagName === 'DIALOG' && e.target.open) {          // backdrop tap
+      const r = e.target.getBoundingClientRect(), x = e.clientX, y = e.clientY;
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) e.target.close();
+    }
+    const inSheet = e.target.closest('dialog.sheet [data-route], dialog.sheet a, dialog.sheet [data-action]');
+    if (inSheet) inSheet.closest('dialog').close();
+  });
+
+  /* ---------- Toast ---------- */
+  function toast(msg, kind = '') {
+    let host = $('.toast-host');
+    if (!host) { host = document.createElement('div'); host.className = 'toast-host'; host.setAttribute('aria-live', 'polite'); document.body.appendChild(host); }
+    const t = document.createElement('div');
+    t.className = 'toast ' + kind; t.textContent = msg; host.appendChild(t);
+    const kill = () => t.remove();
+    t.addEventListener('click', kill);
+    if (kind !== 'error') setTimeout(kill, 2500);
+  }
+
+  /* ---------- Confirm: await PH.confirm('Delete all?', {ok: 'Delete', danger: true}) ---------- */
+  function confirm(message, { title = 'Confirm', ok = 'OK', cancel = 'Cancel', danger = false } = {}) {
+    return new Promise(res => {
+      const d = document.createElement('dialog'); d.className = 'dialog';
+      d.innerHTML = `<h2></h2><p></p><div class="actions"><button class="btn btn-ghost" value="0"></button><button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" value="1"></button></div>`;
+      d.querySelector('h2').textContent = title; d.querySelector('p').textContent = message;
+      const [c, k] = d.querySelectorAll('button'); c.textContent = cancel; k.textContent = ok;
+      d.addEventListener('click', e => { const b = e.target.closest('button'); if (b) d.close(b.value); });
+      d.addEventListener('close', () => { res(d.returnValue === '1'); d.remove(); });
+      document.body.appendChild(d); d.showModal(); c.focus();
+    });
+  }
+
+  /* ---------- Export: share sheet on iOS, download elsewhere ---------- */
+  async function exportFile(name, text, type = 'application/json') {
+    const file = new File([text], name, { type });
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; } } catch (e) { if (e.name === 'AbortError') return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  /* ---------- Boot ---------- */
+  function init(extraDefaults = {}) {
+    Object.assign(defaults, extraDefaults);
+    syncSettings(); applyDisplay(); render();
+  }
+  return { init, store, on, go, back, toast, confirm, exportFile, sync: syncSettings };
+})();
+
+  </script>
+  <script>
+/* Recipe tree notation: a number is an ingredient row (index into ing); an array is [step, ...inputs].
+   Each step sits one column right of its deepest input and spans the rows of everything it combines. */
+const RECIPES = [
+  { id:"salsa", name:"Salsa Chicken Burrito Filling", app:"crockpot", serves:8, kcal:293, p:43, c:17, f:5, bg:"#d9482b", food:["#f2c14e","#2b1d14","#fff3dc"],
+    src:{ site:"Food.com", title:"Salsa Chicken in the Crock Pot", url:"https://www.food.com/recipe/salsa-chicken-in-the-crock-pot-185854", stars:null, n:7 },
+    ing:[[[[3, "lb", 1361]], "boneless skinless chicken breasts"], [[[2, "jar (14 oz)", 794]], "salsa"], [[[1, "can (15 oz)", 425]], "black beans, drained"], [[[1, "can (15 oz)", 425]], "corn, drained"]],
+    tree:["warm through 15–20 min",["shred with 2 forks",["cook on HIGH 4½–5 h",0,1]],2,3],
+    post:["Serve in tortillas, over rice or on salad"] },
+  { id:"chili", name:"Turkey Chili", app:"crockpot", serves:10, kcal:272, p:31, c:31, f:4, bg:"#8f2d1c", food:["#b5482a","#6b3a26","#fff8ea"],
+    src:{ site:"Two Peas & Their Pod", title:"Slow Cooker Turkey Chili", url:"https://www.twopeasandtheirpod.com/slow-cooker-turkey-chili/", stars:4.68, n:148 },
+    change:"We doubled the turkey to 2 lb for more protein per bowl.",
+    ing:[[[[1, "tbsp", 13.5]], "olive oil"], [[[2, "lb", 907]], "99% lean ground turkey"], [[[1, "medium", 150]], "onion, diced"], [[[1, "", 150]], "red bell pepper, chopped"], [[[1, "", 150]], "yellow bell pepper, chopped"], [[[30, "oz", 850]], "tomato sauce"], [[[30, "oz", 850]], "petite diced tomatoes"], [[[30, "oz", 850]], "black beans, rinsed and drained"], [[[30, "oz", 850]], "red kidney beans, rinsed and drained"], [[[1, "jar (16 oz)", 454]], "tamed jalapeño slices, drained"], [[[1, "cup", 140]], "frozen corn"], [[[2, "tbsp", 16]], "chili powder"], [[[1, "tbsp", 6]], "ground cumin"], [[["to taste", "", null]], "salt and black pepper"]],
+    tree:["cook on HIGH 4 h or LOW 6 h",["stir together",["brown in skillet",0,1],2,3,4,5,6,7,8,9,10,11,12,13]],
+    post:["Top with Greek yogurt, green onion or cheese"] },
+  { id:"barbacoa", name:"Beef Barbacoa", app:"crockpot", serves:8, kcal:210, p:30, c:3, f:9, bg:"#6b3a26", food:["#8a4a2c","#4f7a2e","#f4ead7"],
+    src:{ site:"The Real Food Dietitians", title:"Slow Cooker Beef Barbacoa", url:"https://therealfooddietitians.com/slow-cooker-beef-barbacoa/", stars:5, n:8 },
+    ing:[[[[2.5, "lb", 1134]], "beef chuck roast, fat trimmed, cut in 2-inch cubes"], [[[0.5, "cup", 120.0]], "water"], [[[0.5, "medium", 75.0]], "yellow onion, quartered"], [[[6, "", 24]], "garlic cloves"], [[[3, "tbsp", 48]], "tomato paste"], [[[2.5, "tbsp", 37.5]], "lime juice"], [[[1, "tbsp", 6]], "ground cumin"], [[[1, "tbsp", 3]], "dried oregano"], [[[0.75, "tsp", 4.5], [0.25, "tsp", 0.6]], "salt and black pepper"], [[["pinch each", "", null]], "ground cloves and chipotle powder"], [[[3, "", null]], "bay leaves"]],
+    tree:["shred, stir into juices",["cook on LOW 7 h or HIGH 3½ h",0,["blend smooth",1,2,3,4,5,6,7,8,9],10]],
+    post:["Use for tacos, burrito bowls or salads"] },
+  { id:"tikka", name:"Chicken Tikka Masala", app:"crockpot", serves:6, kcal:346, p:44, c:18, f:12, bg:"#e07a1f", food:["#e8a03a","#fff8ea","#4f7a2e"],
+    src:{ site:"The Recipe Critic", title:"Slow Cooker Chicken Tikka Masala", url:"https://therecipecritic.com/slow-cooker-chicken-tikka-masala/", stars:4.29, n:14 },
+    change:"We swapped 1 cup heavy cream for ½ cup half-and-half and used nonfat Greek yogurt.",
+    ing:[[[[1, "small", 110]], "onion, chopped"], [[[3, "", 12]], "garlic cloves, minced"], [[[2, "tbsp", 12]], "fresh ginger, grated"], [[[1, "can (29 oz)", 822]], "tomato purée"], [[[1.5, "cup", 367.5]], "plain nonfat Greek yogurt"], [[[2, "tbsp", 27.0]], "olive oil"], [[[2, "tbsp", 12]], "garam masala"], [[[1, "tbsp", 6]], "ground cumin"], [[[0.5, "tbsp", 3.5], [0.75, "tsp", 2.0], [1, "tsp", 1.8]], "paprika, cinnamon, cayenne"], [[[2, "tsp", 12], [0.75, "tsp", 1.7]], "salt and black pepper"], [[[2, "lb", 907]], "chicken breasts, 1-inch pieces"], [[[2, "", null]], "bay leaves"], [[[0.5, "cup", 121.0]], "half-and-half"], [[[0.5, "tbsp", 4.0]], "cornstarch"]],
+    tree:["cook 20 min more",["cook on LOW 6 h or HIGH 4 h",["toss to coat",["stir together",0,1,2,3,4,5,6,7,8,9],10],11],["whisk",12,13]],
+    post:["Serve over basmati rice with cilantro"] },
+  { id:"whitechili", name:"White Chicken Chili", app:"crockpot", serves:6, kcal:393, p:46, c:33, f:8, bg:"#c9a24a", food:["#f4ead7","#e8c77a","#4f7a2e"], isNew:true,
+    src:{ site:"Food.com", title:"Crock Pot White Chicken Chili", url:"https://www.food.com/recipe/crock-pot-white-chicken-chili-114789", stars:5, n:167 },
+    change:"We raised the chicken from 1¼ to 2 lb and swapped sour cream for Greek yogurt.",
+    ing:[[[[2, "lb", 907]], "boneless skinless chicken breasts"], [[[2, "can (15 oz)", 850]], "great northern beans, drained"], [[[1, "can (15 oz)", 425]], "white hominy or white corn, drained"], [[[1, "packet (1¼ oz)", 35]], "taco seasoning"], [[[1, "can (4½ oz)", 128]], "chopped green chiles"], [[[1, "can (10¾ oz)", 305]], "condensed cream of chicken soup"], [[[1, "can (14 oz)", 397]], "chicken broth"], [[[0.5, "cup", 122.5]], "plain Greek yogurt"]],
+    tree:["stir in",["break up chicken",["cook on LOW 8–10 h",["layer in pot",0,1,2],["mix, pour over",3,4,5,6]]],7],
+    post:["Top with green onion and Monterey Jack"] },
+  { id:"honeygarlic", name:"Honey Garlic Chicken", app:"crockpot", serves:6, kcal:280, p:37, c:24, f:4, bg:"#b5651d", food:["#d98e3a","#fff3dc","#4f7a2e"], isNew:true,
+    src:{ site:"Le Crème de la Crumb", title:"Slow Cooker Honey Garlic Chicken", url:"https://www.lecremedelacrumb.com/slow-cooker-honey-garlic-chicken/", stars:4.91, n:20 },
+    ing:[[[[2, "lb", 907]], "boneless skinless chicken breasts"], [[[0.5, "cup", 127.5]], "low-sodium soy sauce"], [[[0.5, "cup", 120.0]], "ketchup"], [[[0.3333333333333333, "cup", 113.3]], "honey"], [[[2, "tsp", 10]], "hot sauce"], [[[1, "tbsp", 15]], "minced garlic"], [[[1, "tsp", 1]], "Italian seasoning"]],
+    tree:["cook on LOW 6 h",0,["whisk, pour over",1,2,3,4,5,6]],
+    post:["Serve over rice with steamed broccoli"] },
+
+  { id:"salmon", name:"Honey-Soy Salmon Bites", app:"airfryer", serves:3, kcal:390, p:32, c:8, f:25, bg:"#f08a6c", food:["#f4a582","#3d2a1e","#4f7a2e"],
+    src:{ site:"Chef Savvy", title:"Air Fryer Salmon Bites", url:"https://chefsavvy.com/air-fryer-salmon-bites/", stars:5, n:1 },
+    pre:["Preheat air fryer to 400°F; spray basket"],
+    ing:[[[[1, "lb", 454]], "salmon, cut in 1-inch cubes"], [[[3, "tbsp", 48]], "low-sodium soy sauce"], [[[1, "tbsp", 13.5]], "sesame oil"], [[[1, "tbsp", 21]], "honey"], [[[4, "", 16]], "garlic cloves, minced"], [[[1, "tsp", 6]], "sriracha"], [[["sprinkle", "", null]], "sesame seeds, to garnish"]],
+    tree:["spoon on saved sauce, top",["air fry 8 min",["toss",0,["whisk; save 2 tbsp",1,2,3,4,5]]],6],
+    post:["Serve with rice and vegetables"] },
+  { id:"parm", name:"Parmesan-Crusted Chicken", app:"airfryer", serves:4, kcal:405, p:51, c:7, f:18, bg:"#d9a03a", food:["#e3b25a","#c98f0a","#4f7a2e"],
+    src:{ site:"Air Frying Foodie", title:"Air Fryer Parmesan Crusted Chicken", url:"https://airfryingfoodie.com/air-fryer-parmesan-crusted-chicken/", stars:4.72, n:38 },
+    change:"Doubled from 2 to 4 servings.",
+    pre:["Preheat air fryer to 380°F"],
+    ing:[[[[4, "", 800]], "boneless skinless chicken breasts (6–8 oz each)"], [[[0.25, "cup", 57.5]], "sour cream or Greek yogurt"], [[[0.5, "cup", 30.0]], "Italian-style panko"], [[[0.5, "cup", 50.0]], "grated Parmesan"], [[[1, "tsp", 2.3]], "paprika"], [[[0.5, "tsp", 1.5], [0.5, "tsp", 1.1]], "kosher salt and black pepper"], [[[2, "tsp", 9.0]], "olive oil, for the basket"]],
+    tree:["air fry 12 min, flip, 4–6 min to 165°F",["press onto tops",["spread on tops",0,1],["mix",2,3,4,5]],6],
+    post:["Serve with a big salad or roasted vegetables"] },
+  { id:"meatballs", name:"Turkey Meatballs", app:"airfryer", serves:6, kcal:291, p:32, c:8, f:14, bg:"#b8452c", food:["#9c5a3a","#d9482b","#4f7a2e"],
+    src:{ site:"Food Lovin Family", title:"Air Fryer Turkey Meatballs", url:"https://www.foodlovinfamily.com/air-fryer-turkey-meatballs/", stars:4.89, n:36 },
+    change:"Doubled to 2 lb so it makes 6 hearty servings.",
+    pre:["Preheat air fryer to 400°F; spray basket"],
+    ing:[[[[2, "lb", 907]], "ground turkey (93% lean)"], [[[1, "cup", 60]], "panko breadcrumbs"], [[[2, "", 100]], "eggs"], [[[0.5, "cup", 15.0]], "fresh parsley, chopped"], [[[2, "tbsp", 32]], "low-sodium soy sauce"], [[["to taste", "", null]], "black pepper"]],
+    tree:["air fry in batches: 5 min, flip, 5 min",["roll into 1½-inch balls",["mix gently",0,1,2,3,4,5]]],
+    post:["Serve with marinara and zucchini noodles"] },
+  { id:"shrimp", name:"Cajun Shrimp & Sausage", app:"airfryer", serves:4, kcal:262, p:32, c:7, f:12, bg:"#e2643a", food:["#f39a6b","#fff3dc","#4f7a2e"],
+    src:{ site:"Skinnytaste", title:"Air Fryer Cajun Shrimp Dinner", url:"https://www.skinnytaste.com/air-fryer-cajun-shrimp-dinner/", stars:4.93, n:157 },
+    pre:["Preheat air fryer to 400°F"],
+    ing:[[[[1, "lb", 454]], "extra-jumbo shrimp, peeled"], [[[1, "tbsp", 7]], "Cajun or Creole seasoning"], [[[6, "oz", 170]], "cooked chicken or turkey andouille, sliced"], [[[1, "", 227]], "zucchini, ¼-inch half moons"], [[[1, "", 227]], "yellow squash, ¼-inch half moons"], [[[1, "large", 180]], "red bell pepper, 1-inch pieces"], [[[0.25, "tsp", 0.8]], "kosher salt"], [[[2, "tbsp", 27.0]], "olive oil"]],
+    tree:["air fry 2 batches × 8 min, shaking; combine, 1 min",["toss",["toss to coat",0,1],2,3,4,5,6,7]],
+    post:["Serve as is or over rice"] },
+  { id:"tofu", name:"Crispy Tofu & Edamame", app:"airfryer", serves:4, kcal:400, p:38, c:24, f:18, veg:true, bg:"#6f8f3a", food:["#e8c77a","#7fae4a","#2b1d14"],
+    src:{ site:"Nora Cooks", title:"Air Fryer Tofu", url:"https://www.noracooks.com/air-fryer-tofu/", stars:4.98, n:36 },
+    change:"Doubled the tofu and added 1 cup edamame per serving for a full meal.",
+    ing:[[[[2, "block (14 oz)", 794]], "extra-firm tofu"], [[[0.25, "cup", 63.8]], "low-sodium soy sauce or tamari"], [[[2, "tbsp", 30]], "seasoned rice vinegar"], [[[2, "tsp", 9.0]], "sesame oil"], [[[2, "tbsp", 16]], "cornstarch"], [[[4, "cup", 620]], "shelled edamame"]],
+    tree:["serve together",["air fry 400°F 10–15 min, shake at 10",["coat; rest 15 min",["drizzle, toss gently",["press 15 min, cube",0],1,2,3],4]],["steam or microwave",5]],
+    post:["Add rice and a drizzle of sriracha"] },
+  { id:"fajitas", name:"Chicken Fajitas", app:"airfryer", serves:4, kcal:337, p:40, c:9, f:15, bg:"#c0392b", food:["#e8b04a","#3f7a2e","#f4ead7"], isNew:true,
+    src:{ site:"The Big Man's World", title:"Air Fryer Chicken Fajitas", url:"https://thebigmansworld.com/air-fryer-chicken-fajitas/", stars:5, n:1 },
+    pre:["Preheat air fryer to 400°F"],
+    ing:[[[[3, "tbsp", 40.5]], "olive oil"], [[[3, "", 12]], "garlic cloves, minced"], [[[1, "tsp", 2]], "ground cumin"], [[[1, "tsp", 2.3]], "smoked paprika"], [[[1, "tsp", 2.7]], "chili powder"], [[[0.5, "tsp", 1.2], [0.5, "tsp", 0.5]], "onion powder and dried oregano"], [[[1, "tsp", 6], [0.5, "tsp", 1.1]], "salt and black pepper"], [[[1.5, "lb", 680]], "chicken breasts, ½-inch strips"], [[[3, "", 450]], "bell peppers, ½-inch strips"], [[[1, "large", 225]], "white onion, ½-inch strips"]],
+    tree:["air fry 8 min, shake, 4 min to 165°F",["toss by hand",["mix",0,1,2,3,4,5,6],7,8,9]],
+    post:["Serve in warm tortillas or over rice"] },
+
+  { id:"flank", name:"Chimichurri Flank Steak", app:"grill", serves:4, kcal:333, p:36, c:2, f:20, bg:"#3b2a20", food:["#8a3b2a","#4f7a2e","#f4ead7"],
+    change:"The source splits this into 6 small servings (24 g protein each). We count it as 4 so a serving reaches about 36 g.",
+    src:{ site:"Skinnytaste", title:"Grilled Chimichurri Steak", url:"https://www.skinnytaste.com/grilled-flank-steak-with-chimichurri/", stars:4.95, n:36 },
+    pre:["Heat grill to high"],
+    ing:[[[[1.5, "lb", 680]], "flank steak"], [[[1, "tsp", 3]], "garlic powder"], [[[0.75, "tsp", 1.5]], "ground cumin"], [[[0.5, "tsp", 0.5]], "dried oregano"], [[[1.25, "tsp", 3.8]], "kosher salt, plus black pepper"], [[[0.3333333333333333, "cup", 20.0]], "fresh parsley, packed, minced"], [[[2, "tbsp", 20]], "red onion, finely chopped"], [[[4, "", 16]], "garlic cloves, minced"], [[[2, "tbsp", 27.0]], "extra-virgin olive oil"], [[[3, "tbsp", 45]], "red wine vinegar"], [[[1, "tbsp", 15]], "water"], [[[0.25, "tsp", 1.5], [0.125, "tsp", 0.3], [0.125, "tsp", 0.2]], "salt, pepper, red pepper flakes"]],
+    tree:["spoon sauce over",["slice across grain",["grill 3–4 min/side; rest 5 min",["season both sides",["score ⅛ inch deep",0],["mix",1,2,3,4]]]],["mix",5,6,7,8,9,10,11]],
+    post:["Serve with potatoes or over greens"] },
+  { id:"souvlaki", name:"Chicken Souvlaki & Tzatziki", app:"grill", serves:4, kcal:381, p:42, c:5, f:21, bg:"#2f6f8f", food:["#d9a066","#fff8ea","#4f7a2e"],
+    src:{ site:"RecipeTin Eats", title:"Chicken Souvlaki", url:"https://www.recipetineats.com/chicken-souvlaki/", stars:4.94, n:47 },
+    pre:["Heat grill or skillet to high"],
+    ing:[[[[1.5, "lb", 680]], "chicken thighs, 1-inch pieces"], [[[2, "tbsp", 27.0]], "olive oil"], [[[0.25, "cup", 60.0]], "lemon juice"], [[[3, "", 12]], "garlic cloves, minced"], [[[2, "tbsp", 6]], "dried oregano"], [[[0.625, "tsp", 3.8]], "salt, plus black pepper"], [[[1, "tbsp", 13.5]], "olive oil, for cooking"], [[[2, "small", 240]], "cucumbers"], [[[1.25, "cup", 300.0]], "plain Greek yogurt"], [[[2, "tsp", 10]], "white wine vinegar"], [[[1, "tbsp", 15]], "lemon juice"], [[[0.5, "", 2.0]], "garlic clove, minced"], [[[1, "tbsp", 13.5]], "extra-virgin olive oil"], [[[0.5, "tsp", 3.0]], "salt, plus black pepper"]],
+    tree:["serve together",["grill 3 min/side",["thread on 8 skewers",["marinate 3 h to overnight",0,1,2,3,4,5]],6],["mix; rest 20 min",["seed, grate, squeeze dry",7],8,9,10,11,12,13]],
+    post:["Serve with pita, lettuce and tomato"] },
+  { id:"pork", name:"Spice-Rubbed Pork Tenderloin", app:"grill", serves:6, kcal:232, p:33, c:7, f:8, bg:"#a34a2a", food:["#c77b52","#f4ead7","#4f7a2e"],
+    src:{ site:"Fed & Fit", title:"Best Pork Tenderloin Rub", url:"https://fedandfit.com/best-pork-tenderloin-rub/", stars:4.45, n:56 },
+    change:"Rub doubled for two tenderloins. Grill method follows The Wooden Skillet's grilled pork tenderloin.",
+    pre:["Heat grill to medium-high (350–450°F)"],
+    ing:[[[[2, "", 908]], "pork tenderloins (about 1 lb each)"], [[[1, "tbsp", 13.5]], "olive oil"], [[[2, "tbsp", 16]], "chili powder"], [[[2, "tbsp", 26]], "brown or coconut sugar"], [[[1, "tbsp", 3]], "dried oregano"], [[[1, "tbsp", 7]], "paprika"], [[[1, "tsp", 2.6]], "ground cinnamon"], [[[1, "tsp", 3]], "garlic powder"], [[[1, "tsp", 6]], "sea salt"]],
+    tree:["rest 5 min; slice",["grill, turning every 3–4 min, to 145°F (about 25 min)",["rub all over",["pat dry, brush",0,1],["mix",2,3,4,5,6,7,8]]]],
+    post:["Serve with grilled vegetables or sweet potato"] },
+  { id:"teriyaki", name:"Grilled Teriyaki Chicken", app:"grill", serves:4, kcal:226, p:29, c:5, f:9, bg:"#5a2e1a", food:["#8a4a2c","#f4ead7","#4f7a2e"], isNew:true,
+    src:{ site:"The Big Man's World", title:"Grilled Teriyaki Chicken", url:"https://thebigmansworld.com/grilled-teriyaki-chicken/", stars:5, n:3 },
+    pre:["Heat grill to medium; oil the grates"],
+    ing:[[[[3, "tbsp", 48]], "soy sauce"], [[[1, "tbsp", 13]], "brown sugar or honey"], [[[1, "tbsp", 15]], "rice wine vinegar"], [[[1, "tbsp", 13.5]], "sesame oil"], [[[2, "", 8]], "garlic cloves, minced"], [[[1, "tsp", 2]], "fresh ginger, minced"], [[[4, "", 568]], "boneless chicken thighs (about 5 oz each)"], [[[1, "tsp", 2.7]], "cornstarch"]],
+    tree:["brush on, serve",["grill 5 min/side to 165°F",["marinate 10 min to 24 h",["whisk",0,1,2,3,4,5],6]],["simmer with leftover marinade 2–3 min",7]],
+    post:["Serve with rice and grilled pineapple"] },
+  { id:"burger", name:"Juicy Lean Burgers", app:"grill", serves:6, kcal:246, p:33, c:4, f:10, bg:"#c98f0a", food:["#6b3a26","#e8b04a","#4f7a2e"],
+    src:{ site:"Teaspoon of Spice", title:"The Juiciest Lean Beef Burgers", url:"https://teaspoonofspice.com/juiciest-lean-beef-burgers/", stars:null, n:null },
+    change:"Formed into 6 patties instead of 8 for about 33 g protein each.",
+    pre:["Heat grill to medium"],
+    ing:[[[[1, "tbsp", 13.5]], "canola oil"], [[[2, "large", 450]], "onions, chopped"], [[[2, "lb", 907]], "95% lean ground beef"], [[[1.5, "tbsp", 25.5]], "Worcestershire sauce"], [[["to taste", "", null]], "black pepper"]],
+    tree:["grill covered 11–15 min to 160°F",["form 6 patties, press firmly",["mix by hand",["cook 5 min; cover, low, 15 min; cool",0,1],2,3,4]]],
+    post:["Bun adds about 130 kcal and 6 g protein"] },
+
+  { id:"pancakes", name:"Cottage Cheese Pancakes", app:"griddle", cat:"sweet", serves:4, kcal:363, p:22, c:39, f:13, bg:"#d9a560", food:["#e8b878","#a16207","#c0392b"], isNew:true,
+    src:{ site:"Feel Good Foodie", title:"Fluffy Cottage Cheese Pancakes", url:"https://www.feelgoodfoodie.net/recipe/cottage-cheese-pancakes/", stars:4.99, n:101 },
+    change:"We swapped ¼ cup of the flour for a scoop of vanilla whey (+6 g protein per serving).",
+    pre:["Heat a buttered skillet or griddle over medium"],
+    ing:[[[[4, "large", 200]], "eggs"], [[[1, "cup", 225]], "cottage cheese"], [[[0.25, "cup", 61.0]], "milk"], [[[3, "tbsp", 60]], "maple syrup"], [[[1, "tsp", 4]], "vanilla extract"], [[[1, "cup", 125]], "all-purpose flour"], [[[1, "scoop", 30]], "vanilla whey protein"], [[[1, "tsp", 4]], "baking powder"], [[[0.5, "tsp", 1.3]], "cinnamon"], [[[2, "tbsp", 28.4]], "butter, melted"]],
+    tree:["cook ¼-cup mounds 2–3 min/side",["stir in; rest 10 min",["whisk together",["whisk",0,1,2,3,4],["sift in",5,6,7,8]],9]],
+    post:["Serve with berries and Greek yogurt"] },
+  { id:"mix", name:"Protein Pancake & Waffle Mix", app:"griddle", cat:"sweet", serves:4, kcal:433, p:35, c:58, f:9, bg:"#b07a3c", food:["#d9a560","#f4ead7","#7a2e4a"], isNew:true,
+    src:{ site:"Smart Nutrition", title:"High Protein Pancakes: DIY Power Cakes Mix", url:"https://smartnutrition.ca/high-protein-pancakes-diy-power-cakes-mix/", stars:4.56, n:9 },
+    change:"Serving size is ours: the full batch makes 4 big servings.",
+    pre:["Heat griddle or waffle iron"],
+    ing:[[[[1, "cup", 80]], "rolled oats"], [[[1.5, "cup", 180.0]], "whole-wheat flour"], [[[1, "cup", 75]], "whey protein isolate"], [[[4.5, "tsp", 12.2]], "buttermilk powder (optional)"], [[[1, "tbsp", 13]], "brown sugar"], [[[1, "tbsp", 12]], "baking powder"], [[[0.5, "tsp", 3.0]], "salt"], [[[1.75, "cup", 427.0]], "milk"], [[[3, "", 150]], "eggs"]],
+    tree:["cook as pancakes or waffles",["whisk",["whisk; store airtight",["blend to flour",0],1,2,3,4,5,6],7,8]],
+    post:["Smaller batch: 1 cup mix + ½ cup milk + 1 egg"] },
+  { id:"brownies", name:"Greek Yogurt Brownies", app:"airfryer", cat:"sweet", serves:4, kcal:79, p:9, c:11, f:4, bg:"#4a2c1e", food:["#5c3a26","#3b2418","#f4ead7"], isNew:true,
+    src:{ site:"Matt's Fit Chef", title:"Flourless Greek Yogurt Brownies", url:"https://mattsfitchef.com/flourless-greek-yogurt-brownies/", stars:4.6, n:158 },
+    change:"Source bakes in the oven. Our air fryer option: 320°F for about 20 min (check with a toothpick). Stir in a scoop of chocolate whey for about +6 g protein per serving.",
+    pre:["Preheat oven to 350°F; line a 6×6-in pan with parchment"],
+    ing:[[[[0.75, "cup", 180.0]], "plain Greek yogurt"], [[[1, "", 50]], "egg"], [[[0.5, "cup", 60.0]], "cocoa powder"], [[[0.4, "cup", 80.0]], "granulated erythritol"], [[[0.5, "tsp", 0.5], ["pinch", "", null]], "coffee powder and salt (optional)"], [[["handful", "", null]], "chocolate chips (optional)"]],
+    tree:["cool fully, then cut",["bake 22–30 min",["pour into pan, top",["mix until smooth",0,1,2,3,4],5]]],
+    post:["Keeps 4 days in the fridge"] },
+  { id:"muffins", name:"Greek Yogurt Blueberry Protein Muffins", app:"oven", cat:"sweet", serves:6, kcal:342, p:20, c:38, f:12, bg:"#3d4f8a", food:["#e3b878","#f4ead7","#3b3f8f"], isNew:true,
+    src:{ site:"Real Life Nutritionist", title:"High Protein Blueberry Muffins", url:"https://reallifenutritionist.com/high-protein-blueberry-muffins/", stars:5, n:22 },
+    change:"Makes 12 muffins; a serving is 2. For more protein we swapped ¼ cup flour for whey, used nonfat Greek yogurt, and traded some oil for extra yogurt (source: 8 g protein per muffin, ours about 10 g).",
+    pre:["Preheat oven to 350°F; line a 12-cup muffin pan"],
+    ing:[[[[1.25, "cup", 156]], "all-purpose flour"], [[[0.75, "cup", 75]], "vanilla whey protein"], [[[1, "tsp", 4]], "baking powder"], [[[0.5, "tsp", 2.3]], "baking soda"], [[[0.5, "tsp", 3.0]], "salt"], [[[1, "cup", 148]], "blueberries"], [[[1.25, "cup", 306]], "nonfat plain Greek yogurt"], [[[0.33, "cup", 107]], "maple syrup"], [[[0.25, "cup", 54]], "olive oil"], [[[2, "tsp", 8]], "vanilla extract"], [[[2, "large", 100]], "eggs"]],
+    tree:["cool 10 min in pan, then on a rack",["bake 18–22 min, until a toothpick comes out clean",["fold until just combined; fill 12 cups",["toss to coat",["whisk",0,1,2,3,4],5],["whisk until smooth",6,7,8,9,10]]]],
+    post:["Keeps 4 days in the fridge or 3 months frozen", "Add a cup of Greek yogurt for about 43 g protein"] },
+  { id:"rice", name:"Cilantro Lime Rice", app:"stovetop", cat:"side", serves:4, kcal:219, p:3, c:37, f:6, bg:"#7fae4a", food:["#fffaf2","#4f7a2e","#e8c77a"],
+    src:{ site:"Family Fresh Meals", title:"Copycat Chipotle Cilantro Lime Rice", url:"https://www.familyfreshmeals.com/copycat-chipotle-cilantro-lime-rice/", stars:4.94, n:32 },
+    ing:[[[[1, "tbsp", 14.2]], "butter"], [[[1, "", null]], "bay leaf"], [[[1, "cup", 185]], "basmati rice"], [[[2, "cup", 480]], "water"], [[[1, "tsp", 6]], "salt"], [[[1, "tbsp", 14.2]], "butter"], [[[2, "tbsp", 2]], "fresh cilantro, chopped"], [[[1.5, "tbsp", 22.5]], "fresh lime juice"], [[[1, "tbsp", 15]], "fresh lemon juice"]],
+    tree:["stir in; remove bay leaf",["simmer covered 15–17 min",["bring to a boil",["sauté 2 min, stirring",0,1,2],3,4]],5,6,7,8] },
+  { id:"broccoli", name:"Air Fryer Broccoli", app:"airfryer", cat:"side", serves:3, kcal:131, p:4, c:10, f:10, bg:"#3f7a2e", food:["#5d9a3a","#3f6b2a","#f2c14e"],
+    src:{ site:"Well Plated", title:"Air Fryer Broccoli", url:"https://www.wellplated.com/air-fryer-broccoli/", stars:4.55, n:22 },
+    pre:["Preheat air fryer to 400°F (about 3 min)"],
+    ing:[[[[1, "lb", 454]], "broccoli florets, cut small"], [[[2, "tbsp", 27.0]], "extra-virgin olive oil"], [[[0.5, "tsp", 1.5]], "kosher salt"], [[[0.25, "tsp", 0.8]], "garlic powder"], [[[0.25, "tsp", 0.6]], "black pepper"], [[[0.25, "tsp", 1.0]], "sugar (optional)"], [[[2, "tbsp", 30]], "water, into the basket"]],
+    tree:["top with lemon or Parmesan",["air fry 4 min, toss, 4–8 min more",["toss to coat",0,1,2,3,4,5],6]] },
+  { id:"sweetpotato", name:"Air Fryer Sweet Potato Cubes", app:"airfryer", cat:"side", serves:4, kcal:143, p:2, c:23, f:5, bg:"#d9692b", food:["#f08a3c","#c0561f","#4f7a2e"],
+    src:{ site:"Well Plated", title:"Air Fryer Sweet Potato Cubes", url:"https://www.wellplated.com/air-fryer-sweet-potato-cubes/", stars:5, n:7 },
+    ing:[[[[1, "lb", 454]], "sweet potatoes, ½-inch cubes"], [[[1.5, "tbsp", 20.2]], "extra-virgin olive oil"], [[[0.75, "tsp", 2.2]], "kosher salt"], [[[0.5, "tsp", 1.1]], "smoked paprika"], [[[0.5, "tsp", 1.5]], "garlic powder"], [[[0.25, "tsp", 0.6]], "black pepper"]],
+    tree:["salt to taste",["air fry 400°F about 12 min, shake halfway",["toss",0,1,2,3,4,5]]] },
+  { id:"mash", name:"Greek Yogurt Mashed Potatoes", app:"stovetop", cat:"side", serves:6, kcal:171, p:5, c:27, f:5, bg:"#c9a24a", food:["#f4ead7","#e8c77a","#4f7a2e"],
+    src:{ site:"Hey Nutrition Lady", title:"Greek Yogurt Mashed Potatoes", url:"https://www.heynutritionlady.com/greek-yogurt-mashed-potatoes/", stars:4.9, n:9 },
+    ing:[[[[2, "lb", 907]], "Yukon Gold potatoes, 1-inch pieces"], [[[1, "cup", 240]], "vegetable broth"], [[[2, "tbsp", 28.4]], "butter"], [[[0.5, "cup", 122.5]], "full-fat Greek yogurt"], [[[2, "tbsp", 6]], "chives or green onion, chopped"], [[["to taste", "", null]], "salt and black pepper"]],
+    tree:["season; thin with saved broth if dry",["mix in",["roughly mash",["drain, save the liquid",["simmer covered about 15 min",0,1]]],2,3,4],5] },
+  { id:"greek", name:"Greek Salad", app:"salad", cat:"side", serves:4, kcal:259, p:6, c:12, f:22, bg:"#2f6f8f", food:["#d9482b","#7fae4a","#fffaf2"],
+    src:{ site:"Downshiftology", title:"Best Greek Salad", url:"https://downshiftology.com/recipes/greek-salad/", stars:4.97, n:108 },
+    change:"We halved the dressing oil from ½ cup to ¼ cup (saves about 120 kcal per serving).",
+    ing:[[[[1, "large", 300]], "cucumber, diced"], [[[1, "pint", 300]], "grape tomatoes, halved"], [[[1, "", 150]], "green bell pepper, diced"], [[[0.5, "", 75.0]], "red onion, thinly sliced"], [[[0.5, "cup", 67.5]], "Kalamata olives, halved"], [[[4, "oz", 113]], "feta, crumbled"], [[["to taste", "", null]], "salt and black pepper"], [[[0.3333333333333333, "cup", 80.0]], "red wine vinegar"], [[[1, "", 45]], "lemon, juiced"], [[[1, "tsp", 5]], "Dijon mustard"], [[[2, "", 8]], "garlic cloves, minced"], [[[0.5, "tsp", 0.5]], "dried oregano"], [[[0.25, "tsp", 1.5], [0.25, "tsp", 0.6]], "salt and black pepper"], [[[0.25, "cup", 54.0]], "olive oil"]],
+    tree:["toss gently",["combine in a large bowl",0,1,2,3,4,5,6],["whisk in oil slowly",["whisk",7,8,9,10,11,12],13]] },
+  { id:"beansalad", name:"Black Bean & Corn Salad", app:"salad", cat:"side", serves:8, kcal:233, p:6, c:26, f:13, bg:"#3b2a20", food:["#2b1d14","#f2c14e","#7fae4a"],
+    src:{ site:"Once Upon a Chef", title:"Black Bean Salad with Corn, Avocado & Lime Vinaigrette", url:"https://www.onceuponachef.com/recipes/black-bean-salad-with-corn-red-peppers-avocado-lime-cilantro-vinaigrette.html", stars:4.9, n:312 },
+    change:"We cut the olive oil from ½ cup + 1 tbsp to ¼ cup (saves about 75 kcal per serving).",
+    ing:[[[[3, "ear", 270]], "fresh corn"], [[[2, "can (15 oz)", 850]], "black beans, drained and rinsed"], [[[2, "", 300]], "red bell peppers, diced"], [[[2, "", 8]], "garlic cloves, minced"], [[[2, "tbsp", 20]], "shallots, minced"], [[[2, "tsp", 12]], "salt"], [[[0.25, "tsp", 0.5]], "cayenne pepper"], [[[2, "tbsp", 25.0]], "sugar"], [[[0.25, "cup", 54.0]], "extra-virgin olive oil"], [[[1, "tsp", 2]], "lime zest"], [[[0.375, "cup", 90.0]], "fresh lime juice"], [[[0.5, "cup", 8.0]], "fresh cilantro, chopped"], [[[2, "", 300]], "avocados, chopped"]],
+    tree:["fold in just before serving",["chill several hours",["mix well",["boil 3–4 min, ice bath, cut off kernels",0],1,2,3,4,5,6,7,8,9,10,11]],12] },
+  { id:"zucchini", name:"Grilled Zucchini with Parmesan", app:"grill", cat:"side", serves:4, kcal:79, p:4, c:7, f:5, bg:"#4f7a2e", food:["#7fae4a","#3f6b2a","#f4ead7"],
+    src:{ site:"Well Plated", title:"Grilled Zucchini with Parmesan and Herbs", url:"https://www.wellplated.com/grilled-zucchini/", stars:4.74, n:34 },
+    pre:["Heat grill to 400–450°F"],
+    ing:[[[[4, "medium", 908]], "zucchini (8 oz each)"], [[[1, "tbsp", 13.5]], "extra-virgin olive oil"], [[[1, "tsp", 1]], "Italian seasoning (optional)"], [[[1, "tsp", 3]], "kosher salt"], [[[0.5, "tsp", 1.1]], "black pepper"], [[[0.5, "small", 15.0]], "lemon, juiced"], [[[2, "tbsp", 10]], "Parmesan, freshly grated"]],
+    tree:["squeeze and sprinkle on",["grill cut side 4 min, skin side 5 min",["drizzle and season",["trim, quarter lengthwise",0],1,2,3,4]],5,6] },
+  { id:"corn", name:"Skinny Mexican Grilled Corn", app:"grill", cat:"side", serves:4, kcal:119, p:6, c:18, f:4, bg:"#e0a91f", food:["#f2c14e","#fffaf2","#4f7a2e"],
+    src:{ site:"Bless Her Heart Y'all", title:"Skinny Mexican Grilled Corn", url:"https://blessherheartyall.com/skinny-mexican-grilled-corn/", stars:null, n:null },
+    pre:["Heat grill to medium-high"],
+    ing:[[[[4, "ear", 800]], "corn, shucked"], [[["light coat", "", null]], "olive oil"], [[[2, "tbsp", 30]], "Greek yogurt"], [[[0.25, "tsp", 0.7]], "chili powder"], [[[0.125, "tsp", 0.3]], "paprika"], [[[0.125, "tsp", 0.4]], "cumin, black pepper and salt, combined"], [[[0.25, "cup", 25.0]], "grated Parmesan"], [[[0.25, "cup", 4.0]], "fresh cilantro, chopped"], [[[0.5, "", 30.0]], "lime, in wedges"]],
+    tree:["sprinkle on, squeeze lime over",["spread on hot corn",["grill 10–12 min, turning often",0,1],["mix",2,3,4,5]],6,7,8] }
+];
+/* Recommended sides for each main: [side id, why it fits]. */
+const PAIRS = {
+  salsa:[["rice","Turns it into a burrito bowl"],["beansalad","Adds fiber and crunch"]],
+  chili:[["corn","A classic next to chili"],["sweetpotato","Smoky-sweet with the spice"]],
+  barbacoa:[["rice","The Chipotle-style pairing"],["beansalad","Fresh lime to cut the richness"]],
+  tikka:[["rice","Soaks up the sauce"],["broccoli","A quick green vegetable"]],
+  whitechili:[["corn","Same southwest flavors"],["broccoli","A quick green vegetable"]],
+  honeygarlic:[["rice","Catches the honey-garlic glaze"],["broccoli","Balances the sweet sauce"]],
+  salmon:[["rice","Classic with soy-glazed fish"],["broccoli","Same air fryer, same temperature"]],
+  parm:[["mash","A comfort-food plate"],["greek","Bright and fresh next to the crust"]],
+  meatballs:[["zucchini","A light swap for pasta"],["greek","Fresh crunch on the side"]],
+  shrimp:[["rice","Stretches the dish into a full meal"],["corn","Southern-style with Cajun spice"]],
+  tofu:[["rice","Rounds out the bowl"],["broccoli","Air fry it right after the tofu"]],
+  fajitas:[["rice","Burrito bowl base"],["beansalad","Adds fiber and protein"]],
+  flank:[["mash","Steak and potatoes"],["zucchini","Grill it alongside the steak"]],
+  souvlaki:[["greek","The Greek classic"],["rice","Fills out the plate with the tzatziki"]],
+  pork:[["sweetpotato","Sweet-smoky with the spice rub"],["zucchini","Grill it alongside the pork"]],
+  teriyaki:[["rice","Catches the teriyaki sauce"],["broccoli","The takeout-style pairing"]],
+  burger:[["sweetpotato","A lighter swap for fries"],["corn","Cookout classic"]]
+};
+const ADDONS = [
+  { id:"yogurt", name:"Greek yogurt, 1 cup", kcal:130, p:23, c:9, f:0 },
+  { id:"cottage", name:"Cottage cheese, 1 cup", kcal:180, p:28, c:8, f:5 },
+  { id:"eggs", name:"Eggs, 3 large", kcal:215, p:19, c:1, f:15 },
+  { id:"whites", name:"Egg whites, 1 cup", kcal:125, p:26, c:2, f:0 },
+  { id:"edamame", name:"Edamame, 1 cup", kcal:190, p:18, c:14, f:8 },
+  { id:"lentils", name:"Lentils, 1 cup cooked", kcal:230, p:18, c:40, f:1 },
+  { id:"tuna", name:"Tuna in water, 5 oz", kcal:130, p:30, c:0, f:1 },
+  { id:"whey", name:"Whey or casein scoop", kcal:120, p:24, c:3, f:1 }
+];
+const ALL = Object.fromEntries([...RECIPES, ...ADDONS].map(x => [x.id, x]));
+const APP_LABEL = { crockpot:"Crockpot", airfryer:"Air fryer", grill:"Grill", griddle:"Griddle", stovetop:"Stovetop", salad:"Salad", oven:"Oven" };
+const EXAMPLE = [["mix",1],["salsa",1],["souvlaki",1],["yogurt",1]];
+
+/* Kitchen Log app logic. Recipe data lives in data.js (RECIPES, PAIRS, ADDONS, ALL, APP_LABEL, EXAMPLE).
+   Saved data keeps the original "pk-" localStorage keys so plates, servings and ticks from v1 carry over. */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("pk-" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("pk-" + k, JSON.stringify(v)); } catch {} }
+};
+const state = { filter:"all", sort:"protein", q:"", rid:null, unit: store.get("unit","lb"), weight: store.get("weight",176), plate: store.get("plate", null), got: store.get("got", {}), units: store.get("units", "metric"), servings: store.get("servings", {}) };
+if (state.plate) state.plate = state.plate.filter(x => ALL[x[0]]);
+let isExample = state.plate === null;
+if (isExample) state.plate = EXAMPLE.map(x => [...x]);
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+const kg = () => { const w = Number(state.weight) || 0; return state.unit === "lb" ? w / 2.2046 : w; };
+const targets = () => { const k = kg(); return { lo:Math.round(k*1.6), hi:Math.round(k*2.2), mlo:Math.round(k*0.4), mhi:Math.round(k*0.55) }; };
+const ICON = { crockpot:"crockpot", airfryer:"airfryer", grill:"grill", griddle:"griddle", oven:"oven", stovetop:"pot", salad:"bowl" };
+const icon = app => `<svg class="ico" aria-hidden="true"><use href="#i-${ICON[app] || "pot"}"/></svg>`;
+const UNITS_LABEL = { metric:"Grams", us:"Cups" };
+const SORT_LABEL = { protein:"Most protein", density:"Leanest", kcal:"Fewest calories", rating:"Most reviewed", name:"A to Z" };
+
+function ratingText(src, short) {
+  if (src.stars == null && src.n == null) return "No rating listed";
+  if (src.stars == null) return `${src.n} reviews`;
+  const s = `<span class="stars" aria-hidden="true">★</span> ${src.stars}`;
+  return short ? `${s} (${src.n})` : `${s} from ${src.n} rating${src.n === 1 ? "" : "s"}`;
+}
+
+/* Amounts: each ingredient is [[qty, unit, grams], ...parts], name. Grams is the default view; US shows cups and spoons. */
+const MASS = new Set(["lb", "oz", "cup", "tbsp", "tsp"]);
+const servingsOf = r => state.servings[r.id] || r.serves;
+const scaleOf = r => servingsOf(r) / r.serves;
+const FR = [[0,""],[1/8,"⅛"],[1/4,"¼"],[1/3,"⅓"],[3/8,"⅜"],[1/2,"½"],[5/8,"⅝"],[2/3,"⅔"],[3/4,"¾"],[7/8,"⅞"],[1,""]];
+function frac(x) {
+  let w = Math.floor(x), rem = x - w, best = FR[0];
+  for (const f of FR) if (Math.abs(rem - f[0]) < Math.abs(rem - best[0])) best = f;
+  if (best[0] === 1) { w += 1; best = FR[0]; }
+  if (!w && !best[1]) return x > 0 ? "⅛" : "0";
+  return (w ? String(w) : "") + best[1];
+}
+function grams(v) {
+  if (v < 0.5) return "<1";
+  if (v < 10) return String(Math.round(v * 2) / 2);
+  if (v < 100) return String(Math.round(v));
+  return String(Math.round(v / 5) * 5);
+}
+function plural(unit, v) {
+  if (!unit || v <= 1 || /^(small|medium|large|lb|oz)$/.test(unit)) return unit;
+  const [first, ...rest] = unit.split(" ");
+  return [first + "s", ...rest].join(" ");
+}
+function usPart(q, u, f) {
+  const v = q * f;
+  if (u === "tsp" || u === "tbsp" || u === "cup") {
+    const t = v * (u === "tsp" ? 1 : u === "tbsp" ? 3 : 48);
+    const near = (x, set) => set.some(y => Math.abs(x - y) < 0.03);
+    if (t >= 12) {
+      const c = t / 48, rem = c - Math.floor(c);
+      if (near(rem, [0, 1/4, 1/3, 1/2, 2/3, 3/4, 1])) return frac(c) + (c > 1 ? " cups" : " cup");
+      const qc = Math.floor(c * 4) / 4, tb = (t - qc * 48) / 3;
+      return `${frac(qc)} ${qc > 1 ? "cups" : "cup"} + ${frac(tb)} tbsp`;
+    }
+    if (t >= 3) {
+      const tb = Math.floor(t / 3 + 1e-9), rt = t - tb * 3;
+      if (rt < 0.12 || near(t / 3 - tb, [1/2])) return frac(t / 3) + " tbsp";
+      return `${tb} tbsp + ${frac(rt)} tsp`;
+    }
+    return frac(t) + " tsp";
+  }
+  if (u === "lb" && v < 1) return frac(v * 16) + " oz";
+  return (frac(v) + " " + plural(u, v)).trim();
+}
+/* Small whole items (garlic cloves, bay leaves, eggs, scoops) round to whole numbers when scaled. */
+function wholeCount(q, u, g, f) {
+  if (!(u === "" || u === "scoop" || u === "large" || u === "ear") || q < 1) return null;
+  const each = g == null ? 0 : g / q;
+  if (g != null && each > 60) return null;
+  return Math.max(1, Math.round(q * f));
+}
+function partText([q, u, g], f, units) {
+  if (typeof q === "string") return q;
+  const w = wholeCount(q, u, g, f);
+  if (w != null) { f = w / q; }
+  if (units === "us") return usPart(q, u, f);
+  if (MASS.has(u)) return grams(g * f) + " g";
+  const head = (frac(q * f) + " " + plural(u, q * f)).trim();
+  return g ? `${head}, ${grams(g * f)} g` : head;
+}
+const amountText = (ing, f, units = state.units) => ing[0].map(pt => partText(pt, f, units)).join(" + ");
+
+/* Build the tabular recipe: rows are ingredients; each step cell spans the rows it combines. */
+function recipeTable(r) {
+  const cells = []; let row = 0;
+  function walk(node) {
+    if (typeof node === "number") { const c = { kind:"ing", idx:node, col:0, row:row++, span:1 }; cells.push(c); return c; }
+    const [label, ...kids] = node;
+    const kc = kids.map(walk);
+    const col = Math.max(...kc.map(k => k.col)) + 1;
+    kc.forEach(k => k.parentCol = col);
+    const c = { kind:"op", label, col, row:Math.min(...kc.map(k => k.row)), span:kc.reduce((a, k) => a + k.span, 0) };
+    cells.push(c); return c;
+  }
+  const root = walk(r.tree);
+  root.parentCol = root.col + 1; root.final = true;
+  const width = root.col + 1;
+  const rows = Array.from({ length: row }, () => []);
+  cells.forEach(c => rows[c.row].push(c));
+  const full = t => `<tr><td class="step" colspan="${width}">${esc(t)}</td></tr>`;
+  let html = (r.pre || []).map(full).join("");
+  rows.forEach(list => {
+    list.sort((a, b) => a.col - b.col);
+    html += "<tr>" + list.map(c => {
+      const cs = c.parentCol - c.col;
+      if (c.kind === "ing") { const g = r.ing[c.idx]; return `<td class="ing" colspan="${cs}"><span class="amt">${esc(amountText(g, scaleOf(r)))}</span> ${esc(g[1])}</td>`; }
+      return `<td class="op${c.final ? " final" : ""}" rowspan="${c.span}" colspan="${cs}">${esc(c.label)}</td>`;
+    }).join("") + "</tr>";
+  });
+  html += (r.post || []).map(full).join("");
+  return `<div class="cfe-wrap"><table class="cfe" aria-label="${esc(r.name)} recipe table">${html}</table></div>`;
+}
+
+/* ---------- Target ---------- */
+function renderTarget() {
+  const t = targets(), w = `${Number(state.weight) || 0} ${state.unit}`;
+  $("t-daily").textContent = `${t.lo}–${t.hi} g`;
+  $("t-meal").textContent = `${t.mlo}–${t.mhi} g`;
+  $("home-target").textContent = `${t.lo}–${t.hi} g/day`;
+  $("home-weight").textContent = `Body weight ${w}`;
+  $("set-weight").textContent = w;
+  $("unit-lb").setAttribute("aria-pressed", state.unit === "lb");
+  $("unit-kg").setAttribute("aria-pressed", state.unit === "kg");
+}
+function setUnit(u) {
+  if (u === state.unit) return;
+  const w = Number(state.weight) || 0;
+  state.weight = Math.round(u === "kg" ? w / 2.2046 : w * 2.2046);
+  state.unit = u; $("weight").value = state.weight;
+  store.set("unit", u); store.set("weight", state.weight);
+  renderTarget(); renderPlate();
+}
+
+/* ---------- Plate ---------- */
+const onPlate = id => state.plate.some(x => x[0] === id);
+function savePlate() { isExample = false; store.set("plate", state.plate); renderPlate(); renderGrid(); }
+function add(id) {
+  const hit = state.plate.find(x => x[0] === id);
+  if (hit) hit[1] = +(hit[1] + 0.5).toFixed(1); else state.plate.push([id, 1]);
+  savePlate();
+  const x = state.plate.find(p => p[0] === id);
+  PH.toast(`${ALL[id].name.replace(/,.*$/, "")}: ${x[1]}× on plate.`);
+}
+
+function renderPlate() {
+  const t = targets();
+  let P=0,K=0,C=0,F=0;
+  state.plate.forEach(([id, n]) => { const x = ALL[id]; P+=x.p*n; K+=x.kcal*n; C+=x.c*n; F+=x.f*n; });
+  $("p-total").innerHTML = `${Math.round(P)}<small> g</small>`;
+  $("p-target").textContent = `${t.lo}–${t.hi}`;
+  $("m-kcal").textContent = Math.round(K);
+  $("m-c").textContent = Math.round(C) + " g";
+  $("m-f").textContent = Math.round(F) + " g";
+  const scale = Math.max(t.hi * 1.15, P, 1);
+  $("p-fill").style.setProperty("--value", Math.min(100, P / scale * 100) + "%");
+  $("p-band").style.left = (t.lo / scale * 100) + "%";
+  $("p-band").style.width = ((t.hi - t.lo) / scale * 100) + "%";
+  const m = $("p-meter"); m.setAttribute("aria-valuemax", t.hi); m.setAttribute("aria-valuenow", Math.round(P));
+  const s = $("p-status");
+  if (!state.plate.length) { s.textContent = "Your plate is empty. Add a dish from the menu."; s.className = "status"; }
+  else if (P < t.lo) { s.textContent = `${Math.round(t.lo - P)} g to go to reach your minimum.`; s.className = "status warn"; }
+  else if (P <= t.hi) { s.textContent = "Right in your target range."; s.className = "status good"; }
+  else { s.textContent = "Above the range. That's safe, but the extra adds little muscle."; s.className = "status good"; }
+  $("example-note").hidden = !isExample;
+  $("plate-items").innerHTML = state.plate.map(([id, q], i) => {
+    const x = ALL[id];
+    const name = x.ing ? `<button type="button" class="name-link" data-open="${id}">${esc(x.name)}</button>` : esc(x.name);
+    return `<li><span class="name">${name}</span>
+      <span class="qty"><button type="button" class="btn" data-dec="${i}" aria-label="Less ${esc(x.name)}">−</button><span class="num">${q}×</span><button type="button" class="btn" data-inc="${i}" aria-label="More ${esc(x.name)}">+</button></span>
+      <span class="p">${Math.round(x.p*q)} g</span></li>`;
+  }).join("");
+  $("plate-items").hidden = !state.plate.length;
+  renderShop();
+}
+
+function renderAddons() {
+  $("addons").innerHTML = ADDONS.map(a =>
+    `<button type="button" class="menu-item" data-add="${a.id}" aria-label="Add ${esc(a.name)} to plate"><span class="mi-glyph" aria-hidden="true">+</span><span class="mi-label">${esc(a.name)}<small>${a.kcal} kcal</small></span><span class="mi-value t-accent">${a.p} g</span></button>`).join("");
+}
+
+/* ---------- Menu ---------- */
+function renderGrid() {
+  const q = state.q.trim().toLowerCase();
+  const list = RECIPES.filter(r => {
+    const f = state.filter;
+    const okF = f === "all" || (f === "sweet" || f === "side" ? r.cat === f : r.app === f && !r.cat);
+    const okQ = !q || r.name.toLowerCase().includes(q) || r.ing.map(i => i[1]).join(" ").toLowerCase().includes(q);
+    return okF && okQ;
+  });
+  const by = { protein:(a,b)=>b.p-a.p, density:(a,b)=>b.p/b.kcal-a.p/a.kcal, kcal:(a,b)=>a.kcal-b.kcal, rating:(a,b)=>(b.src.n||0)-(a.src.n||0), name:(a,b)=>a.name.localeCompare(b.name) };
+  list.sort(by[state.sort]);
+  $("menu-count").textContent = `${list.length} dish${list.length === 1 ? "" : "es"}`;
+  $("sort-label").textContent = SORT_LABEL[state.sort];
+  document.querySelectorAll("[data-sort]").forEach(b => b.setAttribute("aria-checked", b.dataset.sort === state.sort));
+  $("grid").innerHTML = list.length ? list.map(r => {
+    const added = onPlate(r.id);
+    const tag = r.cat === "sweet" ? `<span class="badge amber">Sweet</span>` : r.cat === "side" ? `<span class="badge cyan">Side</span>` : r.veg ? `<span class="badge">Plant-based</span>` : r.isNew ? `<span class="badge">New</span>` : "";
+    const extra = PAIRS[r.id] ? `Goes with ${PAIRS[r.id].map(([sid]) => esc(ALL[sid].name)).join(" or ")}` : `${(r.p / r.kcal * 100).toFixed(1)} g protein per 100 kcal · ${r.ing.length} ingredients`;
+    return `<article class="card${added ? " on" : ""}">
+      <button type="button" class="card-open" data-open="${r.id}" aria-label="Open ${esc(r.name)}">
+        <span class="card-top"><h3>${esc(r.name)}</h3><span class="pro">${r.p}<small>g</small></span></span>
+        <span class="badges"><span class="badge dim">${icon(r.app)}${APP_LABEL[r.app]}</span>${tag}</span>
+        <span class="macro-line"><b>${r.kcal}</b> kcal · Carbs <b>${r.c}g</b> · Fat <b>${r.f}g</b></span>
+        <span class="meta">${ratingText(r.src, true)} · ${esc(r.src.site)} · makes ${servingsOf(r)}</span>
+        <span class="meta">${extra}</span>
+      </button>
+      <button type="button" class="card-add" data-add="${r.id}" aria-label="${added ? "Add another serving of" : "Add"} ${esc(r.name)} to plate">${added ? "✓" : "+"}<small>${added ? "On plate" : "Plate"}</small></button>
+    </article>`;
+  }).join("") : `<div class="empty"><pre aria-hidden="true">  _____
+ |     |
+ | ? ? |
+ |_____|</pre><p>No dishes match "${esc(state.q)}".</p><button type="button" class="btn" data-act="clear-search">Show all dishes</button></div>`;
+}
+
+/* ---------- Recipe page ---------- */
+function openRecipe(id) {
+  state.rid = id; renderRecipe();
+  if (location.hash !== "#/menu/recipe") PH.go("/menu/recipe");
+  else document.querySelector(".screen-body").scrollTop = 0;
+}
+function renderRecipe() {
+  const r = ALL[state.rid]; if (!r) return;
+  const added = onPlate(r.id), sv = servingsOf(r);
+  const kind = [APP_LABEL[r.app], r.cat === "sweet" ? "Breakfast & sweets" : r.cat === "side" ? "Side" : "", r.veg ? "Plant-based" : ""].filter(Boolean).join(" · ");
+  $("recipe").innerHTML = `<div class="stack" style="gap: var(--sp-4)">
+    <div class="rec-head">
+      <span class="label">${icon(r.app)}${esc(kind)}</span>
+      <h2>${esc(r.name)}</h2>
+      <div class="badges"><span class="badge dim">Makes ${r.serves}</span><span class="badge dim">${ratingText(r.src, true)}</span><span class="badge dim">${r.ing.length} ingredients</span></div>
+    </div>
+    <section class="panel" data-title="Per serving">
+      <div class="per-serving">
+        <div class="readout">${r.p}<small> g</small></div>
+        <div class="stack"><div class="kv"><span>Calories</span><span>${r.kcal}</span></div><div class="kv"><span>Carbs</span><span>${r.c} g</span></div><div class="kv"><span>Fat</span><span>${r.f} g</span></div></div>
+      </div>
+    </section>
+    <section class="panel" data-title="Make">
+      <div class="stack">
+        <div class="stepper"><span class="label">Servings</span>
+          <button type="button" class="btn" data-serv="-1" aria-label="Fewer servings">−</button><output aria-live="polite">${sv}</output><button type="button" class="btn" data-serv="1" aria-label="More servings">+</button>
+          <span class="grow">${sv !== r.serves ? `<button type="button" class="reset" data-serv="reset">Reset to ${r.serves}</button>` : ""}</span></div>
+        <div class="segmented" role="group" aria-label="Measurements"><button type="button" data-units="metric" aria-pressed="${state.units === "metric"}">Grams</button><button type="button" data-units="us" aria-pressed="${state.units === "us"}">Cups &amp; spoons</button></div>
+        <p class="hint">Amounts are for ${sv} serving${sv === 1 ? "" : "s"}. Macros stay per serving. Big batches may need longer cooking.</p>
+      </div>
+    </section>
+    <section class="stack" aria-label="Recipe steps"><span class="label">Ingredients → steps</span>${recipeTable(r)}</section>
+    ${PAIRS[r.id] ? `<section class="panel" data-title="Recommended sides">${PAIRS[r.id].map(([sid, why]) => { const sd = ALL[sid]; return `<div class="pair"><div><b>${esc(sd.name)}</b><small>${esc(why)} · ${sd.kcal} kcal, ${sd.p} g protein</small></div><div class="row"><button type="button" class="btn" data-open="${sid}">View</button><button type="button" class="btn" data-add="${sid}">${onPlate(sid) ? "✓ Add again" : "+ Add side"}</button></div></div>`; }).join("")}</section>` : ""}
+    ${r.change ? `<section class="panel" data-title="Our changes"><p class="change">${esc(r.change)}</p></section>` : ""}
+    <p class="source">Based on <b>${esc(r.src.title)}</b> from ${esc(r.src.site)}. <a href="${esc(r.src.url)}" target="_blank" rel="noopener">View the original recipe</a></p>
+    <button type="button" class="btn btn-primary btn-block" data-add="${r.id}">${added ? "Add another serving" : "+ Add to plate"}</button>
+  </div>`;
+}
+
+/* ---------- Shopping ---------- */
+function renderShop() {
+  const recs = state.plate.map(x => ALL[x[0]]).filter(x => x && x.ing);
+  let total = 0, got = 0;
+  recs.forEach(r => r.ing.forEach((g, i) => { total++; if (state.got[r.id + ":" + i]) got++; }));
+  const left = total - got;
+  $("home-shop").textContent = total ? (left ? `${left} to get` : "All set") : "—";
+  $("shop-count").textContent = left; $("shop-count").hidden = !left;
+  if (!recs.length) {
+    $("shop-progress").innerHTML = "";
+    $("shop").innerHTML = `<div class="empty"><pre aria-hidden="true">  ______
+ [      ]
+ [  --  ]
+ [______]</pre><p>Add a dish to today's plate and its ingredients show up here.</p><button type="button" class="btn" data-route="/menu">Browse the menu</button></div>`;
+    return;
+  }
+  $("shop-progress").innerHTML = `<div class="kv"><span>Ticked off</span><span>${got} of ${total}</span></div><div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${got}" aria-label="Items ticked off"><span style="--value:${total ? got / total * 100 : 0}%"></span></div>`;
+  $("shop").innerHTML = recs.map(r => `<section class="panel shop-group" data-title="${esc(r.name)} · makes ${servingsOf(r)}">${
+    r.ing.map((g, i) => { const k = r.id + ":" + i; return `<label class="check"><input type="checkbox" data-got="${k}" ${state.got[k] ? "checked" : ""}><span><b>${esc(amountText(g, scaleOf(r)))}</b> ${esc(g[1])}</span></label>`; }).join("")
+  }</section>`).join("");
+}
+
+function syncUnits() {
+  document.querySelectorAll("[data-units]").forEach(x => x.setAttribute("aria-pressed", x.dataset.units === state.units));
+  document.querySelectorAll("[data-pick-units]").forEach(x => x.setAttribute("aria-checked", x.dataset.pickUnits === state.units));
+  $("set-units").textContent = UNITS_LABEL[state.units];
+}
+function setUnits(u) { state.units = u; store.set("units", u); syncUnits(); renderShop(); if (state.rid) renderRecipe(); }
+function uncheckAll() { state.got = {}; store.set("got", {}); renderShop(); PH.toast("Shopping list unchecked."); }
+
+/* ---------- Events ---------- */
+document.addEventListener("click", async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const d = b.dataset;
+  if (d.add) { add(d.add); if (state.rid && location.hash === "#/menu/recipe") renderRecipe(); return; }
+  if (d.open) { openRecipe(d.open); return; }
+  if (d.units) { setUnits(d.units); return; }
+  if (d.pickUnits) { setUnits(d.pickUnits); PH.back(); return; }
+  if (d.serv && state.rid) {
+    const r = ALL[state.rid]; const v = d.serv === "reset" ? r.serves : Math.min(48, Math.max(1, servingsOf(r) + Number(d.serv)));
+    if (v === r.serves) delete state.servings[r.id]; else state.servings[r.id] = v;
+    store.set("servings", state.servings); renderRecipe(); renderShop(); renderGrid(); return;
+  }
+  if (d.inc) { state.plate[d.inc][1] += 0.5; savePlate(); return; }
+  if (d.dec) { const i = +d.dec; state.plate[i][1] -= 0.5; if (state.plate[i][1] <= 0) state.plate.splice(i, 1); savePlate(); return; }
+  if (d.filter) { state.filter = d.filter; document.querySelectorAll("[data-filter]").forEach(t => t.setAttribute("aria-pressed", t === b)); renderGrid(); return; }
+  if (d.sort) { state.sort = d.sort; renderGrid(); return; }
+  if (d.wunit) { setUnit(d.wunit); return; }
+  const act = d.act || d.action;
+  if (act === "add-recipe" && state.rid) { add(state.rid); renderRecipe(); }
+  else if (act === "uncheck") uncheckAll();
+  else if (act === "clear-search") { state.q = ""; $("search").value = ""; state.filter = "all"; document.querySelectorAll("[data-filter]").forEach(t => t.setAttribute("aria-pressed", t.dataset.filter === "all")); renderGrid(); }
+  else if (act === "target") PH.go("/target");
+  else if (act === "clear") {
+    if (!state.plate.length) { PH.toast("Your plate is already empty."); return; }
+    if (await PH.confirm(`Clear all ${state.plate.length} items from today's plate?`, { title: "Clear plate", ok: "Clear", danger: true })) {
+      state.plate = []; savePlate(); PH.toast("Plate cleared.", "warn");
+    }
+  }
+});
+document.addEventListener("change", e => {
+  const k = e.target.dataset && e.target.dataset.got; if (!k) return;
+  if (e.target.checked) state.got[k] = 1; else delete state.got[k];
+  store.set("got", state.got); renderShop();
+});
+$("search").addEventListener("input", e => { state.q = e.target.value; renderGrid(); });
+$("weight").addEventListener("input", e => { state.weight = e.target.value; store.set("weight", state.weight); renderTarget(); renderPlate(); });
+$("unit-lb").addEventListener("click", () => setUnit("lb"));
+$("unit-kg").addEventListener("click", () => setUnit("kg"));
+
+PH.on("route", r => {
+  if (r === "/menu/recipe" && !ALL[state.rid]) { location.replace("#/menu"); return; }
+  $("sort-key").hidden = r !== "/menu";
+});
+
+/* ---------- Data: backup, restore, erase (same file format as v1) ---------- */
+const today = () => new Date().toISOString().slice(0, 10);
+const ownKey = k => k.startsWith("pk-") || k.startsWith("kitchen-log:");
+$("export").addEventListener("click", () => {
+  const data = { app: "kitchen-log", version: 1, exported: new Date().toISOString(), keys: {} };
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (ownKey(k)) data.keys[k] = localStorage.getItem(k); } } catch (e) {}
+  PH.exportFile("kitchen-log-backup-" + today() + ".json", JSON.stringify(data, null, 1));
+});
+$("import").addEventListener("click", () => $("import-file").click());
+$("import-file").addEventListener("change", async e => {
+  const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    if (data.app !== "kitchen-log" || !data.keys) throw new Error("wrong file");
+    Object.entries(data.keys).forEach(([k, v]) => { if (ownKey(k)) localStorage.setItem(k, v); });
+    PH.toast("Backup restored. Reloading…"); setTimeout(() => location.reload(), 700);
+  } catch (err) { PH.toast("That file isn't a Kitchen Log backup. Pick a kitchen-log-backup-….json file.", "error"); }
+});
+$("erase").addEventListener("click", async () => {
+  if (!await PH.confirm("Erase your plate, servings, weight, shopping ticks and settings? This can't be undone.", { title: "Erase data", ok: "Erase", danger: true })) return;
+  try { Object.keys(localStorage).filter(k => k.startsWith("pk-")).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  PH.store.reset(); PH.toast("All data erased.", "warn"); setTimeout(() => location.replace(location.pathname), 700);
+});
+$("reset-display").addEventListener("click", () => { PH.store.reset(); PH.toast("Display reset."); });
+
+/* ---------- Boot ---------- */
+$("weight").value = state.weight;
+$("ab-mains").textContent = RECIPES.filter(r => !r.cat).length;
+$("ab-sides").textContent = RECIPES.filter(r => r.cat === "side").length;
+$("ab-sweets").textContent = RECIPES.filter(r => r.cat === "sweet").length;
+renderTarget(); renderAddons(); renderGrid(); renderPlate(); syncUnits();
+PH.init({});
+/* service worker: provided by Phosphor OS */
+
+  </script>
+  <script>
+(() => {
+  const c = document.querySelector('.rain');
+  if (!c || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const x = c.getContext('2d'), glyphs = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄ0123456789<>/=+*';
+  let cols, drops, fs = 16, last = 0, raf;
+  const size = () => { c.width = c.offsetWidth; c.height = c.offsetHeight;
+    cols = Math.ceil(c.width / fs); drops = Array.from({length: cols}, () => Math.random() * -50); };
+  const tick = t => { raf = requestAnimationFrame(tick); if (t - last < 50) return; last = t;
+    x.fillStyle = 'rgba(3,7,3,.12)'; x.fillRect(0, 0, c.width, c.height);  // c sized to .screen in size()
+    x.fillStyle = '#39FF6A'; x.font = fs + 'px ui-monospace, monospace';
+    drops.forEach((y, i) => { x.fillText(glyphs[Math.random() * glyphs.length | 0], i * fs, y * fs);
+      drops[i] = y * fs > c.height && Math.random() > .975 ? 0 : y + 1; }); };
+  addEventListener('resize', size); size(); raf = requestAnimationFrame(tick);
+  document.addEventListener('visibilitychange', () =>
+    document.hidden ? cancelAnimationFrame(raf) : (raf = requestAnimationFrame(tick)));
+})();
+  </script>
+<script>
+/* Phosphor OS embed shim: injected at the end of each bundled app's <body>.
+   The app runs full-screen in an iframe over the OS, keeps its own data (same origin,
+   same localStorage keys as the standalone version) and gets a way back to the OS. */
+(() => {
+  const os = window.parent !== window && window.parent.PhosphorOS;
+  if (!os || typeof PH === 'undefined') return;
+  const route = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
+  const atHome = () => route() === '/';
+  const exit = () => os.closeApp();
+
+  // Back on the app's home page returns to the OS instead of sitting disabled
+  const fixBack = () => document.querySelectorAll('.app-controls [data-back]').forEach(b => {
+    if (atHome()) { b.disabled = false; b.setAttribute('aria-label', 'Back to Phosphor OS'); }
+    else b.setAttribute('aria-label', 'Back');
+  });
+  PH.on('route', r => { fixBack(); os.saveRoute(route()); });
+  fixBack();
+  addEventListener('click', e => {
+    const b = e.target.closest('.app-controls [data-back]');
+    if (b && atHome()) { e.preventDefault(); e.stopPropagation(); exit(); }
+  }, true);
+
+  // "Phosphor OS" at the top of the app's ☰ menu
+  const sections = document.querySelector('#menu [data-sections]');
+  if (sections) {
+    const item = document.createElement('button');
+    item.className = 'menu-item';
+    item.innerHTML = '<span class="mi-glyph" aria-hidden="true">◂</span><span class="mi-label">Phosphor OS</span>';
+    item.addEventListener('click', () => { item.closest('dialog')?.close(); exit(); });
+    sections.prepend(item);
+  }
+
+  // Edge swipe right on the app's home page also returns to the OS
+  let sx = null, sy = 0;
+  addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX < 24 ? t.clientX : null; sy = t.clientY; }, { passive: true });
+  addEventListener('touchend', e => {
+    if (sx === null || !atHome() || document.querySelector('dialog[open]')) return;
+    const t = e.changedTouches[0];
+    if (t.clientX - sx > 70 && Math.abs(t.clientY - sy) < 60) exit();
+    sx = null;
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

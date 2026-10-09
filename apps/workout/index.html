@@ -1,0 +1,1898 @@
+<!doctype html>
+<html lang="en" data-app="gymlog">
+<head>
+  <meta charset="utf-8">
+  <script>/* Phosphor OS: iframes report no safe areas on iOS, so use the OS's */(()=>{const os=window.parent!==window&&window.parent.PhosphorOS;if(!os)return;const i=os.insets(),s=document.documentElement.style;for(const k in i)s.setProperty("--safe-"+k,i[k]+"px");})();</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Workout Log</title>
+  <meta name="theme-color" content="#D9CDB4">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Workout Log">
+  <style>
+/* ==========================================================================
+   PHOSPHOR v1.9 — base stylesheet for Floyd's home-screen tools
+   Spec: brand-guidelines.md (same folder). Paste this whole file into a
+   <style> block in index.html. No external fonts, images or network calls.
+   ========================================================================== */
+
+/* ---------- 1. Tokens ---------- */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces (darkest -> lightest) */
+  --bg:        #030703;
+  --surface-1: #08110A;
+  --surface-2: #0D1A10;
+  --surface-3: #132418;
+
+  /* Lines */
+  --line:        #1F3D26;  /* dividers, panel outlines (decorative) */
+  --line-strong: #3F7A4B;  /* input / control borders (>=3:1 on bg) */
+
+  /* Text */
+  --text:       #C9F5D3;   /* body, 16.9:1 on bg */
+  --text-dim:   #86C295;   /* secondary, labels, 9.8:1 */
+  --text-faint: #4F7F5B;   /* placeholders, disabled ONLY, 4.4:1 */
+
+  /* Signal colors */
+  --accent:     #39FF6A;   /* phosphor green: primary actions, focus, key numbers */
+  --accent-dim: #1E9E42;   /* pressed / secondary fills */
+  --on-accent:  #021A08;   /* text on accent/amber fills */
+  --amber:      #FFB13B;   /* warnings, pending, "attention" */
+  --red:        #FF5C5C;   /* errors, destructive */
+  --cyan:       #5CE1FF;   /* info, links, neutral highlight */
+
+  /* Case plastic (vintage beige computer housing) */
+  --plastic:       #D9CDB4;  /* main housing */
+  --plastic-light: #E8DFCB;  /* top-lit edges, keycap tops */
+  --plastic-shade: #BFB193;  /* recesses, bezel slope */
+  --plastic-dark:  #9C8E70;  /* keycap sides, seams */
+  --trim:          #2B261E;  /* dark brown trim band, status-bar strip */
+  --plastic-band:  #D9CDB4;  /* v1.8: no separate band, the case is one colour up to the top edge */
+  /* iOS status bar: style "black-translucent" so the app draws under the clock; the
+     case continues behind the clock in one colour. theme-color #D9CDB4. */
+  --ink:           #2B261E;  /* text on plastic, 9.5:1 */
+  --ink-dim:       #5E5442;  /* labels on plastic, 4.7:1 */
+  --ink-red:       #8A3A1A;  /* destructive label on plastic, 4.9:1 */
+  --plastic-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .3 0 0 0 0 .2 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  --key-shadow: 0 3px 0 var(--plastic-dark), 0 4px 6px rgba(43, 38, 30, .35), inset 0 1px 0 rgba(255, 255, 255, .7);
+  --key-shadow-pressed: 0 1px 0 var(--plastic-dark), 0 1px 2px rgba(43, 38, 30, .3), inset 0 1px 2px rgba(43, 38, 30, .2);
+  --screen-radius: 38px;   /* follows the iPhone's own rounded display corners (v1.5) */
+
+  /* Glow (accent only, never body text) */
+  --glow:    0 0 6px rgba(57, 255, 106, .55);
+  --glow-lg: 0 0 4px rgba(57, 255, 106, .6), 0 0 16px rgba(57, 255, 106, .3);
+  --glow-box: 0 0 0 1px var(--accent), 0 0 12px rgba(57, 255, 106, .35);
+
+  /* Type */
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco,
+               "Cascadia Mono", Consolas, "Liberation Mono", "Courier New", monospace;
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-md: 16px;   /* base; inputs must never go below this (iOS zoom) */
+  --fs-lg: 20px;
+  --fs-xl: 28px;
+  --fs-2xl: 40px;  /* hero readouts */
+  --lh-tight: 1.15;
+  --lh: 1.5;
+  --tracking-label: .12em;
+
+  /* Space (4px grid) */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+
+  /* Shape */
+  --radius-sm: 2px;
+  --radius: 4px;
+  --tap: 44px;          /* min touch target */
+  --maxw: 560px;
+
+  /* Motion */
+  --dur-fast: 90ms;
+  --dur: 160ms;
+  --dur-slow: 280ms;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --ease-steps: steps(4, end);   /* "digital" transitions */
+
+  /* Safe areas */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ---------- 2. Reset & base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* The case never moves: html/body are locked to the viewport and only
+   .screen-body scrolls. */
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }
+html { background: var(--plastic); }
+body {
+  background: var(--plastic-noise), var(--plastic);
+  height: var(--app-h, 100dvh);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  line-height: var(--lh);
+  font-variant-numeric: tabular-nums slashed-zero;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+img, svg, canvas { display: block; max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+::selection { background: var(--accent); color: var(--on-accent); }
+
+/* ---------- 3. Case + CRT screen ---------- */
+/* (v1.6) No separate status-bar strip: the header band itself runs up behind the clock. */
+
+/* The screen: a fixed CRT frame. Structure:
+   <div class="screen">
+     <canvas class="rain">            (optional, stays put)
+     <nav class="path" data-path>     (status line, stays put)
+     <div class="screen-body">        (the ONLY scrolling area)  */
+.screen {
+  position: relative; isolation: isolate;
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+  border-radius: var(--screen-radius);
+  /* slim bezel: shaded slope, seam, lit lip below, deep glass inset */
+  box-shadow:
+    0 0 0 3px var(--plastic-shade),
+    0 0 0 4px var(--plastic-dark),
+    0 3px 0 4px var(--plastic-light),
+    inset 0 0 0 2px #000,
+    inset 0 0 28px rgba(0, 0, 0, .9);
+  margin: 4px;
+}
+.screen-body {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-3) var(--sp-6);
+  scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent;
+}
+.screen-body::-webkit-scrollbar { width: 4px; }
+.screen-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 2px; }
+/* glass reflection */
+.screen::before {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(120% 60% at 30% 0%, rgba(201, 245, 211, .06), rgba(0,0,0,0) 60%);
+}
+/* scanlines + vignette */
+.screen::after {
+  content: "";
+  position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+  background:
+    repeating-linear-gradient(to bottom,
+      rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, .22) 3px, rgba(0, 0, 0, 0) 4px),
+    radial-gradient(ellipse at center, rgba(0,0,0,0) 60%, rgba(0,0,0,.45) 100%);
+}
+.no-crt .screen::after { display: none; }
+
+/* ---------- 4. Layout ---------- */
+/* Pinned to the real screen edges: on iOS home-screen apps 100%/100dvh can come
+   up short and leave a strip of empty plastic at the bottom (v1.4 fix). */
+.app {
+  position: fixed; top: 0; right: 0; left: 0;
+  /* --app-h is set by phosphor.js to the real screen height in home-screen apps: with a
+     black-translucent status bar iOS reports a viewport one status bar too short and
+     leaves an empty strip at the bottom (v1.7 fix). */
+  height: var(--app-h, 100%);
+  max-width: var(--maxw);
+  margin: 0 auto;
+  /* keys sit low: the space under them matches the space above them (v1.9) */
+  padding: 0 calc(2px + var(--safe-right)) max(var(--sp-3), calc(var(--safe-bottom) - 20px)) calc(2px + var(--safe-left));
+  display: flex; flex-direction: column; gap: 6px;
+}
+.app > :not(.screen) { flex: none; }
+.stack   { display: flex; flex-direction: column; gap: var(--sp-3); }
+.row     { display: flex; align-items: center; gap: var(--sp-3); }
+.row.between { justify-content: space-between; }
+.grid-2  { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.grow    { flex: 1 1 auto; min-width: 0; }
+.divider { border: 0; border-top: 1px dashed var(--line); margin: var(--sp-2) 0; }
+
+/* ---------- 5. Type ---------- */
+h1, h2, h3 { margin: 0; font-weight: 700; line-height: var(--lh-tight); }
+h1 { font-size: var(--fs-xl); }
+h2 { font-size: var(--fs-lg); }
+h3 { font-size: var(--fs-md); }
+p  { margin: 0; }
+.label {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-dim);
+}
+.dim   { color: var(--text-dim); }
+.faint { color: var(--text-faint); }
+.small { font-size: var(--fs-sm); }
+.glow  { color: var(--accent); text-shadow: var(--glow); }
+.readout {
+  font-size: var(--fs-2xl); font-weight: 700; line-height: 1;
+  color: var(--accent); text-shadow: var(--glow-lg);
+  letter-spacing: -.02em;
+}
+.t-accent { color: var(--accent); }
+.t-amber  { color: var(--amber); }
+.t-red    { color: var(--red); }
+.t-cyan   { color: var(--cyan); }
+a { color: var(--cyan); text-underline-offset: 3px; }
+
+/* Blinking block cursor: <span class="cursor" aria-hidden="true"></span> */
+.cursor {
+  display: inline-block; width: .6em; height: 1.05em;
+  background: var(--accent); vertical-align: -.15em; margin-left: 2px;
+  box-shadow: var(--glow);
+  animation: blink 1.06s steps(1, end) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ---------- 6. Header (title only) + bottom controls (on the plastic case) ---------- */
+.app-header {   /* the top band: runs edge to edge and up behind the iOS clock */
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2);
+  margin: 0 calc(-2px - var(--safe-right)) 0 calc(-2px - var(--safe-left));
+  /* title tucked right under the clock row (v1.9) */
+  padding: max(0px, calc(var(--safe-top) - 10px)) calc(var(--sp-4) + var(--safe-right)) 0 calc(var(--sp-4) + var(--safe-left));
+  min-height: calc(max(0px, calc(var(--safe-top) - 10px)) + 26px);
+  background: none;   /* v1.8: same plastic as the rest of the case, no band */
+}
+.app-header .app-title { color: var(--ink); text-shadow: 0 1px 0 rgba(255, 255, 255, .45); font-size: 18px; }
+.app-header .app-meta { color: var(--ink-dim); }
+/* Three keys, centered under the screen, in thumb reach (v1.6):
+   <nav class="app-controls"> ‹ back · ☰ menu · page action (or ■ home) </nav> */
+.app-controls { display: flex; align-items: center; justify-content: center; gap: var(--sp-5); min-height: 44px; padding-top: 4px; }
+.app-controls > .grow { display: none; }
+.app-controls .key { min-width: 76px; min-height: 40px; font-size: var(--fs-lg); }
+.app-controls .key.word { font-size: var(--fs-sm); }
+.app-controls .page-keys { display: contents; }
+.app-title {
+  display: flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--fs-lg); font-weight: 700; text-transform: uppercase;
+  letter-spacing: .14em; color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .55);   /* moulded / debossed */
+}
+.app-title::before {  /* power LED */
+  content: ""; width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent), inset 0 -1px 1px rgba(0,0,0,.3);
+}
+.app-meta { font-size: var(--fs-xs); color: var(--ink-dim); text-transform: uppercase; letter-spacing: var(--tracking-label); text-shadow: 0 1px 0 rgba(255,255,255,.45); }
+.app-title .cursor { display: none; }
+
+/* Vent slots: <div class="vents" aria-hidden="true"></div> */
+.vents {
+  height: 14px; margin: 0 var(--sp-2);
+  background: repeating-linear-gradient(90deg,
+    var(--plastic-dark) 0 2px, var(--trim) 2px 4px, var(--plastic-light) 4px 5px, transparent 5px 12px);
+  opacity: .55; border-radius: 2px;
+}
+
+/* Embossed label on plastic, e.g. under a keypad */
+.emboss { color: var(--ink-dim); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+
+/* Keycap button, for controls ON the plastic (tab bar, keypads, header) */
+.key {
+  appearance: none; -webkit-appearance: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: var(--tap); min-width: var(--tap); padding: 0 var(--sp-3);
+  border: 1px solid var(--plastic-dark); border-radius: 6px;
+  background: linear-gradient(180deg, var(--plastic-light), #DDD2BB 70%, var(--plastic-shade));
+  color: var(--ink); font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  box-shadow: var(--key-shadow);
+  cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation;
+  transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.key:active, .key.is-pressed, .key[aria-pressed="true"], .key[aria-selected="true"] {
+  transform: translateY(3px); box-shadow: var(--key-shadow-pressed);
+  background: linear-gradient(180deg, #DDD2BB, var(--plastic-shade));
+}
+.key:disabled { opacity: .45; cursor: default; transform: translateY(3px); box-shadow: var(--key-shadow-pressed); }
+.key-dark {   /* "Return"-style accent key */
+  background: linear-gradient(180deg, #4A4236, var(--trim));
+  border-color: #17140F; color: var(--plastic-light);
+  box-shadow: 0 3px 0 #17140F, 0 4px 6px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15);
+}
+.key-danger { color: var(--ink-red); }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); padding: var(--sp-2) var(--sp-1) var(--sp-3); }
+.keypad .key { min-height: 52px; font-size: var(--fs-lg); }
+
+/* ---------- 7. Panels ---------- */
+.panel {
+  position: relative;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+}
+.panel[data-title] { padding-top: calc(var(--sp-4) + 4px); }
+.panel[data-title]::before {
+  content: "[ " attr(data-title) " ]";
+  position: absolute; top: -.75em; left: var(--sp-3);
+  padding: 0 var(--sp-1);
+  background: var(--bg);
+  font-size: var(--fs-xs); letter-spacing: var(--tracking-label);
+  text-transform: uppercase; color: var(--text-dim);
+}
+.panel.raised { background: var(--surface-2); }
+.panel.active { border-color: var(--accent); box-shadow: var(--glow-box); }
+
+/* ---------- 8. Buttons ---------- */
+.btn {
+  appearance: none; -webkit-appearance: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: var(--tap); padding: 0 var(--sp-4);
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  background: transparent; color: var(--accent);
+  font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+.btn:active { transform: translateY(1px); background: var(--surface-3); }
+.btn-primary {
+  background: var(--accent); color: var(--on-accent);
+  border-color: var(--accent); box-shadow: var(--glow);
+}
+.btn-primary:active { background: var(--accent-dim); border-color: var(--accent-dim); }
+.btn-ghost { border-color: transparent; color: var(--text-dim); }
+.btn-danger { color: var(--red); border-color: var(--red); }
+.btn-danger:active { background: rgba(255, 92, 92, .12); }
+.btn-block { width: 100%; }
+.btn-icon { width: var(--tap); padding: 0; }
+.btn:disabled, .btn[aria-disabled="true"] {
+  color: var(--text-faint); border-color: var(--line); background: transparent;
+  box-shadow: none; cursor: not-allowed; transform: none;
+}
+
+/* ---------- 9. Focus ---------- */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: var(--glow);
+}
+
+/* ---------- 10. Form fields ---------- */
+.field { display: flex; flex-direction: column; gap: var(--sp-1); }
+.field > .label { padding-left: 2px; }
+.input, .select, .textarea {
+  appearance: none; -webkit-appearance: none;
+  width: 100%; min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg);
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  color: var(--text); font-size: var(--fs-md); /* >=16px: stops iOS zoom */
+  caret-color: var(--accent);
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.textarea { min-height: 96px; resize: vertical; }
+.input::placeholder, .textarea::placeholder { color: var(--text-faint); }
+.input:focus, .select:focus, .textarea:focus {
+  border-color: var(--accent); box-shadow: var(--glow-box); outline: none;
+}
+.input[aria-invalid="true"] { border-color: var(--red); }
+.select {
+  padding-right: var(--sp-6);
+  background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+                    linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+.hint  { font-size: var(--fs-xs); color: var(--text-dim); }
+.error { font-size: var(--fs-xs); color: var(--red); }
+.error::before { content: "ERR: "; font-weight: 700; }
+
+/* Prefix/suffix input: <div class="input-group"><span>$</span><input class="input"></div> */
+.input-group { display: flex; align-items: stretch; }
+.input-group > span {
+  display: flex; align-items: center; padding: 0 var(--sp-3);
+  border: 1px solid var(--line-strong); border-right: 0;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  color: var(--text-dim); background: var(--surface-1);
+}
+.input-group > .input { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+
+/* Checkbox / radio */
+.check { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); cursor: pointer; }
+.check input {
+  appearance: none; -webkit-appearance: none; margin: 0;
+  width: 22px; height: 22px; flex: none;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+  display: grid; place-content: center;
+}
+.check input[type="radio"] { border-radius: 50%; }
+.check input::before {
+  content: ""; width: 12px; height: 12px; background: var(--accent);
+  transform: scale(0); transition: transform var(--dur-fast) var(--ease-steps);
+  box-shadow: var(--glow);
+}
+.check input[type="radio"]::before { border-radius: 50%; }
+.check input:checked { border-color: var(--accent); }
+.check input:checked::before { transform: scale(1); }
+
+/* Toggle switch: <label class="switch"><input type="checkbox" role="switch"><span>Label</span></label> */
+.switch { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--tap); cursor: pointer; }
+.switch input {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 52px; height: 28px; position: relative;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+  order: 2;
+}
+.switch input::before {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; background: var(--text-faint);
+  transition: transform var(--dur) var(--ease-steps), background var(--dur) var(--ease);
+}
+.switch input:checked { border-color: var(--accent); }
+.switch input:checked::before { transform: translateX(24px); background: var(--accent); box-shadow: var(--glow); }
+
+/* Segmented control: <div class="segmented" role="radiogroup"><button aria-pressed="true">A</button>...</div> */
+.segmented {
+  display: flex; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); overflow: hidden;
+}
+.segmented > button {
+  flex: 1; min-height: var(--tap); border: 0; background: transparent;
+  color: var(--text-dim); font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em; cursor: pointer;
+}
+.segmented > button + button { border-left: 1px solid var(--line-strong); }
+.segmented > button[aria-pressed="true"], .segmented > button[aria-checked="true"] {
+  background: var(--accent); color: var(--on-accent);
+}
+
+/* ---------- 11. Lists ---------- */
+.list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.list > li {
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 52px; padding: var(--sp-2) var(--sp-1);
+  border-bottom: 1px solid var(--line);
+}
+.list > li::before { content: ">"; color: var(--text-faint); flex: none; }
+.list.plain > li::before { content: none; }
+.list .meta { margin-left: auto; color: var(--text-dim); font-size: var(--fs-sm); white-space: nowrap; }
+
+/* Key/value readout rows */
+.kv { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); padding: var(--sp-1) 0; }
+.kv > :first-child { color: var(--text-dim); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; }
+.kv > :last-child { font-weight: 700; }
+
+/* ---------- 12. Badges / tags ---------- */
+.badge {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  padding: 2px var(--sp-2); border: 1px solid currentColor; border-radius: var(--radius-sm);
+  font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--accent); white-space: nowrap;
+}
+.badge.amber { color: var(--amber); }
+.badge.red   { color: var(--red); }
+.badge.cyan  { color: var(--cyan); }
+.badge.dim   { color: var(--text-dim); }
+
+/* ---------- 13. Progress / meters ---------- */
+.meter {
+  height: 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  padding: 2px; background: var(--bg);
+}
+.meter > span {
+  display: block; height: 100%; width: var(--value, 0%);
+  background: repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 8px);
+  filter: drop-shadow(0 0 3px rgba(57, 255, 106, .6));
+  transition: width var(--dur-slow) var(--ease-steps);
+}
+.meter.amber > span { background: repeating-linear-gradient(90deg, var(--amber) 0 6px, transparent 6px 8px); filter: none; }
+.meter.red   > span { background: repeating-linear-gradient(90deg, var(--red) 0 6px, transparent 6px 8px); filter: none; }
+
+/* ---------- 15. Toast ---------- */
+.toast-host {
+  position: fixed; left: 0; right: 0; z-index: 100;
+  bottom: calc(var(--sp-5) + var(--safe-bottom) + 50px - var(--app-gap, 0px));   /* above the controls row */
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
+  pointer-events: none; padding: 0 var(--sp-4);
+}
+.toast {
+  max-width: var(--maxw); width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-2); border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  color: var(--text); font-size: var(--fs-sm); box-shadow: var(--glow-box);
+  animation: toast-in var(--dur) var(--ease-steps) both;
+}
+.toast::before { content: "SYS> "; color: var(--accent); font-weight: 700; }
+.toast.warn  { border-color: var(--amber); box-shadow: none; }
+.toast.warn::before  { content: "WARN> "; color: var(--amber); }
+.toast.error { border-color: var(--red); box-shadow: none; }
+.toast.error::before { content: "ERR> "; color: var(--red); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* ---------- 16. Dialog (native <dialog>) ---------- */
+dialog.dialog {
+  width: min(92vw, 420px); padding: var(--sp-5);
+  background: var(--surface-1); color: var(--text);
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  box-shadow: var(--glow-box);
+}
+dialog.dialog::backdrop { background: rgba(0, 0, 0, .75); }
+dialog.dialog h2 { margin-bottom: var(--sp-3); color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
+dialog.dialog .actions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-5); }
+
+/* ---------- 17. Empty state ---------- */
+.empty {
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-7) var(--sp-4); text-align: center; color: var(--text-dim);
+  border: 1px dashed var(--line); border-radius: var(--radius);
+}
+.empty pre { margin: 0; color: var(--text-faint); font-size: var(--fs-sm); line-height: 1.2; }
+
+/* ---------- 18. Matrix rain canvas (optional, decorative; inside .screen) ---------- */
+.rain {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  width: 100%; height: 100%; border-radius: inherit;
+  opacity: .14;
+}
+
+/* ---------- 19. Boot/type-on text ---------- */
+.boot { overflow: hidden; white-space: nowrap; border-right: 0; width: 0; animation: type 600ms steps(var(--chars, 16), end) forwards; }
+@keyframes type { to { width: calc(var(--chars, 16) * 1ch); } }
+
+/* Utility: screen-reader only */
+.sr-only {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- 21. Navigation: header keys, views, path ---------- */
+/* Header: <header class="app-header"><h1 class="app-title" data-view-title>Tool</h1><span class="app-meta">v1.0</span></header>
+   Controls (last child of .app): <nav class="app-controls">
+     <button class="key key-sm" data-back hidden aria-label="Back">‹</button><span class="grow"></span>
+     <div class="page-keys" data-show-on="/x" hidden>…</div>
+     <button class="key key-sm" data-open-sheet="menu" aria-label="Menu">☰</button>
+   </nav> */
+.app-header .app-title { flex: 1 1 auto; min-width: 0; }
+.app-title > span, .app-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.key-sm { min-height: 36px; min-width: 44px; padding: 0 var(--sp-2); font-size: var(--fs-lg); line-height: 1; border-radius: 5px; }
+[hidden] { display: none !important; }
+
+/* Views: <section class="view" id="settings" data-title="Settings" data-parent="home"> */
+.view { display: flex; flex-direction: column; gap: var(--sp-4); }
+.view:not(.is-active) { display: none; }
+.view.enter-fwd  { animation: view-fwd  var(--dur) var(--ease-steps) both; }
+.view.enter-back { animation: view-back var(--dur) var(--ease-steps) both; }
+@keyframes view-fwd  { from { opacity: 0; transform: translateX(16px); } }
+@keyframes view-back { from { opacity: 0; transform: translateX(-16px); } }
+
+/* Status line at the top of the screen (does not scroll): ~/settings/display */
+.path {
+  position: relative; z-index: 1; flex: none;
+  display: flex; align-items: center; gap: 0 2px; overflow-x: auto; white-space: nowrap;
+  min-height: 32px; padding: 0 var(--sp-4);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-xs); color: var(--text-dim); letter-spacing: .04em;
+  scrollbar-width: none;
+}
+.path::-webkit-scrollbar { display: none; }
+.path::before { content: "~"; color: var(--accent); }
+.path:empty::after { content: "/"; color: var(--text-faint); }
+.path a, .path span { color: inherit; text-decoration: none; padding: 8px 0; }
+.path a::before, .path span::before { content: "/"; color: var(--text-faint); margin-right: 2px; }
+.path a { color: var(--cyan); }
+.path span:last-child { color: var(--accent); }
+
+/* ---------- 22. Menu lists (settings rows) ---------- */
+/* <div class="menu">
+     <a class="menu-item" href="#/settings/display"><span class="mi-label">Display</span><span class="mi-value">CRT on</span></a>
+     <label class="menu-item"><span class="mi-label">Sound</span><input type="checkbox" role="switch" class="mi-switch"></label>
+   </div> */
+.menu {
+  display: flex; flex-direction: column;
+  background: var(--surface-1);
+  border: 1px solid var(--line); border-radius: var(--radius);
+}
+.menu-item {
+  position: relative;
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 52px; padding: var(--sp-2) var(--sp-4);
+  color: var(--text); text-decoration: none; text-align: left;
+  background: transparent; border: 0; width: 100%;
+  font-size: var(--fs-md); cursor: pointer;
+  -webkit-user-select: none; user-select: none;
+}
+.menu-item + .menu-item { border-top: 1px solid var(--line); }
+.menu-item:active { background: var(--surface-3); }
+.mi-glyph { width: 1.4em; flex: none; text-align: center; color: var(--accent); }
+.mi-label { flex: 1 1 auto; min-width: 0; }
+.mi-label small { display: block; font-size: var(--fs-xs); color: var(--text-dim); line-height: 1.4; }
+.mi-value { color: var(--text-dim); font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
+/* rows that open a sub-page get a chevron */
+a.menu-item::after, .menu-item[data-nav]::after, .menu-item[data-open-sheet]::after {
+  content: "›"; color: var(--text-dim); font-size: var(--fs-lg); line-height: 1; flex: none;
+}
+.menu-item.danger, .menu-item.danger .mi-glyph { color: var(--red); }
+.menu-item.danger::after { content: none; }
+/* inline controls in a row reuse the switch look */
+.mi-switch {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 52px; height: 28px; position: relative; cursor: pointer;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+}
+.mi-switch::before {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+  background: var(--text-faint);
+  transition: transform var(--dur) var(--ease-steps), background var(--dur) var(--ease);
+}
+.mi-switch:checked { border-color: var(--accent); }
+.mi-switch:checked::before { transform: translateX(24px); background: var(--accent); box-shadow: var(--glow); }
+.menu-item select.mi-select {
+  appearance: none; -webkit-appearance: none; border: 0; background: transparent;
+  color: var(--text-dim); font-size: var(--fs-md); text-align: right; text-align-last: right;
+  max-width: 50%; padding: var(--sp-2) 0;
+}
+.menu-note { padding: var(--sp-2) var(--sp-1) 0; font-size: var(--fs-xs); color: var(--text-dim); }
+.menu-group { display: flex; flex-direction: column; gap: var(--sp-2); }
+.menu-group > .label { padding-left: var(--sp-1); }
+
+/* Radio-choice page (pick one): rows with a check on the selected one */
+.menu-item[aria-checked]::after { content: ""; }
+.menu-item[aria-checked="true"]::after { content: "✓"; color: var(--accent); text-shadow: var(--glow); font-weight: 700; }
+
+/* ---------- 23. Bottom sheet (menus, pickers, quick actions) ---------- */
+/* <dialog class="sheet" id="menu"><div class="sheet-title">Menu</div><div class="menu">…</div>
+     <button class="btn btn-ghost btn-block" data-close>Cancel</button></dialog> */
+dialog.sheet {
+  position: fixed; inset: auto 0 calc(0px - var(--app-gap, 0px)) 0; margin: 0 auto;
+  width: 100%; max-width: var(--maxw); max-height: 80dvh; overflow: auto;
+  padding: var(--sp-3) var(--sp-4) calc(var(--sp-4) + var(--safe-bottom));
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--accent); border-bottom: 0;
+  border-radius: var(--screen-radius) var(--screen-radius) 0 0;
+  box-shadow: 0 0 0 6px var(--plastic-shade), 0 0 24px rgba(57, 255, 106, .2);
+}
+dialog.sheet[open] { display: flex; flex-direction: column; gap: var(--sp-3); animation: sheet-up var(--dur) var(--ease-steps) both; }
+dialog.sheet::backdrop { background: rgba(20, 17, 12, .6); }
+dialog.sheet::before {  /* grab handle */
+  content: ""; align-self: center; width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong);
+}
+.sheet-title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--text-dim); text-align: center; }
+@keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } }
+
+/* The app menu, opened by the ☰ key in the bottom controls; it pops up above it:
+   <dialog class="sheet dropdown" id="menu">…</dialog> */
+dialog.sheet.dropdown {
+  inset: auto calc(var(--sp-2) + var(--safe-right)) calc(var(--safe-bottom) + 60px - var(--app-gap, 0px)) auto;
+  width: min(calc(100vw - 16px), 340px); max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 80px);
+  padding: var(--sp-3);
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  box-shadow: 0 0 0 3px var(--plastic-shade), 0 0 0 4px var(--plastic-dark), 0 12px 28px rgba(0, 0, 0, .45), 0 0 18px rgba(57, 255, 106, .18);
+}
+dialog.sheet.dropdown::before { content: none; }
+dialog.sheet.dropdown[open] { animation: drop-down var(--dur) var(--ease-steps) both; }
+dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
+@keyframes drop-down { from { transform: translateY(10px); opacity: 0; } }
+.dropdown .menu-item { min-height: 48px; }
+.dropdown .menu + .sheet-title { margin-top: var(--sp-1); }
+.dropdown .sheet-title { text-align: left; padding-left: var(--sp-1); }
+
+/* Section links in the menu: current one is marked */
+.menu-item[aria-current="page"] { color: var(--accent); text-shadow: var(--glow); }
+.menu-item[aria-current="page"]::after { content: "●"; font-size: 10px; color: var(--accent); }
+
+/* Count pill in a menu row: <span class="mi-count">4</span> */
+.mi-count {
+  min-width: 22px; height: 20px; padding: 0 6px; border-radius: 10px;
+  background: var(--accent); color: var(--on-accent);
+  font-size: 11px; font-weight: 700; line-height: 20px; text-align: center;
+}
+
+/* Search field above long lists */
+.search { position: relative; }
+.search::before { content: "/"; position: absolute; left: var(--sp-3); top: 50%; transform: translateY(-50%); color: var(--accent); font-weight: 700; }
+.search .input { padding-left: var(--sp-6); }
+
+/* ---------- 19b. Full-screen views (games, canvases, maps, timers) ---------- */
+/* <section class="view fill" data-route="/x"> fills the whole screen and never scrolls.
+   Live numbers go in a .hud on the status line; page actions go in small header
+   keys (.page-keys, in .app-controls) shown only on that page. No keypad under the screen. */
+.screen-body:has(> .view.fill.is-active) { padding: var(--sp-2) var(--sp-3) var(--sp-3); overflow: hidden; }  /* 12px keeps content clear of the round corners */
+.view.fill { flex: 1 1 auto; min-height: 0; gap: var(--sp-2); position: relative; }
+.hud {
+  position: absolute; top: 0; right: 0; z-index: 2; height: 32px; max-width: 72%;
+  display: flex; align-items: center; gap: var(--sp-3); padding: 0 var(--sp-4) 0 var(--sp-5);
+  font-size: var(--fs-xs); color: var(--text-dim); white-space: nowrap; pointer-events: none;
+  background: linear-gradient(90deg, rgba(3, 7, 3, 0), var(--bg) var(--sp-4));
+}
+.hud i { font-style: normal; text-transform: uppercase; letter-spacing: var(--tracking-label); }
+.hud b { color: var(--text); font-size: var(--fs-sm); font-weight: 700; }
+.hud b.glow { color: var(--accent); text-shadow: var(--glow); }
+.page-keys, .hdr-keys { display: flex; gap: var(--sp-2); flex: none; }
+.page-keys .key-sm, .hdr-keys .key-sm { font-size: var(--fs-md); }
+.page-keys .key-sm.word, .hdr-keys .key-sm.word { font-size: var(--fs-xs); }
+
+/* ---------- 20. Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+  .cursor { animation: none; }
+  .view.enter-fwd, .view.enter-back, dialog.sheet[open], dialog.sheet.dropdown[open] { animation: none; }
+  .key { transition: none; }
+  .boot { width: auto; animation: none; }
+  .rain { display: none; }
+}
+
+    /* === tool-specific styles below === */
+
+    .btn-sm { min-height: 40px; padding: 0 var(--sp-3); font-size: var(--fs-xs); }
+
+    /* Day tags: upper days green, lower days cyan (a neutral second series) */
+    .dtag { flex: none; font-size: 11px; font-weight: 700; line-height: 1.3; padding: 0 4px; border: 1px solid currentColor; border-radius: var(--radius-sm); color: var(--accent); letter-spacing: .04em; }
+    .dtag.lo { color: var(--cyan); }
+
+    /* Train: week selector + phase */
+    .weekbar { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+    .weekbar .wk { text-align: center; }
+    .weekbar .wk .label { display: block; }
+    .weekbar .wk b { display: block; font-size: var(--fs-xl); line-height: 1.1; color: var(--accent); text-shadow: var(--glow-lg); }
+    .phase { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px dashed var(--line); }
+    .phase-t { display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap; font-weight: 700; }
+    .phase p { font-size: var(--fs-sm); color: var(--text-dim); }
+    .phase .acts { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+
+    .daypick { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+    .daypick button {
+      appearance: none; -webkit-appearance: none; cursor: pointer; min-width: 0;
+      display: grid; gap: 2px; padding: var(--sp-2) var(--sp-3); text-align: left;
+      background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); color: var(--text);
+    }
+    .daypick button[aria-pressed="true"] { border-color: var(--accent); background: var(--surface-2); box-shadow: var(--glow-box); }
+    .daypick .dn { display: flex; gap: 6px; align-items: center; font-size: var(--fs-sm); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+    .daypick .ds { font-size: var(--fs-xs); color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .daypick .next { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--amber); min-height: 1.5em; }
+    .daypick .next.ok { color: var(--accent); }
+
+    /* Exercise cards */
+    #exlist { display: flex; flex-direction: column; gap: var(--sp-5); }
+    .ex { display: flex; flex-direction: column; gap: var(--sp-3); }
+    .ex h3 { font-size: var(--fs-md); }
+    .ex .alt { font-size: var(--fs-xs); color: var(--text-dim); margin-top: 2px; }
+    .ex-target { display: flex; gap: 6px; flex-wrap: wrap; margin-top: var(--sp-2); }
+    .figs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+    .fig { margin: 0; display: grid; justify-items: center; gap: 2px; padding: 6px 6px 4px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+    .fig svg { width: 100%; max-width: 140px; height: auto; aspect-ratio: 1; }
+    .fig figcaption { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--text-dim); }
+    .tip { font-size: var(--fs-sm); padding: var(--sp-2) var(--sp-3); background: var(--bg); border-left: 2px solid var(--line-strong); color: var(--text-dim); }
+    .tip.up { border-color: var(--accent); color: var(--accent); }
+    .tip.up::before { content: "▲ "; }
+    .sets { display: grid; gap: 6px; }
+    .setrow { display: grid; grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr) 44px; gap: 6px; align-items: center; }
+    .setrow.headrow > span { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim); text-align: center; }
+    .setrow .sn { text-align: center; color: var(--text-dim); font-size: var(--fs-sm); }
+    .setrow.bonus .sn::after { content: "+"; color: var(--amber); }
+    .setrow input {
+      appearance: none; -webkit-appearance: none; width: 100%; min-width: 0; min-height: 44px; padding: 4px; text-align: center;
+      background: var(--bg); border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+      color: var(--text); font-size: var(--fs-md); caret-color: var(--accent);
+    }
+    .setrow input::placeholder { color: var(--text-faint); }
+    .setrow input:focus { border-color: var(--accent); box-shadow: var(--glow-box); outline: none; }
+    .done {
+      appearance: none; -webkit-appearance: none; cursor: pointer; width: 44px; height: 44px; padding: 0;
+      background: var(--bg); border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+      color: var(--text-faint); font-size: var(--fs-lg); font-weight: 700;
+      transition: background var(--dur-fast) var(--ease-steps);
+    }
+    .done[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+    .ex-foot { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+    .savebar { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
+    #saveState { font-size: var(--fs-xs); color: var(--text-dim); flex: 1 1 160px; }
+    #saveState.ok { color: var(--accent); }
+    #saveState.bad { color: var(--red); }
+
+    /* Rest timer: a strip at the bottom of the CRT, above nothing else */
+    .restbar {
+      position: relative; z-index: 2; flex: none;
+      display: flex; align-items: center; gap: var(--sp-2);
+      padding: var(--sp-3) var(--sp-5) var(--sp-4);
+      background: var(--surface-2); border-top: 1px solid var(--accent);
+    }
+    .restbar .who { flex: 1 1 auto; min-width: 0; }
+    .restbar .label { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .restbar .t { display: block; font-size: var(--fs-xl); font-weight: 700; line-height: 1.1; color: var(--accent); text-shadow: var(--glow-lg); }
+    .restbar .t.over { color: var(--amber); text-shadow: none; }
+    .restbar .t.over::after { content: " over"; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); }
+
+    /* This week */
+    .stats { display: grid; gap: var(--sp-3); }
+    .stat { display: grid; gap: 6px; }
+    .stat .top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-2); }
+    .stat .v { font-size: var(--fs-lg); font-weight: 700; }
+    .stat .v small { font-size: var(--fs-sm); color: var(--text-dim); font-weight: 400; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+    .form-grid .span2 { grid-column: 1 / -1; }
+    .hist { display: flex; flex-direction: column; gap: 6px; }
+    .hist details { background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--radius); }
+    .hist details[open] { border-color: var(--line-strong); }
+    .hist summary { list-style: none; cursor: pointer; min-height: 52px; padding: var(--sp-2) var(--sp-3); display: flex; gap: var(--sp-2); align-items: center; }
+    .hist summary::-webkit-details-marker { display: none; }
+    .hist summary::before { content: "▸"; color: var(--text-faint); flex: none; }
+    .hist details[open] summary::before { content: "▾"; color: var(--accent); }
+    .hist summary .what { flex: 1 1 auto; min-width: 0; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .hist summary .when { font-size: var(--fs-xs); color: var(--text-dim); }
+    .hist summary .amt { flex: none; font-size: var(--fs-sm); color: var(--text-dim); }
+    .hist .body { padding: 0 var(--sp-3) var(--sp-3); display: grid; gap: 6px; font-size: var(--fs-sm); }
+    .hist .body .sl { color: var(--text-dim); }
+
+    /* Progress */
+    .prog-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: var(--sp-3); align-items: center; padding: var(--sp-3) 0; border-bottom: 1px solid var(--line); }
+    .prog-row:last-child { border-bottom: 0; }
+    .prog-row .meta { font-size: var(--fs-xs); color: var(--text-dim); }
+    .prog-row svg { width: 100%; height: 36px; }
+    .prog-row .val { text-align: right; font-weight: 700; white-space: nowrap; }
+    .prog-row .ch { font-size: var(--fs-xs); text-align: right; }
+
+    /* Plan + Why */
+    .tbl-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: var(--fs-sm); }
+    th, td { text-align: left; padding: var(--sp-2) 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-size: var(--fs-xs); font-weight: 400; text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim); }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    td .sub, .note { font-size: var(--fs-xs); color: var(--text-dim); }
+    .panel > h2 { font-size: var(--fs-md); margin-bottom: var(--sp-3); }
+    .panel > p + p, .panel > .tbl-wrap + p { margin-top: var(--sp-3); }
+    .panel ul { margin: 0; padding-left: 1.2em; display: grid; gap: var(--sp-2); font-size: var(--fs-sm); }
+    .panel li::marker { content: "> "; color: var(--text-faint); }
+    .cite { font-size: var(--fs-xs); color: var(--text-dim); }
+    .panel .dayhead { display: flex; gap: var(--sp-2); align-items: center; margin-bottom: var(--sp-2); }
+    .panel .dayhead .dim { font-size: var(--fs-xs); }
+
+    .mi-seg { flex: none; width: 120px; }
+    .mi-seg > button { min-height: 36px; }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1 class="app-title" data-view-title>Train</h1>
+      <span class="app-meta">v2.0</span>
+    </header>
+    <div class="screen">
+      <canvas class="rain" aria-hidden="true" hidden></canvas>
+      <nav class="path" data-path aria-label="Location"></nav>
+      <div class="hud" data-show-on="/" hidden><i>Block</i> <b id="hudBlock">1</b> <i>Week</i> <b id="hudWeek">1/8</b></div>
+      <div class="screen-body">
+
+      <!-- ============ TRAIN ============ -->
+      <section class="view" data-route="/" data-title="Train">
+        <section class="panel" data-title="Upper / Lower · 4 days">
+          <div class="weekbar">
+            <button class="btn btn-icon" id="wkPrev" aria-label="Previous week">‹</button>
+            <div class="wk"><span class="label">Block <span id="blockNo">1</span></span><b>Week <span id="wkNo">1</span>/8</b></div>
+            <button class="btn btn-icon" id="wkNext" aria-label="Next week">›</button>
+          </div>
+          <div class="phase" id="phase"></div>
+        </section>
+        <div class="daypick" id="daypick"></div>
+        <div id="exlist"></div>
+        <div class="field">
+          <label class="label" for="notes">Session notes</label>
+          <input class="input" id="notes" type="text" placeholder="Sleep, energy, anything off" enterkeyhint="done">
+        </div>
+        <div class="savebar">
+          <span id="saveState" role="status">Entries save automatically as you type.</span>
+          <button class="btn btn-danger btn-sm" id="clearBtn">Clear this day</button>
+        </div>
+        <p class="note">Ticking a set starts its rest timer. Each week keeps its own entries; use the arrows at the top to look back. Faint numbers in the weight boxes are last week's weights, and they fill in once you log reps for that set.</p>
+      </section>
+
+      <!-- ============ THIS WEEK ============ -->
+      <section class="view" data-route="/week" data-title="This week">
+        <section class="panel" data-title="This week">
+          <div class="stats" id="weekStats"></div>
+        </section>
+        <section class="panel" data-title="Log cardio">
+          <div class="form-grid">
+            <div class="field span2"><label class="label" for="cKind">Type</label>
+              <select class="select" id="cKind"><option value="z2">Zone 2</option><option value="int">4×4 intervals</option><option value="walk">Walk / sport</option></select></div>
+            <div class="field"><label class="label" for="cMin">Minutes</label><input class="input" id="cMin" type="number" inputmode="numeric" min="1" value="40" enterkeyhint="done"></div>
+            <div class="field"><label class="label" for="cDate">Date</label><input class="input" id="cDate" type="date"></div>
+            <button class="btn btn-primary btn-block span2" id="cSave">Add cardio</button>
+          </div>
+          <p class="note" style="margin-top:var(--sp-3)">Targets: 2 Zone 2 sessions of 30–45 min (talk-in-sentences pace), optional one 4×4 interval session, 7,000–10,000 steps a day.</p>
+        </section>
+        <div class="menu-group">
+          <span class="label">History</span>
+          <div class="hist" id="hist"></div>
+        </div>
+      </section>
+
+      <!-- ============ PROGRESS ============ -->
+      <section class="view" data-route="/progress" data-title="Progress">
+        <section class="panel" data-title="Strength trend">
+          <p class="note">Estimated one-rep max from your best set each session (Epley formula, sets of 12 reps or fewer). It should climb over a block; a flat line for 3+ sessions means it's time to change something.</p>
+          <div id="prog" style="margin-top:var(--sp-2)"></div>
+        </section>
+      </section>
+
+      <!-- ============ PLAN ============ -->
+      <section class="view" data-route="/plan" data-title="Plan">
+        <div class="menu">
+          <a class="menu-item" href="#/plan/why"><span class="mi-glyph" aria-hidden="true">?</span><span class="mi-label">Why the plan looks like this<small>The research behind it</small></span></a>
+        </div>
+        <div id="planBody" class="stack" style="gap:var(--sp-5)"></div>
+      </section>
+      <section class="view" data-route="/plan/why" data-title="Why">
+        <div id="guideBody" class="stack" style="gap:var(--sp-5)"></div>
+      </section>
+
+      <!-- ============ SETTINGS ============ -->
+      <section class="view" data-route="/settings" data-title="Settings">
+        <div class="menu-group">
+          <span class="label">General</span>
+          <div class="menu">
+            <div class="menu-item"><span class="mi-glyph" aria-hidden="true">#</span><span class="mi-label">Weight unit</span>
+              <span class="segmented mi-seg" role="group" aria-label="Weight unit"><button id="u-lb" aria-pressed="true">lb</button><button id="u-kg" aria-pressed="false">kg</button></span></div>
+            <button class="menu-item" id="setWeek"><span class="mi-glyph" aria-hidden="true">↺</span><span class="mi-label">Start a new block<small>Makes this week week 1</small></span><span class="mi-value" id="curWeekVal"></span></button>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Appearance</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/display"><span class="mi-glyph" aria-hidden="true">▣</span><span class="mi-label">Display</span><span class="mi-value">CRT <span data-setting-value="crt"></span></span></a>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Data</span>
+          <div class="menu">
+            <button class="menu-item" id="expBtn"><span class="mi-glyph" aria-hidden="true">↑</span><span class="mi-label">Export backup</span></button>
+            <button class="menu-item" id="impBtn"><span class="mi-glyph" aria-hidden="true">↓</span><span class="mi-label">Import backup<small>Merges without duplicating sessions</small></span></button>
+            <button class="menu-item danger" id="erase"><span class="mi-glyph" aria-hidden="true">✕</span><span class="mi-label">Erase all data</span></button>
+          </div>
+          <input type="file" id="impFile" accept="application/json,.json" hidden>
+          <p class="menu-note">Your log lives only on this phone. <span id="bkInfo"></span> Export a backup now and then and keep it in Files or iCloud Drive.</p>
+        </div>
+        <div class="menu-group">
+          <span class="label">About</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/about"><span class="mi-glyph" aria-hidden="true">i</span><span class="mi-label">About</span><span class="mi-value">v2.0</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/display" data-title="Display">
+        <div class="menu">
+          <label class="menu-item"><span class="mi-label">CRT scanlines<small>Faint lines and vignette on the screen</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="crt"></label>
+          <label class="menu-item"><span class="mi-label">Matrix rain<small>Falling code behind the screen</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="rain"></label>
+        </div>
+        <p class="menu-note">Animations turn off automatically when Reduce Motion is on.</p>
+        <div class="menu">
+          <button class="menu-item" id="reset-display"><span class="mi-label">Reset display to defaults</span></button>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/about" data-title="About">
+        <section class="panel" data-title="Workout Log">
+          <div class="kv"><span>Version</span><span>2.0</span></div>
+          <div class="kv"><span>Program</span><span>Upper / Lower, 4 days</span></div>
+          <div class="kv"><span>Block length</span><span>8 weeks</span></div>
+          <div class="kv"><span>Entries</span><span id="aboutCount">—</span></div>
+          <div class="kv"><span>Storage</span><span>This phone</span></div>
+          <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
+        </section>
+      </section>
+
+      </div><!-- /.screen-body -->
+      <div class="restbar" id="timer" hidden>
+        <div class="who"><span class="label" id="timerLabel">Rest</span><b class="t" id="timerT">0:00</b></div>
+        <button class="btn btn-sm" id="timerAdd">+30 s</button>
+        <button class="btn btn-sm" id="timerStop">Done</button>
+      </div>
+    </div><!-- /.screen -->
+
+    <nav class="app-controls" aria-label="Controls">
+      <button class="key key-sm" data-back aria-label="Back">‹</button>
+      <button class="key key-sm" data-open-sheet="menu" aria-label="Menu">☰</button>
+      <button class="key key-sm" data-route="/settings" data-show-on="/" hidden aria-label="Settings">⚙</button>
+      <button class="key key-sm" data-route="/" data-hide-on="/" aria-label="Train">■</button>
+    </nav>
+  </main>
+
+  <dialog class="sheet dropdown" id="menu" aria-label="Menu">
+    <div class="sheet-title">Go to</div>
+    <div class="menu" data-sections>
+      <button class="menu-item" data-route="/"><span class="mi-glyph" aria-hidden="true">■</span><span class="mi-label">Train</span></button>
+      <button class="menu-item" data-route="/week"><span class="mi-glyph" aria-hidden="true">▤</span><span class="mi-label">This week</span></button>
+      <button class="menu-item" data-route="/progress"><span class="mi-glyph" aria-hidden="true">▲</span><span class="mi-label">Progress</span></button>
+      <button class="menu-item" data-route="/plan"><span class="mi-glyph" aria-hidden="true">≡</span><span class="mi-label">Plan</span></button>
+      <button class="menu-item" data-route="/settings"><span class="mi-glyph" aria-hidden="true">⚙</span><span class="mi-label">Settings</span></button>
+    </div>
+    <div class="sheet-title">Actions</div>
+    <div class="menu">
+      <button class="menu-item" data-action="cardio"><span class="mi-glyph" aria-hidden="true">+</span><span class="mi-label">Log cardio</span></button>
+      <button class="menu-item" data-action="today"><span class="mi-glyph" aria-hidden="true">●</span><span class="mi-label">Go to this week</span></button>
+      <button class="menu-item" data-action="export"><span class="mi-glyph" aria-hidden="true">↑</span><span class="mi-label">Export backup</span></button>
+    </div>
+  </dialog>
+
+  <div class="toast-host" aria-live="polite"></div>
+  <script>
+/* ==========================================================================
+   PHOSPHOR v1.9 runtime: navigation, settings, sheets, toasts, confirm.
+   Spec: brand-guidelines.md section 7. Paste this whole file into a <script>
+   at the end of <body>, after the markup. No dependencies, no network.
+   Set a unique key per tool: <html data-app="tip-calc">
+   ========================================================================== */
+const PH = (() => {
+  const APP = document.documentElement.dataset.app || 'app';
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const subs = {};
+  const on = (key, fn) => ((subs[key] ||= []).push(fn), fn);
+  const emit = (key, v) => (subs[key] || []).concat(subs['*'] || []).forEach(fn => fn(v, key));
+
+  /* ---------- Settings store (localStorage, namespaced per tool) ---------- */
+  const defaults = { crt: true, rain: false };
+  const store = {
+    defaults,
+    get(k) {
+      try { const v = localStorage.getItem(APP + ':' + k); return v === null ? defaults[k] : JSON.parse(v); }
+      catch { return defaults[k]; }
+    },
+    set(k, v) {
+      try { localStorage.setItem(APP + ':' + k, JSON.stringify(v)); } catch {}
+      emit(k, v); syncSettings();
+    },
+    reset() {
+      Object.keys(defaults).forEach(k => { try { localStorage.removeItem(APP + ':' + k); } catch {} emit(k, defaults[k]); });
+      syncSettings();
+    },
+  };
+
+  /* Declarative binding:
+     <input type="checkbox" data-setting="crt">          toggle
+     <select data-setting="units">…</select>             select
+     <button class="menu-item" data-setting="units" data-value="kg">  pick-one row
+     <span data-setting-value="units"></span>           shows the current value's label */
+  function labelFor(key, val) {
+    const row = $(`[data-setting="${key}"][data-value="${CSS.escape(String(val))}"]`);
+    if (row) { const lab = row.querySelector('.mi-label') || row; return (lab.firstChild?.textContent || lab.textContent).trim(); }
+    const sel = $(`select[data-setting="${key}"]`);
+    if (sel) { const o = [...sel.options].find(o => o.value === String(val)); if (o) return o.textContent; }
+    if (typeof val === 'boolean') return val ? 'On' : 'Off';
+    return val ?? '—';
+  }
+  function syncSettings() {
+    $$('[data-setting]').forEach(el => {
+      const v = store.get(el.dataset.setting);
+      if (el.type === 'checkbox') el.checked = !!v;
+      else if ('value' in el.dataset) el.setAttribute('aria-checked', String(el.dataset.value === String(v)));
+      else if ('value' in el) el.value = v ?? '';
+    });
+    $$('[data-setting-value]').forEach(el => { el.textContent = labelFor(el.dataset.settingValue, store.get(el.dataset.settingValue)); });
+  }
+  document.addEventListener('change', e => {
+    const el = e.target.closest('[data-setting]');
+    if (!el || 'value' in el.dataset) return;
+    store.set(el.dataset.setting, el.type === 'checkbox' ? el.checked : el.value);
+  });
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-setting][data-value]');
+    if (!el) return;
+    store.set(el.dataset.setting, el.dataset.value);
+    if (el.hasAttribute('data-back-on-pick')) back();
+  });
+
+  /* Built-in display settings */
+  const applyDisplay = () => {
+    document.documentElement.classList.toggle('no-crt', !store.get('crt'));
+    $$('.rain').forEach(c => { c.hidden = !store.get('rain'); });
+  };
+  on('crt', applyDisplay); on('rain', applyDisplay);
+
+  /* ---------- Router: hash routes -> .view[data-route] ---------- */
+  /* <section class="view" data-route="/settings/display" data-title="Display"> */
+  const views = () => $$('.view');
+  const routeOf = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
+  const parentOf = r => r === '/' ? null : (r.split('/').slice(0, -1).join('/') || '/');
+  const depth = r => r === '/' ? 0 : r.split('/').length - 1;
+  const viewFor = r => views().find(v => v.dataset.route === r);
+  let current = null, pushedByUs = 0;
+
+  function render() {
+    let r = routeOf();
+    while (r && !viewFor(r)) r = parentOf(r);          // unknown route -> nearest ancestor
+    const view = viewFor(r || '/') || views()[0];
+    if (!view) return;
+    r = view.dataset.route;
+    const dir = current === null ? '' : depth(r) >= depth(current) ? 'enter-fwd' : 'enter-back';
+    views().forEach(v => v.classList.remove('is-active', 'enter-fwd', 'enter-back'));
+    view.classList.add('is-active');
+    if (dir && r !== current) view.classList.add(dir);
+    current = r;
+
+    $$('[data-view-title]').forEach(el => { el.textContent = view.dataset.title || el.dataset.viewTitle || ''; });
+    $$('[data-back]').forEach(el => { if (el.closest('.app-controls')) el.disabled = r === '/'; else el.hidden = r === '/'; });
+    $$('.app-controls [data-route]').forEach(el => { el.disabled = el.dataset.route === r; });
+    // per-page chrome: data-show-on="/game /other" shows only there (and below); data-hide-on hides
+    const onAny = (list, rr) => list.split(/\s+/).some(p => p === rr || (p !== '/' && rr.startsWith(p + '/')));
+    $$('[data-show-on]').forEach(el => { el.hidden = !onAny(el.dataset.showOn, r); });
+    $$('[data-hide-on]').forEach(el => { el.hidden = onAny(el.dataset.hideOn, r); });
+    // section links in the menu (<div class="menu" data-sections>) mark the current section
+    $$('[data-sections] [data-route]').forEach(t => {
+      const tr = t.dataset.route, sel = tr === '/' ? r === '/' : (r === tr || r.startsWith(tr + '/'));
+      if (sel) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+    });
+    // breadcrumb path: ~/settings/display
+    $$('[data-path]').forEach(el => {
+      el.textContent = '';
+      const parts = r === '/' ? [] : r.split('/').slice(1);
+      parts.forEach((_, i) => {
+        const pr = '/' + parts.slice(0, i + 1).join('/'), last = i === parts.length - 1;
+        const node = document.createElement(last ? 'span' : 'a');
+        node.textContent = ((viewFor(pr) && viewFor(pr).dataset.title) || parts[i]).toLowerCase();
+        if (!last) node.href = '#' + pr;
+        el.appendChild(node);
+      });
+    });
+    $$('.screen-body').forEach(b => { b.scrollTop = 0; });
+    emit('route', r);
+  }
+  function go(r) { if (r === current) return; pushedByUs++; location.hash = r; }
+  function back() {
+    const parent = parentOf(current || '/');
+    if (pushedByUs > 0 && history.length > 1) { pushedByUs--; history.back(); }
+    else if (parent !== null) location.replace('#' + parent);
+  }
+  addEventListener('hashchange', render);
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-back]'); if (b) { e.preventDefault(); back(); return; }
+    const n = e.target.closest('[data-route]:not(.view)');
+    if (n) { e.preventDefault(); go(n.dataset.route); return; }
+    if (e.target.closest('a[href^="#/"]')) pushedByUs++;
+  });
+
+  /* Home-screen apps fill the whole physical screen. iOS under-reports the viewport by the
+     status bar height there, so size the case from the screen itself. */
+  function fitApp() {
+    const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+    const st = document.documentElement.style;
+    if (!standalone) { st.removeProperty('--app-h'); st.removeProperty('--app-gap'); return; }
+    const land = matchMedia('(orientation: landscape)').matches;
+    const h = land ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
+    const full = Math.max(h, innerHeight);
+    st.setProperty('--app-h', full + 'px');
+    st.setProperty('--app-gap', (full - innerHeight) + 'px');   // how far the real bottom is below the reported one
+  }
+  fitApp(); addEventListener('resize', fitApp); addEventListener('orientationchange', () => setTimeout(fitApp, 300));
+
+  /* Keycap press animation: every tap visibly sinks the key, even a quick one */
+  document.addEventListener('pointerdown', e => {
+    const k = e.target.closest('.key'); if (!k || k.disabled) return;
+    k.classList.add('is-pressed'); const t = performance.now();
+    const up = () => { setTimeout(() => k.classList.remove('is-pressed'), Math.max(0, 130 - (performance.now() - t)));
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(n => k.removeEventListener(n, up)); };
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(n => k.addEventListener(n, up));
+  });
+
+  /* Edge-swipe back (installed web apps have no browser back gesture) */
+  let sx = null, sy = 0;
+  addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX < 24 ? t.clientX : null; sy = t.clientY; }, { passive: true });
+  addEventListener('touchend', e => {
+    if (sx === null || (current || '/') === '/') return; const t = e.changedTouches[0];
+    if (t.clientX - sx > 70 && Math.abs(t.clientY - sy) < 60 && !$('dialog[open]')) back();
+    sx = null;
+  }, { passive: true });
+
+  /* ---------- Sheets & dialogs ---------- */
+  /* <button data-open-sheet="menu">  opens <dialog class="sheet" id="menu">
+     [data-close] inside closes it; tapping the backdrop closes it; picking a link closes it. */
+  document.addEventListener('click', e => {
+    const o = e.target.closest('[data-open-sheet]');
+    if (o) { const d = document.getElementById(o.dataset.openSheet); if (d && !d.open) d.showModal(); return; }
+    const c = e.target.closest('[data-close]');
+    if (c) { c.closest('dialog')?.close(); return; }
+    if (e.target.tagName === 'DIALOG' && e.target.open) {          // backdrop tap
+      const r = e.target.getBoundingClientRect(), x = e.clientX, y = e.clientY;
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) e.target.close();
+    }
+    const inSheet = e.target.closest('dialog.sheet [data-route], dialog.sheet a, dialog.sheet [data-action]');
+    if (inSheet) inSheet.closest('dialog').close();
+  });
+
+  /* ---------- Toast ---------- */
+  function toast(msg, kind = '') {
+    let host = $('.toast-host');
+    if (!host) { host = document.createElement('div'); host.className = 'toast-host'; host.setAttribute('aria-live', 'polite'); document.body.appendChild(host); }
+    const t = document.createElement('div');
+    t.className = 'toast ' + kind; t.textContent = msg; host.appendChild(t);
+    const kill = () => t.remove();
+    t.addEventListener('click', kill);
+    if (kind !== 'error') setTimeout(kill, 2500);
+  }
+
+  /* ---------- Confirm: await PH.confirm('Delete all?', {ok: 'Delete', danger: true}) ---------- */
+  function confirm(message, { title = 'Confirm', ok = 'OK', cancel = 'Cancel', danger = false } = {}) {
+    return new Promise(res => {
+      const d = document.createElement('dialog'); d.className = 'dialog';
+      d.innerHTML = `<h2></h2><p></p><div class="actions"><button class="btn btn-ghost" value="0"></button><button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" value="1"></button></div>`;
+      d.querySelector('h2').textContent = title; d.querySelector('p').textContent = message;
+      const [c, k] = d.querySelectorAll('button'); c.textContent = cancel; k.textContent = ok;
+      d.addEventListener('click', e => { const b = e.target.closest('button'); if (b) d.close(b.value); });
+      d.addEventListener('close', () => { res(d.returnValue === '1'); d.remove(); });
+      document.body.appendChild(d); d.showModal(); c.focus();
+    });
+  }
+
+  /* ---------- Export: share sheet on iOS, download elsewhere ---------- */
+  async function exportFile(name, text, type = 'application/json') {
+    const file = new File([text], name, { type });
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; } } catch (e) { if (e.name === 'AbortError') return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  /* ---------- Boot ---------- */
+  function init(extraDefaults = {}) {
+    Object.assign(defaults, extraDefaults);
+    syncSettings(); applyDisplay(); render();
+  }
+  return { init, store, on, go, back, toast, confirm, exportFile, sync: syncSettings };
+})();
+
+  </script>
+  <script>
+(function(){
+"use strict";
+// ---------- Plan data ----------
+const DAYS = {
+  UA:{name:"Upper A", sub:"Strength-leaning", plate:"red", ex:[
+    {id:"bench",n:"Bench press",alt:"Barbell or dumbbell",s:3,lo:5,hi:8,rir:"1–2",rest:180,k:"c",up:1},
+    {id:"csrow",n:"Chest-supported row",alt:"or Pendlay row",s:3,lo:6,hi:10,rir:"1–2",rest:150,k:"c",up:1},
+    {id:"ohp",n:"Overhead press",alt:"Standing or seated DB",s:3,lo:6,hi:10,rir:"1–2",rest:150,k:"c",up:1},
+    {id:"pulldown",n:"Lat pulldown",alt:"or weighted pull-up",s:3,lo:6,hi:10,rir:"1–2",rest:120,k:"c",up:1},
+    {id:"inccurl",n:"Incline DB curl",s:2,lo:10,hi:15,rir:"0–1",rest:90,k:"i",up:1},
+    {id:"ohtri",n:"Overhead cable triceps extension",s:2,lo:10,hi:15,rir:"0–1",rest:90,k:"i",up:1}]},
+  LA:{name:"Lower A", sub:"Squat focus", plate:"blue", ex:[
+    {id:"squat",n:"Back squat",alt:"or hack squat",s:3,lo:5,hi:8,rir:"1–2",rest:180,k:"c"},
+    {id:"rdl",n:"Romanian deadlift",s:3,lo:8,hi:10,rir:"2",rest:150,k:"c"},
+    {id:"legpress",n:"Leg press",alt:"or Bulgarian split squat",s:2,lo:10,hi:12,rir:"1",rest:120,k:"c"},
+    {id:"seatcurl",n:"Seated leg curl",s:3,lo:10,hi:15,rir:"0–1",rest:90,k:"i"},
+    {id:"stcalf",n:"Standing calf raise",alt:"1 s pause in the stretch",s:3,lo:10,hi:15,rir:"0–1",rest:90,k:"i"},
+    {id:"hlr",n:"Hanging leg raise",alt:"or cable crunch",s:2,lo:10,hi:15,rir:"1–2",rest:75,k:"i",bw:1}]},
+  UB:{name:"Upper B", sub:"Hypertrophy-leaning", plate:"yellow", ex:[
+    {id:"incdb",n:"Incline DB press",s:3,lo:8,hi:12,rir:"1–2",rest:120,k:"c",up:1},
+    {id:"pullup",n:"Pull-up",alt:"assisted or pulldown",s:3,lo:8,hi:12,rir:"1–2",rest:120,k:"c",up:1},
+    {id:"cablerow",n:"Seated cable row",s:3,lo:10,hi:12,rir:"1",rest:120,k:"c",up:1},
+    {id:"fly",n:"Cable or machine fly",s:2,lo:12,hi:15,rir:"0–1",rest:90,k:"i",up:1},
+    {id:"lateral",n:"Lateral raise",alt:"cable or DB",s:3,lo:12,hi:20,rir:"0–1",rest:75,k:"i",up:1},
+    {id:"reardelt",n:"Rear-delt fly",alt:"or face pull",s:2,lo:12,hi:20,rir:"0–1",rest:75,k:"i",up:1},
+    {id:"ezcurl",n:"EZ-bar curl",alt:"superset with pushdown",s:2,lo:10,hi:15,rir:"0–1",rest:90,k:"i",up:1},
+    {id:"pushdown",n:"Triceps pushdown",alt:"superset with curl",s:2,lo:10,hi:15,rir:"0–1",rest:90,k:"i",up:1}]},
+  LB:{name:"Lower B", sub:"Hinge focus", plate:"green", ex:[
+    {id:"deadlift",n:"Deadlift",alt:"conventional, sumo or trap bar",s:3,lo:4,hi:6,rir:"2",rest:180,k:"c"},
+    {id:"frontsq",n:"Front squat",alt:"goblet squat or leg press",s:3,lo:8,hi:12,rir:"1–2",rest:150,k:"c"},
+    {id:"lunge",n:"Walking lunge",alt:"or step-up · reps per leg",s:2,lo:10,hi:12,rir:"1–2",rest:120,k:"c"},
+    {id:"lyingcurl",n:"Lying leg curl",alt:"or seated",s:3,lo:10,hi:15,rir:"0–1",rest:90,k:"i"},
+    {id:"legext",n:"Leg extension",s:2,lo:12,hi:15,rir:"0–1",rest:90,k:"i"},
+    {id:"seatcalf",n:"Seated calf raise",s:3,lo:12,hi:20,rir:"0–1",rest:60,k:"i"},
+    {id:"pallof",n:"Pallof press or plank",alt:"seconds, not reps",s:2,lo:30,hi:45,rir:"–",rest:60,k:"i",bw:1,secs:1}]}
+};
+const ORDER=["UA","LA","UB","LB"];
+const PHASES={
+  1:{t:"Learn the feel",d:"Sets as written. Stay conservative, 2–3 reps in reserve.",r:"2–3"},
+  2:{t:"Learn the feel",d:"Sets as written. Stay conservative, 2–3 reps in reserve.",r:"2–3"},
+  3:{t:"Add volume",d:"One extra set on each isolation exercise (marked +).",bonus:1},
+  4:{t:"Add volume",d:"One extra set on each isolation exercise (marked +).",bonus:1},
+  5:{t:"Push effort",d:"Compounds at 1 RIR, isolations at 0–1. Keep the extra sets.",bonus:1,push:1},
+  6:{t:"Push effort",d:"Compounds at 1 RIR, isolations at 0–1. Keep the extra sets.",bonus:1,push:1},
+  7:{t:"Hardest week",d:"Same as weeks 5–6. Give it everything with good form.",bonus:1,push:1},
+  8:{t:"Deload",d:"Same exercises, half the sets, 3–4 reps in reserve. Then start a new block a little heavier.",deload:1}
+};
+function target(ex,wk){
+  const p=PHASES[wk]; let sets=ex.s, rir=ex.rir, bonus=0;
+  if(p.deload){sets=Math.ceil(ex.s/2); rir="3–4";}
+  else { if(p.r && ex.rir!=="–") rir=p.r;
+    if(p.push && ex.rir!=="–") rir=ex.k==="c"?"1":"0–1";
+    if(p.bonus && ex.k==="i"){bonus=1;} }
+  return {sets, bonus, rir};
+}
+
+// ---------- Helpers ----------
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const pad=n=>String(n).padStart(2,"0");
+const isoDate=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parseISO=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const fmtDate=s=>parseISO(s).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+const mmss=s=>{const a=Math.abs(s);return (s<0?"+":"")+Math.floor(a/60)+":"+pad(a%60)};
+function exById(id){for(const k of ORDER){const e=DAYS[k].ex.find(x=>x.id===id);if(e)return {ex:e,day:k}}return null}
+function mondayOf(d){const x=new Date(d);const wd=(x.getDay()+6)%7;x.setDate(x.getDate()-wd);x.setHours(0,0,0,0);return x}
+
+// ---------- State ----------
+let db=null, sessions=[], settings=null, dbReady=false;
+let unit=LS.get("il.unit","lb");
+let viewIdx=null;      // week being viewed, as a 0-based index across blocks; null = the current calendar week
+let day=null;
+
+const idxBW=i=>({wk:(i%8)+1,block:Math.floor(i/8)+1});
+const bwIdx=(b,w)=>(b-1)*8+(w-1);
+function currentIdx(){
+  if(!settings||!settings.blockStart) return 0;
+  const days=Math.floor((mondayOf(new Date())-mondayOf(parseISO(settings.blockStart)))/864e5);
+  return Math.max(0,Math.floor(days/7));
+}
+function shownIdx(){return viewIdx==null?currentIdx():viewIdx}
+function blockWeek(){return idxBW(shownIdx())}
+function lifts(){return sessions.filter(s=>s.kind==="lift")}
+function hasEntries(s){return !!s&&Object.values(s.sets||{}).some(a=>a.some(x=>x.r!=null&&x.r!==""||x.w!=null&&x.w!==""))}
+function findSession(block,wk,d){return lifts().filter(s=>s.block===block&&s.week===wk&&s.day===d).sort((a,b)=>(b.ts||0)-(a.ts||0))[0]||null}
+function sessIdx(s){return s.block&&s.week?bwIdx(s.block,s.week):-1}
+// most recent entry for an exercise from an EARLIER week than the one shown
+function lastExercise(id){
+  const vi=shownIdx();
+  const cands=lifts().filter(s=>sessIdx(s)<vi&&s.sets&&s.sets[id]&&s.sets[id].some(x=>x.r!=null&&x.r!==""));
+  cands.sort((a,b)=>sessIdx(b)-sessIdx(a)||(b.ts||0)-(a.ts||0));
+  const s=cands[0];return s?{s,sets:s.sets[id].filter(x=>x.r!=null&&x.r!=="")}:null;
+}
+function nextDay(){const b=idxBW(currentIdx());return ORDER.find(k=>!hasEntries(findSession(b.block,b.wk,k)))||"UA"}
+
+// ---------- Status ----------
+function status(msg,kind){PH.toast(msg,kind==="err"?"error":kind==="warn"?"warn":"")}
+
+// ---------- Header / pages ----------
+function renderHeader(){const b=blockWeek();$("#wkNo").textContent=b.wk;$("#blockNo").textContent=b.block;
+  $("#hudBlock").textContent=b.block;$("#hudWeek").textContent=b.wk+"/8";$("#wkPrev").disabled=shownIdx()<=0;
+  const c=idxBW(currentIdx());$("#curWeekVal").textContent=settings&&settings.blockStart?"B"+c.block+" · W"+c.wk:"Not started"}
+let route="/";
+PH.on("route",r=>{route=r;if(r==="/week")renderWeek();if(r==="/progress")renderProgress();if(r.startsWith("/settings"))renderBackupInfo()});
+// day tags: upper days green, lower days cyan
+const DTAG=k=>`<span class="dtag${k[0]==="L"?" lo":""}" aria-hidden="true">${k}</span>`;
+$("#wkPrev").addEventListener("click",()=>goWeek(shownIdx()-1));
+$("#wkNext").addEventListener("click",()=>goWeek(shownIdx()+1));
+
+// ---------- Stick figures (start / end positions) ----------
+const FL={torso:34,ua:18,fa:17,th:22,sh:21,foot:7};
+const fdir=(a,l)=>{const r=a*Math.PI/180;return [Math.sin(r)*l,Math.cos(r)*l]};
+const fadd=(p,v)=>[p[0]+v[0],p[1]+v[1]];
+const BENCH=[["line",14,63,76,63,4],["line",20,63,20,92,2.5],["line",70,63,70,92,2.5]];
+const pz=(base,over)=>Object.assign({},base,over);
+const FIGS={
+  bench:(b=>[pz(b,{ua:180,fa:180}),pz(b,{ua:-80,fa:170})])({t:90,hip:[28,58],th:-60,sh:0,props:[...BENCH,["plate","Hn"]]}),
+  csrow:(b=>[pz(b,{ua:0,fa:0}),pz(b,{ua:-75,fa:0})])({t:50,hip:[38,50],th:-15,sh:0,props:[["line",42,55,67,34,4],["line",55,45,55,92,2.5],["plate","Hn"]]}),
+  ohp:(b=>[pz(b,{ua:25,fa:175}),pz(b,{ua:178,fa:180})])({stand:1,sc:.72,props:[["plate","Hn"]]}),
+  pulldown:(b=>[pz(b,{ua:170,fa:180}),pz(b,{ua:-20,fa:170})])({t:-10,hip:[40,66],th:90,sh:0,sc:.85,props:[["line",28,70,50,70,4],["line",40,70,40,92,2.5],["line",56,62,68,62,4],["cableUp","Hn"],["handle","Hn"]]}),
+  inccurl:(b=>[pz(b,{ua:-12,fa:-8}),pz(b,{ua:-12,fa:150})])({t:-35,hip:[46,64],th:80,sh:-5,props:[["line",44,70,20,36,4],["line",36,69,60,69,4],["line",46,69,46,92,2.5],["db","Hn"]]}),
+  ohtri:(b=>[pz(b,{ua:160,fa:-30}),pz(b,{ua:155,fa:155})])({stand:1,t:20,th:10,leg2:[-14,-4],props:[["cable","Hn",6,40],["handle","Hn"]]}),
+  squat:(b=>[pz(b,{t:0,th:0,sh:0}),pz(b,{t:40,th:82,sh:-32})])({stand:1,ua:-35,fa:170,props:[["plate","S"]]}),
+  rdl:(b=>[pz(b,{t:0,th:0,sh:0}),pz(b,{t:75,th:-10,sh:6})])({stand:1,ua:0,fa:0,props:[["plate","Hn"]]}),
+  legpress:(b=>[pz(b,{th:170,sh:90}),pz(b,{th:110,sh:110})])({t:-60,hip:[50,72],fo:20,ua:30,fa:60,props:[["line",16,58,54,80,4],["line",38,74,38,92,2.5],["platform","A",20]]}),
+  seatcurl:(b=>[pz(b,{th:90,sh:82}),pz(b,{th:90,sh:-15})])({t:-5,hip:[38,62],ua:15,fa:70,props:[["line",26,67,50,67,4],["line",38,67,38,92,2.5],["line",31,64,28,28,4],["pad","A"]]}),
+  stcalf:(b=>[pz(b,{fo:140}),pz(b,{fo:30})])({stand:1,toe:[56,82],ua:0,fa:0,props:[["rect",52,82,24,10]]}),
+  hlr:(b=>[pz(b,{th:0,sh:0}),pz(b,{th:90,sh:90})])({hang:[50,10],sc:.72,noGround:1,ua:180,fa:180,props:[["line",28,10,72,10,3]]}),
+  incdb:(b=>[pz(b,{ua:-40,fa:150}),pz(b,{ua:160,fa:160})])({t:-40,hip:[50,64],th:80,sh:-5,props:[["line",48,70,22,34,4],["line",40,69,64,69,4],["line",50,69,50,92,2.5],["db","Hn"]]}),
+  pullup:(b=>[pz(b,{ua:180,fa:180}),pz(b,{ua:-15,fa:175})])({hang:[50,10],sc:.8,noGround:1,th:10,sh:-35,props:[["line",28,10,72,10,3]]}),
+  cablerow:(b=>[pz(b,{t:25,ua:80,fa:85}),pz(b,{t:-5,ua:-50,fa:90})])({hip:[30,74],th:85,sh:75,fo:180,props:[["line",14,79,46,79,4],["cable","Hn",96,70],["platform","A",0],["handle","Hn"]]}),
+  fly:[{front:1,a:75,b:10,props:[["cables",6,14,94,14],["dbs"]]},{front:1,a:55,b:-105,props:[["cables",6,14,94,14],["dbs"]]}],
+  lateral:[{front:1,a:8,b:0,props:[["dbs"]]},{front:1,a:85,b:5,props:[["dbs"]]}],
+  reardelt:(b=>[pz(b,{ua:88,fa:90}),pz(b,{ua:-95,fa:150})])({stand:1,props:[["cable","Hn",96,26],["handle","Hn"]]}),
+  ezcurl:(b=>[pz(b,{ua:0,fa:0}),pz(b,{ua:8,fa:160})])({stand:1,props:[["plate","Hn",5]]}),
+  pushdown:(b=>[pz(b,{ua:-5,fa:155}),pz(b,{ua:-5,fa:5})])({stand:1,t:12,props:[["cable","Hn",64,4],["handle","Hn"]]}),
+  deadlift:(b=>[pz(b,{t:50,th:75,sh:-28}),pz(b,{t:0,th:0,sh:0})])({stand:1,ua:0,fa:0,props:[["plate","Hn",8]]}),
+  frontsq:(b=>[pz(b,{t:5,th:0,sh:0}),pz(b,{t:22,th:85,sh:-35})])({stand:1,ua:90,fa:-110,props:[["plate","Hn",7]]}),
+  lunge:[{stand:1,ua:0,fa:0,th:0,sh:0,leg2:[-3,0],props:[["db","Hn"]]},{stand:1,footX:62,ua:0,fa:0,th:75,sh:-5,leg2:[-20,-80,70],props:[["db","Hn"]]}],
+  lyingcurl:(b=>[pz(b,{th:-90,sh:-90,fo:0}),pz(b,{th:-90,sh:160,fo:-90})])({t:90,hip:[52,56],ua:20,fa:-20,sc:.9,props:[["line",8,61,90,61,4],["line",16,61,16,92,2.5],["line",82,61,82,92,2.5],["pad","A"]]}),
+  legext:(b=>[pz(b,{th:90,sh:-8}),pz(b,{th:88,sh:86})])({t:-5,hip:[38,60],ua:15,fa:70,props:[["line",26,65,50,65,4],["line",38,65,38,92,2.5],["line",31,62,28,26,4],["pad","A"]]}),
+  seatcalf:(b=>[pz(b,{th:90,fo:110}),pz(b,{th:105,fo:50})])({t:0,hip:[36,65],sh:0,ua:20,fa:90,props:[["line",24,70,48,70,4],["line",36,70,36,92,2.5],["rect",60,84,18,8],["pad","K",0,-4]]}),
+  pallof:(b=>[pz(b,{ua:5,fa:150}),pz(b,{ua:88,fa:90})])({stand:1,leg2:[-8,0],props:[["handle","Hn"]]})
+};
+FIGS.ohp[0].leg2=FIGS.ohp[1].leg2=[-6,0];
+const fL=(a,b,w,c)=>`<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="${c}" stroke-width="${w}"/>`;
+const fPL=(pts,w,c,op)=>`<polyline points="${pts.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")}" fill="none" stroke="${c}" stroke-width="${w}"${op?` opacity="${op}"`:""}/>`;
+const INK="var(--text)",EQ="var(--text-faint)",ACC="var(--accent)";
+function propSVG(pr,J,front){
+  const k=pr[0];
+  if(k==="line")return fL([pr[1],pr[2]],[pr[3],pr[4]],pr[5],EQ);
+  if(k==="rect")return `<rect x="${pr[1]}" y="${pr[2]}" width="${pr[3]}" height="${pr[4]}" fill="var(--line)"/>`;
+  if(front)return "";
+  const p=J[pr[1]];
+  if(k==="plate")return `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${pr[2]||7}" fill="var(--bg)" stroke="${ACC}" stroke-width="2.4"/>`;
+  if(k==="db")return fL([p[0]-5,p[1]],[p[0]+5,p[1]],2,ACC)+`<rect x="${(p[0]-6.5).toFixed(1)}" y="${(p[1]-3).toFixed(1)}" width="3" height="6" fill="${ACC}"/><rect x="${(p[0]+3.5).toFixed(1)}" y="${(p[1]-3).toFixed(1)}" width="3" height="6" fill="${ACC}"/>`;
+  if(k==="handle")return fL([p[0]-4,p[1]],[p[0]+4,p[1]],3,ACC);
+  if(k==="cable")return fL(p,[pr[2],pr[3]],1.2,EQ)+`<circle cx="${pr[2]}" cy="${pr[3]}" r="2.6" fill="${EQ}"/>`;
+  if(k==="cableUp")return fL(p,[p[0],2],1.2,EQ)+`<circle cx="${p[0].toFixed(1)}" cy="3" r="2.6" fill="${EQ}"/>`;
+  if(k==="platform"){const v=fdir(pr[2],1);return fL([p[0]-v[0]*6,p[1]-v[1]*6],[p[0]+v[0]*12,p[1]+v[1]*12],4,EQ)}
+  if(k==="pad")return `<circle cx="${(p[0]+(pr[2]||0)).toFixed(1)}" cy="${(p[1]+(pr[3]||0)).toFixed(1)}" r="3.6" fill="${EQ}"/>`;
+  return "";
+}
+function figBody(P){
+  if(P.front){
+    const sR=[56,31],sL=[44,31],hip=[50,57];
+    const arm=(s,sg)=>{const e=[s[0]+sg*Math.sin(P.a*Math.PI/180)*18,s[1]+Math.cos(P.a*Math.PI/180)*18];const ang=(P.a+P.b)*Math.PI/180;return [s,e,[e[0]+sg*Math.sin(ang)*17,e[1]+Math.cos(ang)*17]]};
+    const R=arm(sR,1),Lf=arm(sL,-1);
+    let s="";
+    for(const pr of P.props||[]){
+      if(pr[0]==="cables")s+=fL(Lf[2],[pr[1],pr[2]],1.2,EQ)+fL(R[2],[pr[3],pr[4]],1.2,EQ)+`<circle cx="${pr[1]}" cy="${pr[2]}" r="2.6" fill="${EQ}"/><circle cx="${pr[3]}" cy="${pr[4]}" r="2.6" fill="${EQ}"/>`;
+    }
+    s+=fL([50,25],hip,3.4,INK)+fL(sL,sR,3.4,INK)+fPL(R,3.4,INK)+fPL(Lf,3.4,INK)+fPL([hip,[46,74],[45,92]],3.4,INK)+fPL([hip,[54,74],[55,92]],3.4,INK)+`<circle cx="50" cy="17.5" r="6.5" fill="var(--bg)" stroke="${INK}" stroke-width="3"/>`;
+    for(const pr of P.props||[]){if(pr[0]==="dbs")for(const h of [R[2],Lf[2]])s+=`<rect x="${(h[0]-3).toFixed(1)}" y="${(h[1]-5).toFixed(1)}" width="6" height="10" rx="1.5" fill="${ACC}"/>`}
+    return {s,ground:true};
+  }
+  const t=P.t||0;let hip=[...(P.hip||[45,50])];
+  const S=fadd(hip,fdir(180-t,FL.torso)),Hd=fadd(S,fdir(180-t,10)),E=fadd(S,fdir(P.ua||0,FL.ua)),Hn=fadd(E,fdir(P.fa||0,FL.fa));
+  const leg=(th,sh,fo)=>{const K=fadd(hip,fdir(th,FL.th)),A=fadd(K,fdir(sh,FL.sh));return [K,A,fadd(A,fdir(fo==null?90:fo,FL.foot))]};
+  const l1=leg(P.th||0,P.sh||0,P.fo),l2=P.leg2?leg(P.leg2[0],P.leg2[1],P.leg2[2]):null;
+  const all=[hip,S,Hd,E,Hn,...l1,...(l2||[])];
+  let dx=0,dy=0;
+  if(P.stand){dy=(P.ground||92)-Math.max(...[l1[1],l1[2]].concat(l2?[l2[1],l2[2]]:[]).map(p=>p[1]));dx=(P.footX||48)-l1[1][0]}
+  if(P.toe){dx=P.toe[0]-l1[2][0];dy=P.toe[1]-l1[2][1]}
+  if(P.hang){dx=P.hang[0]-Hn[0];dy=P.hang[1]-Hn[1]}
+  all.forEach(p=>{p[0]+=dx;p[1]+=dy});
+  const J={hip,S,Hd,E,Hn,K:l1[0],A:l1[1],T:l1[2]};
+  const front=["plate","db","handle"];
+  let s=(P.props||[]).filter(p=>!front.includes(p[0])).map(p=>propSVG(p,J)).join("");
+  if(l2)s+=fPL([hip,...l2],3.4,INK,.45);
+  s+=fPL([hip,...l1],3.4,INK)+fL(hip,S,3.4,INK)+fPL([S,E,Hn],3.4,INK)+`<circle cx="${Hd[0].toFixed(1)}" cy="${Hd[1].toFixed(1)}" r="6.5" fill="var(--bg)" stroke="${INK}" stroke-width="3"/>`;
+  s+=(P.props||[]).filter(p=>front.includes(p[0])).map(p=>propSVG(p,J)).join("");
+  const sc=P.sc||(P.stand||P.toe?.84:0);
+  if(sc){const o=P.hang||[50,92];s=`<g transform="translate(${o[0]} ${o[1]}) scale(${sc}) translate(${-o[0]} ${-o[1]})">${s}</g>`}
+  return {s,ground:!P.noGround};
+}
+function figSVG(P,label){
+  const b=figBody(P);
+  return `<svg viewBox="0 0 100 100" role="img" aria-label="${esc(label)}" stroke-linecap="round" stroke-linejoin="round">${b.ground?'<line x1="4" y1="92.5" x2="96" y2="92.5" stroke="var(--line)" stroke-width="1.5"/>':""}${b.s}</svg>`;
+}
+function figPair(ex){
+  const f=FIGS[ex.id];if(!f)return "";
+  return `<div class="figs">${["Start","End"].map((w,i)=>`<figure class="fig">${figSVG(f[i],ex.n+" "+w.toLowerCase()+" position")}<figcaption>${w}</figcaption></figure>`).join("")}</div>`;
+}
+
+// ---------- Train tab ----------
+function renderPhase(){
+  const b=blockWeek(),p=PHASES[b.wk],ci=currentIdx(),vi=shownIdx();
+  let extra="";
+  let badge="";
+  if(!settings||!settings.blockStart) extra='<div class="acts"><button class="btn btn-sm" id="startBlock">Start week 1 today</button></div>';
+  else if(vi!==ci){badge=`<span class="badge cyan">${vi<ci?"Past week":"Future week"}</span>`;
+    extra='<div class="acts"><button class="btn btn-sm" id="toCurrent">Back to this week</button><button class="btn btn-ghost btn-sm" id="makeCurrent">Make this the current week</button></div>'}
+  $("#phase").innerHTML=`<div class="phase-t">${esc(p.t)}${p.deload?'<span class="badge amber">Deload</span>':""}${badge}</div><p>${esc(p.d)}</p>${extra}`;
+  const sb=$("#startBlock"); if(sb)sb.addEventListener("click",()=>setCalendar(shownIdx()));
+  const tc=$("#toCurrent"); if(tc)tc.addEventListener("click",()=>goWeek(null));
+  const mc=$("#makeCurrent"); if(mc)mc.addEventListener("click",()=>setCalendar(shownIdx()));
+}
+async function setCalendar(idx){
+  if(!db){status("Storage is blocked in this browser. Turn off Private Browsing in Safari.","err");return}
+  const start=mondayOf(new Date());start.setDate(start.getDate()-idx*7);
+  try{viewIdx=null;await db.doc("settings/main").set(Object.assign({},settings||{},{blockStart:isoDate(start)}))}
+  catch(e){status("Couldn't change the current week. Try again in a moment.","err")}
+}
+function goWeek(idx){flushWrite();viewIdx=(idx==null||idx===currentIdx())?null:Math.max(0,idx);openView();renderAll()}
+function renderDayPick(){
+  const b=blockWeek(),isCur=shownIdx()===currentIdx(),nd=isCur?nextDay():null;
+  $("#daypick").innerHTML=ORDER.map(k=>{const d=DAYS[k],s=findSession(b.block,b.wk,k),done=hasEntries(s);
+    return `<button data-day="${k}" aria-pressed="${k===day}"><span class="dn">${DTAG(k)}${d.name}</span><span class="ds">${done?"Logged "+fmtDate(s.date):"Not logged yet"}</span><span class="next${done?" ok":""}">${k===nd?"▸ Up next":done?"✓ Week "+b.wk:""}</span></button>`}).join("");
+  document.querySelectorAll("#daypick button").forEach(btn=>btn.addEventListener("click",()=>{flushWrite();day=btn.dataset.day;LS.set("il.day",day);renderDayPick();openView()}));
+}
+
+// The open week+day. Everything typed autosaves into this week's entry for the day.
+let cur=null, loadedJSON="";
+const str=v=>v==null?"":String(v);
+function openView(){
+  const b=blockWeek(), s=findSession(b.block,b.wk,day);
+  cur={block:b.block,wk:b.wk,day,id:s?s.id:`b${b.block}w${b.wk}-${day}`,exists:!!s,date:s&&s.date,ts:s&&s.ts,notes:s&&s.notes||"",sets:{}};
+  for(const [id,arr] of Object.entries((s&&s.sets)||{}))cur.sets[id]=arr.map(x=>({w:str(x.w),r:str(x.r),rir:str(x.rir),done:!!x.done}));
+  loadedJSON=s?JSON.stringify(s):"";
+  renderExercises();
+}
+function rowsFor(ex,count){
+  let arr=cur.sets[ex.id];
+  if(!arr)arr=cur.sets[ex.id]=[];
+  while(arr.length<count)arr.push({w:"",r:"",rir:"",done:false});
+  return arr;
+}
+function suggestW(ex,i){const prev=lastExercise(ex.id);if(!prev||ex.bw)return "";const p=prev.sets[Math.min(i,prev.sets.length-1)];return p&&p.w!=null&&p.w!==""?String(p.w):""}
+function hintFor(ex){
+  const prev=lastExercise(ex.id); if(!prev)return {cls:"",txt:`First time logging this. Pick a weight you can lift for ${ex.lo} reps with the target reps in reserve.`};
+  const sets=prev.sets;
+  const allTop=sets.every(s=>Number(s.r)>=ex.hi);
+  const u=prev.s.unit||"lb", wkTxt=prev.s.week?`week ${prev.s.week}`:"last time";
+  const line=sets.map(s=>(s.w!==""&&s.w!=null?s.w+"×":"")+s.r).join(", ");
+  if(allTop&&!ex.bw){const inc=u==="kg"?(ex.up?"1–2.5 kg":"2.5–5 kg"):(ex.up?"2.5–5 lb":"5–10 lb");
+    return {cls:"up",txt:`You hit ${ex.hi}+ on every set in ${wkTxt} (${line}). Add ${inc} and aim for ${ex.lo}+ reps.`}}
+  return {cls:"",txt:`In ${wkTxt}: ${line} ${u}. Beat it by a rep or two at the same weight.`};
+}
+function renderExercises(){
+  const wk=cur.wk, d=DAYS[day];
+  $("#exlist").innerHTML=d.ex.map((ex,i)=>{
+    const t=target(ex,wk), n=t.sets+t.bonus, arr=rowsFor(ex,n), h=hintFor(ex);
+    const repLabel=ex.secs?"Secs":"Reps";
+    const rows=arr.map((s,j)=>{const sw=suggestW(ex,j);return `<div class="setrow${j>=t.sets?" bonus":""}" data-ex="${ex.id}" data-i="${j}">
+      <span class="sn">${j+1}</span>
+      <input inputmode="decimal" aria-label="${esc(ex.n)} set ${j+1} weight" placeholder="${esc(sw||(ex.bw?"BW":unit))}" value="${esc(s.w)}" data-f="w">
+      <input inputmode="numeric" aria-label="${esc(ex.n)} set ${j+1} ${repLabel.toLowerCase()}" placeholder="${ex.lo}–${ex.hi}" value="${esc(s.r)}" data-f="r">
+      <input inputmode="numeric" aria-label="${esc(ex.n)} set ${j+1} reps in reserve" placeholder="${esc(t.rir)}" value="${esc(s.rir)}" data-f="rir">
+      <button class="done" aria-pressed="${s.done}" aria-label="Mark set ${j+1} done and start rest" data-done>✓</button></div>`}).join("");
+    return `<article class="panel ex" data-title="${i+1} / ${d.ex.length}">
+      <div><h3>${esc(ex.n)}</h3>${ex.alt?`<div class="alt">${esc(ex.alt)}</div>`:""}
+        <div class="ex-target"><span class="badge dim">${t.sets}${t.bonus?"+1":""} × ${ex.lo}–${ex.hi}${ex.secs?" s":""}</span><span class="badge dim">RIR ${esc(t.rir)}</span><span class="badge dim">Rest ${mmss(ex.rest)}</span></div></div>
+      ${figPair(ex)}
+      <div class="tip ${h.cls}">${esc(h.txt)}</div>
+      <div class="sets"><div class="setrow headrow"><span>#</span><span>Weight</span><span>${repLabel}</span><span>RIR</span><span>Done</span></div>${rows}</div>
+      <div class="ex-foot"><button class="btn btn-sm" data-add="${ex.id}">+ Add a set</button>${arr.length>n?`<button class="btn btn-ghost btn-sm" data-rm="${ex.id}">Remove last set</button>`:""}</div>
+    </article>`}).join("");
+  $("#notes").value=cur.notes||"";
+  saveState(cur.exists?"saved":"idle");
+}
+// fill an empty weight with last week's number once the set is actually used
+function fillWeight(row,s){if(s.w!=="")return;const ex=exById(row.dataset.ex).ex,sw=suggestW(ex,+row.dataset.i);if(sw){s.w=sw;const inp=row.querySelector('[data-f="w"]');if(inp)inp.value=sw}}
+$("#exlist").addEventListener("input",e=>{
+  const inp=e.target; const row=inp.closest(".setrow"); if(!row||!inp.dataset.f)return;
+  const s=cur.sets[row.dataset.ex][+row.dataset.i]; s[inp.dataset.f]=inp.value.trim();
+  if(inp.dataset.f!=="w"&&s[inp.dataset.f]!=="")fillWeight(row,s);
+  scheduleWrite();
+});
+$("#exlist").addEventListener("click",e=>{
+  const doneBtn=e.target.closest("[data-done]");
+  if(doneBtn){const row=doneBtn.closest(".setrow");const s=cur.sets[row.dataset.ex][+row.dataset.i];s.done=!s.done;doneBtn.setAttribute("aria-pressed",String(s.done));
+    if(s.done){fillWeight(row,s);const ex=exById(row.dataset.ex).ex;startTimer(ex.rest,ex.n)}scheduleWrite();return}
+  const add=e.target.closest("[data-add]"); if(add){const a=cur.sets[add.dataset.add];a.push({w:a.length?a[a.length-1].w:"",r:"",rir:"",done:false});scheduleWrite();renderExercises();return}
+  const rm=e.target.closest("[data-rm]"); if(rm){cur.sets[rm.dataset.rm].pop();scheduleWrite();renderExercises()}
+});
+$("#notes").addEventListener("input",e=>{cur.notes=e.target.value;scheduleWrite()});
+$("#clearBtn").addEventListener("click",async()=>{
+  if(!await PH.confirm(`Clear everything logged for ${DAYS[cur.day].name} in week ${cur.wk}? This can't be undone.`,{title:"Clear day",ok:"Clear",danger:true}))return;
+  cur.sets={};cur.notes="";scheduleWrite();flushWrite();renderExercises();
+});
+function setUnit(u){unit=u;LS.set("il.unit",u);$("#u-lb").setAttribute("aria-pressed",String(u==="lb"));$("#u-kg").setAttribute("aria-pressed",String(u==="kg"));if(cur)renderExercises()}
+$("#u-lb").addEventListener("click",()=>setUnit("lb"));$("#u-kg").addEventListener("click",()=>setUnit("kg"));
+
+// ---------- Autosave ----------
+let pending=null, writeTimer=null, writing=false, noDbWarned=false;
+function saveState(s){const el=$("#saveState");if(!el)return;
+  el.textContent={idle:"Entries save automatically as you type.",saving:"Saving…",saved:"✓ All changes saved.",err:"Couldn't save. Retrying…",nodb:"Not saving: this browser is blocking storage."}[s]||"";
+  el.className=s==="err"||s==="nodb"?"bad":s==="saved"?"ok":""}
+function buildDoc(){
+  const sets={};let any=false;
+  for(const [id,arr] of Object.entries(cur.sets)){
+    // keep blank rows in front of a filled one so set numbers stay put
+    const last=arr.reduce((m,s,i)=>(s.w!==""||s.r!==""||s.rir!==""||s.done)?i:m,-1);
+    if(last>=0){sets[id]=arr.slice(0,last+1).map(s=>({w:s.w===""?null:Number(s.w),r:s.r===""?null:Number(s.r),rir:s.rir===""?null:s.rir,done:!!s.done}));any=true}
+  }
+  if(!cur.date)cur.date=isoDate(new Date());
+  if(!cur.ts)cur.ts=Date.now();
+  return {id:cur.id,empty:!any&&!cur.notes,body:{kind:"lift",day:cur.day,block:cur.block,week:cur.wk,date:cur.date,ts:cur.ts,unit,sets,notes:cur.notes||""},ref:cur};
+}
+function scheduleWrite(){
+  if(!db){if(!noDbWarned){noDbWarned=true}saveState("nodb");return}
+  pending=buildDoc();saveState("saving");clearTimeout(writeTimer);writeTimer=setTimeout(flushWrite,400);
+}
+async function flushWrite(){
+  clearTimeout(writeTimer);
+  if(!db||!pending)return;
+  if(writing){writeTimer=setTimeout(flushWrite,250);return}
+  const job=pending;pending=null;writing=true;
+  try{
+    const ref=db.collection("sessions").doc(job.id);
+    if(job.empty){if(job.ref.exists)await ref.delete();job.ref.exists=false}
+    else{await ref.set(job.body);job.ref.exists=true}
+    if(!pending&&job.ref===cur)saveState(job.empty?"idle":"saved");
+  }catch(e){
+    if(!pending)pending=job;saveState("err");writeTimer=setTimeout(flushWrite,3000);
+  }finally{writing=false}
+}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushWrite()});
+window.addEventListener("pagehide",()=>flushWrite());
+
+// ---------- Rest timer ----------
+let tEnd=0,tInt=null,beeped=false,actx=null;
+function beep(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.25)}catch(e){}}
+function tick(){const left=Math.round((tEnd-Date.now())/1000);const el=$("#timerT");el.textContent=mmss(left);el.classList.toggle("over",left<=0);if(left<=0&&!beeped){beeped=true;beep()}}
+function startTimer(sec,name){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)()}catch(e){}
+  tEnd=Date.now()+sec*1000;beeped=false;$("#timerLabel").textContent="Rest · "+name;$("#timer").hidden=false;clearInterval(tInt);tick();tInt=setInterval(tick,500)}
+function stopTimer(){clearInterval(tInt);$("#timer").hidden=true}
+$("#timerAdd").addEventListener("click",()=>{tEnd+=30000;beeped=false;tick()});
+$("#timerStop").addEventListener("click",stopTimer);
+
+// ---------- Week tab ----------
+function renderWeek(){
+  renderBackupInfo();
+  const mon=mondayOf(new Date()), monS=isoDate(mon);
+  const wk=sessions.filter(s=>s.date>=monS);
+  const lifted=new Set(wk.filter(s=>s.kind==="lift").map(s=>s.day)).size;
+  const z2=wk.filter(s=>s.kind==="cardio"&&s.type==="z2").reduce((a,s)=>a+(s.minutes||0),0);
+  const intv=wk.filter(s=>s.kind==="cardio"&&s.type==="int").length;
+  const allMin=wk.filter(s=>s.kind==="cardio").reduce((a,s)=>a+(s.minutes||0),0);
+  const pct=(v,t)=>Math.min(100,Math.round(v/t*100));
+  const meter=(v,t,lab)=>`<div class="meter" role="progressbar" aria-label="${lab}" aria-valuemin="0" aria-valuemax="${t}" aria-valuenow="${Math.min(v,t)}"><span style="--value:${pct(v,t)}%"></span></div>`;
+  $("#weekStats").innerHTML=`
+    <div class="stat"><div class="top"><span class="label">Lift days</span><span class="v">${lifted}<small>/4</small></span></div>${meter(lifted,4,"Lift days")}</div>
+    <div class="stat"><div class="top"><span class="label">Zone 2 min</span><span class="v">${z2}<small>/60–90</small></span></div>${meter(z2,60,"Zone 2 minutes")}</div>
+    <div class="stat"><div class="top"><span class="label">All cardio min</span><span class="v">${allMin}</span></div><span class="note">${intv?intv+" interval session"+(intv>1?"s":""):"Intervals optional"}</span></div>`;
+  const h=$("#hist");
+  if(!dbReady){h.innerHTML='<div class="empty"><p>Loading your history…</p></div>';return}
+  if(!db){h.innerHTML='<div class="empty"><p>Storage is blocked in this browser, so there is no history. Turn off Private Browsing.</p></div>';return}
+  if(!sessions.length){h.innerHTML='<div class="empty"><pre aria-hidden="true">  [ ]──[ ]\n  LOG EMPTY</pre><p>No sessions yet. Log your first workout and it shows up here.</p><button class="btn" data-route="/">Go to Train</button></div>';return}
+  h.innerHTML=sessions.slice(0,60).map(s=>{
+    if(s.kind==="cardio"){const lab={z2:"Zone 2",int:"4×4 intervals",walk:"Walk / sport"}[s.type]||"Cardio";
+      return `<details><summary><span class="what"><span class="dtag lo" aria-hidden="true">~</span><strong>${esc(lab)}</strong> <span class="when">${fmtDate(s.date)}</span></span><span class="amt">${s.minutes} min</span></summary><div class="body"><div><button class="btn btn-danger btn-sm" data-del="${esc(s.id)}" data-what="this cardio entry">Delete this entry</button></div></div></details>`}
+    const d=DAYS[s.day]||{name:s.day,ex:[]};
+    const done=Object.fromEntries(Object.entries(s.sets||{}).map(([id,arr])=>[id,arr.filter(x=>x.r!=null&&x.r!=="")]).filter(([,a])=>a.length));
+    const nsets=Object.values(done).reduce((a,x)=>a+x.length,0);
+    const lines=Object.entries(done).map(([id,arr])=>{const e=exById(id);return `<div><strong>${esc(e?e.ex.n:id)}</strong><div class="sl">${arr.map(x=>(x.w!=null?x.w+"×":"")+x.r+(x.rir!=null&&x.rir!==""?" @"+x.rir:"")).join(" · ")}</div></div>`}).join("");
+    return `<details><summary><span class="what">${DTAG(s.day)}<strong>${esc(d.name)}</strong> <span class="when">${fmtDate(s.date)} · wk ${s.week||"?"}</span></span><span class="amt">${nsets} sets</span></summary>
+      <div class="body">${lines}${s.notes?`<div class="sl">“${esc(s.notes)}”</div>`:""}<div class="note">Weights in ${esc(s.unit||"lb")}. Format: weight × reps @ RIR.</div><div><button class="btn btn-danger btn-sm" data-del="${esc(s.id)}" data-what="this ${esc(d.name)} session">Delete this session</button></div></div></details>`}).join("");
+}
+$("#hist").addEventListener("click",async e=>{
+  const b=e.target.closest("[data-del]");if(!b||!db)return;
+  if(!await PH.confirm(`Delete ${b.dataset.what}? This can't be undone.`,{title:"Delete",ok:"Delete",danger:true}))return;
+  try{await db.collection("sessions").doc(b.dataset.del).delete();status("Deleted.","ok")}catch(err){status("Couldn't delete that entry. Try again.","err")}
+});
+$("#cDate").value=isoDate(new Date());
+$("#cSave").addEventListener("click",async()=>{
+  const m=Number($("#cMin").value);if(!m||m<1){status("Enter the minutes first.","err");return}
+  if(!db){status("Storage is blocked in this browser. Turn off Private Browsing in Safari.","err");return}
+  const date=$("#cDate").value||isoDate(new Date());
+  try{await db.collection("sessions").add({kind:"cardio",type:$("#cKind").value,minutes:m,date,ts:parseISO(date).getTime()+43200000});status("Cardio logged.","ok")}
+  catch(e){status("Couldn't save that. Try again in a moment.","err")}
+});
+
+// ---------- Backup ----------
+function renderBackupInfo(){const el=$("#bkInfo");if(!el)return;const last=LS.get("il.lastExport",null);
+  el.textContent=sessions.length+(sessions.length===1?" entry":" entries")+" saved."+(last?" Last export: "+fmtDate(last)+".":" Not exported yet.");
+  $("#aboutCount").textContent=String(sessions.length)}
+async function exportBackup(){
+  if(!db||!db.exportAll)return;
+  const json=JSON.stringify(db.exportAll(),null,1), name="workout-log-backup-"+isoDate(new Date())+".json";
+  const file=new File([json],name,{type:"application/json"});
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name})}
+    else{const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)}
+    LS.set("il.lastExport",isoDate(new Date()));renderBackupInfo();status("Backup ready. Choose Save to Files to keep it.","ok");
+  }catch(e){if(e&&e.name==="AbortError")return;status("Couldn't create the backup file. Try again.","err")}
+}
+$("#expBtn").addEventListener("click",exportBackup);
+$("#impBtn").addEventListener("click",()=>$("#impFile").click());
+$("#impFile").addEventListener("change",async e=>{
+  const f=e.target.files&&e.target.files[0];e.target.value="";if(!f||!db)return;
+  try{const n=db.importAll(JSON.parse(await f.text()));status(n?`Imported ${n} entr${n===1?"y":"ies"}.`:"Nothing new in that backup; everything was already here.","ok")}
+  catch(err){status("That file isn't a Workout Log backup. Pick a file named workout-log-backup-….json.","err")}
+});
+
+// ---------- Progress ----------
+function renderProgress(){
+  const el=$("#prog");
+  if(!db&&dbReady){el.innerHTML='<div class="empty"><p>Storage is blocked in this browser, so there are no trends yet.</p></div>';return}
+  const series={};
+  lifts().slice().reverse().forEach(s=>{for(const [id,arr] of Object.entries(s.sets||{})){
+    let best=0;for(const x of arr){if(x.w&&x.r&&x.r<=12){const e=x.w*(1+x.r/30);if(e>best)best=e}}
+    if(best>0){(series[id]=series[id]||[]).push({v:best,date:s.date,u:s.unit||"lb"})}}});
+  const ids=ORDER.flatMap(k=>DAYS[k].ex.filter(e=>e.k==="c").map(e=>e.id)).filter(id=>series[id]);
+  if(!ids.length){el.innerHTML='<div class="empty"><pre aria-hidden="true">   .-\n .-\'\n_/  NO DATA</pre><p>Log a few sessions with weights and this fills in with one line per compound lift.</p></div>';return}
+  el.innerHTML=ids.map(id=>{const pts=series[id].slice(-16),e=exById(id).ex;
+    const vs=pts.map(p=>p.v),mn=Math.min(...vs),mx=Math.max(...vs),span=mx-mn||1,W=200,H=36,P=4;
+    const xy=pts.map((p,i)=>[pts.length===1?W/2:P+i*(W-2*P)/(pts.length-1),H-P-(p.v-mn)/span*(H-2*P)]);
+    const line=xy.map(p=>p.map(n=>n.toFixed(1)).join(",")).join(" ");
+    const area=`${xy[0][0].toFixed(1)},${H} ${line} ${xy[xy.length-1][0].toFixed(1)},${H}`;
+    const last=pts[pts.length-1],first=pts[0],ch=last.v-first.v;
+    const [lx,ly]=xy[xy.length-1];
+    return `<div class="prog-row"><div><strong class="small">${esc(e.n)}</strong><div class="meta">${pts.length} session${pts.length>1?"s":""} · since ${fmtDate(first.date)}</div></div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><polygon points="${area}" fill="var(--accent-dim)" opacity=".25"/><polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="1.8" vector-effect="non-scaling-stroke"/><circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="3" fill="var(--accent)"/></svg>
+      <div><div class="val">${Math.round(last.v)} ${esc(last.u)}</div><div class="ch ${ch>0?"t-accent":ch<0?"t-red":"dim"}">${ch>0?"▲ +":ch<0?"▼ ":"— "}${ch?Math.round(ch):"flat"}</div></div></div>`}).join("");
+}
+
+// ---------- Plan tab (static) ----------
+function renderPlan(){
+  const sched=[["Mon","Upper A","UA"],["Tue","Lower A","LA"],["Wed","Rest or Zone 2",""],["Thu","Upper B","UB"],["Fri","Lower B","LB"],["Sat","Zone 2, long walk or sport",""],["Sun","Rest",""]];
+  const days=ORDER.map(k=>{const d=DAYS[k];return `<section class="panel" data-title="${d.name}"><div class="dayhead">${DTAG(k)}<span class="dim">${d.sub}</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Exercise</th><th class="num">Sets×reps</th><th class="num">RIR</th><th class="num">Rest</th></tr></thead><tbody>
+    ${d.ex.map(e=>`<tr><td>${esc(e.n)}${e.alt?`<div class="sub">${esc(e.alt)}</div>`:""}</td><td class="num">${e.s}×${e.lo}–${e.hi}${e.secs?" s":""}</td><td class="num">${esc(e.rir)}</td><td class="num">${mmss(e.rest)}</td></tr>`).join("")}
+    </tbody></table></div></section>`}).join("");
+  $("#planBody").innerHTML=`
+  <section class="panel" data-title="Weekly layout"><div class="tbl-wrap"><table><tbody>${sched.map(s=>`<tr><td style="width:56px" class="dim">${s[0]}</td><td>${s[2]?DTAG(s[2])+" ":""}${s[1]}</td></tr>`).join("")}</tbody></table></div>
+  <p class="note">Any 4 days work as long as the two lower days aren't back to back. Warm up with 5 min easy cardio and 2–3 ramp-up sets on the first lift (about 50% × 8, 70% × 4, 85% × 2). Warm-ups don't count.</p></section>
+  ${days}
+  <section class="panel" data-title="The 8-week block"><div class="tbl-wrap"><table><thead><tr><th>Weeks</th><th>What changes</th></tr></thead><tbody>
+  <tr><td>1–2</td><td>Sets as written. Learn the feel of reps in reserve and stay at 2–3.</td></tr>
+  <tr><td>3–4</td><td>One extra set on each isolation exercise.</td></tr>
+  <tr><td>5–6</td><td>Push effort: compounds at 1 RIR, isolations at 0–1.</td></tr>
+  <tr><td>7</td><td>Hardest week.</td></tr>
+  <tr><td>8</td><td>Deload: half the sets at 3–4 RIR. Then restart at week 1 slightly heavier, or swap a few exercises.</td></tr>
+  </tbody></table></div>
+  <p class="note">Deload early if performance drops two sessions in a row, joints ache, or sleep and stress fall apart.</p></section>
+  <section class="panel" data-title="How to progress"><p class="small">Use double progression on every exercise. Start with a weight you can lift for the bottom of the rep range at the target RIR. Add a rep or two each session at that weight. When every set reaches the top of the range, add the smallest jump (2.5–5 lb on upper lifts, 5–10 lb on lower) and drop back to the bottom of the range. The Train page does this check for you.</p></section>
+  <section class="panel" data-title="Hard sets / muscle / week"><p class="note">Weeks 1–2.</p><div class="tbl-wrap"><table><tbody>
+  ${[["Chest","~8"],["Back","~12"],["Side delts","~5, plus pressing"],["Rear delts","~2, plus rows"],["Biceps","~6, plus pulling"],["Triceps","~6, plus pressing"],["Quads","~10–12"],["Hamstrings","~11"],["Glutes","10+"],["Calves","6"]].map(r=>`<tr><td>${r[0]}</td><td class="num">${r[1]}</td></tr>`).join("")}
+  </tbody></table></div></section>`;
+}
+
+// ---------- Guide tab (static) ----------
+function renderGuide(){
+  const rows=[
+    ["Weekly volume","Muscle growth rises with hard sets per muscle per week, with diminishing returns. About 10–20 covers most people.","Schoenfeld 2017; Pelland 2024"],
+    ["Effort","Sets need to end close to failure. 0–3 reps in reserve works; true failure on every set adds fatigue for little extra growth.","Refalo 2023; Robinson 2024"],
+    ["Frequency","Training each muscle twice a week beats once at equal volume. More than twice adds little.","Schoenfeld 2016, 2019"],
+    ["Rep range","Anywhere from about 5 to 30 reps builds similar muscle when sets are hard. Heavier reps build more strength.","Schoenfeld 2017, 2021"],
+    ["Rest","2+ minutes on compounds gives more growth than short rests because later sets keep their reps.","Schoenfeld 2016; Singer 2024"],
+    ["Stretch","Loading muscles at long lengths (RDLs, incline curls, overhead triceps) appears to add growth.","Maeo 2021, 2023; Pedrosa 2022"],
+    ["Protein","About 1.6 g/kg (0.7 g/lb) a day gets most of the benefit; up to 2.2 g/kg when cutting. 30–50 g per meal.","Morton 2018"],
+    ["Sleep","7–9 hours. Short sleep measurably lowers muscle protein synthesis.",""]];
+  $("#guideBody").innerHTML=`
+  <section class="panel" data-title="Why the plan looks like this"><div class="tbl-wrap"><table><tbody>${rows.map(r=>`<tr><th style="width:96px;padding-top:10px">${r[0]}</th><td>${r[1]}${r[2]?`<div class="cite">${r[2]}</div>`:""}</td></tr>`).join("")}</tbody></table></div></section>
+  <section class="panel" data-title="Cardio and health"><ul>
+   <li>150–300 minutes of moderate activity a week, or 75–150 vigorous (WHO). Lifting counts partly.</li>
+   <li>Two Zone 2 sessions of 30–45 minutes: a pace where you can talk in full sentences but would rather not.</li>
+   <li>Optional: once a week, 4 rounds of 4 minutes hard (85–95% of max heart rate) with 3 minutes easy between, for VO2 max.</li>
+   <li>7,000–10,000 steps a day. Mortality benefits largely level off in that range (Paluch 2022).</li>
+   <li>Cardio at these doses barely affects muscle growth. Cycling interferes less with legs than running. Keep hard cardio off lower days or 6+ hours apart.</li></ul></section>
+  <section class="panel" data-title="Rules of thumb"><ul>
+   <li>Control the lowering (2–3 s), use full range, don't bounce.</li>
+   <li>Swap any exercise for one that trains the same muscle through a similar range, and keep it for a full block.</li>
+   <li>Missed a day? Shift the week. Don't cram two sessions into one.</li>
+   <li>Sharp, joint or lingering pain is a stop signal. Swap the exercise and see a professional if it persists.</li>
+   <li>To gain, eat about 250–350 kcal over maintenance (0.25–0.5% bodyweight a week). To lose fat, a moderate deficit with high protein and this same training.</li>
+   <li>Check with a doctor first if you have heart, blood pressure or joint conditions.</li></ul></section>`;
+}
+
+// Entries typed in the older version (before per-week autosave) move into this week's log once.
+function migrateDraft(){
+  const old=LS.get("il.draft",null);if(!old||!db)return;
+  const b=idxBW(currentIdx());
+  for(const k of ORDER){const dd=old[k];if(!dd||hasEntries(findSession(b.block,b.wk,k)))continue;
+    const sets={};for(const [id,arr] of Object.entries(dd)){if(Array.isArray(arr)&&arr.some(x=>x.r!==""))sets[id]=arr.map(x=>({w:x.w===""?null:Number(x.w),r:x.r===""?null:Number(x.r),rir:x.rir===""?null:x.rir,done:!!x.done}))}
+    if(Object.keys(sets).length)db.collection("sessions").doc(`b${b.block}w${b.wk}-${k}`).set({kind:"lift",day:k,block:b.block,week:b.wk,date:isoDate(new Date()),ts:Date.now(),unit,sets,notes:(old.notes&&old.notes[k])||""}).catch(()=>{})}
+  try{localStorage.removeItem("il.draft")}catch(e){}
+}
+
+// ---------- Local store (this phone) ----------
+function makeLocalDb(){
+  const KS="il.sessions",KT="il.settings";
+  let ss=[],st=null;
+  try{ss=JSON.parse(localStorage.getItem(KS)||"[]");st=JSON.parse(localStorage.getItem(KT)||"null")}catch(e){return null}
+  const sub={s:[],t:[]};
+  const snapS=()=>({docs:ss.slice().sort((a,b)=>b.ts-a.ts).map(d=>({id:d.id,data:()=>{const c=Object.assign({},d);delete c.id;return c}}))});
+  const snapT=()=>({exists:!!st,data:()=>st});
+  function save(nss,nst){localStorage.setItem(KS,JSON.stringify(nss));localStorage.setItem(KT,JSON.stringify(nst));ss=nss;st=nst;
+    sub.s.forEach(f=>f(snapS()));sub.t.forEach(f=>f(snapT()))}
+  const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+  const coll={
+    add:async d=>{const id=newId();save(ss.concat([Object.assign({},d,{id})]),st);return {id}},
+    doc:id=>({delete:async()=>save(ss.filter(x=>x.id!==id),st),set:async d=>save(ss.filter(x=>x.id!==id).concat([Object.assign({},d,{id})]),st)}),
+    orderBy(){return coll},limit(){return coll},
+    onSnapshot(f){sub.s.push(f);f(snapS());return()=>{}}
+  };
+  return {
+    // drafts already live in this phone's storage, so only settings need a document here
+    doc:p=>p==="settings/main"?{set:async v=>save(ss,v),get:async()=>snapT(),onSnapshot(f){sub.t.push(f);f(snapT());return()=>{}}}:{get:async()=>({exists:false}),set:async()=>{}},
+    collection:()=>coll,
+    exportAll:()=>({app:"iron-log",version:1,exported:new Date().toISOString(),settings:st,sessions:ss}),
+    importAll(obj){if(!obj||!Array.isArray(obj.sessions))throw new Error("bad");
+      const have=new Set(ss.map(x=>x.id));const add=obj.sessions.filter(x=>x&&x.id&&x.kind&&!have.has(x.id));
+      save(ss.concat(add),st||obj.settings||null);return add.length}
+  };
+}
+// ---------- Boot ----------
+function renderAll(){renderHeader();renderPhase();renderDayPick();if(route==="/week")renderWeek();if(route==="/progress")renderProgress();if(route.startsWith("/settings"))renderBackupInfo()}
+day=LS.get("il.day",null)||"UA";
+setUnit(unit);
+renderPlan();renderGuide();openView();renderAll();
+
+// ---------- Settings + menu actions ----------
+$("#setWeek").addEventListener("click",async()=>{
+  if(!await PH.confirm("Start a new 8-week block with this week as week 1? Your logged sessions stay in History.",{title:"New block",ok:"Start block"}))return;
+  await setCalendar(0);status("New block started. This is week 1.");
+});
+$("#reset-display").addEventListener("click",()=>{PH.store.reset();status("Display reset to defaults.")});
+$("#erase").addEventListener("click",async()=>{
+  const n=sessions.length;
+  if(!await PH.confirm(`Erase all ${n} logged entr${n===1?"y":"ies"}, your block calendar and preferences? This can't be undone. Export a backup first if you might want them.`,{title:"Erase all data",ok:"Erase",danger:true}))return;
+  try{["il.sessions","il.settings","il.day","il.unit","il.lastExport","il.tab","il.draft"].forEach(k=>localStorage.removeItem(k))}catch(e){}
+  PH.store.reset();location.replace(location.pathname);
+});
+document.addEventListener("click",e=>{const a=e.target.closest("#menu [data-action]");if(!a)return;
+  const act=a.dataset.action;
+  if(act==="cardio"){PH.go("/week");setTimeout(()=>{const m=$("#cMin");m.scrollIntoView({block:"center"});m.focus()},250)}
+  if(act==="today"){goWeek(null);PH.go("/")}
+  if(act==="export")exportBackup();
+});
+PH.init({});
+
+(async()=>{
+  db=makeLocalDb();
+  if(!db){dbReady=true;status("This browser is blocking storage, so nothing can be saved. Turn off Private Browsing in Safari.","err");renderAll();return}
+  let gotSessions=false;
+  db.doc("settings/main").onSnapshot(snap=>{settings=snap.exists?snap.data():null;if(!pending&&!writing)openView();renderAll()},()=>{});
+  db.collection("sessions").orderBy("ts","desc").limit(1000).onSnapshot(snap=>{
+    sessions=snap.docs.map(d=>Object.assign({id:d.id},d.data()));dbReady=true;
+    if(!gotSessions){gotSessions=true;migrateDraft();if(!LS.get("il.day",null))day=nextDay();openView()}
+    else{
+      // pick up changes made elsewhere, but never while typing here
+      const s=findSession(cur.block,cur.wk,cur.day),js=s?JSON.stringify(s):"";
+      const typing=document.activeElement&&$("#exlist").contains(document.activeElement);
+      if(js!==loadedJSON&&!pending&&!writing&&!typing&&s&&s.id===cur.id){openView()}
+      else if(s&&!cur.exists&&s.id===cur.id){cur.exists=true}
+      else{loadedJSON=js||loadedJSON}
+    }
+    renderAll();
+  },err=>{dbReady=true;status("Lost the connection to your log. Reload the page to reconnect.","err");renderAll()});
+})();
+})();
+
+  </script>
+  <script>
+(() => {
+  const c = document.querySelector('.rain');
+  if (!c || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const x = c.getContext('2d'), glyphs = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄ0123456789<>/=+*';
+  let cols, drops, fs = 16, last = 0, raf;
+  const size = () => { c.width = c.offsetWidth; c.height = c.offsetHeight;
+    cols = Math.ceil(c.width / fs); drops = Array.from({length: cols}, () => Math.random() * -50); };
+  const tick = t => { raf = requestAnimationFrame(tick); if (t - last < 50) return; last = t;
+    x.fillStyle = 'rgba(3,7,3,.12)'; x.fillRect(0, 0, c.width, c.height);  // c sized to .screen in size()
+    x.fillStyle = '#39FF6A'; x.font = fs + 'px ui-monospace, monospace';
+    drops.forEach((y, i) => { x.fillText(glyphs[Math.random() * glyphs.length | 0], i * fs, y * fs);
+      drops[i] = y * fs > c.height && Math.random() > .975 ? 0 : y + 1; }); };
+  addEventListener('resize', size); size(); raf = requestAnimationFrame(tick);
+  document.addEventListener('visibilitychange', () =>
+    document.hidden ? cancelAnimationFrame(raf) : (raf = requestAnimationFrame(tick)));
+})();
+  </script>
+<script>
+/* Phosphor OS embed shim: injected at the end of each bundled app's <body>.
+   The app runs full-screen in an iframe over the OS, keeps its own data (same origin,
+   same localStorage keys as the standalone version) and gets a way back to the OS. */
+(() => {
+  const os = window.parent !== window && window.parent.PhosphorOS;
+  if (!os || typeof PH === 'undefined') return;
+  const route = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
+  const atHome = () => route() === '/';
+  const exit = () => os.closeApp();
+
+  // Back on the app's home page returns to the OS instead of sitting disabled
+  const fixBack = () => document.querySelectorAll('.app-controls [data-back]').forEach(b => {
+    if (atHome()) { b.disabled = false; b.setAttribute('aria-label', 'Back to Phosphor OS'); }
+    else b.setAttribute('aria-label', 'Back');
+  });
+  PH.on('route', r => { fixBack(); os.saveRoute(route()); });
+  fixBack();
+  addEventListener('click', e => {
+    const b = e.target.closest('.app-controls [data-back]');
+    if (b && atHome()) { e.preventDefault(); e.stopPropagation(); exit(); }
+  }, true);
+
+  // "Phosphor OS" at the top of the app's ☰ menu
+  const sections = document.querySelector('#menu [data-sections]');
+  if (sections) {
+    const item = document.createElement('button');
+    item.className = 'menu-item';
+    item.innerHTML = '<span class="mi-glyph" aria-hidden="true">◂</span><span class="mi-label">Phosphor OS</span>';
+    item.addEventListener('click', () => { item.closest('dialog')?.close(); exit(); });
+    sections.prepend(item);
+  }
+
+  // Edge swipe right on the app's home page also returns to the OS
+  let sx = null, sy = 0;
+  addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX < 24 ? t.clientX : null; sy = t.clientY; }, { passive: true });
+  addEventListener('touchend', e => {
+    if (sx === null || !atHome() || document.querySelector('dialog[open]')) return;
+    const t = e.changedTouches[0];
+    if (t.clientX - sx > 70 && Math.abs(t.clientY - sy) < 60) exit();
+    sx = null;
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

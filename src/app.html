@@ -81,6 +81,14 @@
     .keypad { gap: var(--sp-2) var(--sp-3); padding: var(--sp-2) var(--sp-2) 0; }
     .keypad .key.op { color: var(--ink-dim); }
 
+    /* Bundled apps run in a frame that covers the whole phone, case and keys included */
+    .app-frame {
+      position: fixed; top: 0; left: 0; z-index: 50; width: 100%; height: var(--app-h, 100%);
+      border: 0; background: var(--plastic); animation: app-open var(--dur) var(--ease-steps) both;
+    }
+    @keyframes app-open { from { opacity: 0; transform: scale(.94); } }
+    @media (prefers-reduced-motion: reduce) { .app-frame { animation: none; } }
+
     /* Notes */
     .note-edit { flex: 1 1 auto; min-height: 0; resize: none; font-size: var(--fs-md); line-height: var(--lh); }
     .note-bar { display: flex; justify-content: space-between; align-items: center; color: var(--text-faint); font-size: var(--fs-xs); }
@@ -92,7 +100,7 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.0</span>
+      <span class="app-meta">v1.1</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -109,6 +117,9 @@
         <div class="grid" id="grid"></div>
         <p class="home-hint" id="home-hint">Hold a tile to edit it.</p>
       </section>
+
+      <!-- ===== Bundled app (the frame covers this) ===== -->
+      <section class="view" data-route="/app" data-title="Phosphor OS"></section>
 
       <!-- ===== Tiles editor ===== -->
       <section class="view" data-route="/tiles" data-title="Tiles">
@@ -234,7 +245,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.0</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.1</span></a>
           </div>
         </div>
       </section>
@@ -264,9 +275,12 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.0</span></div>
+          <div class="kv"><span>Version</span><span>1.1</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
+        </section>
+        <section class="panel" data-title="Built-in apps" style="margin-top:var(--sp-4)">
+          <p>Arcade, Workout Log and Kitchen Log are built into the OS and open full-screen without leaving it. They share their data with the standalone versions on this phone. To return, use Back on an app's home page or Phosphor OS in its ☰ menu.</p>
         </section>
         <div class="menu-group" style="margin-top:var(--sp-5)">
           <div class="menu">

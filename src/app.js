@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.0';
+  const VERSION = '1.1';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -42,7 +42,9 @@
     `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">${G[name] || G.term}</svg>`;
 
   /* ---------- Tiles ---------- */
-  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'] };
+  // Built-in apps: OS pages, or Floyd's other tools bundled under apps/<id>/ and run in a full-screen frame
+  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'],
+    arcade: ['Arcade', null, 'apps/arcade/'], workout: ['Workout Log', null, 'apps/workout/'], kitchen: ['Kitchen Log', null, 'apps/kitchen/'] };
   const DEFAULT_TILES = () => [
     ['Phone', 'phone', 'app', 'phone'],
     ['Messages', 'chat', 'link', 'sms:'],
@@ -52,14 +54,21 @@
     ['Camera', 'camera', 'shortcut', 'Open Camera'],
     ['Spotify', 'music', 'link', 'spotify:'],
     ['Notes', 'note', 'app', 'notes'],
-    ['Arcade', 'game', 'link', 'https://bgriffie.github.io/phosphor-arcade/'],
-    ['Workout', 'dumbbell', 'link', 'https://bgriffie.github.io/GymLog/'],
-    ['Kitchen', 'pot', 'link', 'https://bgriffie.github.io/KitchenTracker/'],
+    ['Arcade', 'game', 'app', 'arcade'],
+    ['Workout', 'dumbbell', 'app', 'workout'],
+    ['Kitchen', 'pot', 'app', 'kitchen'],
     ['Calc', 'calc', 'app', 'calc'],
   ].map(([label, glyph, kind, target]) => ({ id: uid(), label, glyph, kind, target }));
 
   let tiles = load('tiles', null);
   if (!Array.isArray(tiles)) { tiles = DEFAULT_TILES(); save('tiles', tiles); }
+  // v1.1: tiles that linked out to the standalone tools now open the bundled copies
+  const BUNDLED = { 'phosphor-arcade': 'arcade', gymlog: 'workout', kitchentracker: 'kitchen' };
+  tiles.forEach(t => {
+    const m = t.kind === 'link' && /^https:\/\/bgriffie\.github\.io\/([^/?#]+)\/?$/i.exec(t.target);
+    if (m && BUNDLED[m[1].toLowerCase()]) { t.kind = 'app'; t.target = BUNDLED[m[1].toLowerCase()]; }
+  });
+  save('tiles', tiles);
   const saveTiles = () => { save('tiles', tiles); renderGrid(); renderTileList(); };
 
   const hrefFor = t =>
@@ -67,7 +76,7 @@
     t.kind === 'link' ? t.target : null;
 
   function launch(t) {
-    if (t.kind === 'app') { PH.go((APPS[t.target] || APPS.notes)[1]); return; }
+    if (t.kind === 'app') { const a = APPS[t.target] || APPS.notes; if (a[2]) openApp(t.target); else PH.go(a[1]); return; }
     const href = hrefFor(t);
     if (!href) return;
     location.href = href;   // iOS hands schemes to the app; a missing app silently does nothing
@@ -410,6 +419,38 @@
     }
   };
 
+  /* ---------- Bundled apps: full-screen frame over the OS (#/app/<id>) ---------- */
+  let frame = null, frameId = null;
+  const routeKey = id => 'route:' + id;
+  function openApp(id) { location.replace('#/app/' + id); }   // replace: the frame's own pages fill the history
+  function showFrame(id) {
+    if (frameId === id) return;
+    hideFrame();
+    const a = APPS[id]; if (!a || !a[2]) { location.replace('#/'); return; }
+    frame = document.createElement('iframe');
+    frame.className = 'app-frame'; frame.title = a[0]; frame.allow = 'web-share; clipboard-write';
+    const last = load(routeKey(id), '/');
+    frame.src = a[2] + '#' + (typeof last === 'string' && last.startsWith('/') ? last : '/');
+    document.body.appendChild(frame); frameId = id;
+    frame.addEventListener('load', () => { try { frame.contentWindow.focus(); } catch {} });
+  }
+  function hideFrame() { if (frame) { frame.remove(); frame = null; frameId = null; } }
+  // Read by the bundled apps (src/embed.js)
+  window.PhosphorOS = {
+    // absolute URL: a relative one would resolve against the calling app's page, not the OS
+    closeApp: () => { hideFrame(); location.replace(location.href.split('#')[0] + '#/'); },
+    saveRoute: r => { if (frameId) save(routeKey(frameId), r); },
+    insets: () => {
+      const p = document.createElement('div');
+      p.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+      document.body.appendChild(p); const c = getComputedStyle(p);
+      const v = { top: parseFloat(c.paddingTop) || 0, right: parseFloat(c.paddingRight) || 0, bottom: parseFloat(c.paddingBottom) || 0, left: parseFloat(c.paddingLeft) || 0 };
+      p.remove(); return v;
+    },
+  };
+  const syncFrame = () => { const m = /^#\/app\/([\w-]+)/.exec(location.hash); if (m) showFrame(m[1]); else hideFrame(); };
+  addEventListener('hashchange', syncFrame);
+
   /* ---------- Routes ---------- */
   let prevRoute = null;
   PH.on('route', r => {
@@ -458,6 +499,6 @@
   PH.init({ clock: '12', cols: '4', boot: true });
   renderGrid();
   startClock();
-  boot();
+  if (/^#\/app\//.test(location.hash)) syncFrame(); else boot();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 })();

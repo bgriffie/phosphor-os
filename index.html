@@ -804,6 +804,14 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .keypad { gap: var(--sp-2) var(--sp-3); padding: var(--sp-2) var(--sp-2) 0; }
     .keypad .key.op { color: var(--ink-dim); }
 
+    /* Bundled apps run in a frame that covers the whole phone, case and keys included */
+    .app-frame {
+      position: fixed; top: 0; left: 0; z-index: 50; width: 100%; height: var(--app-h, 100%);
+      border: 0; background: var(--plastic); animation: app-open var(--dur) var(--ease-steps) both;
+    }
+    @keyframes app-open { from { opacity: 0; transform: scale(.94); } }
+    @media (prefers-reduced-motion: reduce) { .app-frame { animation: none; } }
+
     /* Notes */
     .note-edit { flex: 1 1 auto; min-height: 0; resize: none; font-size: var(--fs-md); line-height: var(--lh); }
     .note-bar { display: flex; justify-content: space-between; align-items: center; color: var(--text-faint); font-size: var(--fs-xs); }
@@ -815,7 +823,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.0</span>
+      <span class="app-meta">v1.1</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -832,6 +840,9 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         <div class="grid" id="grid"></div>
         <p class="home-hint" id="home-hint">Hold a tile to edit it.</p>
       </section>
+
+      <!-- ===== Bundled app (the frame covers this) ===== -->
+      <section class="view" data-route="/app" data-title="Phosphor OS"></section>
 
       <!-- ===== Tiles editor ===== -->
       <section class="view" data-route="/tiles" data-title="Tiles">
@@ -957,7 +968,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.0</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.1</span></a>
           </div>
         </div>
       </section>
@@ -987,9 +998,12 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.0</span></div>
+          <div class="kv"><span>Version</span><span>1.1</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
+        </section>
+        <section class="panel" data-title="Built-in apps" style="margin-top:var(--sp-4)">
+          <p>Arcade, Workout Log and Kitchen Log are built into the OS and open full-screen without leaving it. They share their data with the standalone versions on this phone. To return, use Back on an app's home page or Phosphor OS in its ☰ menu.</p>
         </section>
         <div class="menu-group" style="margin-top:var(--sp-5)">
           <div class="menu">
@@ -1294,7 +1308,7 @@ const PH = (() => {
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.0';
+  const VERSION = '1.1';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -1333,7 +1347,9 @@ const PH = (() => {
     `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">${G[name] || G.term}</svg>`;
 
   /* ---------- Tiles ---------- */
-  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'] };
+  // Built-in apps: OS pages, or Floyd's other tools bundled under apps/<id>/ and run in a full-screen frame
+  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'],
+    arcade: ['Arcade', null, 'apps/arcade/'], workout: ['Workout Log', null, 'apps/workout/'], kitchen: ['Kitchen Log', null, 'apps/kitchen/'] };
   const DEFAULT_TILES = () => [
     ['Phone', 'phone', 'app', 'phone'],
     ['Messages', 'chat', 'link', 'sms:'],
@@ -1343,14 +1359,21 @@ const PH = (() => {
     ['Camera', 'camera', 'shortcut', 'Open Camera'],
     ['Spotify', 'music', 'link', 'spotify:'],
     ['Notes', 'note', 'app', 'notes'],
-    ['Arcade', 'game', 'link', 'https://bgriffie.github.io/phosphor-arcade/'],
-    ['Workout', 'dumbbell', 'link', 'https://bgriffie.github.io/GymLog/'],
-    ['Kitchen', 'pot', 'link', 'https://bgriffie.github.io/KitchenTracker/'],
+    ['Arcade', 'game', 'app', 'arcade'],
+    ['Workout', 'dumbbell', 'app', 'workout'],
+    ['Kitchen', 'pot', 'app', 'kitchen'],
     ['Calc', 'calc', 'app', 'calc'],
   ].map(([label, glyph, kind, target]) => ({ id: uid(), label, glyph, kind, target }));
 
   let tiles = load('tiles', null);
   if (!Array.isArray(tiles)) { tiles = DEFAULT_TILES(); save('tiles', tiles); }
+  // v1.1: tiles that linked out to the standalone tools now open the bundled copies
+  const BUNDLED = { 'phosphor-arcade': 'arcade', gymlog: 'workout', kitchentracker: 'kitchen' };
+  tiles.forEach(t => {
+    const m = t.kind === 'link' && /^https:\/\/bgriffie\.github\.io\/([^/?#]+)\/?$/i.exec(t.target);
+    if (m && BUNDLED[m[1].toLowerCase()]) { t.kind = 'app'; t.target = BUNDLED[m[1].toLowerCase()]; }
+  });
+  save('tiles', tiles);
   const saveTiles = () => { save('tiles', tiles); renderGrid(); renderTileList(); };
 
   const hrefFor = t =>
@@ -1358,7 +1381,7 @@ const PH = (() => {
     t.kind === 'link' ? t.target : null;
 
   function launch(t) {
-    if (t.kind === 'app') { PH.go((APPS[t.target] || APPS.notes)[1]); return; }
+    if (t.kind === 'app') { const a = APPS[t.target] || APPS.notes; if (a[2]) openApp(t.target); else PH.go(a[1]); return; }
     const href = hrefFor(t);
     if (!href) return;
     location.href = href;   // iOS hands schemes to the app; a missing app silently does nothing
@@ -1701,6 +1724,38 @@ const PH = (() => {
     }
   };
 
+  /* ---------- Bundled apps: full-screen frame over the OS (#/app/<id>) ---------- */
+  let frame = null, frameId = null;
+  const routeKey = id => 'route:' + id;
+  function openApp(id) { location.replace('#/app/' + id); }   // replace: the frame's own pages fill the history
+  function showFrame(id) {
+    if (frameId === id) return;
+    hideFrame();
+    const a = APPS[id]; if (!a || !a[2]) { location.replace('#/'); return; }
+    frame = document.createElement('iframe');
+    frame.className = 'app-frame'; frame.title = a[0]; frame.allow = 'web-share; clipboard-write';
+    const last = load(routeKey(id), '/');
+    frame.src = a[2] + '#' + (typeof last === 'string' && last.startsWith('/') ? last : '/');
+    document.body.appendChild(frame); frameId = id;
+    frame.addEventListener('load', () => { try { frame.contentWindow.focus(); } catch {} });
+  }
+  function hideFrame() { if (frame) { frame.remove(); frame = null; frameId = null; } }
+  // Read by the bundled apps (src/embed.js)
+  window.PhosphorOS = {
+    // absolute URL: a relative one would resolve against the calling app's page, not the OS
+    closeApp: () => { hideFrame(); location.replace(location.href.split('#')[0] + '#/'); },
+    saveRoute: r => { if (frameId) save(routeKey(frameId), r); },
+    insets: () => {
+      const p = document.createElement('div');
+      p.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+      document.body.appendChild(p); const c = getComputedStyle(p);
+      const v = { top: parseFloat(c.paddingTop) || 0, right: parseFloat(c.paddingRight) || 0, bottom: parseFloat(c.paddingBottom) || 0, left: parseFloat(c.paddingLeft) || 0 };
+      p.remove(); return v;
+    },
+  };
+  const syncFrame = () => { const m = /^#\/app\/([\w-]+)/.exec(location.hash); if (m) showFrame(m[1]); else hideFrame(); };
+  addEventListener('hashchange', syncFrame);
+
   /* ---------- Routes ---------- */
   let prevRoute = null;
   PH.on('route', r => {
@@ -1749,7 +1804,7 @@ const PH = (() => {
   PH.init({ clock: '12', cols: '4', boot: true });
   renderGrid();
   startClock();
-  boot();
+  if (/^#\/app\//.test(location.hash)) syncFrame(); else boot();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 })();
 
