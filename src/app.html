@@ -90,6 +90,22 @@
     @media (prefers-reduced-motion: reduce) { .app-frame { animation: none; } }
 
     /* Spotify remote */
+    .mu-art { display: block; width: min(100%, 240px); aspect-ratio: 1; margin: 0 auto var(--sp-4); object-fit: cover; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-2); }
+    .mu-art[hidden] { display: none; }
+    .mu-row { gap: var(--sp-3); }
+    .mu-row .mi-thumb { flex: none; width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); }
+    .mu-row .mi-thumb.none { visibility: hidden; }
+    .mu-row .mi-label { min-width: 0; }
+    .mu-row .mi-label, .mu-row .mi-label small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+    .mu-row.is-current .mi-label { color: var(--accent); text-shadow: var(--glow); }
+    .mu-row.is-played .mi-label { color: var(--text-dim); }
+    .mu-head { display: flex; gap: var(--sp-4); align-items: center; }
+    .mu-head .mu-cover { flex: none; width: 104px; height: 104px; object-fit: cover; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-2); }
+    .mu-head .mu-cover.none { visibility: hidden; width: 0; margin-right: calc(-1 * var(--sp-4)); }
+    .mu-head h2 { font-size: var(--fs-lg); line-height: var(--lh-tight); overflow-wrap: anywhere; }
+    .mu-head p { margin-top: var(--sp-1); color: var(--text-dim); font-size: var(--fs-sm); }
+    .mu-btns { display: flex; gap: var(--sp-3); margin: var(--sp-4) 0 var(--sp-5); }
+    .mu-btns .btn { flex: 1; }
     .mu-track { font-size: var(--fs-xl); font-weight: 700; line-height: var(--lh-tight); color: var(--text); overflow-wrap: anywhere; }
     .mu-artist { margin-top: var(--sp-2); color: var(--text-dim); font-size: var(--fs-sm); overflow-wrap: anywhere; }
     .mu-now .meter { margin-top: var(--sp-5); }
@@ -117,7 +133,7 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.2</span>
+      <span class="app-meta">v1.3</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -149,6 +165,7 @@
         </div>
         <div id="mu-on" hidden>
           <section class="panel mu-now" data-title="Now playing">
+            <img class="mu-art" id="mu-art" alt="" hidden referrerpolicy="no-referrer">
             <div class="mu-track" id="mu-track">Nothing playing</div>
             <div class="mu-artist" id="mu-artist"></div>
             <div class="meter" role="progressbar" aria-label="Song position" aria-valuemin="0" aria-valuemax="100"><span id="mu-bar" style="--value:0%"></span></div>
@@ -162,6 +179,11 @@
             </div>
           </section>
           <div class="menu-group" style="margin-top:var(--sp-5)">
+            <div class="menu">
+              <a class="menu-item" href="#/music/podcasts"><span class="mi-glyph" aria-hidden="true">◉</span><span class="mi-label">Podcasts<small>Your shows, search, episodes</small></span></a>
+            </div>
+          </div>
+          <div class="menu-group">
             <span class="label">Playlists</span>
             <div class="menu" id="mu-lists"></div>
           </div>
@@ -175,9 +197,42 @@
         </div>
       </section>
 
+      <section class="view" data-route="/music/list" data-title="Playlist">
+        <div class="mu-head" id="pl-head"><img class="mu-cover none" alt=""><div><h2 id="pl-name"></h2><p id="pl-sub"></p></div></div>
+        <div class="mu-btns"><button class="btn btn-primary" data-mu-act="pl-play">Play</button><button class="btn btn-ghost" data-mu-act="pl-shuffle">Shuffle</button></div>
+        <div class="menu" id="pl-items"></div>
+        <button class="btn btn-ghost btn-block" id="pl-more" data-mu-act="pl-more" style="margin-top:var(--sp-4)" hidden>Load more</button>
+      </section>
+
+      <section class="view" data-route="/music/podcasts" data-title="Podcasts">
+        <div class="search"><input class="input" type="search" id="mp-q" placeholder="Search podcasts" enterkeyhint="search" autocapitalize="off" autocorrect="off"></div>
+        <div class="menu-group" id="mp-results-group" hidden style="margin-top:var(--sp-4)">
+          <span class="label">Results</span>
+          <div class="menu" id="mp-results"></div>
+        </div>
+        <div class="menu-group" style="margin-top:var(--sp-4)">
+          <div class="menu">
+            <button class="menu-item" data-mu-act="sysk"><span class="mi-glyph" aria-hidden="true">★</span><span class="mi-label">Stuff You Should Know<small>Latest episodes</small></span></button>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Your shows</span>
+          <div class="menu" id="mp-shows"></div>
+          <button class="btn btn-ghost btn-block" id="mp-reconnect" data-mu-act="reconnect" style="margin-top:var(--sp-3)" hidden>Reconnect Spotify</button>
+        </div>
+      </section>
+
+      <section class="view" data-route="/music/podcasts/show" data-title="Show">
+        <div class="mu-head" id="sh-head"><img class="mu-cover none" alt=""><div><h2 id="sh-name"></h2><p id="sh-sub"></p></div></div>
+        <div class="mu-btns"><button class="btn btn-primary" data-mu-act="sh-play">Play latest unplayed</button></div>
+        <div class="menu" id="sh-items"></div>
+        <button class="btn btn-ghost btn-block" id="sh-more" data-mu-act="sh-more" style="margin-top:var(--sp-4)" hidden>Load more</button>
+      </section>
+
       <section class="view" data-route="/music/devices" data-title="Play on">
         <div class="menu" id="mu-devices"></div>
         <button class="btn btn-ghost btn-block" id="mu-dev-refresh" style="margin-top:var(--sp-4)">Refresh</button>
+        <p class="menu-note">Your iPhone only shows here after Spotify has played something on it recently. Open Spotify, start any song, come back and tap Refresh.</p>
       </section>
 
       <section class="view" data-route="/music/setup" data-title="Spotify setup">
@@ -343,7 +398,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.2</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.3</span></a>
           </div>
         </div>
       </section>
@@ -373,7 +428,7 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.2</span></div>
+          <div class="kv"><span>Version</span><span>1.3</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>

@@ -813,6 +813,22 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     @media (prefers-reduced-motion: reduce) { .app-frame { animation: none; } }
 
     /* Spotify remote */
+    .mu-art { display: block; width: min(100%, 240px); aspect-ratio: 1; margin: 0 auto var(--sp-4); object-fit: cover; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-2); }
+    .mu-art[hidden] { display: none; }
+    .mu-row { gap: var(--sp-3); }
+    .mu-row .mi-thumb { flex: none; width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); }
+    .mu-row .mi-thumb.none { visibility: hidden; }
+    .mu-row .mi-label { min-width: 0; }
+    .mu-row .mi-label, .mu-row .mi-label small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+    .mu-row.is-current .mi-label { color: var(--accent); text-shadow: var(--glow); }
+    .mu-row.is-played .mi-label { color: var(--text-dim); }
+    .mu-head { display: flex; gap: var(--sp-4); align-items: center; }
+    .mu-head .mu-cover { flex: none; width: 104px; height: 104px; object-fit: cover; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-2); }
+    .mu-head .mu-cover.none { visibility: hidden; width: 0; margin-right: calc(-1 * var(--sp-4)); }
+    .mu-head h2 { font-size: var(--fs-lg); line-height: var(--lh-tight); overflow-wrap: anywhere; }
+    .mu-head p { margin-top: var(--sp-1); color: var(--text-dim); font-size: var(--fs-sm); }
+    .mu-btns { display: flex; gap: var(--sp-3); margin: var(--sp-4) 0 var(--sp-5); }
+    .mu-btns .btn { flex: 1; }
     .mu-track { font-size: var(--fs-xl); font-weight: 700; line-height: var(--lh-tight); color: var(--text); overflow-wrap: anywhere; }
     .mu-artist { margin-top: var(--sp-2); color: var(--text-dim); font-size: var(--fs-sm); overflow-wrap: anywhere; }
     .mu-now .meter { margin-top: var(--sp-5); }
@@ -840,7 +856,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.2</span>
+      <span class="app-meta">v1.3</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -872,6 +888,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         </div>
         <div id="mu-on" hidden>
           <section class="panel mu-now" data-title="Now playing">
+            <img class="mu-art" id="mu-art" alt="" hidden referrerpolicy="no-referrer">
             <div class="mu-track" id="mu-track">Nothing playing</div>
             <div class="mu-artist" id="mu-artist"></div>
             <div class="meter" role="progressbar" aria-label="Song position" aria-valuemin="0" aria-valuemax="100"><span id="mu-bar" style="--value:0%"></span></div>
@@ -885,6 +902,11 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
             </div>
           </section>
           <div class="menu-group" style="margin-top:var(--sp-5)">
+            <div class="menu">
+              <a class="menu-item" href="#/music/podcasts"><span class="mi-glyph" aria-hidden="true">◉</span><span class="mi-label">Podcasts<small>Your shows, search, episodes</small></span></a>
+            </div>
+          </div>
+          <div class="menu-group">
             <span class="label">Playlists</span>
             <div class="menu" id="mu-lists"></div>
           </div>
@@ -898,9 +920,42 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         </div>
       </section>
 
+      <section class="view" data-route="/music/list" data-title="Playlist">
+        <div class="mu-head" id="pl-head"><img class="mu-cover none" alt=""><div><h2 id="pl-name"></h2><p id="pl-sub"></p></div></div>
+        <div class="mu-btns"><button class="btn btn-primary" data-mu-act="pl-play">Play</button><button class="btn btn-ghost" data-mu-act="pl-shuffle">Shuffle</button></div>
+        <div class="menu" id="pl-items"></div>
+        <button class="btn btn-ghost btn-block" id="pl-more" data-mu-act="pl-more" style="margin-top:var(--sp-4)" hidden>Load more</button>
+      </section>
+
+      <section class="view" data-route="/music/podcasts" data-title="Podcasts">
+        <div class="search"><input class="input" type="search" id="mp-q" placeholder="Search podcasts" enterkeyhint="search" autocapitalize="off" autocorrect="off"></div>
+        <div class="menu-group" id="mp-results-group" hidden style="margin-top:var(--sp-4)">
+          <span class="label">Results</span>
+          <div class="menu" id="mp-results"></div>
+        </div>
+        <div class="menu-group" style="margin-top:var(--sp-4)">
+          <div class="menu">
+            <button class="menu-item" data-mu-act="sysk"><span class="mi-glyph" aria-hidden="true">★</span><span class="mi-label">Stuff You Should Know<small>Latest episodes</small></span></button>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Your shows</span>
+          <div class="menu" id="mp-shows"></div>
+          <button class="btn btn-ghost btn-block" id="mp-reconnect" data-mu-act="reconnect" style="margin-top:var(--sp-3)" hidden>Reconnect Spotify</button>
+        </div>
+      </section>
+
+      <section class="view" data-route="/music/podcasts/show" data-title="Show">
+        <div class="mu-head" id="sh-head"><img class="mu-cover none" alt=""><div><h2 id="sh-name"></h2><p id="sh-sub"></p></div></div>
+        <div class="mu-btns"><button class="btn btn-primary" data-mu-act="sh-play">Play latest unplayed</button></div>
+        <div class="menu" id="sh-items"></div>
+        <button class="btn btn-ghost btn-block" id="sh-more" data-mu-act="sh-more" style="margin-top:var(--sp-4)" hidden>Load more</button>
+      </section>
+
       <section class="view" data-route="/music/devices" data-title="Play on">
         <div class="menu" id="mu-devices"></div>
         <button class="btn btn-ghost btn-block" id="mu-dev-refresh" style="margin-top:var(--sp-4)">Refresh</button>
+        <p class="menu-note">Your iPhone only shows here after Spotify has played something on it recently. Open Spotify, start any song, come back and tap Refresh.</p>
       </section>
 
       <section class="view" data-route="/music/setup" data-title="Spotify setup">
@@ -1066,7 +1121,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.2</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.3</span></a>
           </div>
         </div>
       </section>
@@ -1096,7 +1151,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.2</span></div>
+          <div class="kv"><span>Version</span><span>1.3</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
@@ -1414,7 +1469,8 @@ const PH = (() => {
   const drop = k => { try { localStorage.removeItem(KEY + k); } catch {} };
 
   const REDIRECT = new URL('./', location.href.split(/[?#]/)[0]).href;   // https://bgriffie.github.io/phosphor-os/
-  const SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative';
+  const SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative user-library-read user-read-playback-position';
+  const PODCAST_SCOPE = 'user-library-read';   // added in v1.3: logins from v1.2 need a reconnect for followed shows
   const standalone = () => navigator.standalone || matchMedia('(display-mode: standalone)').matches;
   let auth = load('spotify', {});          // { clientId, access, expires, refresh, user }
   const saveAuth = () => save('spotify', auth);
@@ -1424,7 +1480,7 @@ const PH = (() => {
   const rand = n => { const a = new Uint8Array(n); crypto.getRandomValues(a); return [...a].map(b => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'[b % 66]).join(''); };
   const b64url = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   async function login() {
-    const clientId = $('#mu-client').value.trim();
+    const clientId = $('#mu-client').value.trim() || auth.clientId || '';
     if (!/^[0-9a-f]{32}$/i.test(clientId)) { $('#mu-client').setAttribute('aria-invalid', 'true'); PH.toast('Paste the 32-character Client ID from your Spotify app.', 'warn'); return; }
     $('#mu-client').removeAttribute('aria-invalid');
     auth.clientId = clientId; saveAuth();
@@ -1443,6 +1499,7 @@ const PH = (() => {
     if (!r.ok) throw Object.assign(new Error(d.error_description || d.error || 'Spotify login failed'), { code: d.error });
     auth.access = d.access_token; auth.expires = Date.now() + (d.expires_in || 3600) * 1000;
     if (d.refresh_token) auth.refresh = d.refresh_token;   // refresh tokens rotate: keep the newest
+    if (d.scope != null) auth.scope = d.scope;
     saveAuth();
   }
   let refreshing = null;
@@ -1472,7 +1529,7 @@ const PH = (() => {
     } catch (e) { PH.toast('Couldn\'t connect: ' + e.message, 'error'); }
   }
   function disconnect(quiet) {
-    auth = { clientId: auth.clientId }; saveAuth(); state = null; lists = null;
+    auth = { clientId: auth.clientId }; saveAuth(); state = null; lists = null; shows = null;
     renderAll(); if (!quiet) PH.toast('Spotify disconnected.', 'warn');
   }
 
@@ -1503,13 +1560,15 @@ const PH = (() => {
     return d;
   }
   const say = e => {
-    if (e.reason === 'NO_ACTIVE_DEVICE' || e.status === 404) PH.toast('Spotify isn\'t open anywhere. Open it on your phone, start a song, then come back.', 'warn');
+    if (e.reason === 'NO_ACTIVE_DEVICE' || e.status === 404) PH.toast('Spotify isn\'t playing on any device. Open Spotify on your phone, start any song, then come back.', 'warn');
     else if (e.reason === 'PREMIUM_REQUIRED' || e.status === 403) PH.toast('Spotify only allows remote control with Premium.', 'warn');
     else if (e.message !== 'Not connected') PH.toast(e.message, 'error');
   };
 
   /* ---------- Player state ---------- */
-  let state = null, stamp = 0, lists = null, devices = [];
+  let state = null, stamp = 0, lists = null, devices = [], shows = null;
+  // Open playlist / podcast show: { id, uri, name, sub, images, items: [], total, next }
+  let pl = load('mu-pl', null), sh = load('mu-sh', null);
   const fmt = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
   async function poll() {
     if (!connected()) return;
@@ -1534,13 +1593,93 @@ const PH = (() => {
     shuffle: () => cmd(() => api('/me/player/shuffle', { method: 'PUT', query: { state: !(state && state.shuffle_state) } })),
     repeat: () => cmd(() => api('/me/player/repeat', { method: 'PUT', query: { state: { off: 'context', context: 'track', track: 'off' }[(state && state.repeat_state) || 'off'] } })),
   };
-  async function playList(uri) {
+  // body: { context_uri, offset } or { uris, position_ms }
+  async function play(body, { shuffle } = {}) {
     try {
       let device_id;
       if (!state || !state.device) { const dev = await pickDevice(); if (!dev) throw Object.assign(new Error(''), { reason: 'NO_ACTIVE_DEVICE' }); device_id = dev.id; }
-      await api('/me/player/play', { method: 'PUT', body: { context_uri: uri }, query: device_id ? { device_id } : undefined });
+      const query = device_id ? { device_id } : undefined;
+      if (shuffle != null) await api('/me/player/shuffle', { method: 'PUT', query: { state: shuffle, ...(query || {}) } }).catch(() => {});
+      await api('/me/player/play', { method: 'PUT', body, query });
       later(); PH.go('/music');
     } catch (e) { say(e); }
+  }
+
+  /* Playlist songs. Spotify renamed /tracks to /items for newer apps, so try both. */
+  let itemsPath = load('mu-items-path', 'items');
+  async function playlistPage(id, offset) {
+    const q = { query: { limit: 100, offset, additional_types: 'track,episode' } };
+    const tryPath = itemsPath;
+    try { return await api(`/playlists/${id}/${tryPath}`, q); }
+    catch (e) {
+      if (e.status === 401 || e.status === 429) throw e;
+      const alt = tryPath === 'items' ? 'tracks' : 'items';
+      const d = await api(`/playlists/${id}/${alt}`, q);
+      itemsPath = alt; save('mu-items-path', alt);
+      return d;
+    }
+  }
+  async function loadPlaylist(more) {
+    if (!pl || pl.loading) return;
+    pl.loading = true;
+    try {
+      const d = await playlistPage(pl.id, more ? pl.items.length : 0);
+      const got = ((d && d.items) || []).map(x => x && (x.track || x.item)).filter(t => t && t.uri && !t.is_local).map(t => ({
+        uri: t.uri, name: t.name, sub: t.artists ? t.artists.map(a => a.name).join(', ') : t.show ? t.show.name : '',
+        ms: t.duration_ms, images: (t.album && t.album.images) || t.images }));
+      pl.items = more ? pl.items.concat(got) : got;
+      pl.total = d ? d.total : pl.items.length; pl.next = !!(d && d.next); pl.loaded = true;
+      renderCollection('pl', pl);
+    } catch (e) { say(e); pl.loaded = true; renderCollection('pl', pl); }
+    finally { pl.loading = false; }
+  }
+  function openPlaylist(p) {
+    pl = { id: p.id, uri: p.uri, name: p.name, images: p.images, sub: ((p.tracks && p.tracks.total) ?? (p.items && p.items.total) ?? '') + ' songs', items: [], loaded: false };
+    save('mu-pl', { ...pl, items: [] }); renderCollection('pl', pl); PH.go('/music/list'); loadPlaylist();
+  }
+
+  /* Podcasts: followed shows, search, episodes */
+  const hasPodcastScope = () => !auth.scope || auth.scope.split(' ').includes(PODCAST_SCOPE);
+  const showRow = s => ({ id: s.id, uri: s.uri, name: s.name, sub: s.publisher, images: s.images });
+  async function loadShows() {
+    if (auth.scope && !hasPodcastScope()) { shows = []; renderShows(); return; }
+    try { const d = await api('/me/shows', { query: { limit: 50 } }); shows = ((d && d.items) || []).map(x => x && x.show).filter(Boolean).map(showRow); }
+    catch (e) { shows = []; if (e.status === 403 || e.status === 401) { auth.scope = (auth.scope || 'x').replace(PODCAST_SCOPE, ''); saveAuth(); } else say(e); }
+    renderShows();
+  }
+  let searchT = null, searchSeq = 0;
+  async function searchShows(q, open) {
+    const seq = ++searchSeq;
+    if (!q) { $('#mp-results').textContent = ''; $('#mp-results-group').hidden = true; return; }
+    try {
+      const d = await api('/search', { query: { q, type: 'show', limit: open ? 1 : 20, market: 'from_token' } });
+      if (seq !== searchSeq) return;
+      const found = ((d && d.shows && d.shows.items) || []).filter(Boolean).map(showRow);
+      if (open) { if (found[0]) openShow(found[0]); else PH.toast('Couldn\'t find that show.', 'warn'); return; }
+      lastResults = found; fillRows($('#mp-results'), found, 'show', 'No shows found.'); $('#mp-results-group').hidden = false;
+    } catch (e) { say(e); }
+  }
+  const ago = d => { if (!d) return ''; const t = new Date(d + 'T12:00:00'); return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(t.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
+  async function loadShow(more) {
+    if (!sh || sh.loading) return;
+    sh.loading = true;
+    try {
+      const d = await api(`/shows/${sh.id}/episodes`, { query: { limit: 50, offset: more ? sh.items.length : 0, market: 'from_token' } });
+      const got = ((d && d.items) || []).filter(Boolean).map(ep => {
+        const rp = ep.resume_point || {}, left = ep.duration_ms - (rp.resume_position_ms || 0);
+        const status = rp.fully_played ? 'Played' : rp.resume_position_ms > 0 ? Math.max(1, Math.round(left / 60000)) + ' min left' : Math.round(ep.duration_ms / 60000) + ' min';
+        return { uri: ep.uri, name: ep.name, sub: ago(ep.release_date) + ' · ' + status, ms: ep.duration_ms, images: ep.images,
+          resume: rp.fully_played ? 0 : (rp.resume_position_ms || 0), played: !!rp.fully_played };
+      });
+      sh.items = more ? sh.items.concat(got) : got;
+      sh.total = d ? d.total : sh.items.length; sh.next = !!(d && d.next); sh.loaded = true;
+      renderCollection('sh', sh);
+    } catch (e) { say(e); sh.loaded = true; renderCollection('sh', sh); }
+    finally { sh.loading = false; }
+  }
+  function openShow(s) {
+    sh = { ...s, items: [], loaded: false }; save('mu-sh', { ...sh, items: [] });
+    renderCollection('sh', sh); PH.go('/music/podcasts/show'); loadShow();
   }
   async function loadLists() {
     try { const d = await api('/me/playlists', { query: { limit: 50 } }); lists = (d && d.items || []).filter(Boolean); renderLists(); }
@@ -1551,9 +1690,54 @@ const PH = (() => {
   }
 
   /* ---------- Rendering ---------- */
+  // Album art: smallest image at least `size` px, else the biggest there is
+  const art = (imgs, size) => { if (!imgs || !imgs.length) return ''; const s = [...imgs].sort((a, b) => (a.width || 0) - (b.width || 0)); return (s.find(i => (i.width || 0) >= size) || s[s.length - 1]).url; };
+  const img = (src, cls) => { const i = document.createElement('img'); i.className = cls; i.alt = ''; i.loading = 'lazy'; i.decoding = 'async'; i.referrerPolicy = 'no-referrer'; if (src) i.src = src; else i.classList.add('none'); return i; };
+  // rows: [{ uri|id, name, sub, images }] rendered as menu rows with a thumbnail
+  function fillRows(box, rows, kind, empty) {
+    box.textContent = '';
+    if (!rows.length) { const p = document.createElement('p'); p.className = 'menu-note'; p.textContent = empty; box.appendChild(p); return; }
+    rows.forEach((r, i) => {
+      const b = document.createElement('button'); b.className = 'menu-item mu-row'; b.dataset.kind = kind; b.dataset.i = i;
+      if (r.uri) b.dataset.uri = r.uri;
+      b.appendChild(img(art(r.images, 64), 'mi-thumb'));
+      const l = document.createElement('span'); l.className = 'mi-label'; l.textContent = r.name;
+      if (r.sub) { const sm = document.createElement('small'); sm.textContent = r.sub; l.appendChild(sm); }
+      b.appendChild(l);
+      if (r.ms && kind !== 'episode') { const v = document.createElement('span'); v.className = 'mi-value'; v.textContent = fmt(r.ms); b.appendChild(v); }
+      if (r.played) b.classList.add('is-played');
+      box.appendChild(b);
+    });
+    markCurrent();
+  }
+  function markCurrent() {
+    const cur = state && state.item && state.item.uri;
+    document.querySelectorAll('.mu-row[data-uri]').forEach(b => b.classList.toggle('is-current', !!cur && b.dataset.uri === cur));
+  }
+  function renderCollection(px, c) {
+    const head = $(`#${px}-head`);
+    if (!c) { $(`#${px}-name`).textContent = 'Nothing open'; $(`#${px}-items`).textContent = ''; return; }
+    head.querySelector('.mu-cover').replaceWith(img(art(c.images, 300), 'mu-cover'));
+    $(`#${px}-name`).textContent = c.name; $(`#${px}-sub`).textContent = c.sub || '';
+    const box = $(`#${px}-items`);
+    if (!c.loaded) { box.innerHTML = '<p class="menu-note">Loading…</p>'; $(`#${px}-more`).hidden = true; return; }
+    fillRows(box, c.items, px === 'pl' ? 'track' : 'episode', px === 'pl' ? 'This playlist is empty, or Spotify won\'t share its songs.' : 'No episodes.');
+    $(`#${px}-more`).hidden = !c.next;
+  }
+  function renderShows() {
+    const box = $('#mp-shows');
+    $('#mp-reconnect').hidden = hasPodcastScope();
+    if (!hasPodcastScope()) { box.innerHTML = '<p class="menu-note">Reconnect Spotify once so Phosphor OS can see the shows you follow. Search works already.</p>'; return; }
+    if (!shows) { box.innerHTML = '<p class="menu-note">Loading your shows…</p>'; return; }
+    fillRows(box, shows, 'show', 'You don\'t follow any shows yet. Search above.');
+  }
   function renderNow() {
     const it = state && state.item, playing = !!(state && state.is_playing);
     $('#mu-track').textContent = it ? it.name : 'Nothing playing';
+    const src = it ? art((it.album && it.album.images) || it.images || (it.show && it.show.images), 300) : '';
+    const cover = $('#mu-art');
+    if (cover.dataset.src !== src) { cover.dataset.src = src; cover.hidden = !src; if (src) cover.src = src; else cover.removeAttribute('src'); }
+    markCurrent();
     $('#mu-artist').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : it.show ? it.show.name : '') : 'Start a song in Spotify, or pick a playlist below.';
     $('#mu-dev').textContent = state && state.device ? state.device.name : 'No device';
     $('#mu-devname').textContent = state && state.device ? state.device.name : 'None';
@@ -1577,17 +1761,10 @@ const PH = (() => {
     if (state.is_playing && pos >= it.duration_ms && Date.now() - stamp > 1500) { stamp = Date.now(); later(); }
   }
   function renderLists() {
-    const box = $('#mu-lists'); box.textContent = '';
+    const box = $('#mu-lists');
     if (!lists) { box.innerHTML = '<p class="menu-note">Loading playlists…</p>'; return; }
-    if (!lists.length) { box.innerHTML = '<p class="menu-note">No playlists in your library yet.</p>'; return; }
-    lists.forEach(p => {
-      const b = document.createElement('button'); b.className = 'menu-item'; b.dataset.uri = p.uri;
-      b.innerHTML = '<span class="mi-glyph" aria-hidden="true">▸</span><span class="mi-label"></span><span class="mi-value"></span>';
-      b.querySelector('.mi-label').textContent = p.name;
-      const n = (p.tracks && p.tracks.total) ?? (p.items && p.items.total);
-      b.querySelector('.mi-value').textContent = n != null ? n : '';
-      box.appendChild(b);
-    });
+    fillRows(box, lists.map(p => ({ id: p.id, name: p.name, images: p.images,
+      sub: (((p.tracks && p.tracks.total) ?? (p.items && p.items.total)) ?? '') + ' songs' })), 'playlist', 'No playlists in your library yet.');
   }
   function renderDevices() {
     const box = $('#mu-devices'); box.textContent = '';
@@ -1611,7 +1788,9 @@ const PH = (() => {
   }
   function renderAll() {
     $('#mu-off').hidden = connected(); $('#mu-on').hidden = !connected();
-    renderSetup(); renderNow(); renderLists();
+    renderSetup(); renderNow(); renderLists(); renderShows();
+    if (pl && !pl.loaded) renderCollection('pl', pl);
+    if (sh && !sh.loaded) renderCollection('sh', sh);
   }
 
   const ICON = {
@@ -1622,7 +1801,27 @@ const PH = (() => {
   /* ---------- Wiring ---------- */
   document.addEventListener('click', e => {
     const m = e.target.closest('[data-mu]'); if (m && actions[m.dataset.mu]) { e.preventDefault(); actions[m.dataset.mu](); return; }
-    const p = e.target.closest('#mu-lists [data-uri]'); if (p) { playList(p.dataset.uri); return; }
+    const row = e.target.closest('.mu-row');
+    if (row) {
+      const i = +row.dataset.i, k = row.dataset.kind;
+      if (k === 'playlist') openPlaylist(lists[i]);
+      else if (k === 'show') openShow((row.closest('#mp-results') ? null : shows && shows[i]) || readShow(row));
+      else if (k === 'track') play({ context_uri: pl.uri, offset: { uri: pl.items[i].uri } });
+      else if (k === 'episode') { const ep = sh.items[i]; play({ uris: [ep.uri], ...(ep.resume ? { position_ms: ep.resume } : {}) }); }
+      return;
+    }
+    const a = e.target.closest('[data-mu-act]');
+    if (a) {
+      const k = a.dataset.muAct;
+      if (k === 'pl-play' && pl) play({ context_uri: pl.uri }, { shuffle: false });
+      if (k === 'pl-shuffle' && pl) play({ context_uri: pl.uri }, { shuffle: true });
+      if (k === 'pl-more') loadPlaylist(true);
+      if (k === 'sh-play' && sh && sh.items.length) { const ep = sh.items.find(x => !x.played) || sh.items[0]; play({ uris: [ep.uri], ...(ep.resume ? { position_ms: ep.resume } : {}) }); }
+      if (k === 'sh-more') loadShow(true);
+      if (k === 'sysk') searchShows('Stuff You Should Know', true);
+      if (k === 'reconnect') login();
+      return;
+    }
     const d = e.target.closest('#mu-devices [data-device]');
     if (d) cmd(async () => { await api('/me/player', { method: 'PUT', body: { device_ids: [d.dataset.device], play: true } }); setTimeout(loadDevices, 600); });
   });
@@ -1637,6 +1836,10 @@ const PH = (() => {
     catch { if (src.select) { src.select(); document.execCommand('copy'); PH.toast('Copied.'); } }
   }));
   $('#mu-dev-refresh').addEventListener('click', loadDevices);
+  let lastResults = [];
+  const readShow = row => lastResults[+row.dataset.i];
+  $('#mp-q').addEventListener('input', () => { clearTimeout(searchT); searchT = setTimeout(() => searchShows($('#mp-q').value.trim()), 400); });
+  $('#mp-q').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchT); searchShows($('#mp-q').value.trim()); e.target.blur(); } });
 
   // Poll only while a music page is on screen and the app is visible
   let pollT = null, barT = null;
@@ -1647,7 +1850,11 @@ const PH = (() => {
     renderAll();
     if (!connected()) return;
     poll(); pollT = setInterval(poll, 4000); barT = setInterval(tickBar, 1000);
-    if (location.hash.startsWith('#/music/devices')) loadDevices();
+    const h = location.hash;
+    if (h.startsWith('#/music/devices')) loadDevices();
+    else if (h.startsWith('#/music/list')) { if (pl && !pl.loaded) loadPlaylist(); }
+    else if (h.startsWith('#/music/podcasts/show')) { if (sh && !sh.loaded) loadShow(); }
+    else if (h.startsWith('#/music/podcasts')) { if (!shows) loadShows(); }
     else if (!lists) loadLists();
   }
   addEventListener('hashchange', sync);
@@ -1662,7 +1869,7 @@ const PH = (() => {
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.2';
+  const VERSION = '1.3';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
