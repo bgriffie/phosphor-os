@@ -88,18 +88,29 @@
   }
 
   /* ---------- Web API ---------- */
-  async function api(path, { method = 'GET', body, query } = {}, retried) {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  let backoffUntil = 0;   // Spotify said "slow down" (429): no polling until then
+  async function api(path, { method = 'GET', body, query } = {}, retried, attempt = 0) {
     if (!connected()) throw new Error('Not connected');
     if (!auth.access || Date.now() > auth.expires - 60000) await refresh();
     const url = 'https://api.spotify.com/v1' + path + (query ? '?' + new URLSearchParams(query) : '');
-    const r = await fetch(url, { method, headers: { Authorization: 'Bearer ' + auth.access, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
-    if (r.status === 401 && !retried) { await refresh(); return api(path, { method, body, query }, true); }
+    const safe = method !== 'POST';   // next/previous must not be sent twice
+    let r;
+    try { r = await fetch(url, { method, headers: { Authorization: 'Bearer ' + auth.access, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined }); }
+    catch (e) {   // offline or a dropped connection: one quiet retry
+      if (safe && attempt < 1) { await wait(800); return api(path, { method, body, query }, retried, attempt + 1); }
+      throw Object.assign(new Error(navigator.onLine === false ? 'No internet connection.' : 'Couldn\'t reach Spotify.'), { offline: true });
+    }
+    if (r.status === 401 && !retried) { await refresh(); return api(path, { method, body, query }, true, attempt); }
+    if (r.status === 429) { backoffUntil = Date.now() + 1000 * (+r.headers.get('Retry-After') || 5); }
+    if (r.status >= 500 && safe && attempt < 2) { await wait(600 * (attempt + 1)); return api(path, { method, body, query }, retried, attempt + 1); }
     if (r.status === 204 || r.status === 202) return null;
     const d = await r.json().catch(() => null);
     if (!r.ok) throw Object.assign(new Error((d && d.error && d.error.message) || 'Spotify error ' + r.status), { status: r.status, reason: d && d.error && d.error.reason });
     return d;
   }
   const say = e => {
+    if (e.offline) { PH.toast(e.message, 'warn'); return; }
     if (e.reason === 'NO_ACTIVE_DEVICE' || e.status === 404) PH.toast('Spotify isn\'t playing on any device. Open Spotify on your phone, start any song, then come back.', 'warn');
     else if (e.reason === 'PREMIUM_REQUIRED' || e.status === 403) PH.toast('Spotify only allows remote control with Premium.', 'warn');
     else if (e.message !== 'Not connected') PH.toast(e.message, 'error');
@@ -110,21 +121,35 @@
   // Open playlist / podcast show: { id, uri, name, sub, images, items: [], total, next }
   let pl = load('mu-pl', null), sh = load('mu-sh', null);
   const fmt = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  let misses = 0;
   async function poll() {
-    if (!connected()) return;
-    try { state = await api('/me/player', { query: { additional_types: 'episode' } }); stamp = Date.now(); renderNow(); }
-    catch (e) { if (e.status !== 429) { state = null; renderNow(); } }
+    if (!connected() || Date.now() < backoffUntil) return;
+    try {
+      state = await api('/me/player', { query: { additional_types: 'episode' } }); stamp = Date.now(); misses = 0;
+      if (state && state.device && state.device.id) save('mu-last-device', state.device.id);
+      renderNow(); note('');
+    } catch (e) {
+      if (e.status === 429) return;
+      // keep showing the last song through a blip; only clear after a few misses in a row
+      if (++misses >= 3) { state = null; renderNow(); }
+      note(e.offline ? 'Offline. Retrying…' : 'Reconnecting to Spotify…');
+    }
   }
+  const note = t => { const el = $('#mu-note'); if (el) { el.textContent = t; el.hidden = !t; } };
   const later = () => setTimeout(poll, 450);
   async function cmd(fn) { try { await fn(); later(); } catch (e) { say(e); } }
 
   async function pickDevice() {   // when nothing is active: wake this phone (or the first device Spotify knows)
     const d = await api('/me/player/devices'); devices = (d && d.devices) || [];
-    return devices.find(x => x.is_active) || devices.find(x => x.type === 'Smartphone') || devices[0] || null;
+    const last = load('mu-last-device', null), ok = devices.filter(x => !x.is_restricted);
+    return ok.find(x => x.is_active) || ok.find(x => x.id === last) || ok.find(x => x.type === 'Smartphone') || ok[0] || null;
   }
   const actions = {
     toggle: () => cmd(async () => {
-      if (state && state.device) { await api('/me/player/' + (state.is_playing ? 'pause' : 'play'), { method: 'PUT' }); if (state) { state.is_playing = !state.is_playing; renderNow(); } return; }
+      if (state && state.device) {
+        try { await api('/me/player/' + (state.is_playing ? 'pause' : 'play'), { method: 'PUT' }); if (state) { state.is_playing = !state.is_playing; renderNow(); } return; }
+        catch (e) { if (!(e.reason === 'NO_ACTIVE_DEVICE' || e.status === 404)) throw e; }   // fall through and wake a device
+      }
       const dev = await pickDevice(); if (!dev) throw Object.assign(new Error(''), { reason: 'NO_ACTIVE_DEVICE' });
       await api('/me/player', { method: 'PUT', body: { device_ids: [dev.id], play: true } });
     }),
@@ -138,9 +163,14 @@
     try {
       let device_id;
       if (!state || !state.device) { const dev = await pickDevice(); if (!dev) throw Object.assign(new Error(''), { reason: 'NO_ACTIVE_DEVICE' }); device_id = dev.id; }
-      const query = device_id ? { device_id } : undefined;
+      let query = device_id ? { device_id } : undefined;
       if (shuffle != null) await api('/me/player/shuffle', { method: 'PUT', query: { state: shuffle, ...(query || {}) } }).catch(() => {});
-      await api('/me/player/play', { method: 'PUT', body, query });
+      try { await api('/me/player/play', { method: 'PUT', body, query }); }
+      catch (e) {   // the device we thought was active went to sleep: wake the best one and try once more
+        if (!(e.reason === 'NO_ACTIVE_DEVICE' || e.status === 404) || device_id) throw e;
+        const dev = await pickDevice(); if (!dev) throw e;
+        await api('/me/player/play', { method: 'PUT', body, query: { device_id: dev.id } });
+      }
       later(); PH.go('/music');
     } catch (e) { say(e); }
   }
@@ -399,6 +429,8 @@
   }
   addEventListener('hashchange', sync);
   document.addEventListener('visibilitychange', sync);
+  addEventListener('online', sync);
+  addEventListener('pageshow', e => { if (e.persisted) sync(); });
 
   renderSetup();
   finishLogin().finally(() => setTimeout(sync, 0));

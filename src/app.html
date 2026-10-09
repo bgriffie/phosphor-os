@@ -16,6 +16,11 @@
 /*@@PHOSPHOR_CSS@@*/
     /* === tool-specific styles below === */
 
+    /* No title on the case (Floyd, v1.4): the screen starts right under the iOS clock.
+       Phosphor OS only; the breadcrumb at the top of the screen still says where you are. */
+    .app-header { display: none; }
+    .app { padding-top: max(var(--sp-2), calc(var(--safe-top) - 4px)); }
+
     /* Boot screen: covers the CRT on a cold start, tap to skip */
     .boot-screen {
       position: absolute; inset: 0; z-index: 5; padding: 56px var(--sp-5) var(--sp-5);
@@ -49,6 +54,36 @@
     .tile .lbl { max-width: 100%; font-size: var(--fs-xs); color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .tile.add .ico { border-style: dashed; color: var(--text-faint); background: none; }
     .home-hint { margin-top: var(--sp-5); text-align: center; color: var(--text-faint); font-size: var(--fs-xs); }
+
+    /* Sphere home */
+    .view.fill .home-clock { padding: var(--sp-2) 0 0; flex: none; }
+    .view.fill .home-clock .readout { font-size: 40px; }
+    .sphere { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    .sphere[hidden] { display: none; }
+    .sphere canvas { position: absolute; inset: 0; pointer-events: none; }
+    .orb {
+      position: absolute; top: 0; left: 0; width: 60px; height: 60px; padding: 0; margin: 0;
+      appearance: none; -webkit-appearance: none; background: none; border: 0; color: var(--accent);
+      transform-origin: 30px 30px; will-change: transform, opacity; -webkit-tap-highlight-color: transparent;
+    }
+    .orb .ico {
+      display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%;
+      background: radial-gradient(circle at 50% 40%, var(--surface-3), var(--bg) 75%);
+      border: 1px solid var(--line-strong); box-shadow: 0 0 12px rgba(57, 255, 106, .18), inset 0 0 10px rgba(57, 255, 106, .12);
+    }
+    .orb .ico svg { width: 26px; height: 26px; filter: drop-shadow(0 0 3px rgba(57, 255, 106, .5)); }
+    .orb.kind-shortcut { color: var(--amber); }
+    .orb.kind-shortcut .ico { border-color: rgba(255, 177, 59, .55); box-shadow: 0 0 12px rgba(255, 177, 59, .18), inset 0 0 10px rgba(255, 177, 59, .1); }
+    .orb.add .ico { border-style: dashed; color: var(--text-faint); background: none; box-shadow: none; }
+    .orb.front .ico { border-color: var(--accent); box-shadow: 0 0 16px rgba(57, 255, 106, .35), inset 0 0 12px rgba(57, 255, 106, .18); }
+    .orb.is-held .ico, .orb:active .ico { background: var(--surface-3); box-shadow: var(--glow-box); }
+    .orb .lbl {
+      position: absolute; top: 64px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+      font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim);
+      opacity: 0; transition: opacity var(--dur) var(--ease-steps);
+    }
+    .orb.front .lbl { opacity: 1; }
+    .view.fill .home-hint { margin: 0; padding-bottom: var(--sp-1); flex: none; }
 
     /* Glyphs */
     .gl { display: inline-block; width: 22px; height: 22px; flex: none; }
@@ -108,6 +143,7 @@
     .mu-btns .btn { flex: 1; }
     .mu-track { font-size: var(--fs-xl); font-weight: 700; line-height: var(--lh-tight); color: var(--text); overflow-wrap: anywhere; }
     .mu-artist { margin-top: var(--sp-2); color: var(--text-dim); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+    .mu-note { margin-top: var(--sp-2); color: var(--amber); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); }
     .mu-now .meter { margin-top: var(--sp-5); }
     .mu-times { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--text-dim); font-variant-numeric: tabular-nums; }
     .mu-times .badge { max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -133,7 +169,7 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.3</span>
+      <span class="app-meta">v1.4</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -147,6 +183,7 @@
           <div class="readout" id="clock">--:--</div>
           <div class="date" id="date"></div>
         </div>
+        <div class="sphere" id="sphere" hidden><canvas id="sphere-lines" aria-hidden="true"></canvas></div>
         <div class="grid" id="grid"></div>
         <p class="home-hint" id="home-hint">Hold a tile to edit it.</p>
       </section>
@@ -168,6 +205,7 @@
             <img class="mu-art" id="mu-art" alt="" hidden referrerpolicy="no-referrer">
             <div class="mu-track" id="mu-track">Nothing playing</div>
             <div class="mu-artist" id="mu-artist"></div>
+            <div class="mu-note" id="mu-note" hidden></div>
             <div class="meter" role="progressbar" aria-label="Song position" aria-valuemin="0" aria-valuemax="100"><span id="mu-bar" style="--value:0%"></span></div>
             <div class="mu-times"><span id="mu-pos">0:00</span><span class="badge dim" id="mu-dev">No device</span><span id="mu-dur">0:00</span></div>
             <div class="mu-ctrl">
@@ -375,6 +413,7 @@
             <a class="menu-item" href="#/tiles"><span class="mi-label">Tiles</span><span class="mi-value" id="tile-count"></span></a>
             <a class="menu-item" href="#/music/setup"><span class="mi-label">Spotify</span><span class="mi-value" id="set-spotify"></span></a>
             <a class="menu-item" href="#/settings/clock"><span class="mi-label">Clock</span><span class="mi-value" data-setting-value="clock"></span></a>
+            <a class="menu-item" href="#/settings/home"><span class="mi-label">Home screen</span><span class="mi-value" data-setting-value="home"></span></a>
             <a class="menu-item" href="#/settings/columns"><span class="mi-label">Grid columns</span><span class="mi-value" data-setting-value="cols"></span></a>
             <label class="menu-item"><span class="mi-label">Boot screen<small>Short start-up text when the app cold starts</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="boot"></label>
           </div>
@@ -398,7 +437,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.3</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.4</span></a>
           </div>
         </div>
       </section>
@@ -407,6 +446,13 @@
         <div class="menu" role="radiogroup" aria-label="Clock">
           <button class="menu-item" role="radio" data-setting="clock" data-value="12" data-back-on-pick><span class="mi-label">12-hour</span></button>
           <button class="menu-item" role="radio" data-setting="clock" data-value="24" data-back-on-pick><span class="mi-label">24-hour</span></button>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/home" data-title="Home screen">
+        <div class="menu" role="radiogroup" aria-label="Home screen">
+          <button class="menu-item" role="radio" data-setting="home" data-value="sphere" data-back-on-pick><span class="mi-label">Sphere<small>A 3D web of tiles you drag to spin</small></span></button>
+          <button class="menu-item" role="radio" data-setting="home" data-value="grid" data-back-on-pick><span class="mi-label">Grid<small>Rows of tiles</small></span></button>
         </div>
       </section>
 
@@ -428,7 +474,7 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.3</span></div>
+          <div class="kv"><span>Version</span><span>1.4</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>

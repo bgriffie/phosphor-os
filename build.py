@@ -23,6 +23,8 @@ for app_id, src in APPS.items():
     a = re.sub(r'\s*<link rel="(manifest|apple-touch-icon|icon)"[^>]*>', '', a)
     a = re.sub(r'if \(["\']serviceWorker["\'] in navigator\) navigator\.serviceWorker\.register\([^;]*;', '/* service worker: provided by Phosphor OS */', a)
     a = a.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n  ' + HEAD, 1)
+    # same case as the OS: no title, screen right under the clock (Floyd, OS v1.4)
+    a = a.replace('</head>', '<style>/* Phosphor OS */ .app-header { display: none; } .app { padding-top: max(var(--sp-2), calc(var(--safe-top) - 4px)); }</style>\n</head>', 1)
     i = a.rindex('</body>')
     a = a[:i] + '<script>\n' + embed + '</script>\n' + a[i:]
     assert HEAD in a and 'serviceWorker.register' not in a, app_id

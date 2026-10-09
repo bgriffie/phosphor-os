@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.3';
+  const VERSION = '1.4';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -102,6 +102,7 @@
     add.innerHTML = '<span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="lbl">Add</span>';
     grid.appendChild(add);
     $('#tile-count').textContent = tiles.length;
+    sphere.build();
   }
 
   // Tap launches; hold (550ms) opens the tile editor
@@ -120,6 +121,147 @@
     if (held) { held = false; return; }
     const t = tiles.find(x => x.id === b.dataset.tile); if (t) launch(t);
   });
+
+  /* ---------- Sphere home: the tiles as a draggable 3D web ---------- */
+  const sphere = (() => {
+    const wrap = $('#sphere'), cv = $('#sphere-lines'), cx2 = cv.getContext('2d');
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let nodes = [], edges = [], pulses = [], R = 120, cx = 0, cy = 0, W = 0, H = 0;
+    let M = [1, 0, 0, 0, 1, 0, 0, 0, 1], vx = 0, vy = 0, raf = null, idleAt = 0, frames = 0;
+    const mul = (a, b) => { const r = []; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) r[i * 3 + j] = a[i * 3] * b[j] + a[i * 3 + 1] * b[3 + j] + a[i * 3 + 2] * b[6 + j]; return r; };
+    const rotate = (ax, ay) => {   // drag right spins the front to the right, drag down spins it down
+      const c = Math.cos(ay), s = Math.sin(ay), C = Math.cos(ax), S = Math.sin(ax);
+      M = mul([1, 0, 0, 0, C, -S, 0, S, C], mul([c, 0, s, 0, 1, 0, -s, 0, c], M));
+      if (++frames % 120 === 0) orthonormalize();
+    };
+    function orthonormalize() {   // keep the matrix a pure rotation as float error builds up
+      const a = M.slice(0, 3), b = M.slice(3, 6), n = v => { const l = Math.hypot(...v); return v.map(x => x / l); };
+      const x = n(a), d = x[0] * b[0] + x[1] * b[1] + x[2] * b[2], y = n(b.map((v, i) => v - d * x[i]));
+      M = [...x, ...y, x[1] * y[2] - x[2] * y[1], x[2] * y[0] - x[0] * y[2], x[0] * y[1] - x[1] * y[0]];
+    }
+    function build() {
+      wrap.querySelectorAll('.orb').forEach(el => el.remove());
+      const items = tiles.map(t => ({ t })).concat([{ add: true }]);
+      const n = items.length, golden = Math.PI * (3 - Math.sqrt(5));
+      nodes = items.map((it, i) => {
+        const y = 1 - 2 * (i + .5) / n, r = Math.sqrt(1 - y * y), th = i * golden;
+        const el = document.createElement('button');
+        el.className = 'orb' + (it.add ? ' add' : ' kind-' + it.t.kind);
+        if (it.add) { el.dataset.act = 'add-tile'; el.setAttribute('aria-label', 'Add tile'); el.innerHTML = '<span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="lbl">Add</span>'; }
+        else { el.dataset.tile = it.t.id; el.setAttribute('aria-label', it.t.label); el.innerHTML = `<span class="ico">${svg(it.t.glyph)}</span><span class="lbl"></span>`; el.querySelector('.lbl').textContent = it.t.label; }
+        wrap.appendChild(el);
+        return { p: [Math.cos(th) * r, y, Math.sin(th) * r], el, q: [0, 0, 0], d: 0, x: 0, y: 0 };
+      });
+      // link each node to its 3 nearest neighbours
+      const seen = new Set(); edges = [];
+      nodes.forEach((a, i) => nodes.map((b, j) => [j, a.p[0] * b.p[0] + a.p[1] * b.p[1] + a.p[2] * b.p[2]]).filter(([j]) => j !== i)
+        .sort((u, v) => v[1] - u[1]).slice(0, 3).forEach(([j]) => { const k = i < j ? i + '-' + j : j + '-' + i; if (!seen.has(k)) { seen.add(k); edges.push([i, j]); } }));
+      pulses = Array.from({ length: Math.min(6, edges.length) }, () => ({ e: Math.random() * edges.length | 0, t: Math.random(), v: .004 + Math.random() * .006 }));
+      size(); draw();
+    }
+    function size() {
+      W = wrap.clientWidth; H = wrap.clientHeight; if (!W || !H) return;
+      const dpr = Math.min(2, devicePixelRatio || 1);
+      cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+      cx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+      R = Math.min(W * .4, H * .36); cx = W / 2; cy = H / 2;
+    }
+    function draw() {
+      if (!W) size(); if (!W) return;
+      nodes.forEach(nd => {
+        const p = nd.p, q = [M[0] * p[0] + M[1] * p[1] + M[2] * p[2], M[3] * p[0] + M[4] * p[1] + M[5] * p[2], M[6] * p[0] + M[7] * p[1] + M[8] * p[2]];
+        const d = (q[2] + 1) / 2, k = R * (.82 + .3 * d);   // d: 0 at the back, 1 facing you
+        nd.q = q; nd.d = d; nd.x = cx + q[0] * k; nd.y = cy - q[1] * k;
+        const st = nd.el.style;
+        st.transform = `translate3d(${(nd.x - 30).toFixed(1)}px,${(nd.y - 30).toFixed(1)}px,0) scale(${(.5 + .62 * d).toFixed(3)})`;
+        st.opacity = (.15 + .85 * d * d).toFixed(3); st.zIndex = 1 + Math.round(d * 100);
+        st.pointerEvents = d > .42 ? 'auto' : 'none';
+        nd.el.classList.toggle('front', d > .72);
+      });
+      const g = cx2; g.clearRect(0, 0, W, H);
+      // core glow + outer ring
+      const rad = g.createRadialGradient(cx, cy, 0, cx, cy, R * 1.25);
+      rad.addColorStop(0, 'rgba(57,255,106,.10)'); rad.addColorStop(1, 'rgba(57,255,106,0)');
+      g.fillStyle = rad; g.beginPath(); g.arc(cx, cy, R * 1.25, 0, 7); g.fill();
+      g.strokeStyle = 'rgba(57,255,106,.22)'; g.lineWidth = 1; g.setLineDash([2, 6]);
+      g.beginPath(); g.arc(cx, cy, R * 1.18, 0, 7); g.stroke(); g.setLineDash([]);
+      // two wireframe rings that turn with the sphere
+      [[1, 0, 0], [0, 1, 0]].forEach(axis => {
+        g.beginPath();
+        for (let i = 0; i <= 48; i++) {
+          const a = i / 48 * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
+          const p = axis[0] ? [0, c, s] : [c, 0, s];
+          const q = [M[0] * p[0] + M[1] * p[1] + M[2] * p[2], M[3] * p[0] + M[4] * p[1] + M[5] * p[2], M[6] * p[0] + M[7] * p[1] + M[8] * p[2]];
+          const k = R * (.82 + .3 * (q[2] + 1) / 2), x = cx + q[0] * k, y = cy - q[1] * k;
+          i ? g.lineTo(x, y) : g.moveTo(x, y);
+        }
+        g.strokeStyle = 'rgba(57,255,106,.10)'; g.stroke();
+      });
+      // links, brighter in front
+      edges.forEach(([i, j]) => {
+        const a = nodes[i], b = nodes[j], d = (a.d + b.d) / 2;
+        g.strokeStyle = `rgba(57,255,106,${(.05 + .5 * d * d).toFixed(3)})`; g.lineWidth = .6 + d;
+        g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+      });
+      // data packets running along the links
+      pulses.forEach(pu => {
+        const [i, j] = edges[pu.e] || [0, 0], a = nodes[i], b = nodes[j]; if (!a || !b) return;
+        const x = a.x + (b.x - a.x) * pu.t, y = a.y + (b.y - a.y) * pu.t, d = (a.d + b.d) / 2;
+        g.fillStyle = `rgba(255,177,59,${(.2 + .8 * d).toFixed(3)})`; g.shadowColor = '#FFB13B'; g.shadowBlur = 8 * d;
+        g.fillRect(x - 1.5, y - 1.5, 3, 3); g.shadowBlur = 0;
+      });
+    }
+    function tick(t) {
+      raf = requestAnimationFrame(tick);
+      if (!drag) {
+        if (Math.abs(vx) + Math.abs(vy) > .0002) { rotate(vx, vy); vx *= .94; vy *= .94; }
+        else if (!reduce && performance.now() - idleAt > 1500) rotate(0.0006, .0028);   // slow idle spin
+      }
+      if (!reduce) pulses.forEach(pu => { pu.t += pu.v; if (pu.t > 1) { pu.t = 0; pu.e = Math.random() * edges.length | 0; } });
+      draw();
+    }
+    const start = () => { if (!raf && !wrap.hidden && !document.hidden) { size(); raf = requestAnimationFrame(tick); } };
+    const stop = () => { if (raf) cancelAnimationFrame(raf); raf = null; };
+
+    // Drag spins (with inertia); a tap opens a tile; holding a tile edits it
+    let drag = null;
+    wrap.addEventListener('pointerdown', e => {
+      const el = e.target.closest('.orb');
+      drag = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now(), el, moved: false, held: false,
+        hold: el && el.dataset.tile ? setTimeout(() => { if (drag && !drag.moved) { drag.held = true; el.classList.add('is-held'); setTimeout(() => el.classList.remove('is-held'), 200); editTile(el.dataset.tile); } }, 550) : null };
+      vx = vy = 0; wrap.setPointerCapture(e.pointerId);
+    });
+    wrap.addEventListener('pointermove', e => {
+      if (!drag) return;
+      const dx = e.clientX - drag.lx, dy = e.clientY - drag.ly;
+      if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 7) { drag.moved = true; clearTimeout(drag.hold); }
+      if (drag.moved) { const k = 1.6 / Math.max(160, R * 2); rotate(dy * k * Math.PI, dx * k * Math.PI); vx = dy * k * Math.PI; vy = dx * k * Math.PI; if (!raf) draw(); }
+      drag.lx = e.clientX; drag.ly = e.clientY;
+    });
+    const end = e => {
+      if (!drag) return; clearTimeout(drag.hold);
+      const d = drag; drag = null; idleAt = performance.now();
+      if (e.type === 'pointerup' && !d.moved && !d.held && d.el) {
+        if (d.el.dataset.act === 'add-tile') editTile(null);
+        else { const t = tiles.find(x => x.id === d.el.dataset.tile); if (t) launch(t); }
+      }
+    };
+    wrap.addEventListener('pointerup', end); wrap.addEventListener('pointercancel', end);
+    wrap.addEventListener('contextmenu', e => e.preventDefault());
+    wrap.addEventListener('click', e => { if (e.target.closest('.orb')) { e.preventDefault(); e.stopPropagation(); } }, true);   // taps are handled on pointerup
+    addEventListener('resize', () => { size(); draw(); });
+    document.addEventListener('visibilitychange', () => document.hidden ? stop() : start());
+    return { build, start, stop };
+  })();
+
+  // Sphere or grid, per Settings › Home screen
+  function applyHome() {
+    const sph = PH.store.get('home') !== 'grid', onHome = (location.hash.replace(/^#/, '') || '/') === '/';
+    $('.view[data-route="/"]').classList.toggle('fill', sph);
+    $('#sphere').hidden = !sph; $('#grid').hidden = sph;
+    $('#home-hint').textContent = sph ? 'Drag to spin · tap to open · hold to edit' : 'Hold a tile to edit it.';
+    if (sph && onHome) requestAnimationFrame(() => sphere.start()); else sphere.stop();
+  }
 
   /* ---------- Tile list + editor ---------- */
   function renderTileList() {
@@ -466,6 +608,8 @@
     prevRoute = r;
   });
   PH.on('cols', renderGrid);
+  PH.on('home', applyHome);
+  PH.on('route', applyHome);
   PH.on('clock', () => { tick(); renderNotes(); });
 
   // keyboard input for the calculator and dialer on desktop
@@ -498,7 +642,7 @@
 
   /* ---------- Start ---------- */
   renderGrid(); renderTileList(); renderNotes(); renderDial(); renderCalc();
-  PH.init({ clock: '12', cols: '4', boot: true });
+  PH.init({ clock: '12', cols: '4', boot: true, home: 'sphere' });
   renderGrid();
   startClock();
   if (/^#\/app\//.test(location.hash)) syncFrame(); else boot();
