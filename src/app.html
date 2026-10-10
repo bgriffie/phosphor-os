@@ -186,7 +186,7 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.9</span>
+      <span class="app-meta">v1.10</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -231,6 +231,7 @@
           </div>
           <div class="menu mu-links">
             <a class="menu-item" href="#/music/episodes"><span class="mi-label">Stuff You Should Know<small id="mu-sysk-sub">Episodes</small></span></a>
+            <a class="menu-item" href="#/music/recent"><span class="mi-label">Recently played<small>Songs you played lately</small></span></a>
             <a class="menu-item" href="#/music/devices"><span class="mi-label">Play on</span><span class="mi-value" id="mu-devname"></span></a>
           </div>
         </div>
@@ -244,6 +245,15 @@
         <div class="menu" id="ep-items"></div>
         <button class="btn btn-ghost btn-block" id="ep-more" hidden>Load more</button>
         <p class="menu-note" id="ep-scope" hidden>Reconnect Spotify in Settings › Spotify to see which episodes you've played.</p>
+      </section>
+
+      <section class="view" data-route="/music/recent" data-title="Recently played">
+        <div class="panel" id="rp-scope" hidden>
+          <p>Spotify needs your OK once more to share what you've played. Tap Reconnect, approve, and you'll come straight back.</p>
+          <button class="btn btn-primary btn-block" data-mu-act="reconnect" style="margin-top:var(--sp-3)">Reconnect Spotify</button>
+        </div>
+        <div class="menu" id="rp-items"></div>
+        <p class="menu-note">Tap a song to play it, carrying on from its album or playlist. Spotify doesn't include podcasts here.</p>
       </section>
 
       <section class="view" data-route="/music/devices" data-title="Play on">
@@ -408,7 +418,7 @@
             <a class="menu-item" href="#/music/setup"><span class="mi-label">Spotify</span><span class="mi-value" id="set-spotify"></span></a>
                         <a class="menu-item" href="#/settings/clock"><span class="mi-label">Clock</span><span class="mi-value" data-setting-value="clock"></span></a>
             <a class="menu-item" href="#/settings/rkey"><span class="mi-label">Right button</span><span class="mi-value" data-setting-value="rkey"></span></a>
-            <label class="menu-item"><span class="mi-label">App buttons first<small>In Arcade and Kitchen, show the app's own button (like Pause) instead</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="rkeyApp"></label>
+            <label class="menu-item"><span class="mi-label">App buttons first<small>Inside Arcade, Kitchen and Lights, show the app's own button (like Pause) past its first page. Hold the right key for the menu anytime.</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="rkeyApp"></label>
             <a class="menu-item" href="#/settings/home"><span class="mi-label">Home screen</span><span class="mi-value" data-setting-value="home"></span></a>
             <a class="menu-item" href="#/settings/columns"><span class="mi-label">Grid columns</span><span class="mi-value" data-setting-value="cols"></span></a>
             <label class="menu-item"><span class="mi-label">Boot screen<small>Short start-up text when the app cold starts</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="boot"></label>
@@ -433,7 +443,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.9</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.10</span></a>
           </div>
         </div>
       </section>
@@ -483,7 +493,7 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.9</span></div>
+          <div class="kv"><span>Version</span><span>1.10</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>

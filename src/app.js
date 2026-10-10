@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.9';
+  const VERSION = '1.10';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -638,7 +638,9 @@
   const curRoute = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
   function rightKey() {
     const c = child();
-    if (frameId && c && PH.store.get('rkeyApp')) { const k = c.pageKey(); if (k) return { app: k }; }
+    // An app's own key (Pause, Party…) takes over below its first page; on the first page the
+    // right key stays the Menu, so the app's menu (settings, Party mode…) is always reachable
+    if (frameId && c && PH.store.get('rkeyApp') && !c.atHome()) { const k = c.pageKey(); if (k) return { app: k }; }
     const m = PH.store.get('rkey');
     return { mode: RKEY[m] ? m : 'menu' };
   }
@@ -673,13 +675,21 @@
     if (frameId) { PhosphorOS.closeApp(); return; }
     if (curRoute() !== '/') location.replace(home());
   });
+  function openMenu() {
+    const c = child();
+    if (frameId && c) { c.openMenu(); return; }
+    const m = $('#menu'); if (m.open) m.close(); else m.showModal();
+  }
+  // Hold the right key: the menu, whatever the key is showing
+  let rkHold = null, rkHeld = false;
+  $('#k-right').addEventListener('pointerdown', () => { rkHeld = false; clearTimeout(rkHold); rkHold = setTimeout(() => { rkHeld = true; openMenu(); }, 550); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(n => $('#k-right').addEventListener(n, () => clearTimeout(rkHold)));
+  $('#k-right').addEventListener('contextmenu', e => e.preventDefault());
   $('#k-right').addEventListener('click', () => {
+    if (rkHeld) { rkHeld = false; return; }
     const r = rightKey(), c = child();
     if (r.app) { c.pressKey(); return; }
-    if (r.mode === 'menu') {
-      if (frameId && c) { c.openMenu(); return; }
-      const m = $('#menu'); if (m.open) m.close(); else m.showModal(); return;
-    }
+    if (r.mode === 'menu') { openMenu(); return; }
     if (r.mode === 'play') { PhosphorMusic.toggle(); return; }
     closeDialogs();
     if (RKEY[r.mode][2]) { openApp(RKEY[r.mode][2]); return; }

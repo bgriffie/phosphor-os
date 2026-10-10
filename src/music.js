@@ -9,7 +9,8 @@
   const drop = k => { try { localStorage.removeItem(KEY + k); } catch {} };
 
   const REDIRECT = new URL('./', location.href.split(/[?#]/)[0]).href;   // https://bgriffie.github.io/phosphor-os/
-  const SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative user-library-read user-read-playback-position';
+  const SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing playlist-read-private playlist-read-collaborative user-library-read user-read-playback-position user-read-recently-played';
+  const RECENT_SCOPE = 'user-read-recently-played';   // added in v1.10: older logins must reconnect once for Recently played
   const RESUME_SCOPE = 'user-read-playback-position';   // added in v1.3: older logins can't see which episodes were played
   const standalone = () => navigator.standalone || matchMedia('(display-mode: standalone)').matches;
   let auth = load('spotify', {});          // { clientId, access, expires, refresh, user }
@@ -184,13 +185,35 @@
 
   /* Stuff You Should Know: find the show once, then page through its episodes (newest first) */
   const hasResume = () => !auth.scope || auth.scope.split(' ').includes(RESUME_SCOPE);
+  const SYSK_ID = '0ofXAdFIQQRsCYj9754UFx';   // the show's Spotify id, used if search comes back empty
   async function syskId() {
     let id = load('mu-sysk', null); if (id) return id;
-    const d = await api('/search', { query: { q: 'Stuff You Should Know', type: 'show', limit: 5, market: 'from_token' } });
-    const found = ((d && d.shows && d.shows.items) || []).filter(Boolean);
-    const s = found.find(x => /^stuff you should know$/i.test(x.name)) || found[0];
-    if (!s) throw new Error('Couldn\'t find Stuff You Should Know on Spotify.');
-    save('mu-sysk', s.id); return s.id;
+    let found = [];
+    for (const q of [{ market: 'from_token' }, {}]) {   // some accounts get nothing back with a market
+      try {
+        const d = await api('/search', { query: { q: 'Stuff You Should Know', type: 'show', limit: 5, ...q } });
+        found = ((d && d.shows && d.shows.items) || []).filter(Boolean);
+      } catch (e) { if (e.status === 401 || e.offline) throw e; }
+      if (found.length) break;
+    }
+    const s = found.find(x => /^stuff you should know$/i.test(x.name)) || found.find(x => /stuff you should know/i.test(x.name));
+    id = s ? s.id : SYSK_ID;
+    save('mu-sysk', id); return id;
+  }
+  // Episodes, newest first. Tries the episodes list, then the show itself (which carries its first
+  // page of episodes), with and without a market, since Spotify answers these differently per account.
+  async function episodePage(id, offset) {
+    const tries = [
+      () => api(`/shows/${id}/episodes`, { query: { limit: 50, offset, market: 'from_token' } }),
+      () => api(`/shows/${id}/episodes`, { query: { limit: 20, offset } }),
+      ...(offset ? [] : [() => api(`/shows/${id}`, { query: { market: 'from_token' } }).then(s => s && s.episodes)]),
+    ];
+    let last;
+    for (const t of tries) {
+      try { const d = await t(); if (d && (d.items || []).some(Boolean)) return d; last = last || new Error('Spotify sent no episodes.'); }
+      catch (e) { if (e.status === 401 || e.status === 429 || e.offline) throw e; last = e; }
+    }
+    throw last;
   }
   const day = d => { if (!d) return ''; const t = new Date(d + 'T12:00:00'); return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(t.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
   async function loadEpisodes(more) {
@@ -200,16 +223,38 @@
     try {
       const id = await syskId();
       let d;
-      try { d = await api(`/shows/${id}/episodes`, { query: { limit: 50, offset: eps.items.length, market: 'from_token' } }); }
-      catch (e) { if (e.status === 404 || e.status === 400) drop('mu-sysk'); throw e; }
+      try { d = await episodePage(id, eps.items.length); }
+      catch (e) { drop('mu-sysk'); throw e; }
       const got = ((d && d.items) || []).filter(Boolean).map(ep => {
         const rp = ep.resume_point || {}, at = rp.resume_position_ms || 0, left = ep.duration_ms - at;
         const status = rp.fully_played ? 'Played' : at > 0 ? Math.max(1, Math.round(left / 60000)) + ' min left' : Math.round(ep.duration_ms / 60000) + ' min';
         return { uri: ep.uri, name: ep.name, sub: day(ep.release_date) + ' · ' + status, played: !!rp.fully_played, resume: rp.fully_played ? 0 : at };
       });
-      eps.items = eps.items.concat(got); eps.next = !!(d && d.next);
-    } catch (e) { say(e); }
+      eps.items = eps.items.concat(got); eps.next = !!(d && d.next); eps.error = '';
+    } catch (e) { eps.error = e.message || 'Spotify didn\'t send the episodes.'; if (e.offline) say(e); }
     finally { eps.loading = false; eps.loaded = true; renderEpisodes(); }
+  }
+  /* Recently played songs (Spotify only lists music here, not podcast episodes) */
+  let recent = null;   // { items: [], loaded, error }
+  const hasRecent = () => !auth.scope || auth.scope.split(' ').includes(RECENT_SCOPE);
+  const ago = t => { const m = Math.round((Date.now() - new Date(t)) / 60000);
+    return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
+  async function loadRecent() {
+    if (recent && recent.loading) return;
+    recent = { items: (recent && recent.items) || [], loaded: !!recent, loading: true };
+    renderRecent();
+    try {
+      const d = await api('/me/player/recently-played', { query: { limit: 50 } });
+      const seen = new Set();
+      recent.items = ((d && d.items) || []).filter(x => x && x.track && x.track.uri && !seen.has(x.track.uri) && seen.add(x.track.uri)).map(x => ({
+        uri: x.track.uri, name: x.track.name, sub: (x.track.artists || []).map(a => a.name).join(', ') + ' · ' + ago(x.played_at),
+        images: x.track.album && x.track.album.images, context: x.context && /^spotify:(album|playlist|artist|show):/.test(x.context.uri) ? x.context.uri : null }));
+      recent.error = '';
+    } catch (e) {
+      recent.error = e.status === 403 || e.status === 401 ? 'scope' : (e.message || 'Spotify didn\'t send your history.');
+      if (e.offline) say(e);
+    }
+    recent.loading = false; recent.loaded = true; renderRecent();
   }
   async function loadDevices() {
     try { const d = await api('/me/player/devices'); devices = (d && d.devices) || []; renderDevices(); } catch (e) { say(e); }
@@ -249,6 +294,26 @@
     $('#mu-pos').textContent = fmt(p); $('#mu-dur').textContent = fmt(it.duration_ms);
     if (state.is_playing && p >= it.duration_ms && Date.now() - stamp > 1500) { stamp = Date.now(); later(); }
   }
+  function renderRecent() {
+    const box = $('#rp-items'); box.textContent = '';
+    const needScope = !hasRecent() || (recent && recent.error === 'scope');
+    $('#rp-scope').hidden = !needScope;
+    const msg = t => { const p = document.createElement('p'); p.className = 'menu-note'; p.textContent = t; box.appendChild(p); };
+    if (needScope) return;
+    if (!recent || (!recent.loaded && !recent.items.length)) { msg('Loading what you played…'); return; }
+    if (recent.error && !recent.items.length) { msg('Couldn\'t load your history. Spotify said: ' + recent.error); return; }
+    if (!recent.items.length) { msg('Nothing played lately. Play something in Spotify and it shows up here.'); return; }
+    const cur = state && state.item && state.item.uri;
+    recent.items.forEach((x, i) => {
+      const b = document.createElement('button'); b.className = 'menu-item mu-row mu-rp'; b.dataset.i = i; b.dataset.uri = x.uri;
+      const im = document.createElement('img'); im.className = 'mi-thumb'; im.alt = ''; im.loading = 'lazy'; im.referrerPolicy = 'no-referrer';
+      const src = art(x.images, 64); if (src) im.src = src; else im.classList.add('none'); b.appendChild(im);
+      const l = document.createElement('span'); l.className = 'mi-label'; l.textContent = x.name;
+      const sm = document.createElement('small'); sm.textContent = x.sub; l.appendChild(sm); b.appendChild(l);
+      b.classList.toggle('is-current', x.uri === cur);
+      box.appendChild(b);
+    });
+  }
   function renderEpisodes() {
     document.querySelectorAll('[data-ep-filter]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.epFilter === epFilter)));
     $('#ep-scope').hidden = hasResume();
@@ -257,7 +322,7 @@
     if (!eps || !eps.loaded) { msg('Loading episodes…'); $('#ep-more').hidden = true; return; }
     const cur = state && state.item && state.item.uri;
     const rows = eps.items.map((x, i) => [x, i]).filter(([x]) => epFilter === 'all' || !x.played);
-    if (!rows.length) msg(eps.items.length ? 'You\'ve played everything loaded. Tap Load more or All.' : 'No episodes yet.');
+    if (!rows.length) msg(eps.error ? 'Couldn\'t load episodes. Spotify said: ' + eps.error : eps.items.length ? 'You\'ve played everything loaded. Tap Load more or All.' : 'No episodes yet.');
     rows.forEach(([x, i]) => {
       const b = document.createElement('button'); b.className = 'menu-item mu-ep'; b.dataset.i = i; b.dataset.uri = x.uri;
       const l = document.createElement('span'); l.className = 'mi-label'; l.textContent = x.name;
@@ -301,6 +366,9 @@
     const m = e.target.closest('[data-mu]'); if (m && actions[m.dataset.mu]) { e.preventDefault(); actions[m.dataset.mu](); return; }
     const row = e.target.closest('#ep-items .mu-ep');
     if (row) { const ep = eps.items[+row.dataset.i]; play({ uris: [ep.uri], ...(ep.resume ? { position_ms: ep.resume } : {}) }); return; }
+    const rp = e.target.closest('#rp-items .mu-rp');
+    if (rp) { const x = recent.items[+rp.dataset.i]; play(x.context && !/^spotify:artist:/.test(x.context) ? { context_uri: x.context, offset: { uri: x.uri } } : { uris: [x.uri] }); return; }
+    if (e.target.closest('[data-mu-act="reconnect"]')) { login(); return; }
     const f = e.target.closest('[data-ep-filter]');
     if (f) { epFilter = f.dataset.epFilter; save('mu-ep-filter', epFilter); renderEpisodes(); return; }
     const d = e.target.closest('#mu-devices [data-device]');
@@ -336,7 +404,8 @@
     poll(); pollT = setInterval(poll, 4000); barT = setInterval(tickBar, 1000);
     const h = location.hash;
     if (h.startsWith('#/music/devices')) loadDevices();
-    else if (!eps || (!eps.loaded && !eps.loading)) loadEpisodes();   // also fills "N unplayed" on the main page
+    else if (h.startsWith('#/music/recent')) { if (hasRecent()) loadRecent(); else renderRecent(); }
+    else if (!eps || eps.error || (!eps.loaded && !eps.loading)) loadEpisodes();   // also fills "N unplayed" on the main page
   }
   addEventListener('hashchange', sync);
   document.addEventListener('visibilitychange', sync);
