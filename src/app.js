@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.6';
+  const VERSION = '1.7';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -43,7 +43,7 @@
 
   /* ---------- Tiles ---------- */
   // Built-in apps: OS pages, or Floyd's other tools bundled under apps/<id>/ and run in a full-screen frame
-  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'],
+  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'], lights: ['Lights', '/lights'],
     arcade: ['Arcade', null, 'apps/arcade/'], workout: ['Workout Log', null, 'apps/workout/'], kitchen: ['Kitchen Log', null, 'apps/kitchen/'] };
   const DEFAULT_TILES = () => [
     ['Phone', 'phone', 'app', 'phone'],
@@ -53,6 +53,7 @@
     ['Maps', 'map', 'link', 'comgooglemaps://'],
     ['Camera', 'camera', 'shortcut', 'Open Camera'],
     ['Spotify', 'music', 'app', 'music'],
+    ['Lights', 'bulb', 'app', 'lights'],
     ['Notes', 'note', 'app', 'notes'],
     ['Arcade', 'game', 'app', 'arcade'],
     ['Workout', 'dumbbell', 'app', 'workout'],
@@ -76,6 +77,14 @@
     if (t.kind === 'link' && /^message:\/*$/i.test(t.target)) t.target = 'googlegmail://';
     if (t.kind === 'link' && /^maps:\/*$/i.test(t.target)) t.target = 'comgooglemaps://';
   });
+  // v1.7: a Lights tile, once, for phones set up before it existed
+  if (!load('mig-lights', false)) {
+    if (!tiles.some(t => t.kind === 'app' && t.target === 'lights')) {
+      const i = tiles.findIndex(t => t.kind === 'app' && t.target === 'music');
+      tiles.splice(i < 0 ? tiles.length : i + 1, 0, { id: uid(), label: 'Lights', glyph: 'bulb', kind: 'app', target: 'lights' });
+    }
+    save('mig-lights', true);
+  }
   save('tiles', tiles);
   const saveTiles = () => { save('tiles', tiles); renderGrid(); renderTileList(); };
 
@@ -605,14 +614,14 @@
     plus: '<path d="M12 4v16M4 12h16"/>',
     retry: '<path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/>',
     flag: '<path d="M6 21V4M6 4h12l-3 4 3 4H6"/>',
-    music: G.music, notes: G.note, phone: G.phone, calc: G.calc, settings: G.gear,
+    music: G.music, lights: G.bulb, notes: G.note, phone: G.phone, calc: G.calc, settings: G.gear,
   };
   const keySvg = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">${KI[n]}</svg>`;
   const FILLED = {   // solid shapes, so they read cleanly at key size (text glyphs like "II" don't)
     play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>',
     pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16"/><rect x="14" y="4" width="5" height="16"/></svg>',
   };
-  const RKEY = { menu: ['Menu'], play: ['Play or pause'], music: ['Spotify', '/music'], notes: ['Notes', '/notes'], phone: ['Phone', '/phone'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'] };
+  const RKEY = { menu: ['Menu'], play: ['Play or pause'], music: ['Spotify', '/music'], notes: ['Notes', '/notes'], phone: ['Phone', '/phone'], calc: ['Calculator', '/calc'], lights: ['Lights', '/lights'], settings: ['Settings', '/settings'] };
   const APP_GLYPH = { 'II': 'pause', '▸': 'play', '▶': 'play', '+': 'plus', '⟳': 'retry', '▲': 'flag' };
   const curRoute = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
   function rightKey() {

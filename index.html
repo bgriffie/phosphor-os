@@ -860,6 +860,33 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .screen.has-frame > :not(.app-frame) { visibility: hidden; }
 
     /* Spotify remote */
+    /* Lights */
+    .li-allrow { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+    .li-list { display: flex; flex-direction: column; gap: var(--sp-3); margin-top: var(--sp-4); }
+    .li-card { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); padding: var(--sp-3) var(--sp-4); }
+    .li-card.is-on { border-color: var(--line-strong); }
+    .li-card.is-offline { opacity: .55; }
+    .li-top { display: flex; align-items: center; gap: var(--sp-3); }
+    .li-main { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: auto 1fr; column-gap: var(--sp-3); align-items: center; text-align: left;
+      background: none; border: 0; padding: 0; color: var(--text); cursor: pointer; }
+    .li-dot { grid-row: span 2; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line-strong); background: transparent; }
+    .li-card.is-on .li-dot { box-shadow: 0 0 12px currentColor; }
+    .li-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .li-sub { color: var(--text-dim); font-size: var(--fs-sm); }
+    .li-card.big { padding: var(--sp-4); }
+    .li-card.big .li-name { font-size: var(--fs-lg); }
+    .li-range { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 28px; margin: var(--sp-3) 0 0; background: none; touch-action: pan-y; }
+    .li-range::-webkit-slider-runnable-track { height: 8px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface-2); }
+    .li-range::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: -10px; border-radius: 4px; background: var(--accent); box-shadow: var(--glow-box); border: 0; }
+    .li-range::-moz-range-track { height: 8px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface-2); }
+    .li-range::-moz-range-thumb { width: 26px; height: 26px; border-radius: 4px; background: var(--accent); border: 0; }
+    .li-swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); }
+    .li-sw { aspect-ratio: 1.6; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); cursor: pointer; }
+    .li-sw.is-sel, .li-whites .is-sel { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .li-whites { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+    #li-one .menu-group { margin-top: var(--sp-5); }
+    .li-links { margin-top: var(--sp-5); }
+
     .mu-now { display: flex; flex-direction: column; }
     .mu-now .mu-track, .mu-now .mu-artist, .mu-now .mu-note { text-align: center; }
     .mu-links { margin-top: var(--sp-6); }
@@ -909,7 +936,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.6</span>
+      <span class="app-meta">v1.7</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1011,6 +1038,56 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
           <button class="btn btn-ghost btn-block" id="mu-pair-use" style="margin-top:var(--sp-3)">Use pairing code</button>
           <p class="menu-note">Only needed if iOS finished the Spotify login in Safari instead of coming back here.</p>
         </div>
+      </section>
+
+      <!-- ===== Lights (Kasa, through the relay on a home computer) ===== -->
+      <section class="view" data-route="/lights" data-title="Lights">
+        <div class="empty" id="li-off" hidden>
+          <div class="glyph" aria-hidden="true">✺</div>
+          <h2>Lights aren't set up</h2>
+          <p>Your Kasa bulbs are controlled through a small relay on a computer at home.</p>
+          <button class="btn btn-primary" data-route="/lights/setup">Set up lights</button>
+        </div>
+        <div id="li-on" hidden>
+          <div class="li-allrow">
+            <button class="btn btn-ghost" data-li-all="off">All off</button>
+            <button class="btn btn-primary" data-li-all="on">All on</button>
+          </div>
+          <p class="mu-note" id="li-note" hidden></p>
+          <div class="li-list" id="li-list"></div>
+          <div class="menu li-links">
+            <a class="menu-item" href="#/lights/setup"><span class="mi-label">Setup</span><span class="mi-value" id="li-status"></span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-route="/lights/one" data-title="Light">
+        <div id="li-one"></div>
+      </section>
+
+      <section class="view" data-route="/lights/setup" data-title="Lights setup">
+        <section class="panel" data-title="Connect">
+          <div class="field">
+            <label class="label" for="li-link">Lights link</label>
+            <input class="input" id="li-link" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="https://your-pc.ts.net#key">
+            <span class="hint">The relay prints this when it starts. Send it to your phone and paste it here.</span>
+          </div>
+          <button class="btn btn-primary btn-block" id="li-save" style="margin-top:var(--sp-4)">Connect</button>
+        </section>
+        <div class="menu-group" style="margin-top:var(--sp-5)">
+          <div class="menu">
+            <button class="menu-item" id="li-rescan"><span class="mi-label">Rescan for lights<small>After adding a bulb in the Kasa app</small></span></button>
+            <button class="menu-item danger" id="li-forget" hidden><span class="mi-label">Forget relay</span></button>
+          </div>
+        </div>
+        <section class="panel" data-title="How it works" style="margin-top:var(--sp-5)">
+          <ol class="steps">
+            <li>On a computer that stays on at home, install Python and Tailscale, and sign in to Tailscale.</li>
+            <li>Install Tailscale on this iPhone with the same account and leave it on.</li>
+            <li>On the computer, run <code>tailscale serve --bg <span id="li-port"></span></code> once, then start the relay.</li>
+            <li>Paste the Lights link it prints above.</li>
+          </ol>
+        </section>
       </section>
 
       <!-- ===== Tiles editor ===== -->
@@ -1129,6 +1206,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
           <div class="menu">
             <a class="menu-item" href="#/tiles"><span class="mi-label">Tiles</span><span class="mi-value" id="tile-count"></span></a>
             <a class="menu-item" href="#/music/setup"><span class="mi-label">Spotify</span><span class="mi-value" id="set-spotify"></span></a>
+            <a class="menu-item" href="#/lights/setup"><span class="mi-label">Lights</span><span class="mi-value" id="set-lights"></span></a>
             <a class="menu-item" href="#/settings/clock"><span class="mi-label">Clock</span><span class="mi-value" data-setting-value="clock"></span></a>
             <a class="menu-item" href="#/settings/rkey"><span class="mi-label">Right button</span><span class="mi-value" data-setting-value="rkey"></span></a>
             <label class="menu-item"><span class="mi-label">App buttons first<small>In Arcade and Kitchen, show the app's own button (like Pause) instead</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="rkeyApp"></label>
@@ -1156,7 +1234,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.6</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.7</span></a>
           </div>
         </div>
       </section>
@@ -1176,6 +1254,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
           <button class="menu-item" role="radio" data-setting="rkey" data-value="notes" data-back-on-pick><span class="mi-label">Notes</span></button>
           <button class="menu-item" role="radio" data-setting="rkey" data-value="phone" data-back-on-pick><span class="mi-label">Phone</span></button>
           <button class="menu-item" role="radio" data-setting="rkey" data-value="calc" data-back-on-pick><span class="mi-label">Calculator</span></button>
+          <button class="menu-item" role="radio" data-setting="rkey" data-value="lights" data-back-on-pick><span class="mi-label">Lights</span></button>
           <button class="menu-item" role="radio" data-setting="rkey" data-value="settings" data-back-on-pick><span class="mi-label">Settings</span></button>
         </div>
       </section>
@@ -1205,7 +1284,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.6</span></div>
+          <div class="kv"><span>Version</span><span>1.7</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
@@ -1254,6 +1333,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
       <button class="menu-item" data-route="/notes"><span class="mi-glyph" aria-hidden="true">≡</span><span class="mi-label">Notes</span><span class="mi-count" id="note-count" hidden></span></button>
       <button class="menu-item" data-route="/calc"><span class="mi-glyph" aria-hidden="true">±</span><span class="mi-label">Calculator</span></button>
       <button class="menu-item" data-route="/music"><span class="mi-glyph" aria-hidden="true">♪</span><span class="mi-label">Spotify</span></button>
+      <button class="menu-item" data-route="/lights"><span class="mi-glyph" aria-hidden="true">✺</span><span class="mi-label">Lights</span></button>
       <button class="menu-item" data-route="/settings"><span class="mi-glyph" aria-hidden="true">⚙</span><span class="mi-label">Settings</span></button>
     </div>
     <div class="sheet-title">Actions</div>
@@ -1840,12 +1920,201 @@ const PH = (() => {
   finishLogin().finally(() => setTimeout(sync, 0));
 })();
 
+/* Phosphor OS: Lights (#/lights). Talks to the lights relay (bridge/kasa_bridge.py) running on a
+   computer at home, reached over HTTPS through Tailscale. The relay talks to the Kasa bulbs. */
+(() => {
+  const $ = s => document.querySelector(s);
+  const KEY = 'phosphor-os:data:';
+  const load = (k, d) => { try { const v = localStorage.getItem(KEY + k); return v === null ? d : JSON.parse(v); } catch { return d; } };
+  const save = (k, v) => { try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch {} };
+
+  let link = load('lights-link', null);   // { url, key }
+  let lights = load('lights-cache', []), openId = load('lights-open', null), lastOk = 0, failing = false;
+  const ready = () => !!(link && link.url && link.key);
+
+  // "https://pc.tailnet.ts.net#key" (what the relay prints)
+  function parseLink(s) {
+    const m = /^\s*(https?:\/\/[^\s#]+?)\/?#([\w-]{8,})\s*$/.exec(s || '');
+    return m ? { url: m[1], key: m[2] } : null;
+  }
+
+  async function call(path, body) {
+    if (!ready()) throw new Error('Lights aren\'t set up yet.');
+    let r;
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 12000);
+    try {
+      r = await fetch(link.url + path, { method: body ? 'POST' : 'GET', signal: ctl.signal, cache: 'no-store',
+        headers: { Authorization: 'Bearer ' + link.key, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+        body: body ? JSON.stringify(body) : undefined });
+    } catch {
+      throw new Error(navigator.onLine === false ? 'No internet connection.' : 'Can\'t reach the lights relay. Is the computer on, and Tailscale on here?');
+    } finally { clearTimeout(t); }
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 401) throw new Error('The relay rejected the key. Paste the Lights link again.');
+    if (!r.ok) throw new Error(d.error || 'Relay error ' + r.status);
+    return d;
+  }
+
+  const note = t => { $('#li-note').textContent = t || ''; $('#li-note').hidden = !t; };
+  async function refresh(scan) {
+    try {
+      const d = await call(scan ? '/lights/rescan' : '/lights', scan ? {} : undefined);
+      lights = d.lights || []; save('lights-cache', lights); lastOk = Date.now(); failing = false; note('');
+    } catch (e) { failing = true; note(e.message); }
+    render();
+  }
+  const merge = d => { const i = lights.findIndex(x => x.id === d.id); if (i >= 0) lights[i] = d; else lights.push(d); save('lights-cache', lights); };
+  async function set(id, body) {
+    const l = lights.find(x => x.id === id); if (!l) return;
+    Object.assign(l, 'on' in body ? { on: body.on } : {}, 'brightness' in body ? { brightness: body.brightness, on: true } : {});
+    if (body.hsv) { l.hsv = body.hsv; l.temp = 0; l.on = true; }
+    if (body.temp) { l.temp = body.temp; l.on = true; }
+    render();
+    try {
+      // a colour or brightness change on an off bulb turns it on
+      const send = 'on' in body ? body : { ...body, on: true };
+      merge(await call('/lights/' + encodeURIComponent(id), send)); note('');
+    } catch (e) { note(e.message); PH.toast(e.message, 'warn'); refresh(); return; }
+    render();
+  }
+  async function all(on) {
+    lights.forEach(l => { if (l.online) l.on = on; }); render();
+    try { const d = await call('/lights/all', { on }); lights = d.lights || lights; save('lights-cache', lights); note(''); }
+    catch (e) { note(e.message); PH.toast(e.message, 'warn'); }
+    render();
+  }
+
+  /* ---------- Rendering ---------- */
+  // The colour a bulb is showing, for its dot
+  function tint(l) {
+    if (!l.on || !l.online) return '';
+    if (l.hsv && !l.temp) return `hsl(${l.hsv[0]} ${Math.max(40, l.hsv[1])}% 55%)`;
+    if (l.temp) { const t = Math.max(0, Math.min(1, (l.temp - 2500) / 4000)); return `hsl(${38 - t * 8} ${90 - t * 80}% ${62 + t * 20}%)`; }
+    return 'var(--accent)';
+  }
+  const pct = l => !l.online ? 'Not responding' : !l.on ? 'Off' : l.brightness != null ? l.brightness + '%' : 'On';
+  function card(l) {
+    const c = document.createElement('div'); c.className = 'li-card' + (l.on && l.online ? ' is-on' : '') + (l.online ? '' : ' is-offline'); c.dataset.id = l.id;
+    c.innerHTML = `<div class="li-top"><button class="li-main" data-li-open aria-label="More controls"><span class="li-dot"></span><span class="li-name"></span><small class="li-sub"></small></button>
+      <input type="checkbox" role="switch" class="mi-switch" data-li-toggle aria-label="On"></div>`;
+    c.querySelector('.li-name').textContent = l.name;
+    c.querySelector('.li-sub').textContent = pct(l);
+    c.querySelector('.li-dot').style.background = tint(l);
+    const sw = c.querySelector('[data-li-toggle]'); sw.checked = !!l.on; sw.disabled = !l.online;
+    if (l.brightness != null) {
+      const r = document.createElement('input'); r.type = 'range'; r.className = 'li-range'; r.min = 1; r.max = 100; r.value = l.brightness;
+      r.dataset.liDim = ''; r.setAttribute('aria-label', l.name + ' brightness'); r.disabled = !l.online; c.appendChild(r);
+    }
+    return c;
+  }
+  let dragging = false;
+  function render() {
+    $('#li-off').hidden = ready(); $('#li-on').hidden = !ready();
+    if (!dragging) {
+      const box = $('#li-list'); box.textContent = '';
+      if (ready() && !lights.length) box.innerHTML = `<p class="menu-note">${failing ? 'No lights to show yet.' : lastOk ? 'The relay didn\'t find any Kasa lights. Make sure the computer is on the same Wi-Fi, then tap Rescan in Setup.' : 'Looking for lights…'}</p>`;
+      lights.forEach(l => box.appendChild(card(l)));
+      renderOne();
+    }
+    $('#li-status').textContent = !ready() ? 'Not set up' : failing ? 'Can\'t reach relay' : lastOk ? 'Connected' : 'Connecting…';
+    $('#li-status').className = ready() && !failing && lastOk ? 't-accent' : '';
+    $('#li-forget').hidden = !ready();
+    $('#set-lights').textContent = ready() ? 'Set up' : 'Off';
+  }
+  const SWATCH = [['Green', 125, 85], ['Cyan', 185, 90], ['Blue', 225, 95], ['Purple', 275, 85], ['Pink', 320, 75], ['Red', 0, 95], ['Orange', 28, 95], ['Gold', 45, 85]];
+  const WHITES = [['Warm', 2700], ['Soft', 3500], ['Neutral', 4500], ['Daylight', 6500]];
+  function renderOne() {
+    const l = lights.find(x => x.id === openId), v = $('#li-one');
+    if (!l) { v.innerHTML = '<p class="menu-note">That light is gone. Go back and pick another.</p>'; return; }
+    v.innerHTML = `<div class="li-card big${l.on && l.online ? ' is-on' : ''}" data-id=""><div class="li-top"><div class="li-main"><span class="li-dot"></span><span class="li-name"></span><small class="li-sub"></small></div>
+      <input type="checkbox" role="switch" class="mi-switch" data-li-toggle aria-label="On"></div></div>`;
+    const c = v.firstChild; c.dataset.id = l.id;
+    c.querySelector('.li-name').textContent = l.name; c.querySelector('.li-sub').textContent = pct(l) + (l.model ? ' · ' + l.model : '');
+    c.querySelector('.li-dot').style.background = tint(l);
+    const sw = c.querySelector('[data-li-toggle]'); sw.checked = !!l.on; sw.disabled = !l.online;
+    const group = (title, cls) => { const g = document.createElement('div'); g.className = 'menu-group'; g.innerHTML = `<span class="label"></span><div class="${cls}"></div>`; g.firstChild.textContent = title; v.appendChild(g); return g.lastChild; };
+    if (l.brightness != null) {
+      const r = document.createElement('input'); r.type = 'range'; r.className = 'li-range'; r.min = 1; r.max = 100; r.value = l.brightness; r.dataset.liDim = ''; r.dataset.id = l.id;
+      r.setAttribute('aria-label', 'Brightness'); r.disabled = !l.online; group('Brightness ' + l.brightness + '%', 'li-dimrow').appendChild(r);
+    }
+    if (l.hsv) {
+      const g = group('Colour', 'li-swatches');
+      SWATCH.forEach(([n, h, s]) => { const b = document.createElement('button'); b.className = 'li-sw'; b.dataset.liHsv = h + ',' + s; b.dataset.id = l.id; b.setAttribute('aria-label', n);
+        b.style.background = `hsl(${h} ${s}% 55%)`; if (!l.temp && Math.abs(l.hsv[0] - h) < 6 && l.on) b.classList.add('is-sel'); b.disabled = !l.online; g.appendChild(b); });
+    }
+    if (l.tempRange) {
+      const g = group('White', 'li-whites');
+      WHITES.forEach(([n, k]) => { const kk = Math.max(l.tempRange[0], Math.min(l.tempRange[1], k)); const b = document.createElement('button'); b.className = 'btn'; b.textContent = n;
+        b.dataset.liTemp = kk; b.dataset.id = l.id; if (l.temp && Math.abs(l.temp - kk) < 200 && l.on) b.classList.add('is-sel'); b.disabled = !l.online; g.appendChild(b); });
+    }
+  }
+
+  /* ---------- Wiring ---------- */
+  const idOf = el => el.dataset.id || el.closest('[data-id]')?.dataset.id;
+  document.addEventListener('change', e => {
+    const t = e.target;
+    if (t.matches('[data-li-toggle]')) set(idOf(t), { on: t.checked });
+    else if (t.matches('[data-li-dim]')) { dragging = false; set(idOf(t), { brightness: +t.value }); }
+  });
+  document.addEventListener('input', e => {
+    if (!e.target.matches('[data-li-dim]')) return;
+    dragging = true;
+    const card = e.target.closest('.li-card'); if (card) card.querySelector('.li-sub').textContent = e.target.value + '%';
+    const lab = e.target.closest('.menu-group')?.querySelector('.label'); if (lab) lab.textContent = 'Brightness ' + e.target.value + '%';
+  });
+  document.addEventListener('click', e => {
+    const o = e.target.closest('[data-li-open]');
+    if (o) { openId = idOf(o); save('lights-open', openId); renderOne(); PH.go('/lights/one'); return; }
+    const sw = e.target.closest('[data-li-hsv]');
+    if (sw) { const [h, s] = sw.dataset.liHsv.split(',').map(Number); const l = lights.find(x => x.id === idOf(sw)); set(idOf(sw), { hsv: [h, s, (l && l.brightness) || 80] }); return; }
+    const w = e.target.closest('[data-li-temp]');
+    if (w) { set(idOf(w), { temp: +w.dataset.liTemp }); return; }
+    const a = e.target.closest('[data-li-all]');
+    if (a) all(a.dataset.liAll === 'on');
+  });
+  $('#li-save').addEventListener('click', async () => {
+    const p = parseLink($('#li-link').value);
+    if (!p) { $('#li-link').setAttribute('aria-invalid', 'true'); PH.toast('Paste the whole Lights link the relay printed, including the # part.', 'warn'); return; }
+    $('#li-link').removeAttribute('aria-invalid');
+    const prev = link; link = p;   // keep the old link unless the new one works
+    try { const d = await call('/lights'); lights = d.lights || []; lastOk = Date.now(); failing = false; }
+    catch (e) { link = prev; PH.toast(e.message, 'warn'); return; }
+    save('lights-link', link); save('lights-cache', lights); note('');
+    $('#li-link').value = ''; PH.toast('Lights connected.'); PH.go('/lights'); render();
+  });
+  $('#li-rescan').addEventListener('click', () => { if (ready()) { note('Scanning…'); refresh(true); } });
+  $('#li-forget').addEventListener('click', async () => {
+    if (!await PH.confirm('Forget the lights relay on this phone?', { title: 'Forget relay', ok: 'Forget', danger: true })) return;
+    link = null; lights = []; save('lights-link', null); save('lights-cache', []); render();
+  });
+  $('#li-port').textContent = '7788';
+
+  // For the OS right key
+  window.PhosphorLights = { ready, all, anyOn: () => lights.some(l => l.on && l.online) };
+
+  // Poll only while a lights page is on screen
+  let pollT = null;
+  const onLights = () => /^#\/lights(\/|$)/.test(location.hash);
+  function sync() {
+    clearInterval(pollT); pollT = null;
+    if (!onLights() || document.hidden) return;
+    render();
+    if (!ready()) return;
+    refresh(); pollT = setInterval(() => { if (!dragging) refresh(); }, 6000);
+  }
+  addEventListener('hashchange', sync);
+  document.addEventListener('visibilitychange', sync);
+  addEventListener('online', sync);
+  addEventListener('pageshow', e => { if (e.persisted) sync(); });
+  render(); setTimeout(sync, 0);
+})();
+
 /* Phosphor OS: a phone-style launcher. Tiles open app links (tel:, sms:, maps://),
    Shortcuts (shortcuts://run-shortcut), Floyd's other tools, or built-in apps. */
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.6';
+  const VERSION = '1.7';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -1885,7 +2154,7 @@ const PH = (() => {
 
   /* ---------- Tiles ---------- */
   // Built-in apps: OS pages, or Floyd's other tools bundled under apps/<id>/ and run in a full-screen frame
-  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'],
+  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'], lights: ['Lights', '/lights'],
     arcade: ['Arcade', null, 'apps/arcade/'], workout: ['Workout Log', null, 'apps/workout/'], kitchen: ['Kitchen Log', null, 'apps/kitchen/'] };
   const DEFAULT_TILES = () => [
     ['Phone', 'phone', 'app', 'phone'],
@@ -1895,6 +2164,7 @@ const PH = (() => {
     ['Maps', 'map', 'link', 'comgooglemaps://'],
     ['Camera', 'camera', 'shortcut', 'Open Camera'],
     ['Spotify', 'music', 'app', 'music'],
+    ['Lights', 'bulb', 'app', 'lights'],
     ['Notes', 'note', 'app', 'notes'],
     ['Arcade', 'game', 'app', 'arcade'],
     ['Workout', 'dumbbell', 'app', 'workout'],
@@ -1918,6 +2188,14 @@ const PH = (() => {
     if (t.kind === 'link' && /^message:\/*$/i.test(t.target)) t.target = 'googlegmail://';
     if (t.kind === 'link' && /^maps:\/*$/i.test(t.target)) t.target = 'comgooglemaps://';
   });
+  // v1.7: a Lights tile, once, for phones set up before it existed
+  if (!load('mig-lights', false)) {
+    if (!tiles.some(t => t.kind === 'app' && t.target === 'lights')) {
+      const i = tiles.findIndex(t => t.kind === 'app' && t.target === 'music');
+      tiles.splice(i < 0 ? tiles.length : i + 1, 0, { id: uid(), label: 'Lights', glyph: 'bulb', kind: 'app', target: 'lights' });
+    }
+    save('mig-lights', true);
+  }
   save('tiles', tiles);
   const saveTiles = () => { save('tiles', tiles); renderGrid(); renderTileList(); };
 
@@ -2447,14 +2725,14 @@ const PH = (() => {
     plus: '<path d="M12 4v16M4 12h16"/>',
     retry: '<path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/>',
     flag: '<path d="M6 21V4M6 4h12l-3 4 3 4H6"/>',
-    music: G.music, notes: G.note, phone: G.phone, calc: G.calc, settings: G.gear,
+    music: G.music, lights: G.bulb, notes: G.note, phone: G.phone, calc: G.calc, settings: G.gear,
   };
   const keySvg = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">${KI[n]}</svg>`;
   const FILLED = {   // solid shapes, so they read cleanly at key size (text glyphs like "II" don't)
     play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>',
     pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16"/><rect x="14" y="4" width="5" height="16"/></svg>',
   };
-  const RKEY = { menu: ['Menu'], play: ['Play or pause'], music: ['Spotify', '/music'], notes: ['Notes', '/notes'], phone: ['Phone', '/phone'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'] };
+  const RKEY = { menu: ['Menu'], play: ['Play or pause'], music: ['Spotify', '/music'], notes: ['Notes', '/notes'], phone: ['Phone', '/phone'], calc: ['Calculator', '/calc'], lights: ['Lights', '/lights'], settings: ['Settings', '/settings'] };
   const APP_GLYPH = { 'II': 'pause', '▸': 'play', '▶': 'play', '+': 'plus', '⟳': 'retry', '▲': 'flag' };
   const curRoute = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
   function rightKey() {
