@@ -1429,6 +1429,8 @@ PH.init({ partyMode: 'strobe', partySpeed: 'medium' });
   document.addEventListener('click', e => { if (e.target.closest('[data-pa-toggle]')) partyOn() ? stopParty() : startParty(); });
   PH.on('partyMode', renderParty);
   renderParty();
+  // Phosphor OS awaits this before removing the app's frame, so a running party is stopped and restored
+  window.osBeforeClose = () => stopParty();
 
   // Poll only while the app is on screen
   let pollT = null;
