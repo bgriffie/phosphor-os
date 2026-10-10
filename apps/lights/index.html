@@ -772,6 +772,15 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .li-sw.is-sel, .li-whites .is-sel { outline: 2px solid var(--accent); outline-offset: 2px; }
     .li-whites { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
     #li-one .menu-group { margin-top: var(--sp-5); }
+    .pa-home { margin-top: var(--sp-4); }
+    .pa-stage { text-align: center; padding: var(--sp-4) 0 var(--sp-5); }
+    .pa-stage svg { width: 72px; height: 72px; color: var(--text-faint); display: block; margin: 0 auto var(--sp-3); }
+    .pa-stage.is-on svg { color: var(--accent); filter: drop-shadow(0 0 10px var(--accent)); animation: pa-blink .5s steps(1) infinite; }
+    @keyframes pa-blink { 50% { opacity: .25; } }
+    @media (prefers-reduced-motion: reduce) { .pa-stage.is-on svg { animation: none; } }
+    .pa-stage .readout { font-size: var(--fs-xl); }
+    #party .menu-group { margin-top: var(--sp-5); }
+    .pa-run { position: relative; }
     .steps { display: flex; flex-direction: column; gap: var(--sp-2); padding-left: 1.4em; color: var(--text); }
     .steps li::marker { color: var(--text-dim); }
     .steps a { color: var(--cyan); }
@@ -790,7 +799,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Kasa Lights</h1>
-      <span class="app-meta">v1.0</span>
+      <span class="app-meta">v1.1</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -810,12 +819,45 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
             <button class="btn btn-primary" data-li-all="on">All on</button>
           </div>
           <p class="li-note" id="li-note" hidden></p>
+          <section class="panel active" data-title="Party" id="pa-banner" style="margin-top:var(--sp-4)" hidden>
+            <p>Party mode is on.</p>
+            <button class="btn btn-danger btn-block" data-pa-toggle style="margin-top:var(--sp-3)">Stop party</button>
+          </section>
           <div class="li-list" id="li-list"></div>
+          <div class="menu pa-home">
+            <a class="menu-item" href="#/party"><span class="mi-label">Party mode<small>Flash every light like a strobe</small></span></a>
+          </div>
         </div>
       </section>
 
       <section class="view" data-route="/light" data-title="Light">
         <div id="li-one"></div>
+      </section>
+
+      <section class="view" data-route="/party" data-title="Party" id="party">
+        <div class="pa-stage" id="pa-stage">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+          <div class="readout" id="pa-state">Ready</div>
+          <p class="hint" id="pa-hint">Every light flashes together.</p>
+        </div>
+        <button class="btn btn-primary btn-block" data-pa-toggle id="pa-go">Start party</button>
+        <div class="menu-group">
+          <span class="label">Mode</span>
+          <div class="segmented" role="radiogroup" aria-label="Mode">
+            <button role="radio" data-setting="partyMode" data-value="strobe">Strobe</button>
+            <button role="radio" data-setting="partyMode" data-value="color">Colour</button>
+            <button role="radio" data-setting="partyMode" data-value="both">Both</button>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Speed</span>
+          <div class="segmented" role="radiogroup" aria-label="Speed">
+            <button role="radio" data-setting="partySpeed" data-value="slow">Slow</button>
+            <button role="radio" data-setting="partySpeed" data-value="medium">Medium</button>
+            <button role="radio" data-setting="partySpeed" data-value="fast">Fast</button>
+          </div>
+          <p class="menu-note">Kasa bulbs can switch a few times a second at most. Keep this app open; your lights go back to how they were when you stop.</p>
+        </div>
       </section>
 
       <section class="view" data-route="/settings" data-title="Settings">
@@ -842,7 +884,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.0</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.1</span></a>
           </div>
         </div>
       </section>
@@ -876,7 +918,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Kasa Lights">
-          <div class="kv"><span>Version</span><span>1.0</span></div>
+          <div class="kv"><span>Version</span><span>1.1</span></div>
           <div class="kv"><span>Lights</span><span id="li-count">—</span></div>
           <div class="kv"><span>Relay port</span><span>7788</span></div>
           <div class="kv"><span>Needs</span><span>Relay + Tailscale</span></div>
@@ -888,7 +930,8 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
       <button class="key key-sm" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
       <button class="key key-sm" data-open-sheet="menu" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
       <div class="page-keys" data-show-on="/ /light" hidden><button class="key key-sm" id="k-power" aria-label="All on or off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg></button></div>
-      <button class="key key-sm" data-route="/" data-hide-on="/ /light" aria-label="Lights"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5V16h8v-2.5A6 6 0 0 0 12 3z"/></svg></button>
+      <div class="page-keys" data-show-on="/party" hidden><button class="key key-sm" data-pa-toggle id="k-party" aria-label="Start party"></button></div>
+      <button class="key key-sm" data-route="/" data-hide-on="/ /light /party" aria-label="Lights"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5V16h8v-2.5A6 6 0 0 0 12 3z"/></svg></button>
     </nav>
   </main>
 
@@ -902,6 +945,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
     <div class="menu">
       <button class="menu-item" data-li-all="on" data-action="all"><span class="mi-label">All on</span></button>
       <button class="menu-item" data-li-all="off" data-action="all"><span class="mi-label">All off</span></button>
+      <button class="menu-item" data-route="/party"><span class="mi-label">Party mode</span></button>
       <button class="menu-item" data-route="/settings/relay"><span class="mi-label">Relay setup</span></button>
     </div>
   </dialog>
@@ -1136,7 +1180,7 @@ const PH = (() => {
 /* Kasa Lights. Talks to the lights relay (kasa_bridge.py in bgriffie/phosphor-os/bridge) running on a
    computer at home, reached over HTTPS through Tailscale. The relay talks to the Kasa bulbs.
    Same relay, API and link as the Lights app in Phosphor OS. */
-PH.init({});
+PH.init({ partyMode: 'strobe', partySpeed: 'medium' });
 (() => {
   const $ = s => document.querySelector(s);
   const KEY = 'kasa-lights:data:';   // every tool shares bgriffie.github.io, so keys are prefixed
@@ -1319,11 +1363,79 @@ PH.init({});
     link = null; lights = []; save('link', null); save('cache', []); PH.toast('Relay forgotten.', 'warn'); render();
   });
 
+
+  /* ---------- Party mode: every light flashes together until stopped ---------- */
+  // Each beat sends one request per light at the same time and waits for them all, so the
+  // pace never outruns what the bulbs and the relay can do. Lights are put back afterwards.
+  const BEAT = { slow: 1200, medium: 600, fast: 250 };
+  const STOP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="14" height="14"/></svg>';
+  const GO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>';
+  let party = null;   // { snap, beat, fails }
+  const partyOn = () => !!party;
+  const send = (id, body) => call('/lights/' + encodeURIComponent(id), body);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  let wake = null;
+  async function startParty() {
+    if (!ready()) { PH.go('/settings/relay'); return; }
+    const targets = lights.filter(l => l.online);
+    if (!targets.length) { PH.toast('No lights are responding right now.', 'warn'); return; }
+    party = { snap: targets.map(l => ({ ...l, hsv: l.hsv && [...l.hsv] })), beat: 0, fails: 0 };
+    clearInterval(pollT); pollT = null;
+    try { wake = await navigator.wakeLock?.request('screen'); } catch {}
+    renderParty();
+    const run = party;
+    while (party === run) {
+      const t0 = Date.now(), mode = PH.store.get('partyMode'), k = run.beat++;
+      const on = k % 2 === 0, hue = (k * 137) % 360;
+      run.pending = Promise.allSettled(run.snap.map((l, i) => {
+        const colour = l.hsv && (mode === 'color' || (mode === 'both' && on));
+        if (colour) return send(l.id, { hsv: [(hue + i * 60) % 360, 100, 100], on: true });
+        return send(l.id, { on: mode === 'color' ? true : on });
+      }));
+      const res = await run.pending;
+      if (party !== run) break;
+      run.fails = res.every(r => r.status === 'rejected') ? run.fails + 1 : 0;
+      if (run.fails >= 3) { PH.toast(res[0].reason?.message || 'Lost the relay.', 'warn'); await stopParty(); return; }
+      await sleep(Math.max(0, (BEAT[PH.store.get('partySpeed')] || 600) - (Date.now() - t0)));
+    }
+  }
+  async function stopParty() {
+    const run = party; if (!run) return;
+    party = null; renderParty();
+    try { await wake?.release(); } catch {} wake = null;
+    await run.pending;   // let the last flash land first, so it can't undo the restore
+    // put every light back the way it was
+    await Promise.allSettled(run.snap.map(l => {
+      if (!l.on) return send(l.id, { on: false });
+      const body = { on: true };
+      if (l.hsv && !l.temp) body.hsv = l.hsv; else if (l.temp) body.temp = l.temp;
+      if (l.brightness != null) body.brightness = l.brightness;
+      return send(l.id, body);
+    }));
+    PH.toast('Party over. Lights restored.');
+    sync();
+  }
+  function renderParty() {
+    const on = partyOn();
+    $('#pa-stage').classList.toggle('is-on', on);
+    $('#pa-state').textContent = on ? 'Party on' : 'Ready';
+    $('#pa-go').textContent = on ? 'Stop party' : 'Start party';
+    $('#pa-go').className = 'btn btn-block ' + (on ? 'btn-danger' : 'btn-primary');
+    $('#pa-banner').hidden = !on;
+    const k = $('#k-party'); k.innerHTML = on ? STOP_SVG : GO_SVG; k.setAttribute('aria-label', on ? 'Stop party' : 'Start party'); k.setAttribute('aria-pressed', String(on));
+    const m = PH.store.get('partyMode');
+    $('#pa-hint').textContent = m === 'color' ? 'Colour bulbs jump between bright colours.' : m === 'both' ? 'Lights flash and colour bulbs change colour on every flash.' : 'Every light flashes on and off together.';
+  }
+  document.addEventListener('click', e => { if (e.target.closest('[data-pa-toggle]')) partyOn() ? stopParty() : startParty(); });
+  PH.on('partyMode', renderParty);
+  renderParty();
+
   // Poll only while the app is on screen
   let pollT = null;
   function sync() {
     clearInterval(pollT); pollT = null;
     render();
+    if (party) { if (document.hidden) stopParty(); return; }
     if (document.hidden || !ready()) return;
     refresh(); pollT = setInterval(() => { if (!dragging) refresh(); }, 6000);
   }
@@ -1357,6 +1469,8 @@ PH.init({});
     pageKey: () => { const b = keyEl(); if (!b) return null;
       return { text: b.textContent.trim(), svg: b.querySelector('svg')?.outerHTML || '', label: b.getAttribute('aria-label') || b.textContent.trim(), pressed: b.getAttribute('aria-pressed') }; },
     pressKey: () => { const b = keyEl(); if (b) b.click(); },
+    // An app can define window.osBeforeClose() (returning a promise) to tidy up before the OS closes it
+    prepareClose: () => typeof window.osBeforeClose === 'function' ? window.osBeforeClose() : null,
   };
 
   PH.on('route', () => { os.saveRoute(route()); os.keysChanged(); });

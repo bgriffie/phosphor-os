@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.8';
+  const VERSION = '1.9';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -595,7 +595,17 @@
     frame.addEventListener('load', () => { frame.classList.add('is-ready'); try { frame.contentWindow.focus(); } catch {} renderKeys(); });
     renderKeys();
   }
-  function hideFrame() { if (frame) { frame.remove(); frame = null; frameId = null; $('.screen').classList.remove('has-frame'); renderKeys(); } }
+  // The frame disappears at once but stays loaded until the app has tidied up
+  // (Kasa Lights puts the bulbs back after a party), then it is removed
+  function hideFrame() {
+    if (!frame) return;
+    const f = frame, c = child();
+    frame = null; frameId = null; f.style.display = 'none';
+    $('.screen').classList.remove('has-frame'); renderKeys();
+    let done = null;
+    try { done = c && c.prepareClose && c.prepareClose(); } catch {}
+    Promise.race([Promise.resolve(done), new Promise(r => setTimeout(r, 5000))]).catch(() => {}).finally(() => f.remove());
+  }
   const child = () => { try { return frame && frame.contentWindow.OSChild; } catch { return null; } };
   // Read by the bundled apps (src/embed.js)
   window.PhosphorOS = {

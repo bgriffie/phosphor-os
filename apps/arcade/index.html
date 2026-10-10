@@ -2180,6 +2180,8 @@ const PH = (() => {
     pageKey: () => { const b = keyEl(); if (!b) return null;
       return { text: b.textContent.trim(), svg: b.querySelector('svg')?.outerHTML || '', label: b.getAttribute('aria-label') || b.textContent.trim(), pressed: b.getAttribute('aria-pressed') }; },
     pressKey: () => { const b = keyEl(); if (b) b.click(); },
+    // An app can define window.osBeforeClose() (returning a promise) to tidy up before the OS closes it
+    prepareClose: () => typeof window.osBeforeClose === 'function' ? window.osBeforeClose() : null,
   };
 
   PH.on('route', () => { os.saveRoute(route()); os.keysChanged(); });
