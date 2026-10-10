@@ -16,7 +16,7 @@
     back: () => { const d = openDialog(); if (d) d.close(); else PH.back(); },
     openMenu: () => { const m = document.getElementById('menu'); if (!m) return; if (m.open) m.close(); else m.showModal(); },
     pageKey: () => { const b = keyEl(); if (!b) return null;
-      return { text: b.textContent.trim(), label: b.getAttribute('aria-label') || b.textContent.trim(), pressed: b.getAttribute('aria-pressed') }; },
+      return { text: b.textContent.trim(), svg: b.querySelector('svg')?.outerHTML || '', label: b.getAttribute('aria-label') || b.textContent.trim(), pressed: b.getAttribute('aria-pressed') }; },
     pressKey: () => { const b = keyEl(); if (b) b.click(); },
   };
 

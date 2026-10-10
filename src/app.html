@@ -137,33 +137,6 @@
     .screen.has-frame > :not(.app-frame) { visibility: hidden; }
 
     /* Spotify remote */
-    /* Lights */
-    .li-allrow { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
-    .li-list { display: flex; flex-direction: column; gap: var(--sp-3); margin-top: var(--sp-4); }
-    .li-card { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); padding: var(--sp-3) var(--sp-4); }
-    .li-card.is-on { border-color: var(--line-strong); }
-    .li-card.is-offline { opacity: .55; }
-    .li-top { display: flex; align-items: center; gap: var(--sp-3); }
-    .li-main { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: auto 1fr; column-gap: var(--sp-3); align-items: center; text-align: left;
-      background: none; border: 0; padding: 0; color: var(--text); cursor: pointer; }
-    .li-dot { grid-row: span 2; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line-strong); background: transparent; }
-    .li-card.is-on .li-dot { box-shadow: 0 0 12px currentColor; }
-    .li-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .li-sub { color: var(--text-dim); font-size: var(--fs-sm); }
-    .li-card.big { padding: var(--sp-4); }
-    .li-card.big .li-name { font-size: var(--fs-lg); }
-    .li-range { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 28px; margin: var(--sp-3) 0 0; background: none; touch-action: pan-y; }
-    .li-range::-webkit-slider-runnable-track { height: 8px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface-2); }
-    .li-range::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: -10px; border-radius: 4px; background: var(--accent); box-shadow: var(--glow-box); border: 0; }
-    .li-range::-moz-range-track { height: 8px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface-2); }
-    .li-range::-moz-range-thumb { width: 26px; height: 26px; border-radius: 4px; background: var(--accent); border: 0; }
-    .li-swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); }
-    .li-sw { aspect-ratio: 1.6; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); cursor: pointer; }
-    .li-sw.is-sel, .li-whites .is-sel { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .li-whites { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
-    #li-one .menu-group { margin-top: var(--sp-5); }
-    .li-links { margin-top: var(--sp-5); }
-
     .mu-now { display: flex; flex-direction: column; }
     .mu-now .mu-track, .mu-now .mu-artist, .mu-now .mu-note { text-align: center; }
     .mu-links { margin-top: var(--sp-6); }
@@ -213,7 +186,7 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.7</span>
+      <span class="app-meta">v1.8</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -315,56 +288,6 @@
           <button class="btn btn-ghost btn-block" id="mu-pair-use" style="margin-top:var(--sp-3)">Use pairing code</button>
           <p class="menu-note">Only needed if iOS finished the Spotify login in Safari instead of coming back here.</p>
         </div>
-      </section>
-
-      <!-- ===== Lights (Kasa, through the relay on a home computer) ===== -->
-      <section class="view" data-route="/lights" data-title="Lights">
-        <div class="empty" id="li-off" hidden>
-          <div class="glyph" aria-hidden="true">✺</div>
-          <h2>Lights aren't set up</h2>
-          <p>Your Kasa bulbs are controlled through a small relay on a computer at home.</p>
-          <button class="btn btn-primary" data-route="/lights/setup">Set up lights</button>
-        </div>
-        <div id="li-on" hidden>
-          <div class="li-allrow">
-            <button class="btn btn-ghost" data-li-all="off">All off</button>
-            <button class="btn btn-primary" data-li-all="on">All on</button>
-          </div>
-          <p class="mu-note" id="li-note" hidden></p>
-          <div class="li-list" id="li-list"></div>
-          <div class="menu li-links">
-            <a class="menu-item" href="#/lights/setup"><span class="mi-label">Setup</span><span class="mi-value" id="li-status"></span></a>
-          </div>
-        </div>
-      </section>
-
-      <section class="view" data-route="/lights/one" data-title="Light">
-        <div id="li-one"></div>
-      </section>
-
-      <section class="view" data-route="/lights/setup" data-title="Lights setup">
-        <section class="panel" data-title="Connect">
-          <div class="field">
-            <label class="label" for="li-link">Lights link</label>
-            <input class="input" id="li-link" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="https://your-pc.ts.net#key">
-            <span class="hint">The relay prints this when it starts. Send it to your phone and paste it here.</span>
-          </div>
-          <button class="btn btn-primary btn-block" id="li-save" style="margin-top:var(--sp-4)">Connect</button>
-        </section>
-        <div class="menu-group" style="margin-top:var(--sp-5)">
-          <div class="menu">
-            <button class="menu-item" id="li-rescan"><span class="mi-label">Rescan for lights<small>After adding a bulb in the Kasa app</small></span></button>
-            <button class="menu-item danger" id="li-forget" hidden><span class="mi-label">Forget relay</span></button>
-          </div>
-        </div>
-        <section class="panel" data-title="How it works" style="margin-top:var(--sp-5)">
-          <ol class="steps">
-            <li>On a computer that stays on at home, install Python and Tailscale, and sign in to Tailscale.</li>
-            <li>Install Tailscale on this iPhone with the same account and leave it on.</li>
-            <li>On the computer, run <code>tailscale serve --bg <span id="li-port"></span></code> once, then start the relay.</li>
-            <li>Paste the Lights link it prints above.</li>
-          </ol>
-        </section>
       </section>
 
       <!-- ===== Tiles editor ===== -->
@@ -483,8 +406,7 @@
           <div class="menu">
             <a class="menu-item" href="#/tiles"><span class="mi-label">Tiles</span><span class="mi-value" id="tile-count"></span></a>
             <a class="menu-item" href="#/music/setup"><span class="mi-label">Spotify</span><span class="mi-value" id="set-spotify"></span></a>
-            <a class="menu-item" href="#/lights/setup"><span class="mi-label">Lights</span><span class="mi-value" id="set-lights"></span></a>
-            <a class="menu-item" href="#/settings/clock"><span class="mi-label">Clock</span><span class="mi-value" data-setting-value="clock"></span></a>
+                        <a class="menu-item" href="#/settings/clock"><span class="mi-label">Clock</span><span class="mi-value" data-setting-value="clock"></span></a>
             <a class="menu-item" href="#/settings/rkey"><span class="mi-label">Right button</span><span class="mi-value" data-setting-value="rkey"></span></a>
             <label class="menu-item"><span class="mi-label">App buttons first<small>In Arcade and Kitchen, show the app's own button (like Pause) instead</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="rkeyApp"></label>
             <a class="menu-item" href="#/settings/home"><span class="mi-label">Home screen</span><span class="mi-value" data-setting-value="home"></span></a>
@@ -511,7 +433,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.7</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.8</span></a>
           </div>
         </div>
       </section>
@@ -561,7 +483,7 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.7</span></div>
+          <div class="kv"><span>Version</span><span>1.8</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
@@ -610,7 +532,7 @@
       <button class="menu-item" data-route="/notes"><span class="mi-glyph" aria-hidden="true">≡</span><span class="mi-label">Notes</span><span class="mi-count" id="note-count" hidden></span></button>
       <button class="menu-item" data-route="/calc"><span class="mi-glyph" aria-hidden="true">±</span><span class="mi-label">Calculator</span></button>
       <button class="menu-item" data-route="/music"><span class="mi-glyph" aria-hidden="true">♪</span><span class="mi-label">Spotify</span></button>
-      <button class="menu-item" data-route="/lights"><span class="mi-glyph" aria-hidden="true">✺</span><span class="mi-label">Lights</span></button>
+      <button class="menu-item" data-route="/app/lights"><span class="mi-glyph" aria-hidden="true">✺</span><span class="mi-label">Lights</span></button>
       <button class="menu-item" data-route="/settings"><span class="mi-glyph" aria-hidden="true">⚙</span><span class="mi-label">Settings</span></button>
     </div>
     <div class="sheet-title">Actions</div>

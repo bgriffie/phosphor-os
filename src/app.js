@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.7';
+  const VERSION = '1.8';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -43,7 +43,7 @@
 
   /* ---------- Tiles ---------- */
   // Built-in apps: OS pages, or Floyd's other tools bundled under apps/<id>/ and run in a full-screen frame
-  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'], lights: ['Lights', '/lights'],
+  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'], lights: ['Lights', null, 'apps/lights/'],
     arcade: ['Arcade', null, 'apps/arcade/'], workout: ['Workout Log', null, 'apps/workout/'], kitchen: ['Kitchen Log', null, 'apps/kitchen/'] };
   const DEFAULT_TILES = () => [
     ['Phone', 'phone', 'app', 'phone'],
@@ -603,6 +603,8 @@
     saveRoute: r => { if (frameId) save(routeKey(frameId), r); },
     keysChanged: () => renderKeys(),
   };
+  // v1.8: Lights is the bundled Kasa Lights app now; old #/lights links open it
+  if (/^#\/lights(\/|$)/.test(location.hash)) location.replace('#/app/lights');
   const syncFrame = () => { const m = /^#\/app\/([\w-]+)/.exec(location.hash); if (m) showFrame(m[1]); else hideFrame(); };
   addEventListener('hashchange', syncFrame);
 
@@ -621,7 +623,7 @@
     play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>',
     pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16"/><rect x="14" y="4" width="5" height="16"/></svg>',
   };
-  const RKEY = { menu: ['Menu'], play: ['Play or pause'], music: ['Spotify', '/music'], notes: ['Notes', '/notes'], phone: ['Phone', '/phone'], calc: ['Calculator', '/calc'], lights: ['Lights', '/lights'], settings: ['Settings', '/settings'] };
+  const RKEY = { menu: ['Menu'], play: ['Play or pause'], music: ['Spotify', '/music'], notes: ['Notes', '/notes'], phone: ['Phone', '/phone'], calc: ['Calculator', '/calc'], lights: ['Lights', null, 'lights'], settings: ['Settings', '/settings'] };
   const APP_GLYPH = { 'II': 'pause', '▸': 'play', '▶': 'play', '+': 'plus', '⟳': 'retry', '▲': 'flag' };
   const curRoute = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
   function rightKey() {
@@ -638,6 +640,7 @@
     if (r.app) {
       const g = APP_GLYPH[r.app.text];
       html = g ? (FILLED[g] || keySvg(g)) : null; label = r.app.label || r.app.text;
+      if (!html && r.app.svg) html = r.app.svg;
       if (!html) { html = ''; word = true; }
       if (r.app.pressed == null) right.removeAttribute('aria-pressed'); else right.setAttribute('aria-pressed', r.app.pressed);
     } else {
@@ -669,6 +672,7 @@
     }
     if (r.mode === 'play') { PhosphorMusic.toggle(); return; }
     closeDialogs();
+    if (RKEY[r.mode][2]) { openApp(RKEY[r.mode][2]); return; }
     const to = RKEY[r.mode][1];
     if (frameId) { hideFrame(); location.replace(location.href.split('#')[0] + '#' + to); }
     else PH.go(to);
