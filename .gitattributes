@@ -1,1 +1,2 @@
-*.bat text eol=crlf
+# keep CRLF in the stored file: GitHub serves raw files as committed, and cmd misreads LF batch files
+*.bat -text
