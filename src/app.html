@@ -186,7 +186,7 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.5</span>
+      <span class="app-meta">v1.6</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -433,7 +433,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.5</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.6</span></a>
           </div>
         </div>
       </section>
@@ -482,12 +482,12 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.5</span></div>
+          <div class="kv"><span>Version</span><span>1.6</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
         <section class="panel" data-title="Built-in apps" style="margin-top:var(--sp-4)">
-          <p>Arcade, Workout Log and Kitchen Log are built into the OS and open full-screen without leaving it. They share their data with the standalone versions on this phone. To return, use Back on an app's home page or Phosphor OS in its ☰ menu.</p>
+          <p>Arcade, Workout Log and Kitchen Log are built into the OS and open full-screen without leaving it. They share their data with the standalone versions on this phone. To return, press Home, or Back on an app's first page.</p>
         </section>
         <div class="menu-group" style="margin-top:var(--sp-5)">
           <div class="menu">
@@ -498,10 +498,10 @@
 
       <section class="view" data-route="/settings/about/launching" data-title="Launching">
         <section class="panel" data-title="App links">
-          <p>Phone, Messages, Mail and Maps open through app links such as <code>messages://</code> or <code>maps://</code>. If an app isn't installed, nothing happens.</p>
+          <p>Mail opens Gmail (<code>googlegmail://</code>) and Maps opens Google Maps (<code>comgooglemaps://</code>). If an app isn't installed, nothing happens.</p>
         </section>
         <section class="panel" data-title="Shortcuts" style="margin-top:var(--sp-4)">
-          <p>Any other app (Camera, FaceTime, Settings) opens through the Shortcuts app. Shortcut tiles are amber.</p>
+          <p>Messages, Camera, FaceTime and any other app open through the Shortcuts app, because iOS only lets a link start a new message, not open Messages itself. Shortcut tiles are amber.</p>
           <ul class="list plain" style="margin-top:var(--sp-3)">
             <li>1. In Shortcuts, tap +, add the "Open App" action and pick the app.</li>
             <li>2. Name it exactly what the tile says, for example "Open Camera".</li>

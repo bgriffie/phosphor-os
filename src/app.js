@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.5';
+  const VERSION = '1.6';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -47,10 +47,10 @@
     arcade: ['Arcade', null, 'apps/arcade/'], workout: ['Workout Log', null, 'apps/workout/'], kitchen: ['Kitchen Log', null, 'apps/kitchen/'] };
   const DEFAULT_TILES = () => [
     ['Phone', 'phone', 'app', 'phone'],
-    ['Messages', 'chat', 'link', 'messages://'],
-    ['Mail', 'mail', 'link', 'message://'],
+    ['Messages', 'chat', 'shortcut', 'Open Messages'],
+    ['Mail', 'mail', 'link', 'googlegmail://'],
     ['FaceTime', 'video', 'shortcut', 'Open FaceTime'],
-    ['Maps', 'map', 'link', 'maps://'],
+    ['Maps', 'map', 'link', 'comgooglemaps://'],
     ['Camera', 'camera', 'shortcut', 'Open Camera'],
     ['Spotify', 'music', 'app', 'music'],
     ['Notes', 'note', 'app', 'notes'],
@@ -70,7 +70,11 @@
     // v1.2: the Spotify tile opens the built-in remote (an app link can't leave Guided Access)
     if (t.kind === 'link' && /^spotify:\/*$/i.test(t.target)) { t.kind = 'app'; t.target = 'music'; }
     // v1.5: Messages opens the app itself, not a blank new message
-    if (t.kind === 'link' && /^sms:\/*$/i.test(t.target)) t.target = 'messages://';
+    // v1.6: iOS treats sms: and messages:// as "new message", so Messages runs a one-step Shortcut that opens the app
+    if (t.kind === 'link' && /^(sms:|messages:)\/*$/i.test(t.target)) { t.kind = 'shortcut'; t.target = 'Open Messages'; }
+    // v1.6: Floyd uses Gmail and Google Maps, not Apple Mail and Maps
+    if (t.kind === 'link' && /^message:\/*$/i.test(t.target)) t.target = 'googlegmail://';
+    if (t.kind === 'link' && /^maps:\/*$/i.test(t.target)) t.target = 'comgooglemaps://';
   });
   save('tiles', tiles);
   const saveTiles = () => { save('tiles', tiles); renderGrid(); renderTileList(); };
@@ -298,7 +302,7 @@
     $('#tf-target-field').hidden = k === 'app';
     $('#tf-app-field').hidden = k !== 'app';
     $('#tf-target-label').textContent = k === 'shortcut' ? 'Shortcut name' : 'Link';
-    $('#tf-target').placeholder = k === 'shortcut' ? 'Open Camera' : 'messages://  maps://  https://…';
+    $('#tf-target').placeholder = k === 'shortcut' ? 'Open Camera' : 'googlegmail://  comgooglemaps://  https://…';
     $('#tf-target').setAttribute('inputmode', k === 'shortcut' ? 'text' : 'url');
     $('#tf-hint').textContent = k === 'shortcut'
       ? 'Must match the shortcut\'s name in the Shortcuts app exactly.'
@@ -512,7 +516,7 @@
       }
     },
     'dial-call': () => { if (dial) location.href = 'tel:' + dial; else PH.toast('Enter a number first.'); },
-    'dial-sms': () => { location.href = dial ? 'sms:' + dial : 'messages://'; },
+    'dial-sms': () => { location.href = dial ? 'sms:' + dial : 'shortcuts://run-shortcut?name=' + encodeURIComponent('Open Messages'); },
     'dial-del': () => { dial = dial.slice(0, -1); renderDial(); },
     'fav-add': () => {
       const name = (prompt('Name for ' + fmt(dial)) || '').trim(); if (!name) return;
