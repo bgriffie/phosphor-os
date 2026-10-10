@@ -113,7 +113,8 @@
   const say = e => {
     if (e.offline) { PH.toast(e.message, 'warn'); return; }
     if (e.reason === 'NO_ACTIVE_DEVICE' || e.status === 404) PH.toast('Spotify isn\'t playing on any device. Open Spotify on your phone, start any song, then come back.', 'warn');
-    else if (e.reason === 'PREMIUM_REQUIRED' || e.status === 403) PH.toast('Spotify only allows remote control with Premium.', 'warn');
+    else if (e.reason === 'PREMIUM_REQUIRED') PH.toast('Spotify only allows remote control with Premium.', 'warn');
+    else if (e.status === 403) PH.toast('Spotify refused that: ' + (e.message || 'not allowed') + (e.reason ? ' (' + e.reason + ')' : ''), 'warn');
     else if (e.message !== 'Not connected') PH.toast(e.message, 'error');
   };
 
@@ -158,7 +159,10 @@
     toggle: () => cmd(async () => {
       if (state && state.device) {
         try { await api('/me/player/' + (state.is_playing ? 'pause' : 'play'), { method: 'PUT' }); if (state) { state.progress_ms = pos(); stamp = Date.now(); state.is_playing = !state.is_playing; renderNow(); } return; }
-        catch (e) { if (!(e.reason === 'NO_ACTIVE_DEVICE' || e.status === 404)) throw e; }   // fall through and wake a device
+        catch (e) {
+          if (e.status === 403 && e.reason !== 'PREMIUM_REQUIRED') { later(); return; }   // already paused/playing: just refresh
+          if (!(e.reason === 'NO_ACTIVE_DEVICE' || e.status === 404)) throw e;   // fall through and wake a device
+        }
       }
       const dev = await pickDevice(); if (!dev) throw Object.assign(new Error(''), { reason: 'NO_ACTIVE_DEVICE' });
       await api('/me/player', { method: 'PUT', body: { device_ids: [dev.id], play: true } });
@@ -173,7 +177,14 @@
     try {
       let device_id;
       if (!state || !state.device) { const dev = await pickDevice(); if (!dev) throw Object.assign(new Error(''), { reason: 'NO_ACTIVE_DEVICE' }); device_id = dev.id; }
-      try { await api('/me/player/play', { method: 'PUT', body, query: device_id ? { device_id } : undefined }); }
+      try {
+        try { await api('/me/player/play', { method: 'PUT', body, query: device_id ? { device_id } : undefined }); }
+        catch (e) {   // Spotify won't start some playlists (its own mixes) for apps like this one: play just the song
+          if (!(body.context_uri && body.offset && body.offset.uri && (e.status === 403 || e.status === 404) && e.reason !== 'NO_ACTIVE_DEVICE')) throw e;
+          body = { uris: [body.offset.uri] };
+          await api('/me/player/play', { method: 'PUT', body, query: device_id ? { device_id } : undefined });
+        }
+      }
       catch (e) {   // the device we thought was active went to sleep: wake the best one and try once more
         if (!(e.reason === 'NO_ACTIVE_DEVICE' || e.status === 404) || device_id) throw e;
         const dev = await pickDevice(); if (!dev) throw e;
