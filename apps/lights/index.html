@@ -799,7 +799,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Kasa Lights</h1>
-      <span class="app-meta">v1.1</span>
+      <span class="app-meta">v1.2</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -819,10 +819,6 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
             <button class="btn btn-primary" data-li-all="on">All on</button>
           </div>
           <p class="li-note" id="li-note" hidden></p>
-          <section class="panel active" data-title="Party" id="pa-banner" style="margin-top:var(--sp-4)" hidden>
-            <p>Party mode is on.</p>
-            <button class="btn btn-danger btn-block" data-pa-toggle style="margin-top:var(--sp-3)">Stop party</button>
-          </section>
           <div class="li-list" id="li-list"></div>
           <div class="menu pa-home">
             <a class="menu-item" href="#/party"><span class="mi-label">Party mode<small>Flash every light like a strobe</small></span></a>
@@ -856,7 +852,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
             <button role="radio" data-setting="partySpeed" data-value="medium">Medium</button>
             <button role="radio" data-setting="partySpeed" data-value="fast">Fast</button>
           </div>
-          <p class="menu-note">Kasa bulbs can switch a few times a second at most. Keep this app open; your lights go back to how they were when you stop.</p>
+          <p class="menu-note">Kasa bulbs can switch a few times a second at most. Party mode runs while this page is open. Leaving it stops the party and puts your lights back.</p>
         </div>
       </section>
 
@@ -884,7 +880,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.1</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.2</span></a>
           </div>
         </div>
       </section>
@@ -918,7 +914,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Kasa Lights">
-          <div class="kv"><span>Version</span><span>1.1</span></div>
+          <div class="kv"><span>Version</span><span>1.2</span></div>
           <div class="kv"><span>Lights</span><span id="li-count">—</span></div>
           <div class="kv"><span>Relay port</span><span>7788</span></div>
           <div class="kv"><span>Needs</span><span>Relay + Tailscale</span></div>
@@ -1403,7 +1399,8 @@ PH.init({ partyMode: 'strobe', partySpeed: 'medium' });
     const run = party; if (!run) return;
     party = null; renderParty();
     try { await wake?.release(); } catch {} wake = null;
-    await run.pending;   // let the last flash land first, so it can't undo the restore
+    // let the last flash land first so it can't undo the restore, but never hold Stop up for long
+    await Promise.race([run.pending, sleep(1500)]);
     // put every light back the way it was
     await Promise.allSettled(run.snap.map(l => {
       if (!l.on) return send(l.id, { on: false });
@@ -1421,13 +1418,14 @@ PH.init({ partyMode: 'strobe', partySpeed: 'medium' });
     $('#pa-state').textContent = on ? 'Party on' : 'Ready';
     $('#pa-go').textContent = on ? 'Stop party' : 'Start party';
     $('#pa-go').className = 'btn btn-block ' + (on ? 'btn-danger' : 'btn-primary');
-    $('#pa-banner').hidden = !on;
     const k = $('#k-party'); k.innerHTML = on ? STOP_SVG : GO_SVG; k.setAttribute('aria-label', on ? 'Stop party' : 'Start party'); k.setAttribute('aria-pressed', String(on));
     const m = PH.store.get('partyMode');
     $('#pa-hint').textContent = m === 'color' ? 'Colour bulbs jump between bright colours.' : m === 'both' ? 'Lights flash and colour bulbs change colour on every flash.' : 'Every light flashes on and off together.';
   }
   document.addEventListener('click', e => { if (e.target.closest('[data-pa-toggle]')) partyOn() ? stopParty() : startParty(); });
   PH.on('partyMode', renderParty);
+  // Party mode lives on its page: leaving it (Back, Home, the menu) ends the party
+  PH.on('route', r => { if (party && r !== '/party') stopParty(); });
   renderParty();
   // Phosphor OS awaits this before removing the app's frame, so a running party is stopped and restored
   window.osBeforeClose = () => stopParty();
