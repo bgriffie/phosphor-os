@@ -138,6 +138,17 @@
 
     /* Spotify remote */
     .mu-now { display: flex; flex-direction: column; }
+    .mu-mini { display: flex; align-items: center; gap: var(--sp-3); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); padding: var(--sp-3); }
+    .mu-mini-link { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--sp-3); color: var(--text); text-decoration: none; }
+    .mu-mini-link .mi-label { min-width: 0; display: flex; flex-direction: column; font-weight: 700; }
+    .mu-mini-link .mi-label > span, .mu-mini-link small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mu-mini-link small { font-weight: 400; color: var(--text-dim); font-size: var(--fs-sm); }
+    .mu-mini .mi-thumb { flex: none; width: 52px; height: 52px; object-fit: cover; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); }
+    .mu-mini .mi-thumb.none { visibility: hidden; }
+    .mu-mini-play { flex: none; width: 52px; height: 52px; }
+    .mu-mini-play svg { width: 24px; height: 24px; }
+    #mu-on > .mu-note { text-align: center; }
+    #ep-diag { font-size: var(--fs-xs); color: var(--text-faint); }
     .mu-now .mu-track, .mu-now .mu-artist, .mu-now .mu-note { text-align: center; }
     .mu-links { margin-top: var(--sp-6); }
     .segmented { margin-bottom: var(--sp-2); }
@@ -186,7 +197,7 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.10</span>
+      <span class="app-meta">v1.11</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -217,22 +228,41 @@
           <p>Control Spotify from here, even under Guided Access. It needs Spotify Premium and a one-time setup.</p>
           <button class="btn btn-primary" data-route="/music/setup">Set up Spotify</button>
         </div>
-        <div class="mu-now" id="mu-on" hidden>
+        <div id="mu-on" hidden>
+          <div class="mu-mini">
+            <a class="mu-mini-link" href="#/music/now" aria-label="Now playing">
+              <img class="mi-thumb none" id="mu-mini-art" alt="" referrerpolicy="no-referrer">
+              <span class="mi-label"><span id="mu-mini-title">Nothing playing</span><small id="mu-mini-sub">Now playing</small></span>
+            </a>
+            <button class="btn btn-icon btn-primary mu-mini-play" data-mu="toggle" aria-label="Play"></button>
+          </div>
+          <div class="mu-note" id="mu-note" hidden></div>
+          <div class="menu mu-links">
+            <a class="menu-item" href="#/music/episodes"><span class="mi-label">Stuff You Should Know<small id="mu-sysk-sub">Episodes</small></span></a>
+            <a class="menu-item" href="#/music/devices"><span class="mi-label">Play on</span><span class="mi-value" id="mu-devname"></span></a>
+          </div>
+          <div class="menu-group" style="margin-top:var(--sp-5)">
+            <span class="label">Recently played</span>
+            <div class="panel" id="rp-scope" hidden>
+              <p>Spotify needs your OK once more to share what you've played. Tap Reconnect, approve, and you'll come straight back.</p>
+              <button class="btn btn-primary btn-block" data-mu-act="reconnect" style="margin-top:var(--sp-3)">Reconnect Spotify</button>
+            </div>
+            <div class="menu" id="rp-items"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-route="/music/now" data-title="Now playing">
+        <div class="mu-now">
           <img class="mu-art" id="mu-art" alt="" hidden referrerpolicy="no-referrer">
           <div class="mu-track" id="mu-track">Nothing playing</div>
           <div class="mu-artist" id="mu-artist"></div>
-          <div class="mu-note" id="mu-note" hidden></div>
           <div class="meter" role="progressbar" aria-label="Position" aria-valuemin="0" aria-valuemax="100"><span id="mu-bar" style="--value:0%"></span></div>
           <div class="mu-times"><span id="mu-pos">0:00</span><span id="mu-dur">0:00</span></div>
           <div class="mu-ctrl">
             <button class="btn btn-icon btn-ghost" id="mu-left" data-mu="left" aria-label="Back 15 seconds"></button>
             <button class="btn btn-primary mu-play" data-mu="toggle" aria-label="Play"></button>
             <button class="btn btn-icon btn-ghost" id="mu-right" data-mu="right" aria-label="Forward 30 seconds"></button>
-          </div>
-          <div class="menu mu-links">
-            <a class="menu-item" href="#/music/episodes"><span class="mi-label">Stuff You Should Know<small id="mu-sysk-sub">Episodes</small></span></a>
-            <a class="menu-item" href="#/music/recent"><span class="mi-label">Recently played<small>Songs you played lately</small></span></a>
-            <a class="menu-item" href="#/music/devices"><span class="mi-label">Play on</span><span class="mi-value" id="mu-devname"></span></a>
           </div>
         </div>
       </section>
@@ -245,15 +275,7 @@
         <div class="menu" id="ep-items"></div>
         <button class="btn btn-ghost btn-block" id="ep-more" hidden>Load more</button>
         <p class="menu-note" id="ep-scope" hidden>Reconnect Spotify in Settings › Spotify to see which episodes you've played.</p>
-      </section>
-
-      <section class="view" data-route="/music/recent" data-title="Recently played">
-        <div class="panel" id="rp-scope" hidden>
-          <p>Spotify needs your OK once more to share what you've played. Tap Reconnect, approve, and you'll come straight back.</p>
-          <button class="btn btn-primary btn-block" data-mu-act="reconnect" style="margin-top:var(--sp-3)">Reconnect Spotify</button>
-        </div>
-        <div class="menu" id="rp-items"></div>
-        <p class="menu-note">Tap a song to play it, carrying on from its album or playlist. Spotify doesn't include podcasts here.</p>
+        <p class="menu-note" id="ep-diag"></p>
       </section>
 
       <section class="view" data-route="/music/devices" data-title="Play on">
@@ -443,7 +465,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.10</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.11</span></a>
           </div>
         </div>
       </section>
@@ -493,7 +515,7 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.10</span></div>
+          <div class="kv"><span>Version</span><span>1.11</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>

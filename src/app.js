@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.10';
+  const VERSION = '1.11';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -43,7 +43,7 @@
 
   /* ---------- Tiles ---------- */
   // Built-in apps: OS pages, or Floyd's other tools bundled under apps/<id>/ and run in a full-screen frame
-  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'], lights: ['Lights', null, 'apps/lights/'],
+  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'], lights: ['Lights', null, 'apps/lights/', false],
     arcade: ['Arcade', null, 'apps/arcade/'], workout: ['Workout Log', null, 'apps/workout/'], kitchen: ['Kitchen Log', null, 'apps/kitchen/'] };
   const DEFAULT_TILES = () => [
     ['Phone', 'phone', 'app', 'phone'],
@@ -589,7 +589,7 @@
     const a = APPS[id]; if (!a || !a[2]) { location.replace('#/'); return; }
     frame = document.createElement('iframe');
     frame.className = 'app-frame'; frame.title = a[0]; frame.allow = 'web-share; clipboard-write';
-    const last = load(routeKey(id), '/');
+    const last = a[3] === false ? '/' : load(routeKey(id), '/');   // some apps always open on their first page
     frame.src = a[2] + '#' + (typeof last === 'string' && last.startsWith('/') ? last : '/');
     $('.screen').appendChild(frame); $('.screen').classList.add('has-frame'); frameId = id;
     frame.addEventListener('load', () => { frame.classList.add('is-ready'); try { frame.contentWindow.focus(); } catch {} renderKeys(); });
@@ -667,7 +667,14 @@
   }
   function closeDialogs() { $$('dialog[open]').forEach(d => d.close()); }
   $('#k-back').addEventListener('click', () => {
-    if (frameId) { const c = child(); if (c && !c.atHome()) c.back(); else PhosphorOS.closeApp(); return; }
+    if (frameId) {
+      const c = child(); if (!c || c.atHome()) { PhosphorOS.closeApp(); return; }
+      // if the app's own Back doesn't move it (its history can get out of step inside the frame), go to its first page
+      const was = c.route(), dialog = !!(frame && frame.contentDocument && frame.contentDocument.querySelector('dialog[open]'));
+      c.back();
+      if (!dialog) setTimeout(() => { const k = child(); if (k === c && k.route() === was) k.home(); }, 400);
+      return;
+    }
     closeDialogs(); PH.back();
   });
   $('#k-home').addEventListener('click', () => {

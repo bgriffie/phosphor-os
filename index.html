@@ -861,6 +861,17 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 
     /* Spotify remote */
     .mu-now { display: flex; flex-direction: column; }
+    .mu-mini { display: flex; align-items: center; gap: var(--sp-3); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); padding: var(--sp-3); }
+    .mu-mini-link { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--sp-3); color: var(--text); text-decoration: none; }
+    .mu-mini-link .mi-label { min-width: 0; display: flex; flex-direction: column; font-weight: 700; }
+    .mu-mini-link .mi-label > span, .mu-mini-link small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mu-mini-link small { font-weight: 400; color: var(--text-dim); font-size: var(--fs-sm); }
+    .mu-mini .mi-thumb { flex: none; width: 52px; height: 52px; object-fit: cover; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); }
+    .mu-mini .mi-thumb.none { visibility: hidden; }
+    .mu-mini-play { flex: none; width: 52px; height: 52px; }
+    .mu-mini-play svg { width: 24px; height: 24px; }
+    #mu-on > .mu-note { text-align: center; }
+    #ep-diag { font-size: var(--fs-xs); color: var(--text-faint); }
     .mu-now .mu-track, .mu-now .mu-artist, .mu-now .mu-note { text-align: center; }
     .mu-links { margin-top: var(--sp-6); }
     .segmented { margin-bottom: var(--sp-2); }
@@ -909,7 +920,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.10</span>
+      <span class="app-meta">v1.11</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -940,22 +951,41 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
           <p>Control Spotify from here, even under Guided Access. It needs Spotify Premium and a one-time setup.</p>
           <button class="btn btn-primary" data-route="/music/setup">Set up Spotify</button>
         </div>
-        <div class="mu-now" id="mu-on" hidden>
+        <div id="mu-on" hidden>
+          <div class="mu-mini">
+            <a class="mu-mini-link" href="#/music/now" aria-label="Now playing">
+              <img class="mi-thumb none" id="mu-mini-art" alt="" referrerpolicy="no-referrer">
+              <span class="mi-label"><span id="mu-mini-title">Nothing playing</span><small id="mu-mini-sub">Now playing</small></span>
+            </a>
+            <button class="btn btn-icon btn-primary mu-mini-play" data-mu="toggle" aria-label="Play"></button>
+          </div>
+          <div class="mu-note" id="mu-note" hidden></div>
+          <div class="menu mu-links">
+            <a class="menu-item" href="#/music/episodes"><span class="mi-label">Stuff You Should Know<small id="mu-sysk-sub">Episodes</small></span></a>
+            <a class="menu-item" href="#/music/devices"><span class="mi-label">Play on</span><span class="mi-value" id="mu-devname"></span></a>
+          </div>
+          <div class="menu-group" style="margin-top:var(--sp-5)">
+            <span class="label">Recently played</span>
+            <div class="panel" id="rp-scope" hidden>
+              <p>Spotify needs your OK once more to share what you've played. Tap Reconnect, approve, and you'll come straight back.</p>
+              <button class="btn btn-primary btn-block" data-mu-act="reconnect" style="margin-top:var(--sp-3)">Reconnect Spotify</button>
+            </div>
+            <div class="menu" id="rp-items"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-route="/music/now" data-title="Now playing">
+        <div class="mu-now">
           <img class="mu-art" id="mu-art" alt="" hidden referrerpolicy="no-referrer">
           <div class="mu-track" id="mu-track">Nothing playing</div>
           <div class="mu-artist" id="mu-artist"></div>
-          <div class="mu-note" id="mu-note" hidden></div>
           <div class="meter" role="progressbar" aria-label="Position" aria-valuemin="0" aria-valuemax="100"><span id="mu-bar" style="--value:0%"></span></div>
           <div class="mu-times"><span id="mu-pos">0:00</span><span id="mu-dur">0:00</span></div>
           <div class="mu-ctrl">
             <button class="btn btn-icon btn-ghost" id="mu-left" data-mu="left" aria-label="Back 15 seconds"></button>
             <button class="btn btn-primary mu-play" data-mu="toggle" aria-label="Play"></button>
             <button class="btn btn-icon btn-ghost" id="mu-right" data-mu="right" aria-label="Forward 30 seconds"></button>
-          </div>
-          <div class="menu mu-links">
-            <a class="menu-item" href="#/music/episodes"><span class="mi-label">Stuff You Should Know<small id="mu-sysk-sub">Episodes</small></span></a>
-            <a class="menu-item" href="#/music/recent"><span class="mi-label">Recently played<small>Songs you played lately</small></span></a>
-            <a class="menu-item" href="#/music/devices"><span class="mi-label">Play on</span><span class="mi-value" id="mu-devname"></span></a>
           </div>
         </div>
       </section>
@@ -968,15 +998,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         <div class="menu" id="ep-items"></div>
         <button class="btn btn-ghost btn-block" id="ep-more" hidden>Load more</button>
         <p class="menu-note" id="ep-scope" hidden>Reconnect Spotify in Settings › Spotify to see which episodes you've played.</p>
-      </section>
-
-      <section class="view" data-route="/music/recent" data-title="Recently played">
-        <div class="panel" id="rp-scope" hidden>
-          <p>Spotify needs your OK once more to share what you've played. Tap Reconnect, approve, and you'll come straight back.</p>
-          <button class="btn btn-primary btn-block" data-mu-act="reconnect" style="margin-top:var(--sp-3)">Reconnect Spotify</button>
-        </div>
-        <div class="menu" id="rp-items"></div>
-        <p class="menu-note">Tap a song to play it, carrying on from its album or playlist. Spotify doesn't include podcasts here.</p>
+        <p class="menu-note" id="ep-diag"></p>
       </section>
 
       <section class="view" data-route="/music/devices" data-title="Play on">
@@ -1166,7 +1188,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.10</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.11</span></a>
           </div>
         </div>
       </section>
@@ -1216,7 +1238,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.10</span></div>
+          <div class="kv"><span>Version</span><span>1.11</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
@@ -1684,14 +1706,16 @@ const PH = (() => {
         const dev = await pickDevice(); if (!dev) throw e;
         await api('/me/player/play', { method: 'PUT', body, query: { device_id: dev.id } });
       }
-      later(); PH.go('/music');
+      later(); PH.go('/music/now');
     } catch (e) { say(e); }
   }
 
   /* Stuff You Should Know: find the show once, then page through its episodes (newest first) */
   const hasResume = () => !auth.scope || auth.scope.split(' ').includes(RESUME_SCOPE);
   const SYSK_ID = '0ofXAdFIQQRsCYj9754UFx';   // the show's Spotify id, used if search comes back empty
+  let searchNote = 'saved id';
   async function syskId() {
+    searchNote = 'saved id';
     let id = load('mu-sysk', null); if (id) return id;
     let found = [];
     for (const q of [{ market: 'from_token' }, {}]) {   // some accounts get nothing back with a market
@@ -1702,11 +1726,12 @@ const PH = (() => {
       if (found.length) break;
     }
     const s = found.find(x => /^stuff you should know$/i.test(x.name)) || found.find(x => /stuff you should know/i.test(x.name));
-    id = s ? s.id : SYSK_ID;
+    id = s ? s.id : SYSK_ID; searchNote = s ? 'search found the show' : `search found ${found.length} shows, using built-in id`;
     save('mu-sysk', id); return id;
   }
   // Episodes, newest first. Tries the episodes list, then the show itself (which carries its first
   // page of episodes), with and without a market, since Spotify answers these differently per account.
+  let diag = [];
   async function episodePage(id, offset) {
     const tries = [
       () => api(`/shows/${id}/episodes`, { query: { limit: 50, offset, market: 'from_token' } }),
@@ -1714,9 +1739,9 @@ const PH = (() => {
       ...(offset ? [] : [() => api(`/shows/${id}`, { query: { market: 'from_token' } }).then(s => s && s.episodes)]),
     ];
     let last;
-    for (const t of tries) {
-      try { const d = await t(); if (d && (d.items || []).some(Boolean)) return d; last = last || new Error('Spotify sent no episodes.'); }
-      catch (e) { if (e.status === 401 || e.status === 429 || e.offline) throw e; last = e; }
+    for (const [i, t] of tries.entries()) {
+      try { const d = await t(); const n = ((d && d.items) || []).filter(Boolean).length; diag.push(`try ${i + 1}: ${n} episodes`); if (n) return d; last = last || new Error('Spotify sent no episodes.'); }
+      catch (e) { diag.push(`try ${i + 1}: ${e.status || ''} ${e.message}`); if (e.status === 401 || e.status === 429 || e.offline) throw e; last = e; }
     }
     throw last;
   }
@@ -1726,7 +1751,7 @@ const PH = (() => {
     if (!eps || !more) eps = { items: [], next: false, loaded: false };
     eps.loading = true; if (!more) renderEpisodes();
     try {
-      const id = await syskId();
+      const id = await syskId(); diag = [searchNote + ' (' + id + ')'];
       let d;
       try { d = await episodePage(id, eps.items.length); }
       catch (e) { drop('mu-sysk'); throw e; }
@@ -1778,11 +1803,17 @@ const PH = (() => {
   function renderNow() {
     const it = state && state.item, ep = isEpisode();
     $('#mu-track').textContent = it ? it.name : 'Nothing playing';
-    $('#mu-artist').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : it.show ? it.show.name : '') : 'Pick an episode below, or start something in Spotify.';
+    $('#mu-artist').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : it.show ? it.show.name : '') : 'Pick a song or an episode, or start something in Spotify.';
     const src = it ? art((it.album && it.album.images) || it.images || (it.show && it.show.images), 300) : '';
     const cover = $('#mu-art');
     if (cover.dataset.src !== src) { cover.dataset.src = src; cover.hidden = !src; if (src) cover.src = src; else cover.removeAttribute('src'); }
     $('#mu-devname').textContent = state && state.device ? state.device.name : 'None';
+    // the Now playing card on the Spotify home page
+    $('#mu-mini-title').textContent = it ? it.name : 'Nothing playing';
+    $('#mu-mini-sub').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : it.show ? it.show.name : '') : 'Pick something below';
+    const mini = $('#mu-mini-art'), msrc = it ? art((it.album && it.album.images) || it.images || (it.show && it.show.images), 64) : '';
+    if (mini.dataset.src !== msrc) { mini.dataset.src = msrc; mini.classList.toggle('none', !msrc); if (msrc) mini.src = msrc; else mini.removeAttribute('src'); }
+    document.querySelectorAll('#rp-items [data-uri]').forEach(b => b.classList.toggle('is-current', !!it && b.dataset.uri === it.uri));
     const set = (b, html, label) => { if (b.dataset.icon !== html) { b.innerHTML = html; b.dataset.icon = html; } b.setAttribute('aria-label', label); };
     set($('#mu-left'), ep ? ICON.back15 : ICON.prev, ep ? 'Back 15 seconds' : 'Previous');
     set($('#mu-right'), ep ? ICON.fwd30 : ICON.next, ep ? 'Forward 30 seconds' : 'Next');
@@ -1837,6 +1868,7 @@ const PH = (() => {
     });
     $('#ep-more').hidden = !eps.next;
     $('#ep-more').disabled = !!eps.loading;
+    $('#ep-diag').textContent = eps.error ? 'Details: ' + diag.join(' · ') : '';
     const fresh = eps.items.filter(x => !x.played).length;
     $('#mu-sysk-sub').textContent = hasResume() && eps.items.length ? fresh + (eps.next ? '+' : '') + ' unplayed' : 'Episodes';
   }
@@ -1901,6 +1933,7 @@ const PH = (() => {
   // Poll only while a music page is on screen and the app is visible
   let pollT = null, barT = null;
   const onMusic = () => /^#\/music(\/|$)/.test(location.hash);
+  if (/^#\/music\/recent/.test(location.hash)) location.replace('#/music');   // v1.11: recent plays moved to the Spotify home page
   function sync() {
     clearInterval(pollT); clearInterval(barT); pollT = barT = null;
     if (!onMusic() || document.hidden) return;
@@ -1909,8 +1942,8 @@ const PH = (() => {
     poll(); pollT = setInterval(poll, 4000); barT = setInterval(tickBar, 1000);
     const h = location.hash;
     if (h.startsWith('#/music/devices')) loadDevices();
-    else if (h.startsWith('#/music/recent')) { if (hasRecent()) loadRecent(); else renderRecent(); }
-    else if (!eps || eps.error || (!eps.loaded && !eps.loading)) loadEpisodes();   // also fills "N unplayed" on the main page
+    else if (/^#\/music\/?$/.test(h)) { if (hasRecent()) loadRecent(); else renderRecent(); if (!eps || eps.error) loadEpisodes(); }
+    else if (h.startsWith('#/music/episodes') && (!eps || eps.error || (!eps.loaded && !eps.loading))) loadEpisodes();
   }
   addEventListener('hashchange', sync);
   document.addEventListener('visibilitychange', sync);
@@ -1926,7 +1959,7 @@ const PH = (() => {
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.10';
+  const VERSION = '1.11';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -1966,7 +1999,7 @@ const PH = (() => {
 
   /* ---------- Tiles ---------- */
   // Built-in apps: OS pages, or Floyd's other tools bundled under apps/<id>/ and run in a full-screen frame
-  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'], lights: ['Lights', null, 'apps/lights/'],
+  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'], lights: ['Lights', null, 'apps/lights/', false],
     arcade: ['Arcade', null, 'apps/arcade/'], workout: ['Workout Log', null, 'apps/workout/'], kitchen: ['Kitchen Log', null, 'apps/kitchen/'] };
   const DEFAULT_TILES = () => [
     ['Phone', 'phone', 'app', 'phone'],
@@ -2512,7 +2545,7 @@ const PH = (() => {
     const a = APPS[id]; if (!a || !a[2]) { location.replace('#/'); return; }
     frame = document.createElement('iframe');
     frame.className = 'app-frame'; frame.title = a[0]; frame.allow = 'web-share; clipboard-write';
-    const last = load(routeKey(id), '/');
+    const last = a[3] === false ? '/' : load(routeKey(id), '/');   // some apps always open on their first page
     frame.src = a[2] + '#' + (typeof last === 'string' && last.startsWith('/') ? last : '/');
     $('.screen').appendChild(frame); $('.screen').classList.add('has-frame'); frameId = id;
     frame.addEventListener('load', () => { frame.classList.add('is-ready'); try { frame.contentWindow.focus(); } catch {} renderKeys(); });
@@ -2590,7 +2623,14 @@ const PH = (() => {
   }
   function closeDialogs() { $$('dialog[open]').forEach(d => d.close()); }
   $('#k-back').addEventListener('click', () => {
-    if (frameId) { const c = child(); if (c && !c.atHome()) c.back(); else PhosphorOS.closeApp(); return; }
+    if (frameId) {
+      const c = child(); if (!c || c.atHome()) { PhosphorOS.closeApp(); return; }
+      // if the app's own Back doesn't move it (its history can get out of step inside the frame), go to its first page
+      const was = c.route(), dialog = !!(frame && frame.contentDocument && frame.contentDocument.querySelector('dialog[open]'));
+      c.back();
+      if (!dialog) setTimeout(() => { const k = child(); if (k === c && k.route() === was) k.home(); }, 400);
+      return;
+    }
     closeDialogs(); PH.back();
   });
   $('#k-home').addEventListener('click', () => {

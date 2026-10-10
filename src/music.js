@@ -179,14 +179,16 @@
         const dev = await pickDevice(); if (!dev) throw e;
         await api('/me/player/play', { method: 'PUT', body, query: { device_id: dev.id } });
       }
-      later(); PH.go('/music');
+      later(); PH.go('/music/now');
     } catch (e) { say(e); }
   }
 
   /* Stuff You Should Know: find the show once, then page through its episodes (newest first) */
   const hasResume = () => !auth.scope || auth.scope.split(' ').includes(RESUME_SCOPE);
   const SYSK_ID = '0ofXAdFIQQRsCYj9754UFx';   // the show's Spotify id, used if search comes back empty
+  let searchNote = 'saved id';
   async function syskId() {
+    searchNote = 'saved id';
     let id = load('mu-sysk', null); if (id) return id;
     let found = [];
     for (const q of [{ market: 'from_token' }, {}]) {   // some accounts get nothing back with a market
@@ -197,11 +199,12 @@
       if (found.length) break;
     }
     const s = found.find(x => /^stuff you should know$/i.test(x.name)) || found.find(x => /stuff you should know/i.test(x.name));
-    id = s ? s.id : SYSK_ID;
+    id = s ? s.id : SYSK_ID; searchNote = s ? 'search found the show' : `search found ${found.length} shows, using built-in id`;
     save('mu-sysk', id); return id;
   }
   // Episodes, newest first. Tries the episodes list, then the show itself (which carries its first
   // page of episodes), with and without a market, since Spotify answers these differently per account.
+  let diag = [];
   async function episodePage(id, offset) {
     const tries = [
       () => api(`/shows/${id}/episodes`, { query: { limit: 50, offset, market: 'from_token' } }),
@@ -209,9 +212,9 @@
       ...(offset ? [] : [() => api(`/shows/${id}`, { query: { market: 'from_token' } }).then(s => s && s.episodes)]),
     ];
     let last;
-    for (const t of tries) {
-      try { const d = await t(); if (d && (d.items || []).some(Boolean)) return d; last = last || new Error('Spotify sent no episodes.'); }
-      catch (e) { if (e.status === 401 || e.status === 429 || e.offline) throw e; last = e; }
+    for (const [i, t] of tries.entries()) {
+      try { const d = await t(); const n = ((d && d.items) || []).filter(Boolean).length; diag.push(`try ${i + 1}: ${n} episodes`); if (n) return d; last = last || new Error('Spotify sent no episodes.'); }
+      catch (e) { diag.push(`try ${i + 1}: ${e.status || ''} ${e.message}`); if (e.status === 401 || e.status === 429 || e.offline) throw e; last = e; }
     }
     throw last;
   }
@@ -221,7 +224,7 @@
     if (!eps || !more) eps = { items: [], next: false, loaded: false };
     eps.loading = true; if (!more) renderEpisodes();
     try {
-      const id = await syskId();
+      const id = await syskId(); diag = [searchNote + ' (' + id + ')'];
       let d;
       try { d = await episodePage(id, eps.items.length); }
       catch (e) { drop('mu-sysk'); throw e; }
@@ -273,11 +276,17 @@
   function renderNow() {
     const it = state && state.item, ep = isEpisode();
     $('#mu-track').textContent = it ? it.name : 'Nothing playing';
-    $('#mu-artist').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : it.show ? it.show.name : '') : 'Pick an episode below, or start something in Spotify.';
+    $('#mu-artist').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : it.show ? it.show.name : '') : 'Pick a song or an episode, or start something in Spotify.';
     const src = it ? art((it.album && it.album.images) || it.images || (it.show && it.show.images), 300) : '';
     const cover = $('#mu-art');
     if (cover.dataset.src !== src) { cover.dataset.src = src; cover.hidden = !src; if (src) cover.src = src; else cover.removeAttribute('src'); }
     $('#mu-devname').textContent = state && state.device ? state.device.name : 'None';
+    // the Now playing card on the Spotify home page
+    $('#mu-mini-title').textContent = it ? it.name : 'Nothing playing';
+    $('#mu-mini-sub').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : it.show ? it.show.name : '') : 'Pick something below';
+    const mini = $('#mu-mini-art'), msrc = it ? art((it.album && it.album.images) || it.images || (it.show && it.show.images), 64) : '';
+    if (mini.dataset.src !== msrc) { mini.dataset.src = msrc; mini.classList.toggle('none', !msrc); if (msrc) mini.src = msrc; else mini.removeAttribute('src'); }
+    document.querySelectorAll('#rp-items [data-uri]').forEach(b => b.classList.toggle('is-current', !!it && b.dataset.uri === it.uri));
     const set = (b, html, label) => { if (b.dataset.icon !== html) { b.innerHTML = html; b.dataset.icon = html; } b.setAttribute('aria-label', label); };
     set($('#mu-left'), ep ? ICON.back15 : ICON.prev, ep ? 'Back 15 seconds' : 'Previous');
     set($('#mu-right'), ep ? ICON.fwd30 : ICON.next, ep ? 'Forward 30 seconds' : 'Next');
@@ -332,6 +341,7 @@
     });
     $('#ep-more').hidden = !eps.next;
     $('#ep-more').disabled = !!eps.loading;
+    $('#ep-diag').textContent = eps.error ? 'Details: ' + diag.join(' · ') : '';
     const fresh = eps.items.filter(x => !x.played).length;
     $('#mu-sysk-sub').textContent = hasResume() && eps.items.length ? fresh + (eps.next ? '+' : '') + ' unplayed' : 'Episodes';
   }
@@ -396,6 +406,7 @@
   // Poll only while a music page is on screen and the app is visible
   let pollT = null, barT = null;
   const onMusic = () => /^#\/music(\/|$)/.test(location.hash);
+  if (/^#\/music\/recent/.test(location.hash)) location.replace('#/music');   // v1.11: recent plays moved to the Spotify home page
   function sync() {
     clearInterval(pollT); clearInterval(barT); pollT = barT = null;
     if (!onMusic() || document.hidden) return;
@@ -404,8 +415,8 @@
     poll(); pollT = setInterval(poll, 4000); barT = setInterval(tickBar, 1000);
     const h = location.hash;
     if (h.startsWith('#/music/devices')) loadDevices();
-    else if (h.startsWith('#/music/recent')) { if (hasRecent()) loadRecent(); else renderRecent(); }
-    else if (!eps || eps.error || (!eps.loaded && !eps.loading)) loadEpisodes();   // also fills "N unplayed" on the main page
+    else if (/^#\/music\/?$/.test(h)) { if (hasRecent()) loadRecent(); else renderRecent(); if (!eps || eps.error) loadEpisodes(); }
+    else if (h.startsWith('#/music/episodes') && (!eps || eps.error || (!eps.loaded && !eps.loading))) loadEpisodes();
   }
   addEventListener('hashchange', sync);
   document.addEventListener('visibilitychange', sync);
