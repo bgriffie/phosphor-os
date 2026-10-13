@@ -786,6 +786,11 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .tp-rot.wide .tp-btns { grid-template-columns: none; grid-template-rows: 1fr 1fr; width: 84px; }
     .tp-rot.wide .tp-btns .btn { min-height: 0; }
     .tp-rot.wide .tp-pad { min-height: 60px; }
+    /* Sideways the key row has the phone's full length: fit every key instead of scrolling it */
+    .tp-rot.wide .tp-strip { overflow: hidden; gap: 4px; }
+    .tp-rot.wide .tp-k { flex: 1 1 0; min-width: 0; padding: 0 2px; font-size: 10px; letter-spacing: 0; }
+    .tp-rot.wide .tp-k svg { width: 16px; height: 16px; }
+    .tp-rot.wide [data-wide-hide] { display: none; }   /* the drawn keyboard has these */
     /* On-screen keyboard for sideways use (the iPhone keyboard can't turn with the trackpad) */
     .vk { flex: none; display: flex; flex-direction: column; gap: 5px; touch-action: none; -webkit-user-select: none; user-select: none; }
     .vk[hidden] { display: none; }
@@ -870,7 +875,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>PC Remote</h1>
-      <span class="app-meta">v1.1</span>
+      <span class="app-meta">v1.2</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -912,9 +917,9 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
           <button class="tp-k" data-key="down" aria-label="Down arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 4v15M6 13l6 6 6-6"/></svg></button>
           <button class="tp-k" data-key="right" aria-label="Right arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>
           <button class="tp-k" data-key="backspace" aria-label="Backspace"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M8 5h13v14H8l-6-7zM11 9l6 6M17 9l-6 6"/></svg></button>
-          <button class="tp-k" data-key="delete">Del</button>
-          <button class="tp-k" data-key="enter">Enter</button>
-          <button class="tp-k" data-key="space">Space</button>
+          <button class="tp-k" data-key="delete" data-wide-hide>Del</button>
+          <button class="tp-k" data-key="enter" data-wide-hide>Enter</button>
+          <button class="tp-k" data-key="space" data-wide-hide>Space</button>
           <button class="tp-k" data-key="f11">F11</button>
         </div>
         <div class="tp-mid">
@@ -1028,7 +1033,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.1</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.2</span></a>
           </div>
         </div>
       </section>
@@ -1089,7 +1094,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="PC Remote">
-          <div class="kv"><span>Version</span><span>1.1</span></div>
+          <div class="kv"><span>Version</span><span>1.2</span></div>
           <div class="kv"><span>Monitors</span><span id="ab-mons">—</span></div>
           <div class="kv"><span>Saved shows</span><span id="ab-shows">0</span></div>
           <div class="kv"><span>Needs</span><span>Relay + Tailscale</span></div>
