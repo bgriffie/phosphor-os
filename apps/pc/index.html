@@ -1,0 +1,1717 @@
+<!doctype html>
+<html lang="en" data-app="pc-remote">
+<head>
+  <meta charset="utf-8">
+  <script>/* Phosphor OS: this app runs inside the OS screen, which already clears the notch */(()=>{if(window.parent===window||!window.parent.PhosphorOS)return;const d=document.documentElement;d.classList.add("os-embed");for(const k of["top","right","bottom","left"])d.style.setProperty("--safe-"+k,"0px");})();</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>PC Remote</title>
+  <meta name="theme-color" content="#D9CDB4">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PC">
+  <style>
+/* ==========================================================================
+   PHOSPHOR v1.9 — base stylesheet for Floyd's home-screen tools
+   Spec: brand-guidelines.md (same folder). Paste this whole file into a
+   <style> block in index.html. No external fonts, images or network calls.
+   ========================================================================== */
+
+/* ---------- 1. Tokens ---------- */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces (darkest -> lightest) */
+  --bg:        #030703;
+  --surface-1: #08110A;
+  --surface-2: #0D1A10;
+  --surface-3: #132418;
+
+  /* Lines */
+  --line:        #1F3D26;  /* dividers, panel outlines (decorative) */
+  --line-strong: #3F7A4B;  /* input / control borders (>=3:1 on bg) */
+
+  /* Text */
+  --text:       #C9F5D3;   /* body, 16.9:1 on bg */
+  --text-dim:   #86C295;   /* secondary, labels, 9.8:1 */
+  --text-faint: #4F7F5B;   /* placeholders, disabled ONLY, 4.4:1 */
+
+  /* Signal colors */
+  --accent:     #39FF6A;   /* phosphor green: primary actions, focus, key numbers */
+  --accent-dim: #1E9E42;   /* pressed / secondary fills */
+  --on-accent:  #021A08;   /* text on accent/amber fills */
+  --amber:      #FFB13B;   /* warnings, pending, "attention" */
+  --red:        #FF5C5C;   /* errors, destructive */
+  --cyan:       #5CE1FF;   /* info, links, neutral highlight */
+
+  /* Case plastic (vintage beige computer housing) */
+  --plastic:       #D9CDB4;  /* main housing */
+  --plastic-light: #E8DFCB;  /* top-lit edges, keycap tops */
+  --plastic-shade: #BFB193;  /* recesses, bezel slope */
+  --plastic-dark:  #9C8E70;  /* keycap sides, seams */
+  --trim:          #2B261E;  /* dark brown trim band, status-bar strip */
+  --plastic-band:  #D9CDB4;  /* v1.8: no separate band, the case is one colour up to the top edge */
+  /* iOS status bar: style "black-translucent" so the app draws under the clock; the
+     case continues behind the clock in one colour. theme-color #D9CDB4. */
+  --ink:           #2B261E;  /* text on plastic, 9.5:1 */
+  --ink-dim:       #5E5442;  /* labels on plastic, 4.7:1 */
+  --ink-red:       #8A3A1A;  /* destructive label on plastic, 4.9:1 */
+  --plastic-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .3 0 0 0 0 .2 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  --key-shadow: 0 3px 0 var(--plastic-dark), 0 4px 6px rgba(43, 38, 30, .35), inset 0 1px 0 rgba(255, 255, 255, .7);
+  --key-shadow-pressed: 0 1px 0 var(--plastic-dark), 0 1px 2px rgba(43, 38, 30, .3), inset 0 1px 2px rgba(43, 38, 30, .2);
+  --screen-radius: 38px;   /* follows the iPhone's own rounded display corners (v1.5) */
+
+  /* Glow (accent only, never body text) */
+  --glow:    0 0 6px rgba(57, 255, 106, .55);
+  --glow-lg: 0 0 4px rgba(57, 255, 106, .6), 0 0 16px rgba(57, 255, 106, .3);
+  --glow-box: 0 0 0 1px var(--accent), 0 0 12px rgba(57, 255, 106, .35);
+
+  /* Type */
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco,
+               "Cascadia Mono", Consolas, "Liberation Mono", "Courier New", monospace;
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-md: 16px;   /* base; inputs must never go below this (iOS zoom) */
+  --fs-lg: 20px;
+  --fs-xl: 28px;
+  --fs-2xl: 40px;  /* hero readouts */
+  --lh-tight: 1.15;
+  --lh: 1.5;
+  --tracking-label: .12em;
+
+  /* Space (4px grid) */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+
+  /* Shape */
+  --radius-sm: 2px;
+  --radius: 4px;
+  --tap: 44px;          /* min touch target */
+  --maxw: 560px;
+
+  /* Motion */
+  --dur-fast: 90ms;
+  --dur: 160ms;
+  --dur-slow: 280ms;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --ease-steps: steps(4, end);   /* "digital" transitions */
+
+  /* Safe areas */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ---------- 2. Reset & base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* The case never moves: html/body are locked to the viewport and only
+   .screen-body scrolls. */
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }
+html { background: var(--plastic); }
+body {
+  background: var(--plastic-noise), var(--plastic);
+  height: var(--app-h, 100dvh);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  line-height: var(--lh);
+  font-variant-numeric: tabular-nums slashed-zero;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+img, svg, canvas { display: block; max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+::selection { background: var(--accent); color: var(--on-accent); }
+
+/* ---------- 3. Case + CRT screen ---------- */
+/* (v1.6) No separate status-bar strip: the header band itself runs up behind the clock. */
+
+/* The screen: a fixed CRT frame. Structure:
+   <div class="screen">
+     <canvas class="rain">            (optional, stays put)
+     <nav class="path" data-path>     (status line, stays put)
+     <div class="screen-body">        (the ONLY scrolling area)  */
+.screen {
+  position: relative; isolation: isolate;
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+  border-radius: var(--screen-radius);
+  /* slim bezel: shaded slope, seam, lit lip below, deep glass inset */
+  box-shadow:
+    0 0 0 3px var(--plastic-shade),
+    0 0 0 4px var(--plastic-dark),
+    0 3px 0 4px var(--plastic-light),
+    inset 0 0 0 2px #000,
+    inset 0 0 28px rgba(0, 0, 0, .9);
+  margin: 4px;
+}
+.screen-body {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-3) var(--sp-6);
+  scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent;
+}
+.screen-body::-webkit-scrollbar { width: 4px; }
+.screen-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 2px; }
+/* glass reflection */
+.screen::before {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(120% 60% at 30% 0%, rgba(201, 245, 211, .06), rgba(0,0,0,0) 60%);
+}
+/* scanlines + vignette */
+.screen::after {
+  content: "";
+  position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+  background:
+    repeating-linear-gradient(to bottom,
+      rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, .22) 3px, rgba(0, 0, 0, 0) 4px),
+    radial-gradient(ellipse at center, rgba(0,0,0,0) 60%, rgba(0,0,0,.45) 100%);
+}
+.no-crt .screen::after { display: none; }
+
+/* ---------- 4. Layout ---------- */
+/* Pinned to the real screen edges: on iOS home-screen apps 100%/100dvh can come
+   up short and leave a strip of empty plastic at the bottom (v1.4 fix). */
+.app {
+  position: fixed; top: 0; right: 0; left: 0;
+  /* --app-h is set by phosphor.js to the real screen height in home-screen apps: with a
+     black-translucent status bar iOS reports a viewport one status bar too short and
+     leaves an empty strip at the bottom (v1.7 fix). */
+  height: var(--app-h, 100%);
+  max-width: var(--maxw);
+  margin: 0 auto;
+  /* keys sit low: the space under them matches the space above them (v1.9) */
+  padding: 0 calc(2px + var(--safe-right)) max(var(--sp-3), calc(var(--safe-bottom) - 20px)) calc(2px + var(--safe-left));
+  display: flex; flex-direction: column; gap: 6px;
+}
+.app > :not(.screen) { flex: none; }
+.stack   { display: flex; flex-direction: column; gap: var(--sp-3); }
+.row     { display: flex; align-items: center; gap: var(--sp-3); }
+.row.between { justify-content: space-between; }
+.grid-2  { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.grow    { flex: 1 1 auto; min-width: 0; }
+.divider { border: 0; border-top: 1px dashed var(--line); margin: var(--sp-2) 0; }
+
+/* ---------- 5. Type ---------- */
+h1, h2, h3 { margin: 0; font-weight: 700; line-height: var(--lh-tight); }
+h1 { font-size: var(--fs-xl); }
+h2 { font-size: var(--fs-lg); }
+h3 { font-size: var(--fs-md); }
+p  { margin: 0; }
+.label {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-dim);
+}
+.dim   { color: var(--text-dim); }
+.faint { color: var(--text-faint); }
+.small { font-size: var(--fs-sm); }
+.glow  { color: var(--accent); text-shadow: var(--glow); }
+.readout {
+  font-size: var(--fs-2xl); font-weight: 700; line-height: 1;
+  color: var(--accent); text-shadow: var(--glow-lg);
+  letter-spacing: -.02em;
+}
+.t-accent { color: var(--accent); }
+.t-amber  { color: var(--amber); }
+.t-red    { color: var(--red); }
+.t-cyan   { color: var(--cyan); }
+a { color: var(--cyan); text-underline-offset: 3px; }
+
+/* Blinking block cursor: <span class="cursor" aria-hidden="true"></span> */
+.cursor {
+  display: inline-block; width: .6em; height: 1.05em;
+  background: var(--accent); vertical-align: -.15em; margin-left: 2px;
+  box-shadow: var(--glow);
+  animation: blink 1.06s steps(1, end) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ---------- 6. Header (title only) + bottom controls (on the plastic case) ---------- */
+.app-header {   /* the top band: runs edge to edge and up behind the iOS clock */
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2);
+  margin: 0 calc(-2px - var(--safe-right)) 0 calc(-2px - var(--safe-left));
+  /* title tucked right under the clock row (v1.9) */
+  padding: max(0px, calc(var(--safe-top) - 10px)) calc(var(--sp-4) + var(--safe-right)) 0 calc(var(--sp-4) + var(--safe-left));
+  min-height: calc(max(0px, calc(var(--safe-top) - 10px)) + 26px);
+  background: none;   /* v1.8: same plastic as the rest of the case, no band */
+}
+.app-header .app-title { color: var(--ink); text-shadow: 0 1px 0 rgba(255, 255, 255, .45); font-size: 18px; }
+.app-header .app-meta { color: var(--ink-dim); }
+/* Three keys, centered under the screen, in thumb reach (v1.6):
+   <nav class="app-controls"> ‹ back · ☰ menu · page action (or ■ home) </nav> */
+.app-controls { display: flex; align-items: center; justify-content: center; gap: var(--sp-5); min-height: 44px; padding-top: 4px; }
+.app-controls > .grow { display: none; }
+.app-controls .key { min-width: 76px; min-height: 40px; font-size: var(--fs-lg); }
+.app-controls .key.word { font-size: var(--fs-sm); }
+.app-controls .page-keys { display: contents; }
+.app-title {
+  display: flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--fs-lg); font-weight: 700; text-transform: uppercase;
+  letter-spacing: .14em; color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .55);   /* moulded / debossed */
+}
+.app-title::before {  /* power LED */
+  content: ""; width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent), inset 0 -1px 1px rgba(0,0,0,.3);
+}
+.app-meta { font-size: var(--fs-xs); color: var(--ink-dim); text-transform: uppercase; letter-spacing: var(--tracking-label); text-shadow: 0 1px 0 rgba(255,255,255,.45); }
+.app-title .cursor { display: none; }
+
+/* Vent slots: <div class="vents" aria-hidden="true"></div> */
+.vents {
+  height: 14px; margin: 0 var(--sp-2);
+  background: repeating-linear-gradient(90deg,
+    var(--plastic-dark) 0 2px, var(--trim) 2px 4px, var(--plastic-light) 4px 5px, transparent 5px 12px);
+  opacity: .55; border-radius: 2px;
+}
+
+/* Embossed label on plastic, e.g. under a keypad */
+.emboss { color: var(--ink-dim); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+
+/* Keycap button, for controls ON the plastic (tab bar, keypads, header) */
+.key {
+  appearance: none; -webkit-appearance: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: var(--tap); min-width: var(--tap); padding: 0 var(--sp-3);
+  border: 1px solid var(--plastic-dark); border-radius: 6px;
+  background: linear-gradient(180deg, var(--plastic-light), #DDD2BB 70%, var(--plastic-shade));
+  color: var(--ink); font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  box-shadow: var(--key-shadow);
+  cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation;
+  transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.key:active, .key.is-pressed, .key[aria-pressed="true"], .key[aria-selected="true"] {
+  transform: translateY(3px); box-shadow: var(--key-shadow-pressed);
+  background: linear-gradient(180deg, #DDD2BB, var(--plastic-shade));
+}
+.key:disabled { opacity: .45; cursor: default; transform: translateY(3px); box-shadow: var(--key-shadow-pressed); }
+.key-dark {   /* "Return"-style accent key */
+  background: linear-gradient(180deg, #4A4236, var(--trim));
+  border-color: #17140F; color: var(--plastic-light);
+  box-shadow: 0 3px 0 #17140F, 0 4px 6px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15);
+}
+.key-danger { color: var(--ink-red); }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); padding: var(--sp-2) var(--sp-1) var(--sp-3); }
+.keypad .key { min-height: 52px; font-size: var(--fs-lg); }
+
+/* ---------- 7. Panels ---------- */
+.panel {
+  position: relative;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+}
+.panel[data-title] { padding-top: calc(var(--sp-4) + 4px); }
+.panel[data-title]::before {
+  content: "[ " attr(data-title) " ]";
+  position: absolute; top: -.75em; left: var(--sp-3);
+  padding: 0 var(--sp-1);
+  background: var(--bg);
+  font-size: var(--fs-xs); letter-spacing: var(--tracking-label);
+  text-transform: uppercase; color: var(--text-dim);
+}
+.panel.raised { background: var(--surface-2); }
+.panel.active { border-color: var(--accent); box-shadow: var(--glow-box); }
+
+/* ---------- 8. Buttons ---------- */
+.btn {
+  appearance: none; -webkit-appearance: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: var(--tap); padding: 0 var(--sp-4);
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  background: transparent; color: var(--accent);
+  font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+.btn:active { transform: translateY(1px); background: var(--surface-3); }
+.btn-primary {
+  background: var(--accent); color: var(--on-accent);
+  border-color: var(--accent); box-shadow: var(--glow);
+}
+.btn-primary:active { background: var(--accent-dim); border-color: var(--accent-dim); }
+.btn-ghost { border-color: transparent; color: var(--text-dim); }
+.btn-danger { color: var(--red); border-color: var(--red); }
+.btn-danger:active { background: rgba(255, 92, 92, .12); }
+.btn-block { width: 100%; }
+.btn-icon { width: var(--tap); padding: 0; }
+.btn:disabled, .btn[aria-disabled="true"] {
+  color: var(--text-faint); border-color: var(--line); background: transparent;
+  box-shadow: none; cursor: not-allowed; transform: none;
+}
+
+/* ---------- 9. Focus ---------- */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: var(--glow);
+}
+
+/* ---------- 10. Form fields ---------- */
+.field { display: flex; flex-direction: column; gap: var(--sp-1); }
+.field > .label { padding-left: 2px; }
+.input, .select, .textarea {
+  appearance: none; -webkit-appearance: none;
+  width: 100%; min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg);
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  color: var(--text); font-size: var(--fs-md); /* >=16px: stops iOS zoom */
+  caret-color: var(--accent);
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.textarea { min-height: 96px; resize: vertical; }
+.input::placeholder, .textarea::placeholder { color: var(--text-faint); }
+.input:focus, .select:focus, .textarea:focus {
+  border-color: var(--accent); box-shadow: var(--glow-box); outline: none;
+}
+.input[aria-invalid="true"] { border-color: var(--red); }
+.select {
+  padding-right: var(--sp-6);
+  background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+                    linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+.hint  { font-size: var(--fs-xs); color: var(--text-dim); }
+.error { font-size: var(--fs-xs); color: var(--red); }
+.error::before { content: "ERR: "; font-weight: 700; }
+
+/* Prefix/suffix input: <div class="input-group"><span>$</span><input class="input"></div> */
+.input-group { display: flex; align-items: stretch; }
+.input-group > span {
+  display: flex; align-items: center; padding: 0 var(--sp-3);
+  border: 1px solid var(--line-strong); border-right: 0;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  color: var(--text-dim); background: var(--surface-1);
+}
+.input-group > .input { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+
+/* Checkbox / radio */
+.check { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); cursor: pointer; }
+.check input {
+  appearance: none; -webkit-appearance: none; margin: 0;
+  width: 22px; height: 22px; flex: none;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+  display: grid; place-content: center;
+}
+.check input[type="radio"] { border-radius: 50%; }
+.check input::before {
+  content: ""; width: 12px; height: 12px; background: var(--accent);
+  transform: scale(0); transition: transform var(--dur-fast) var(--ease-steps);
+  box-shadow: var(--glow);
+}
+.check input[type="radio"]::before { border-radius: 50%; }
+.check input:checked { border-color: var(--accent); }
+.check input:checked::before { transform: scale(1); }
+
+/* Toggle switch: <label class="switch"><input type="checkbox" role="switch"><span>Label</span></label> */
+.switch { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--tap); cursor: pointer; }
+.switch input {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 52px; height: 28px; position: relative;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+  order: 2;
+}
+.switch input::before {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; background: var(--text-faint);
+  transition: transform var(--dur) var(--ease-steps), background var(--dur) var(--ease);
+}
+.switch input:checked { border-color: var(--accent); }
+.switch input:checked::before { transform: translateX(24px); background: var(--accent); box-shadow: var(--glow); }
+
+/* Segmented control: <div class="segmented" role="radiogroup"><button aria-pressed="true">A</button>...</div> */
+.segmented {
+  display: flex; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); overflow: hidden;
+}
+.segmented > button {
+  flex: 1; min-height: var(--tap); border: 0; background: transparent;
+  color: var(--text-dim); font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em; cursor: pointer;
+}
+.segmented > button + button { border-left: 1px solid var(--line-strong); }
+.segmented > button[aria-pressed="true"], .segmented > button[aria-checked="true"] {
+  background: var(--accent); color: var(--on-accent);
+}
+
+/* ---------- 11. Lists ---------- */
+.list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.list > li {
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 52px; padding: var(--sp-2) var(--sp-1);
+  border-bottom: 1px solid var(--line);
+}
+.list > li::before { content: ">"; color: var(--text-faint); flex: none; }
+.list.plain > li::before { content: none; }
+.list .meta { margin-left: auto; color: var(--text-dim); font-size: var(--fs-sm); white-space: nowrap; }
+
+/* Key/value readout rows */
+.kv { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); padding: var(--sp-1) 0; }
+.kv > :first-child { color: var(--text-dim); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; }
+.kv > :last-child { font-weight: 700; }
+
+/* ---------- 12. Badges / tags ---------- */
+.badge {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  padding: 2px var(--sp-2); border: 1px solid currentColor; border-radius: var(--radius-sm);
+  font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--accent); white-space: nowrap;
+}
+.badge.amber { color: var(--amber); }
+.badge.red   { color: var(--red); }
+.badge.cyan  { color: var(--cyan); }
+.badge.dim   { color: var(--text-dim); }
+
+/* ---------- 13. Progress / meters ---------- */
+.meter {
+  height: 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  padding: 2px; background: var(--bg);
+}
+.meter > span {
+  display: block; height: 100%; width: var(--value, 0%);
+  background: repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 8px);
+  filter: drop-shadow(0 0 3px rgba(57, 255, 106, .6));
+  transition: width var(--dur-slow) var(--ease-steps);
+}
+.meter.amber > span { background: repeating-linear-gradient(90deg, var(--amber) 0 6px, transparent 6px 8px); filter: none; }
+.meter.red   > span { background: repeating-linear-gradient(90deg, var(--red) 0 6px, transparent 6px 8px); filter: none; }
+
+/* ---------- 15. Toast ---------- */
+.toast-host {
+  position: fixed; left: 0; right: 0; z-index: 100;
+  bottom: calc(var(--sp-5) + var(--safe-bottom) + 50px - var(--app-gap, 0px));   /* above the controls row */
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
+  pointer-events: none; padding: 0 var(--sp-4);
+}
+.toast {
+  max-width: var(--maxw); width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-2); border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  color: var(--text); font-size: var(--fs-sm); box-shadow: var(--glow-box);
+  animation: toast-in var(--dur) var(--ease-steps) both;
+}
+.toast::before { content: "SYS> "; color: var(--accent); font-weight: 700; }
+.toast.warn  { border-color: var(--amber); box-shadow: none; }
+.toast.warn::before  { content: "WARN> "; color: var(--amber); }
+.toast.error { border-color: var(--red); box-shadow: none; }
+.toast.error::before { content: "ERR> "; color: var(--red); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* ---------- 16. Dialog (native <dialog>) ---------- */
+dialog.dialog {
+  width: min(92vw, 420px); padding: var(--sp-5);
+  background: var(--surface-1); color: var(--text);
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  box-shadow: var(--glow-box);
+}
+dialog.dialog::backdrop { background: rgba(0, 0, 0, .75); }
+dialog.dialog h2 { margin-bottom: var(--sp-3); color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
+dialog.dialog .actions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-5); }
+
+/* ---------- 17. Empty state ---------- */
+.empty {
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-7) var(--sp-4); text-align: center; color: var(--text-dim);
+  border: 1px dashed var(--line); border-radius: var(--radius);
+}
+.empty pre { margin: 0; color: var(--text-faint); font-size: var(--fs-sm); line-height: 1.2; }
+
+/* ---------- 18. Matrix rain canvas (optional, decorative; inside .screen) ---------- */
+.rain {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  width: 100%; height: 100%; border-radius: inherit;
+  opacity: .14;
+}
+
+/* ---------- 19. Boot/type-on text ---------- */
+.boot { overflow: hidden; white-space: nowrap; border-right: 0; width: 0; animation: type 600ms steps(var(--chars, 16), end) forwards; }
+@keyframes type { to { width: calc(var(--chars, 16) * 1ch); } }
+
+/* Utility: screen-reader only */
+.sr-only {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- 21. Navigation: header keys, views, path ---------- */
+/* Header: <header class="app-header"><h1 class="app-title" data-view-title>Tool</h1><span class="app-meta">v1.0</span></header>
+   Controls (last child of .app): <nav class="app-controls">
+     <button class="key key-sm" data-back hidden aria-label="Back">‹</button><span class="grow"></span>
+     <div class="page-keys" data-show-on="/x" hidden>…</div>
+     <button class="key key-sm" data-open-sheet="menu" aria-label="Menu">☰</button>
+   </nav> */
+.app-header .app-title { flex: 1 1 auto; min-width: 0; }
+.app-title > span, .app-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.key-sm { min-height: 36px; min-width: 44px; padding: 0 var(--sp-2); font-size: var(--fs-lg); line-height: 1; border-radius: 5px; }
+[hidden] { display: none !important; }
+
+/* Views: <section class="view" id="settings" data-title="Settings" data-parent="home"> */
+.view { display: flex; flex-direction: column; gap: var(--sp-4); }
+.view:not(.is-active) { display: none; }
+.view.enter-fwd  { animation: view-fwd  var(--dur) var(--ease-steps) both; }
+.view.enter-back { animation: view-back var(--dur) var(--ease-steps) both; }
+@keyframes view-fwd  { from { opacity: 0; transform: translateX(16px); } }
+@keyframes view-back { from { opacity: 0; transform: translateX(-16px); } }
+
+/* Status line at the top of the screen (does not scroll): ~/settings/display */
+.path {
+  position: relative; z-index: 1; flex: none;
+  display: flex; align-items: center; gap: 0 2px; overflow-x: auto; white-space: nowrap;
+  min-height: 32px; padding: 0 var(--sp-4);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-xs); color: var(--text-dim); letter-spacing: .04em;
+  scrollbar-width: none;
+}
+.path::-webkit-scrollbar { display: none; }
+.path::before { content: "~"; color: var(--accent); }
+.path:empty::after { content: "/"; color: var(--text-faint); }
+.path a, .path span { color: inherit; text-decoration: none; padding: 8px 0; }
+.path a::before, .path span::before { content: "/"; color: var(--text-faint); margin-right: 2px; }
+.path a { color: var(--cyan); }
+.path span:last-child { color: var(--accent); }
+
+/* ---------- 22. Menu lists (settings rows) ---------- */
+/* <div class="menu">
+     <a class="menu-item" href="#/settings/display"><span class="mi-label">Display</span><span class="mi-value">CRT on</span></a>
+     <label class="menu-item"><span class="mi-label">Sound</span><input type="checkbox" role="switch" class="mi-switch"></label>
+   </div> */
+.menu {
+  display: flex; flex-direction: column;
+  background: var(--surface-1);
+  border: 1px solid var(--line); border-radius: var(--radius);
+}
+.menu-item {
+  position: relative;
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 52px; padding: var(--sp-2) var(--sp-4);
+  color: var(--text); text-decoration: none; text-align: left;
+  background: transparent; border: 0; width: 100%;
+  font-size: var(--fs-md); cursor: pointer;
+  -webkit-user-select: none; user-select: none;
+}
+.menu-item + .menu-item { border-top: 1px solid var(--line); }
+.menu-item:active { background: var(--surface-3); }
+.mi-glyph { width: 1.4em; flex: none; text-align: center; color: var(--accent); }
+.mi-label { flex: 1 1 auto; min-width: 0; }
+.mi-label small { display: block; font-size: var(--fs-xs); color: var(--text-dim); line-height: 1.4; }
+.mi-value { color: var(--text-dim); font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
+/* rows that open a sub-page get a chevron */
+a.menu-item::after, .menu-item[data-nav]::after, .menu-item[data-open-sheet]::after {
+  content: "›"; color: var(--text-dim); font-size: var(--fs-lg); line-height: 1; flex: none;
+}
+.menu-item.danger, .menu-item.danger .mi-glyph { color: var(--red); }
+.menu-item.danger::after { content: none; }
+/* inline controls in a row reuse the switch look */
+.mi-switch {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 52px; height: 28px; position: relative; cursor: pointer;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+}
+.mi-switch::before {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+  background: var(--text-faint);
+  transition: transform var(--dur) var(--ease-steps), background var(--dur) var(--ease);
+}
+.mi-switch:checked { border-color: var(--accent); }
+.mi-switch:checked::before { transform: translateX(24px); background: var(--accent); box-shadow: var(--glow); }
+.menu-item select.mi-select {
+  appearance: none; -webkit-appearance: none; border: 0; background: transparent;
+  color: var(--text-dim); font-size: var(--fs-md); text-align: right; text-align-last: right;
+  max-width: 50%; padding: var(--sp-2) 0;
+}
+.menu-note { padding: var(--sp-2) var(--sp-1) 0; font-size: var(--fs-xs); color: var(--text-dim); }
+.menu-group { display: flex; flex-direction: column; gap: var(--sp-2); }
+.menu-group > .label { padding-left: var(--sp-1); }
+
+/* Radio-choice page (pick one): rows with a check on the selected one */
+.menu-item[aria-checked]::after { content: ""; }
+.menu-item[aria-checked="true"]::after { content: "✓"; color: var(--accent); text-shadow: var(--glow); font-weight: 700; }
+
+/* ---------- 23. Bottom sheet (menus, pickers, quick actions) ---------- */
+/* <dialog class="sheet" id="menu"><div class="sheet-title">Menu</div><div class="menu">…</div>
+     <button class="btn btn-ghost btn-block" data-close>Cancel</button></dialog> */
+dialog.sheet {
+  position: fixed; inset: auto 0 calc(0px - var(--app-gap, 0px)) 0; margin: 0 auto;
+  width: 100%; max-width: var(--maxw); max-height: 80dvh; overflow: auto;
+  padding: var(--sp-3) var(--sp-4) calc(var(--sp-4) + var(--safe-bottom));
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--accent); border-bottom: 0;
+  border-radius: var(--screen-radius) var(--screen-radius) 0 0;
+  box-shadow: 0 0 0 6px var(--plastic-shade), 0 0 24px rgba(57, 255, 106, .2);
+}
+dialog.sheet[open] { display: flex; flex-direction: column; gap: var(--sp-3); animation: sheet-up var(--dur) var(--ease-steps) both; }
+dialog.sheet::backdrop { background: rgba(20, 17, 12, .6); }
+dialog.sheet::before {  /* grab handle */
+  content: ""; align-self: center; width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong);
+}
+.sheet-title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--text-dim); text-align: center; }
+@keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } }
+
+/* The app menu, opened by the ☰ key in the bottom controls; it pops up above it:
+   <dialog class="sheet dropdown" id="menu">…</dialog> */
+dialog.sheet.dropdown {
+  inset: auto calc(var(--sp-2) + var(--safe-right)) calc(var(--safe-bottom) + 60px - var(--app-gap, 0px)) auto;
+  width: min(calc(100vw - 16px), 340px); max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 80px);
+  padding: var(--sp-3);
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  box-shadow: 0 0 0 3px var(--plastic-shade), 0 0 0 4px var(--plastic-dark), 0 12px 28px rgba(0, 0, 0, .45), 0 0 18px rgba(57, 255, 106, .18);
+}
+dialog.sheet.dropdown::before { content: none; }
+dialog.sheet.dropdown[open] { animation: drop-down var(--dur) var(--ease-steps) both; }
+dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
+@keyframes drop-down { from { transform: translateY(10px); opacity: 0; } }
+.dropdown .menu-item { min-height: 48px; }
+.dropdown .menu + .sheet-title { margin-top: var(--sp-1); }
+.dropdown .sheet-title { text-align: left; padding-left: var(--sp-1); }
+
+/* Section links in the menu: current one is marked */
+.menu-item[aria-current="page"] { color: var(--accent); text-shadow: var(--glow); }
+.menu-item[aria-current="page"]::after { content: "●"; font-size: 10px; color: var(--accent); }
+
+/* Count pill in a menu row: <span class="mi-count">4</span> */
+.mi-count {
+  min-width: 22px; height: 20px; padding: 0 6px; border-radius: 10px;
+  background: var(--accent); color: var(--on-accent);
+  font-size: 11px; font-weight: 700; line-height: 20px; text-align: center;
+}
+
+/* Search field above long lists */
+.search { position: relative; }
+.search::before { content: "/"; position: absolute; left: var(--sp-3); top: 50%; transform: translateY(-50%); color: var(--accent); font-weight: 700; }
+.search .input { padding-left: var(--sp-6); }
+
+/* ---------- 19b. Full-screen views (games, canvases, maps, timers) ---------- */
+/* <section class="view fill" data-route="/x"> fills the whole screen and never scrolls.
+   Live numbers go in a .hud on the status line; page actions go in small header
+   keys (.page-keys, in .app-controls) shown only on that page. No keypad under the screen. */
+.screen-body:has(> .view.fill.is-active) { padding: var(--sp-2) var(--sp-3) var(--sp-3); overflow: hidden; }  /* 12px keeps content clear of the round corners */
+.view.fill { flex: 1 1 auto; min-height: 0; gap: var(--sp-2); position: relative; }
+.hud {
+  position: absolute; top: 0; right: 0; z-index: 2; height: 32px; max-width: 72%;
+  display: flex; align-items: center; gap: var(--sp-3); padding: 0 var(--sp-4) 0 var(--sp-5);
+  font-size: var(--fs-xs); color: var(--text-dim); white-space: nowrap; pointer-events: none;
+  background: linear-gradient(90deg, rgba(3, 7, 3, 0), var(--bg) var(--sp-4));
+}
+.hud i { font-style: normal; text-transform: uppercase; letter-spacing: var(--tracking-label); }
+.hud b { color: var(--text); font-size: var(--fs-sm); font-weight: 700; }
+.hud b.glow { color: var(--accent); text-shadow: var(--glow); }
+.page-keys, .hdr-keys { display: flex; gap: var(--sp-2); flex: none; }
+.page-keys .key-sm, .hdr-keys .key-sm { font-size: var(--fs-md); }
+.page-keys .key-sm.word, .hdr-keys .key-sm.word { font-size: var(--fs-xs); }
+
+/* ---------- 20. Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+  .cursor { animation: none; }
+  .view.enter-fwd, .view.enter-back, dialog.sheet[open], dialog.sheet.dropdown[open] { animation: none; }
+  .key { transition: none; }
+  .boot { width: auto; animation: none; }
+  .rain { display: none; }
+}
+
+    /* === tool-specific styles below === */
+
+    /* No title on the case: the screen starts right under the iOS clock (Floyd, from Phosphor OS) */
+    .app-header { display: none; }
+    .app { padding-top: max(var(--sp-2), calc(var(--safe-top) - 4px)); }
+    /* Pages swap instantly; nothing slides (Floyd) */
+    .view.enter-fwd, .view.enter-back { animation: none; }
+    /* Keys and controls carry drawn icons, not font glyphs */
+    .app-controls .key svg { width: 20px; height: 20px; }
+    .ic { width: 22px; height: 22px; flex: none; }
+    .glyph-svg { width: 56px; height: 56px; color: var(--accent); filter: drop-shadow(0 0 8px var(--accent)); margin: 0 auto var(--sp-3); display: block; }
+    .mi-glyph svg { width: 20px; height: 20px; display: block; }
+    .pc-note { margin: 0 0 var(--sp-3); color: var(--amber); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); }
+    .steps { display: flex; flex-direction: column; gap: var(--sp-2); padding-left: 1.4em; color: var(--text); }
+    .steps li::marker { color: var(--text-dim); }
+    .steps code { color: var(--accent); word-break: break-all; }
+
+    /* Trackpad */
+        .tp-strip { display: flex; gap: var(--sp-2); overflow-x: auto; flex: none; padding-bottom: 2px; scrollbar-width: none; touch-action: pan-x; }
+    .tp-strip::-webkit-scrollbar { display: none; }
+    .tp-k { flex: none; min-width: 48px; height: 40px; padding: 0 var(--sp-2); border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+      background: var(--surface-1); color: var(--text); font: inherit; font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+      display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+    .tp-k svg { width: 18px; height: 18px; }
+    .tp-k:active { background: var(--surface-3); }
+    .tp-k[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); box-shadow: var(--glow-box); }
+    .tp-pad { flex: 1 1 auto; min-height: 120px; position: relative; border: 1px solid var(--line-strong); border-radius: var(--radius);
+      background: repeating-linear-gradient(0deg, transparent 0 23px, rgba(57,255,106,.05) 23px 24px), repeating-linear-gradient(90deg, transparent 0 23px, rgba(57,255,106,.05) 23px 24px), var(--surface-1);
+      touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; overflow: hidden; }
+    .tp-pad.is-drag { border-color: var(--accent); box-shadow: var(--glow-box); }
+    .tp-tag { position: absolute; top: var(--sp-2); left: var(--sp-3); font-size: var(--fs-xs); color: var(--text-faint); text-transform: uppercase; letter-spacing: var(--tracking-label); pointer-events: none; }
+    .tp-pad.is-drag .tp-tag { color: var(--accent); }
+    .tp-dot { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; border: 1px solid var(--accent); box-shadow: var(--glow-box); pointer-events: none; opacity: 0; }
+    .tp-dot.on { opacity: .7; }
+    .tp-btns { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); flex: none; }
+    .tp-btns .btn { min-height: 52px; touch-action: manipulation; }
+    .tp-btns .btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+    #pc-kb { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; font-size: 16px; resize: none; caret-color: transparent; background: transparent; color: transparent; }
+
+    /* Monitor picks */
+    .mons { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+    .mon { min-width: 52px; height: 44px; padding: 0 var(--sp-2); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1);
+      color: var(--text); font: inherit; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+    .mon svg { width: 20px; height: 20px; }
+    .mon:active { background: var(--surface-3); }
+    .mon.is-here { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+    .mon:disabled { opacity: .45; }
+    .mon.busy { animation: busy .5s steps(2) infinite; }
+    @keyframes busy { 50% { opacity: .4; } }
+    @media (prefers-reduced-motion: reduce) { .mon.busy { animation: none; opacity: .6; } }
+
+    /* Shows and windows */
+    .cards { display: flex; flex-direction: column; gap: var(--sp-3); }
+    .card { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-3); }
+    .card-top { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+    .card-main { flex: 1 1 auto; min-width: 0; text-align: left; background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+    .card-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .card-sub { color: var(--text-dim); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .card.is-min .card-name { color: var(--text-dim); }
+    .row { display: flex; gap: var(--sp-2); align-items: flex-end; }
+    .row .field { flex: 1 1 auto; min-width: 0; }
+    .group-gap { margin-top: var(--sp-5); }
+
+    /* Media */
+    .md-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+    .md-b { aspect-ratio: 1.15; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--surface-1); color: var(--text);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-2); font: inherit; font-size: var(--fs-xs);
+      text-transform: uppercase; letter-spacing: var(--tracking-label); cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+    .md-b svg { width: 34px; height: 34px; }
+    .md-b:active, .md-b.held { background: var(--surface-3); }
+    .md-b.main { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+  </style>
+<style>/* Phosphor OS */
+html.os-embed { --app-gap: 0px !important; --app-h: 100% !important; }
+html.os-embed, html.os-embed body { background: var(--bg) !important; height: 100% !important; }
+html.os-embed .app { padding: 0 !important; max-width: none; gap: 0; height: 100% !important; min-height: 0 !important; }
+html.os-embed .app-header, html.os-embed .app-controls { display: none !important; }
+html.os-embed .screen { margin: 0; border-radius: 0; box-shadow: none; }
+html.os-embed .screen::before, html.os-embed .screen::after { display: none; }
+html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none; }
+</style>
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1 class="app-title" data-view-title>PC Remote</h1>
+      <span class="app-meta">v1.0</span>
+    </header>
+    <div class="screen">
+      <canvas class="rain" aria-hidden="true" hidden></canvas>
+      <nav class="path" data-path aria-label="Location"></nav>
+      <div class="screen-body">
+
+      <section class="view" data-route="/" data-title="PC">
+        <div class="empty" id="pc-off" hidden>
+          <svg class="glyph-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v12H3zM9 20h6M12 16v4"/></svg>
+          <h2>PC isn't set up</h2>
+          <p>Your PC is controlled through the same relay as your lights.</p>
+          <button class="btn btn-primary" data-route="/settings/relay">Set up PC</button>
+        </div>
+        <div id="pc-on" hidden>
+          <p class="pc-note" id="pc-note" hidden></p>
+          <div class="menu">
+            <a class="menu-item" href="#/pad"><span class="mi-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M3 4h18v16H3zM3 15h18M12 15v5"/></svg></span><span class="mi-label">Trackpad<small>Mouse and keyboard</small></span></a>
+            <a class="menu-item" href="#/shows"><span class="mi-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M3 5h18v12H3zM10 8.5v5l4-2.5z"/></svg></span><span class="mi-label">Shows<small>Play a show on a monitor</small></span></a>
+            <a class="menu-item" href="#/windows"><span class="mi-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M2 6h9v8H2zM13 6h9v8h-9zM5 18h3M16 18h3"/></svg></span><span class="mi-label">Windows<small>Move what's open between monitors</small></span></a>
+            <a class="menu-item" href="#/media"><span class="mi-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M4 9h4l5-4v14l-5-4H4zM16.5 8.5a5 5 0 0 1 0 7"/></svg></span><span class="mi-label">Media<small>Play, pause, volume</small></span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="view fill" data-route="/pad" data-title="Trackpad" id="pad-view">
+        <textarea id="pc-kb" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Type on the PC"></textarea>
+        <div class="tp-strip" id="tp-strip">
+          <button class="tp-k" data-kb-toggle aria-label="Keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 6h20v12H2zM6 10h1M10 10h1M14 10h1M18 10h1M7 14h10"/></svg></button>
+          <button class="tp-k" data-key="esc">Esc</button>
+          <button class="tp-k" data-key="tab">Tab</button>
+          <button class="tp-k" data-mod="ctrl" aria-pressed="false">Ctrl</button>
+          <button class="tp-k" data-mod="alt" aria-pressed="false">Alt</button>
+          <button class="tp-k" data-mod="shift" aria-pressed="false">Shift</button>
+          <button class="tp-k" data-mod="win" aria-pressed="false">Win</button>
+          <button class="tp-k" data-key="left" aria-label="Left arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 12H5M11 6l-6 6 6 6"/></svg></button>
+          <button class="tp-k" data-key="up" aria-label="Up arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 20V5M6 11l6-6 6 6"/></svg></button>
+          <button class="tp-k" data-key="down" aria-label="Down arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 4v15M6 13l6 6 6-6"/></svg></button>
+          <button class="tp-k" data-key="right" aria-label="Right arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>
+          <button class="tp-k" data-key="backspace" aria-label="Backspace"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M8 5h13v14H8l-6-7zM11 9l6 6M17 9l-6 6"/></svg></button>
+          <button class="tp-k" data-key="delete">Del</button>
+          <button class="tp-k" data-key="enter">Enter</button>
+          <button class="tp-k" data-key="space">Space</button>
+          <button class="tp-k" data-key="f11">F11</button>
+        </div>
+        <div class="tp-pad" id="tp-pad" aria-label="Trackpad: drag to move, tap to click, two fingers to scroll or right-click, hold to drag">
+          <span class="tp-tag" id="tp-tag">Trackpad</span>
+          <span class="tp-dot" id="tp-dot" aria-hidden="true"></span>
+        </div>
+        <div class="tp-btns">
+          <button class="btn" data-click="left" id="tp-left">Left</button>
+          <button class="btn" data-click="right">Right</button>
+        </div>
+      </section>
+
+      <section class="view" data-route="/shows" data-title="Shows">
+        <section class="panel" data-title="Open a link">
+          <div class="row">
+            <div class="field">
+              <label class="label" for="sh-url">Link</label>
+              <input class="input" id="sh-url" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="https://youtube.com/…">
+            </div>
+            <button class="btn" id="sh-paste">Paste</button>
+          </div>
+          <div class="mons" data-mons="link" style="margin-top:var(--sp-3)"></div>
+        </section>
+        <div class="menu-group group-gap">
+          <span class="label">Saved shows</span>
+          <div class="cards" id="sh-list"></div>
+        </div>
+      </section>
+
+      <section class="view" data-route="/shows/edit" data-title="Show">
+        <div class="field">
+          <label class="label" for="se-name">Name</label>
+          <input class="input" id="se-name" autocomplete="off" enterkeyhint="next" placeholder="Severance">
+        </div>
+        <div class="field" style="margin-top:var(--sp-4)">
+          <label class="label" for="se-url">Link</label>
+          <input class="input" id="se-url" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="https://tv.apple.com/…">
+          <span class="hint">Copy it from the show's page in Safari or the app's Share button.</span>
+        </div>
+        <div class="menu-group" style="margin-top:var(--sp-4)">
+          <span class="label">Usual monitor</span>
+          <div class="mons" data-mons="edit"></div>
+        </div>
+        <div class="menu" style="margin-top:var(--sp-4)">
+          <label class="menu-item"><span class="mi-label">Full screen</span><input type="checkbox" role="switch" class="mi-switch" id="se-full"></label>
+        </div>
+        <button class="btn btn-primary btn-block" id="se-save" style="margin-top:var(--sp-5)">Save show</button>
+        <button class="btn btn-danger btn-block" id="se-del" style="margin-top:var(--sp-3)">Delete show</button>
+      </section>
+
+      <section class="view" data-route="/windows" data-title="Windows">
+        <p class="pc-note" id="wi-note" hidden></p>
+        <div class="cards" id="wi-list"></div>
+      </section>
+
+      <section class="view" data-route="/media" data-title="Media">
+        <div class="md-grid">
+          <button class="md-b" data-key="prev"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 5h2.5v14H5zM19 5v14l-10-7z"/></svg>Back</button>
+          <button class="md-b main" data-key="playpause"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5v14l9-7zM14 5h3v14h-3zM19 5h3v14h-3z"/></svg>Play</button>
+          <button class="md-b" data-key="next"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.5 5H19v14h-2.5zM5 5v14l10-7z"/></svg>Next</button>
+          <button class="md-b" data-key="voldown" data-repeat><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3zM15 12h6"/></svg>Vol −</button>
+          <button class="md-b" data-key="mute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3zM16 9l5 6M21 9l-5 6"/></svg>Mute</button>
+          <button class="md-b" data-key="volup" data-repeat><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 9h4l5-4v14l-5-4H3zM15 12h6M18 9v6"/></svg>Vol +</button>
+        </div>
+        <p class="menu-note" style="margin-top:var(--sp-4)">These are the PC's media keys, so they control whatever is playing: a show in the browser, Spotify, VLC.</p>
+      </section>
+
+      <section class="view" data-route="/settings" data-title="Settings">
+        <div class="menu-group">
+          <span class="label">General</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/relay"><span class="mi-label">Relay</span><span class="mi-value" id="pc-status"></span></a>
+            <a class="menu-item" href="#/settings/speed"><span class="mi-label">Trackpad speed</span><span class="mi-value" data-setting-value="speed"></span></a>
+            <label class="menu-item"><span class="mi-label">Natural scrolling<small>Content follows your fingers, like the iPhone</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="natural"></label>
+            <a class="menu-item" href="#/settings/browser"><span class="mi-label">Browser for shows<small>Use the one you're signed in to</small></span><span class="mi-value" data-setting-value="browser"></span></a>
+            <button class="menu-item" id="pc-identify"><span class="mi-label">Identify monitors<small>Shows each monitor's number on it</small></span></button>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Appearance</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/display"><span class="mi-label">Display</span><span class="mi-value">CRT <span data-setting-value="crt"></span></span></a>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Data</span>
+          <div class="menu">
+            <button class="menu-item" id="pc-export"><span class="mi-label">Export shows</span></button>
+            <button class="menu-item danger" id="pc-erase"><span class="mi-label">Erase saved shows</span></button>
+          </div>
+          <p class="menu-note">Your shows and the relay link stay on this phone.</p>
+        </div>
+        <div class="menu-group">
+          <span class="label">About</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.0</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/speed" data-title="Speed">
+        <div class="menu" role="radiogroup" aria-label="Trackpad speed">
+          <button class="menu-item" role="radio" data-setting="speed" data-value="slow" data-back-on-pick><span class="mi-label">Slow</span></button>
+          <button class="menu-item" role="radio" data-setting="speed" data-value="normal" data-back-on-pick><span class="mi-label">Normal</span></button>
+          <button class="menu-item" role="radio" data-setting="speed" data-value="fast" data-back-on-pick><span class="mi-label">Fast<small>For big or several monitors</small></span></button>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/browser" data-title="Browser">
+        <div class="menu" role="radiogroup" aria-label="Browser for shows">
+          <button class="menu-item" role="radio" data-setting="browser" data-value="auto" data-back-on-pick><span class="mi-label">Automatic<small>Chrome, else Edge</small></span></button>
+          <button class="menu-item" role="radio" data-setting="browser" data-value="chrome" data-back-on-pick><span class="mi-label">Chrome</span></button>
+          <button class="menu-item" role="radio" data-setting="browser" data-value="edge" data-back-on-pick><span class="mi-label">Edge</span></button>
+          <button class="menu-item" role="radio" data-setting="browser" data-value="brave" data-back-on-pick><span class="mi-label">Brave</span></button>
+          <button class="menu-item" role="radio" data-setting="browser" data-value="firefox" data-back-on-pick><span class="mi-label">Firefox</span></button>
+        </div>
+        <p class="menu-note" id="br-found"></p>
+      </section>
+
+      <section class="view" data-route="/settings/relay" data-title="Relay">
+        <section class="panel" data-title="Connect">
+          <div class="field">
+            <label class="label" for="pc-link">Relay link</label>
+            <input class="input" id="pc-link" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="https://your-pc.ts.net#key">
+            <span class="hint">The same link as Lights. The relay prints it when it starts.</span>
+          </div>
+          <button class="btn btn-primary btn-block" id="pc-save" style="margin-top:var(--sp-4)">Connect</button>
+        </section>
+        <section class="panel" data-title="Turn on PC control" style="margin-top:var(--sp-5)">
+          <ol class="steps">
+            <li>On the PC, save <code>pc_control.py</code> into the relay folder (Documents\PhosphorLights), next to kasa_bridge.py, and save the new kasa_bridge.py over the old one.</li>
+            <li>Close the relay window and start it again with <code>py kasa_bridge.py</code>.</li>
+            <li>It should print <code>PC control: on</code>. Nothing else to install.</li>
+          </ol>
+          <p class="hint" style="margin-top:var(--sp-3)">Files: <a href="https://github.com/bgriffie/phosphor-os/tree/main/bridge" target="_blank" rel="noopener">phosphor-os/bridge</a>. Only your own devices on Tailscale, holding the relay's secret key, can reach it.</p>
+        </section>
+      </section>
+
+      <section class="view" data-route="/settings/display" data-title="Display">
+        <div class="menu">
+          <label class="menu-item"><span class="mi-label">CRT scanlines</span><input type="checkbox" role="switch" class="mi-switch" data-setting="crt"></label>
+          <label class="menu-item"><span class="mi-label">Matrix rain</span><input type="checkbox" role="switch" class="mi-switch" data-setting="rain"></label>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/about" data-title="About">
+        <section class="panel" data-title="PC Remote">
+          <div class="kv"><span>Version</span><span>1.0</span></div>
+          <div class="kv"><span>Monitors</span><span id="ab-mons">—</span></div>
+          <div class="kv"><span>Saved shows</span><span id="ab-shows">0</span></div>
+          <div class="kv"><span>Needs</span><span>Relay + Tailscale</span></div>
+        </section>
+        <section class="panel" data-title="Trackpad" style="margin-top:var(--sp-5)">
+          <div class="kv"><span>Move</span><span>One finger</span></div>
+          <div class="kv"><span>Click</span><span>Tap</span></div>
+          <div class="kv"><span>Right-click</span><span>Two-finger tap</span></div>
+          <div class="kv"><span>Scroll</span><span>Two fingers</span></div>
+          <div class="kv"><span>Drag</span><span>Hold, then move</span></div>
+        </section>
+      </section>
+      </div><!-- /.screen-body -->
+    </div><!-- /.screen -->
+    <nav class="app-controls" aria-label="Controls">
+      <button class="key key-sm" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
+      <button class="key key-sm" data-open-sheet="menu" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="page-keys" data-show-on="/pad" hidden><button class="key key-sm" data-kb-toggle aria-label="Keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 6h20v12H2zM6 10h1M10 10h1M14 10h1M18 10h1M7 14h10"/></svg></button></div>
+      <div class="page-keys" data-show-on="/shows/edit" hidden><button class="key key-sm" id="k-save" aria-label="Save show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></button></div>
+      <div class="page-keys" data-show-on="/shows" hidden><button class="key key-sm" id="k-add" data-hide-on="/shows/edit" aria-label="Add show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></div>
+      <div class="page-keys" data-show-on="/windows" hidden><button class="key key-sm" id="k-refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg></button></div>
+      <div class="page-keys" data-show-on="/media" hidden><button class="key key-sm" data-key="playpause" aria-label="Play or pause"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5v14l9-7zM14 5h3v14h-3zM19 5h3v14h-3z"/></svg></button></div>
+      <button class="key key-sm" data-route="/pad" data-hide-on="/pad /shows /windows /media" aria-label="Trackpad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v16H3zM3 15h18M12 15v5"/></svg></button>
+    </nav>
+  </main>
+
+  <dialog class="sheet dropdown" id="menu" aria-label="Menu">
+    <div class="sheet-title">Go to</div>
+    <div class="menu" data-sections>
+      <button class="menu-item" data-route="/"><span class="mi-glyph" aria-hidden="true">■</span><span class="mi-label">PC</span></button>
+      <button class="menu-item" data-route="/pad"><span class="mi-label">Trackpad</span></button>
+      <button class="menu-item" data-route="/shows"><span class="mi-label">Shows</span></button>
+      <button class="menu-item" data-route="/windows"><span class="mi-label">Windows</span></button>
+      <button class="menu-item" data-route="/media"><span class="mi-label">Media</span></button>
+      <button class="menu-item" data-route="/settings"><span class="mi-glyph" aria-hidden="true">⚙</span><span class="mi-label">Settings</span></button>
+    </div>
+    <div class="sheet-title">Actions</div>
+    <div class="menu">
+      <button class="menu-item" data-action="identify" id="m-identify"><span class="mi-label">Identify monitors</span></button>
+      <button class="menu-item" data-action="add" id="m-add"><span class="mi-label">Add a show</span></button>
+      <button class="menu-item" data-route="/settings/relay"><span class="mi-label">Relay setup</span></button>
+    </div>
+  </dialog>
+
+  <dialog class="sheet" id="win-sheet" aria-label="Window">
+    <div class="sheet-title" id="ws-title">Window</div>
+    <div class="menu">
+      <button class="menu-item" data-wact="focus"><span class="mi-label">Bring to front</span></button>
+      <button class="menu-item" data-wact="fullscreen"><span class="mi-label">Full screen<small>Presses F11 in that window</small></span></button>
+      <button class="menu-item" data-wact="minimize"><span class="mi-label">Minimise</span></button>
+      <button class="menu-item danger" data-wact="close"><span class="mi-label">Close</span></button>
+    </div>
+    <div class="actions"><button class="btn btn-ghost" data-close>Cancel</button></div>
+  </dialog>
+
+  <div class="toast-host" aria-live="polite"></div>
+  <script>
+/* ==========================================================================
+   PHOSPHOR v1.9 runtime: navigation, settings, sheets, toasts, confirm.
+   Spec: brand-guidelines.md section 7. Paste this whole file into a <script>
+   at the end of <body>, after the markup. No dependencies, no network.
+   Set a unique key per tool: <html data-app="tip-calc">
+   ========================================================================== */
+const PH = (() => {
+  const APP = document.documentElement.dataset.app || 'app';
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const subs = {};
+  const on = (key, fn) => ((subs[key] ||= []).push(fn), fn);
+  const emit = (key, v) => (subs[key] || []).concat(subs['*'] || []).forEach(fn => fn(v, key));
+
+  /* ---------- Settings store (localStorage, namespaced per tool) ---------- */
+  const defaults = { crt: true, rain: false };
+  const store = {
+    defaults,
+    get(k) {
+      try { const v = localStorage.getItem(APP + ':' + k); return v === null ? defaults[k] : JSON.parse(v); }
+      catch { return defaults[k]; }
+    },
+    set(k, v) {
+      try { localStorage.setItem(APP + ':' + k, JSON.stringify(v)); } catch {}
+      emit(k, v); syncSettings();
+    },
+    reset() {
+      Object.keys(defaults).forEach(k => { try { localStorage.removeItem(APP + ':' + k); } catch {} emit(k, defaults[k]); });
+      syncSettings();
+    },
+  };
+
+  /* Declarative binding:
+     <input type="checkbox" data-setting="crt">          toggle
+     <select data-setting="units">…</select>             select
+     <button class="menu-item" data-setting="units" data-value="kg">  pick-one row
+     <span data-setting-value="units"></span>           shows the current value's label */
+  function labelFor(key, val) {
+    const row = $(`[data-setting="${key}"][data-value="${CSS.escape(String(val))}"]`);
+    if (row) { const lab = row.querySelector('.mi-label') || row; return (lab.firstChild?.textContent || lab.textContent).trim(); }
+    const sel = $(`select[data-setting="${key}"]`);
+    if (sel) { const o = [...sel.options].find(o => o.value === String(val)); if (o) return o.textContent; }
+    if (typeof val === 'boolean') return val ? 'On' : 'Off';
+    return val ?? '—';
+  }
+  function syncSettings() {
+    $$('[data-setting]').forEach(el => {
+      const v = store.get(el.dataset.setting);
+      if (el.type === 'checkbox') el.checked = !!v;
+      else if ('value' in el.dataset) el.setAttribute('aria-checked', String(el.dataset.value === String(v)));
+      else if ('value' in el) el.value = v ?? '';
+    });
+    $$('[data-setting-value]').forEach(el => { el.textContent = labelFor(el.dataset.settingValue, store.get(el.dataset.settingValue)); });
+  }
+  document.addEventListener('change', e => {
+    const el = e.target.closest('[data-setting]');
+    if (!el || 'value' in el.dataset) return;
+    store.set(el.dataset.setting, el.type === 'checkbox' ? el.checked : el.value);
+  });
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-setting][data-value]');
+    if (!el) return;
+    store.set(el.dataset.setting, el.dataset.value);
+    if (el.hasAttribute('data-back-on-pick')) back();
+  });
+
+  /* Built-in display settings */
+  const applyDisplay = () => {
+    document.documentElement.classList.toggle('no-crt', !store.get('crt'));
+    $$('.rain').forEach(c => { c.hidden = !store.get('rain'); });
+  };
+  on('crt', applyDisplay); on('rain', applyDisplay);
+
+  /* ---------- Router: hash routes -> .view[data-route] ---------- */
+  /* <section class="view" data-route="/settings/display" data-title="Display"> */
+  const views = () => $$('.view');
+  const routeOf = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
+  const parentOf = r => r === '/' ? null : (r.split('/').slice(0, -1).join('/') || '/');
+  const depth = r => r === '/' ? 0 : r.split('/').length - 1;
+  const viewFor = r => views().find(v => v.dataset.route === r);
+  let current = null, pushedByUs = 0;
+
+  function render() {
+    let r = routeOf();
+    while (r && !viewFor(r)) r = parentOf(r);          // unknown route -> nearest ancestor
+    const view = viewFor(r || '/') || views()[0];
+    if (!view) return;
+    r = view.dataset.route;
+    const dir = current === null ? '' : depth(r) >= depth(current) ? 'enter-fwd' : 'enter-back';
+    views().forEach(v => v.classList.remove('is-active', 'enter-fwd', 'enter-back'));
+    view.classList.add('is-active');
+    if (dir && r !== current) view.classList.add(dir);
+    current = r;
+
+    $$('[data-view-title]').forEach(el => { el.textContent = view.dataset.title || el.dataset.viewTitle || ''; });
+    $$('[data-back]').forEach(el => { if (el.closest('.app-controls')) el.disabled = r === '/'; else el.hidden = r === '/'; });
+    $$('.app-controls [data-route]').forEach(el => { el.disabled = el.dataset.route === r; });
+    // per-page chrome: data-show-on="/game /other" shows only there (and below); data-hide-on hides
+    const onAny = (list, rr) => list.split(/\s+/).some(p => p === rr || (p !== '/' && rr.startsWith(p + '/')));
+    $$('[data-show-on]').forEach(el => { el.hidden = !onAny(el.dataset.showOn, r); });
+    $$('[data-hide-on]').forEach(el => { el.hidden = onAny(el.dataset.hideOn, r); });
+    // section links in the menu (<div class="menu" data-sections>) mark the current section
+    $$('[data-sections] [data-route]').forEach(t => {
+      const tr = t.dataset.route, sel = tr === '/' ? r === '/' : (r === tr || r.startsWith(tr + '/'));
+      if (sel) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+    });
+    // breadcrumb path: ~/settings/display
+    $$('[data-path]').forEach(el => {
+      el.textContent = '';
+      const parts = r === '/' ? [] : r.split('/').slice(1);
+      parts.forEach((_, i) => {
+        const pr = '/' + parts.slice(0, i + 1).join('/'), last = i === parts.length - 1;
+        const node = document.createElement(last ? 'span' : 'a');
+        node.textContent = ((viewFor(pr) && viewFor(pr).dataset.title) || parts[i]).toLowerCase();
+        if (!last) node.href = '#' + pr;
+        el.appendChild(node);
+      });
+    });
+    $$('.screen-body').forEach(b => { b.scrollTop = 0; });
+    emit('route', r);
+  }
+  function go(r) { if (r === current) return; pushedByUs++; location.hash = r; }
+  function back() {
+    const parent = parentOf(current || '/');
+    if (pushedByUs > 0 && history.length > 1) { pushedByUs--; history.back(); }
+    else if (parent !== null) location.replace('#' + parent);
+  }
+  addEventListener('hashchange', render);
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-back]'); if (b) { e.preventDefault(); back(); return; }
+    const n = e.target.closest('[data-route]:not(.view)');
+    if (n) { e.preventDefault(); go(n.dataset.route); return; }
+    if (e.target.closest('a[href^="#/"]')) pushedByUs++;
+  });
+
+  /* Home-screen apps fill the whole physical screen. iOS under-reports the viewport by the
+     status bar height there, so size the case from the screen itself. */
+  function fitApp() {
+    const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+    const st = document.documentElement.style;
+    if (!standalone) { st.removeProperty('--app-h'); st.removeProperty('--app-gap'); return; }
+    const land = matchMedia('(orientation: landscape)').matches;
+    const h = land ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
+    const full = Math.max(h, innerHeight);
+    st.setProperty('--app-h', full + 'px');
+    st.setProperty('--app-gap', (full - innerHeight) + 'px');   // how far the real bottom is below the reported one
+  }
+  fitApp(); addEventListener('resize', fitApp); addEventListener('orientationchange', () => setTimeout(fitApp, 300));
+
+  /* Keycap press animation: every tap visibly sinks the key, even a quick one */
+  document.addEventListener('pointerdown', e => {
+    const k = e.target.closest('.key'); if (!k || k.disabled) return;
+    k.classList.add('is-pressed'); const t = performance.now();
+    const up = () => { setTimeout(() => k.classList.remove('is-pressed'), Math.max(0, 130 - (performance.now() - t)));
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(n => k.removeEventListener(n, up)); };
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(n => k.addEventListener(n, up));
+  });
+
+  /* Edge-swipe back (installed web apps have no browser back gesture) */
+  let sx = null, sy = 0;
+  addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX < 24 ? t.clientX : null; sy = t.clientY; }, { passive: true });
+  addEventListener('touchend', e => {
+    if (sx === null || (current || '/') === '/') return; const t = e.changedTouches[0];
+    if (t.clientX - sx > 70 && Math.abs(t.clientY - sy) < 60 && !$('dialog[open]')) back();
+    sx = null;
+  }, { passive: true });
+
+  /* ---------- Sheets & dialogs ---------- */
+  /* <button data-open-sheet="menu">  opens <dialog class="sheet" id="menu">
+     [data-close] inside closes it; tapping the backdrop closes it; picking a link closes it. */
+  document.addEventListener('click', e => {
+    const o = e.target.closest('[data-open-sheet]');
+    if (o) { const d = document.getElementById(o.dataset.openSheet); if (d && !d.open) d.showModal(); return; }
+    const c = e.target.closest('[data-close]');
+    if (c) { c.closest('dialog')?.close(); return; }
+    if (e.target.tagName === 'DIALOG' && e.target.open) {          // backdrop tap
+      const r = e.target.getBoundingClientRect(), x = e.clientX, y = e.clientY;
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) e.target.close();
+    }
+    const inSheet = e.target.closest('dialog.sheet [data-route], dialog.sheet a, dialog.sheet [data-action]');
+    if (inSheet) inSheet.closest('dialog').close();
+  });
+
+  /* ---------- Toast ---------- */
+  function toast(msg, kind = '') {
+    let host = $('.toast-host');
+    if (!host) { host = document.createElement('div'); host.className = 'toast-host'; host.setAttribute('aria-live', 'polite'); document.body.appendChild(host); }
+    const t = document.createElement('div');
+    t.className = 'toast ' + kind; t.textContent = msg; host.appendChild(t);
+    const kill = () => t.remove();
+    t.addEventListener('click', kill);
+    if (kind !== 'error') setTimeout(kill, 2500);
+  }
+
+  /* ---------- Confirm: await PH.confirm('Delete all?', {ok: 'Delete', danger: true}) ---------- */
+  function confirm(message, { title = 'Confirm', ok = 'OK', cancel = 'Cancel', danger = false } = {}) {
+    return new Promise(res => {
+      const d = document.createElement('dialog'); d.className = 'dialog';
+      d.innerHTML = `<h2></h2><p></p><div class="actions"><button class="btn btn-ghost" value="0"></button><button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" value="1"></button></div>`;
+      d.querySelector('h2').textContent = title; d.querySelector('p').textContent = message;
+      const [c, k] = d.querySelectorAll('button'); c.textContent = cancel; k.textContent = ok;
+      d.addEventListener('click', e => { const b = e.target.closest('button'); if (b) d.close(b.value); });
+      d.addEventListener('close', () => { res(d.returnValue === '1'); d.remove(); });
+      document.body.appendChild(d); d.showModal(); c.focus();
+    });
+  }
+
+  /* ---------- Export: share sheet on iOS, download elsewhere ---------- */
+  async function exportFile(name, text, type = 'application/json') {
+    const file = new File([text], name, { type });
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; } } catch (e) { if (e.name === 'AbortError') return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  /* ---------- Boot ---------- */
+  function init(extraDefaults = {}) {
+    Object.assign(defaults, extraDefaults);
+    syncSettings(); applyDisplay(); render();
+  }
+  return { init, store, on, go, back, toast, confirm, exportFile, sync: syncSettings };
+})();
+
+  </script>
+  <script>
+/* PC Remote. Uses the phone as a trackpad and keyboard for the PC, and puts shows, videos and windows
+   on a chosen monitor. Talks to the relay on the PC (kasa_bridge.py + pc_control.py in
+   bgriffie/phosphor-os/bridge) over HTTPS through Tailscale, with the same link and key as Lights. */
+PH.init({ speed: 'normal', natural: true, browser: 'auto' });
+(() => {
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const KEY = 'pc-remote:data:';   // every tool shares bgriffie.github.io, so keys are prefixed
+  const load = (k, d) => { try { const v = localStorage.getItem(KEY + k); return v === null ? d : JSON.parse(v); } catch { return d; } };
+  const save = (k, v) => { try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch {} };
+  const peek = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+
+  // The relay is the lights relay, so reuse a link already pasted into Lights or Phosphor OS
+  const sharedLink = () => peek('kasa-lights:data:link') || peek('phosphor-os:data:lights-link');
+  let link = load('link', null) || sharedLink();   // { url, key }
+  let info = load('info', null);                   // { monitors, browsers } from the relay
+  let shows = load('shows', []), wins = [], editId = null;
+  let state = 'idle';                              // idle | ok | old (relay has no PC control) | down
+  let lastErr = '';
+  const ready = () => !!(link && link.url && link.key);
+  const route = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+  function parseLink(s) {
+    const m = /^\s*(https?:\/\/[^\s#]+?)\/?#([\w-]{8,})\s*$/.exec(s || '');
+    return m ? { url: m[1], key: m[2] } : null;
+  }
+
+  async function call(path, body, timeout = 12000) {
+    if (!ready()) throw new Error('The PC isn\'t set up yet.');
+    let r;
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), timeout);
+    try {
+      r = await fetch(link.url + path, { method: body ? 'POST' : 'GET', signal: ctl.signal, cache: 'no-store',
+        headers: { Authorization: 'Bearer ' + link.key, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+        body: body ? JSON.stringify(body) : undefined });
+    } catch {
+      throw new Error(navigator.onLine === false ? 'No internet connection.' : 'Can\'t reach the PC. Is it on with the relay running, and Tailscale on here?');
+    } finally { clearTimeout(t); }
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 401) throw new Error('The relay rejected the key. Paste the relay link again.');
+    if (r.status === 404 && path === '/pc') { const e = new Error('The relay needs the PC control update. See Settings › Relay.'); e.old = true; throw e; }
+    if (!r.ok) throw new Error(d.error || 'Relay error ' + r.status);
+    return d;
+  }
+
+  async function check() {
+    if (!ready()) { state = 'idle'; render(); return; }
+    try { info = await call('/pc'); save('info', info); state = 'ok'; lastErr = ''; }
+    catch (e) { state = e.old ? 'old' : 'down'; lastErr = e.message; }
+    render();
+  }
+  const mons = () => (info && info.monitors) || [];
+
+  /* ---------- Input stream: trackpad and keys ---------- */
+  // Moves are summed and sent once per frame over a WebSocket; if that can't open, the same events go by HTTP.
+  let ws = null, wsTries = 0, queue = [], mx = 0, my = 0, sx = 0, sy = 0, frame = 0, posting = false;
+  function openWS() {
+    if (!ready() || (ws && ws.readyState <= 1) || wsTries > 2) return;
+    try { ws = new WebSocket(link.url.replace(/^http/, 'ws') + '/pc/ws?key=' + encodeURIComponent(link.key)); } catch { ws = null; wsTries++; return; }
+    ws.onopen = () => { wsTries = 0; };
+    ws.onclose = () => { ws = null; wsTries++; };
+    ws.onmessage = e => { try { const d = JSON.parse(e.data); if (d.error) PH.toast(d.error, 'warn'); } catch {} };
+  }
+  const closeWS = () => { if (ws) { ws.onclose = null; ws.close(); ws = null; } };
+  function push(ev) { queue.push(ev); schedule(); }
+  function schedule() { if (!frame) frame = requestAnimationFrame(flush); }
+  async function flush() {
+    frame = 0;
+    if (mx || my) { queue.push({ m: [+mx.toFixed(2), +my.toFixed(2)] }); mx = my = 0; }
+    const wx = Math.trunc(sx), wy = Math.trunc(sy);
+    if (wx || wy) { queue.push({ s: [wx, wy] }); sx -= wx; sy -= wy; }
+    if (!queue.length) return;
+    if (ws && ws.readyState === 1) { ws.send(JSON.stringify(queue)); queue = []; return; }
+    openWS();
+    if (posting) return;   // one HTTP batch at a time; the rest waits for the next frame
+    const batch = queue; queue = []; posting = true;
+    try { await call('/pc/input', { events: batch }, 5000); }
+    catch (e) { PH.toast(e.message, 'warn'); }
+    finally { posting = false; if (queue.length || mx || my) schedule(); }
+  }
+
+  /* ---------- Trackpad ---------- */
+  const pad = $('#tp-pad'), dot = $('#tp-dot');
+  const GAIN = { slow: 1.0, normal: 1.6, fast: 2.4 };
+  let g = null, holdT = 0, dragging = false;
+  const centroid = ts => { let x = 0, y = 0; for (const t of ts) { x += t.clientX; y += t.clientY; } return { x: x / ts.length, y: y / ts.length }; };
+  const setDrag = on => { dragging = on; pad.classList.toggle('is-drag', on); $('#tp-tag').textContent = on ? 'Dragging' : 'Trackpad'; $('#tp-left').setAttribute('aria-pressed', String(on)); };
+  const showDot = t => { if (!t) { dot.classList.remove('on'); return; } const r = pad.getBoundingClientRect(); dot.style.left = (t.clientX - r.left) + 'px'; dot.style.top = (t.clientY - r.top) + 'px'; dot.classList.add('on'); };
+  pad.addEventListener('touchstart', e => {
+    e.preventDefault(); e.stopPropagation();   // keep the screen still and the edge-swipe Back out of it
+    const c = centroid(e.touches);
+    if (!g) {
+      g = { t0: performance.now(), fingers: e.touches.length, moved: 0, last: c, lt: performance.now() };
+      clearTimeout(holdT);
+      holdT = setTimeout(() => { if (g && g.fingers === 1 && g.moved < 10 && !dragging) { setDrag(true); push({ down: 'left' }); } }, 450);
+    } else {
+      g.fingers = Math.max(g.fingers, e.touches.length); g.last = c;
+      if (g.fingers > 1) clearTimeout(holdT);
+    }
+    showDot(e.touches.length === 1 ? e.touches[0] : null);
+  }, { passive: false });
+  pad.addEventListener('touchmove', e => {
+    e.preventDefault(); e.stopPropagation();
+    if (!g) return;
+    const c = centroid(e.touches), now = performance.now();
+    const dx = c.x - g.last.x, dy = c.y - g.last.y, dt = Math.max(1, now - g.lt);
+    g.last = c; g.lt = now; g.moved += Math.hypot(dx, dy);
+    if (g.moved >= 10) clearTimeout(holdT);
+    if (e.touches.length >= 2) {
+      // two fingers scroll; wheel units are 120 per notch, so ~3 per pixel feels like a trackpad
+      const k = PH.store.get('natural') ? 3 : -3;
+      sy += dy * k; sx += -dx * k; schedule();
+    } else if (g.fingers === 1 || dragging) {
+      const v = Math.hypot(dx, dy) / dt;   // px per ms: faster swipes go further
+      const gain = (GAIN[PH.store.get('speed')] || 1.6) * (1 + Math.min(v, 2.5) * 0.9);
+      mx += dx * gain; my += dy * gain; schedule();
+      showDot(e.touches[0]);
+    }
+  }, { passive: false });
+  const endTouch = e => {
+    e.preventDefault(); e.stopPropagation();
+    if (!g || e.touches.length) { if (g && e.touches.length) g.last = centroid(e.touches); return; }
+    clearTimeout(holdT); showDot(null);
+    const quick = performance.now() - g.t0 < 300 && g.moved < 10;
+    if (dragging) { setDrag(false); push({ up: 'left' }); }
+    else if (quick) push({ c: g.fingers === 1 ? 'left' : g.fingers === 2 ? 'right' : 'middle' });
+    g = null;
+  };
+  pad.addEventListener('touchend', endTouch, { passive: false });
+  pad.addEventListener('touchcancel', endTouch, { passive: false });
+  // Mouse use on a computer (for trying it out)
+  let mdown = null;
+  pad.addEventListener('mousedown', e => { mdown = { x: e.clientX, y: e.clientY, moved: 0 }; });
+  addEventListener('mousemove', e => { if (!mdown) return; const dx = e.clientX - mdown.x, dy = e.clientY - mdown.y; mdown.x = e.clientX; mdown.y = e.clientY; mdown.moved += Math.hypot(dx, dy); mx += dx * 2; my += dy * 2; schedule(); });
+  addEventListener('mouseup', () => { if (mdown && mdown.moved < 4) push({ c: 'left' }); mdown = null; });
+
+  // Left button holds while pressed (drag with the other finger); Right is a click
+  $('#tp-left').addEventListener('pointerdown', e => { e.preventDefault(); if (!dragging) { setDrag(true); push({ down: 'left' }); } });
+  const leftUp = () => { if (dragging && !g) { setDrag(false); push({ up: 'left' }); } };
+  $('#tp-left').addEventListener('pointerup', leftUp); $('#tp-left').addEventListener('pointercancel', leftUp);
+
+  /* ---------- Keyboard ---------- */
+  const kb = $('#pc-kb'), SENT = '  ';
+  const mods = () => $$('[data-mod][aria-pressed="true"]').map(b => b.dataset.mod);
+  const clearMods = () => $$('[data-mod]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  function sendKey(name) {
+    const m = mods(); clearMods();
+    push({ k: [...m, name] });
+  }
+  function sendText(text) {
+    if (!text) return;
+    const m = mods();
+    if (m.length && text.length === 1 && /[a-z0-9]/i.test(text)) { clearMods(); push({ k: [...m, text.toLowerCase()] }); return; }
+    if (m.length) clearMods();
+    push({ t: text });
+  }
+  const resetKb = () => { kb.value = SENT; try { kb.setSelectionRange(SENT.length, SENT.length); } catch {} };
+  resetKb();
+  kb.addEventListener('beforeinput', e => {
+    if (!e.cancelable) return;   // the input handler below catches it instead
+    e.preventDefault();
+    const t = e.inputType;
+    if (t === 'insertText' || t === 'insertReplacementText' || t === 'insertFromPaste') sendText(e.data ?? e.dataTransfer?.getData('text/plain') ?? '');
+    else if (t === 'insertLineBreak' || t === 'insertParagraph') sendKey('enter');
+    else if (t.startsWith('deleteContentBackward') || t === 'deleteWordBackward') sendKey('backspace');
+    else if (t.startsWith('deleteContentForward')) sendKey('delete');
+  });
+  kb.addEventListener('input', () => {
+    // Only reached when the typing couldn't be intercepted: work out what changed
+    const v = kb.value;
+    if (v.length < SENT.length) for (let i = v.length; i < SENT.length; i++) sendKey('backspace');
+    else if (v.startsWith(SENT)) { const add = v.slice(SENT.length); add.split('\n').forEach((p, i) => { if (i) sendKey('enter'); sendText(p); }); }
+    resetKb();
+  });
+  kb.addEventListener('focus', resetKb);
+  const kbOpen = () => document.activeElement === kb;
+  function toggleKb() { if (kbOpen()) kb.blur(); else { resetKb(); kb.focus({ preventScroll: true }); } renderKb(); }
+  const renderKb = () => $$('[data-kb-toggle]').forEach(b => b.setAttribute('aria-pressed', String(kbOpen())));
+  kb.addEventListener('blur', renderKb);
+  // Keep the keyboard up while tapping keys in the strip
+  $('#tp-strip').addEventListener('pointerdown', e => { if (kbOpen() && e.target.closest('button')) e.preventDefault(); });
+
+  document.addEventListener('click', e => {
+    const tg = e.target.closest('[data-kb-toggle]');
+    if (tg) { if (route() !== '/pad') PH.go('/pad'); toggleKb(); return; }
+    const md = e.target.closest('[data-mod]');
+    if (md) {
+      // Tap once to hold it for the next key; tap again to press it on its own (Win opens Start)
+      if (md.getAttribute('aria-pressed') === 'true') { md.setAttribute('aria-pressed', 'false'); push({ k: [...mods(), md.dataset.mod] }); clearMods(); }
+      else md.setAttribute('aria-pressed', 'true');
+      return;
+    }
+    const k = e.target.closest('[data-key]');
+    if (k && !k.hasAttribute('data-repeat')) { if (!ready()) { PH.go('/settings/relay'); return; } sendKey(k.dataset.key); return; }
+    const c = e.target.closest('[data-click]');
+    if (c && c.dataset.click === 'right') push({ c: 'right' });
+  });
+
+  // Volume keys repeat while held
+  let rep = 0;
+  document.addEventListener('pointerdown', e => {
+    const b = e.target.closest('[data-repeat]'); if (!b) return;
+    e.preventDefault(); b.classList.add('held'); sendKey(b.dataset.key);
+    clearInterval(rep); let n = 0;
+    rep = setInterval(() => { if (++n > 3) sendKey(b.dataset.key); }, 110);
+    const stop = () => { clearInterval(rep); b.classList.remove('held'); ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => b.removeEventListener(t, stop)); };
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => b.addEventListener(t, stop));
+  });
+
+  /* ---------- Monitors ---------- */
+  const MON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v12H3zM9 20h6M12 16v4"/></svg>';
+  function monButtons(box, { here, pick, label = true } = {}) {
+    box.textContent = '';
+    const list = mons();
+    if (!list.length) { box.innerHTML = `<span class="hint">${state === 'ok' ? 'No monitors found.' : 'Connect to the PC to see its monitors.'}</span>`; return; }
+    list.forEach(m => {
+      const b = document.createElement('button'); b.className = 'mon' + (m.n === here ? ' is-here' : ''); b.dataset.mon = m.n;
+      b.innerHTML = (label ? MON_SVG : '') + m.n; b.setAttribute('aria-label', 'Monitor ' + m.n + (m.primary ? ' (main)' : ''));
+      b.addEventListener('click', () => pick(m.n, b)); box.appendChild(b);
+    });
+  }
+  async function busy(btn, fn) {
+    if (btn) { btn.classList.add('busy'); btn.disabled = true; }
+    try { return await fn(); } catch (e) { PH.toast(e.message, 'warn'); } finally { if (btn) { btn.classList.remove('busy'); btn.disabled = false; } }
+  }
+
+  /* ---------- Shows ---------- */
+  const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
+  const cleanUrl = s => { s = (s || '').trim(); const m = /https?:\/\/\S+/i.exec(s); return m ? m[0] : /^[\w.-]+\.[a-z]{2,}(\/\S*)?$/i.test(s) ? 'https://' + s : ''; };
+  async function play(url, mon, full, btn) {
+    if (!ready()) { PH.go('/settings/relay'); return; }
+    await busy(btn, async () => {
+      const d = await call('/pc/open', { url, monitor: mon, fullscreen: full, browser: PH.store.get('browser') }, 20000);
+      PH.toast('Playing on monitor ' + d.monitor + '.');
+    });
+  }
+  function renderShows() {
+    const box = $('#sh-list'); box.textContent = '';
+    if (!shows.length) box.innerHTML = '<p class="menu-note">No shows saved yet. Tap + to save one with its link and usual monitor, then it\'s one tap to put it up.</p>';
+    shows.forEach(s => {
+      const c = document.createElement('div'); c.className = 'card';
+      c.innerHTML = `<div class="card-top"><button class="card-main" data-play><span class="card-name"></span><span class="card-sub"></span></button>
+        <button class="btn btn-icon btn-ghost" data-edit aria-label="Edit show"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg></button></div><div class="mons"></div>`;
+      c.querySelector('.card-name').textContent = s.name;
+      c.querySelector('.card-sub').textContent = host(s.url) + (s.mon ? ' · monitor ' + s.mon : '');
+      c.querySelector('[data-play]').addEventListener('click', () => play(s.url, s.mon || 1, s.full !== false, c.querySelector(`.mon[data-mon="${s.mon || 1}"]`)));
+      c.querySelector('[data-edit]').addEventListener('click', () => openEdit(s.id));
+      monButtons(c.querySelector('.mons'), { here: s.mon, pick: (n, b) => { s.mon = n; save('shows', shows); renderShows(); play(s.url, n, s.full !== false, box.querySelector(`.card:nth-child(${shows.indexOf(s) + 1}) .mon[data-mon="${n}"]`)); } });
+      box.appendChild(c);
+    });
+    monButtons($('[data-mons="link"]'), { pick: (n, b) => {
+      const u = cleanUrl($('#sh-url').value);
+      if (!u) { $('#sh-url').setAttribute('aria-invalid', 'true'); PH.toast('Paste a link first.', 'warn'); return; }
+      $('#sh-url').removeAttribute('aria-invalid'); play(u, n, true, b);
+    } });
+    $('#ab-shows').textContent = String(shows.length);
+  }
+  let editMon = 1;
+  function openEdit(id) {
+    editId = id; const s = shows.find(x => x.id === id);
+    $('#se-name').value = s ? s.name : ''; $('#se-url').value = s ? s.url : ''; $('#se-full').checked = s ? s.full !== false : true;
+    editMon = s ? s.mon || 1 : 1; $('#se-del').hidden = !s; renderEditMons();
+    PH.go('/shows/edit');
+  }
+  const renderEditMons = () => monButtons($('[data-mons="edit"]'), { here: editMon, pick: n => { editMon = n; renderEditMons(); } });
+  $('#se-save').addEventListener('click', () => {
+    const name = $('#se-name').value.trim(), url = cleanUrl($('#se-url').value);
+    $('#se-name').toggleAttribute('aria-invalid', !name); $('#se-url').toggleAttribute('aria-invalid', !url);
+    if (!name || !url) { PH.toast(!name ? 'Give the show a name.' : 'Paste the show\'s link (https://…).', 'warn'); return; }
+    const s = shows.find(x => x.id === editId);
+    const data = { name, url, mon: editMon, full: $('#se-full').checked };
+    if (s) Object.assign(s, data); else shows.push({ id: uid(), ...data });
+    save('shows', shows); renderShows(); PH.toast('Show saved.'); PH.back();
+  });
+  $('#k-save').addEventListener('click', () => $('#se-save').click());
+  $('#se-del').addEventListener('click', async () => {
+    const s = shows.find(x => x.id === editId); if (!s) return;
+    if (!await PH.confirm(`Delete "${s.name}"?`, { title: 'Delete show', ok: 'Delete', danger: true })) return;
+    shows = shows.filter(x => x !== s); save('shows', shows); renderShows(); PH.back();
+  });
+  const addShow = () => {
+    openEdit(null);
+    const u = cleanUrl($('#sh-url').value); if (u) $('#se-url').value = u;   // a link just pasted above becomes the new show
+  };
+  $('#k-add').addEventListener('click', addShow);
+  $('#m-add').addEventListener('click', addShow);
+  $('#sh-paste').addEventListener('click', async () => {
+    try { const t = await navigator.clipboard.readText(); $('#sh-url').value = cleanUrl(t) || t; }
+    catch { $('#sh-url').focus(); PH.toast('Tap the box and choose Paste.', 'warn'); }
+  });
+
+  /* ---------- Windows ---------- */
+  let sheetWin = null;
+  async function loadWins() {
+    if (!ready()) return;
+    try { wins = (await call('/pc/windows')).windows || []; $('#wi-note').hidden = true; }
+    catch (e) { $('#wi-note').textContent = e.message; $('#wi-note').hidden = false; }
+    renderWins();
+  }
+  function renderWins() {
+    const box = $('#wi-list'); box.textContent = '';
+    if (!wins.length) { box.innerHTML = `<p class="menu-note">${ready() ? 'No open windows yet.' : 'Connect to the PC first.'}</p>`; return; }
+    wins.forEach(w => {
+      const c = document.createElement('div'); c.className = 'card' + (w.min ? ' is-min' : '');
+      c.innerHTML = '<div class="card-top"><button class="card-main"><span class="card-name"></span><span class="card-sub"></span></button></div><div class="mons"></div>';
+      c.querySelector('.card-name').textContent = w.title;
+      c.querySelector('.card-sub').textContent = w.app + (w.min ? ' · minimised' : w.monitor ? ' · on monitor ' + w.monitor : '');
+      c.querySelector('.card-main').addEventListener('click', () => { sheetWin = w; $('#ws-title').textContent = w.app || 'Window'; $('#win-sheet').showModal(); });
+      monButtons(c.querySelector('.mons'), { here: w.min ? null : w.monitor, pick: (n, b) => busy(b, async () => {
+        wins = (await call('/pc/window', { id: w.id, action: 'move', monitor: n })).windows || wins; renderWins();
+      }) });
+      box.appendChild(c);
+    });
+  }
+  $('#k-refresh').addEventListener('click', loadWins);
+  $$('[data-wact]').forEach(b => b.addEventListener('click', async () => {
+    const w = sheetWin, act = b.dataset.wact; $('#win-sheet').close(); if (!w) return;
+    if (act === 'close' && !await PH.confirm(`Close "${w.title}"?`, { title: 'Close window', ok: 'Close', danger: true })) return;
+    await busy(null, async () => { wins = (await call('/pc/window', { id: w.id, action: act })).windows || wins; renderWins(); });
+  }));
+
+  /* ---------- Setup and settings ---------- */
+  $('#pc-save').addEventListener('click', async () => {
+    const p = parseLink($('#pc-link').value);
+    if (!p) { $('#pc-link').setAttribute('aria-invalid', 'true'); PH.toast('Paste the whole relay link, including the # part.', 'warn'); return; }
+    $('#pc-link').removeAttribute('aria-invalid');
+    const prev = link; link = p; closeWS(); wsTries = 0;
+    try { info = await call('/pc'); }
+    catch (e) { if (!e.old) { link = prev; PH.toast(e.message, 'warn'); return; } PH.toast(e.message, 'warn'); }
+    save('link', link); save('info', info); $('#pc-link').value = '';
+    if (info) { state = 'ok'; PH.toast('PC connected.'); PH.go('/'); } else state = 'old';
+    render();
+  });
+  $('#pc-link').addEventListener('keydown', e => { if (e.key === 'Enter') $('#pc-save').click(); });
+  const identify = () => { if (!ready()) { PH.go('/settings/relay'); return; } busy(null, async () => { await call('/pc/identify', {}); PH.toast('Look at your monitors.'); }); };
+  $('#pc-identify').addEventListener('click', identify);
+  $('#m-identify').addEventListener('click', identify);
+  $('#pc-export').addEventListener('click', () => PH.exportFile('pc-remote-shows.json', JSON.stringify({ shows }, null, 2)));
+  $('#pc-erase').addEventListener('click', async () => {
+    if (!await PH.confirm('Erase all saved shows? This can\'t be undone.', { title: 'Erase shows', ok: 'Erase', danger: true })) return;
+    shows = []; save('shows', shows); renderShows(); PH.toast('Shows erased.', 'warn');
+  });
+
+  function render() {
+    $('#pc-off').hidden = ready(); $('#pc-on').hidden = !ready();
+    const note = state === 'old' || state === 'down' ? lastErr : '';
+    $('#pc-note').textContent = note; $('#pc-note').hidden = !note;
+    $('#pc-status').textContent = !ready() ? 'Not set up' : state === 'ok' ? 'Connected' : state === 'old' ? 'Needs update' : state === 'down' ? 'Can\'t reach' : 'Connecting…';
+    $('#pc-status').className = 'mi-value' + (state === 'ok' ? ' t-accent' : state === 'old' ? ' t-amber' : '');
+    $('#ab-mons').textContent = mons().length ? String(mons().length) : '—';
+    const br = info && info.browsers;
+    $('#br-found').textContent = br && br.length ? 'Found on the PC: ' + br.map(b => b[0].toUpperCase() + b.slice(1)).join(', ') + '.' : '';
+    renderShows();
+    if (route() === '/shows/edit') renderEditMons();
+  }
+
+  // Connect while the app is on screen; the trackpad's live link only on its page
+  function sync() {
+    if (document.hidden) { closeWS(); return; }
+    check();
+    const r = route();
+    if (r === '/pad') { wsTries = 0; openWS(); } else closeWS();
+    if (r === '/windows') loadWins();
+    if (r !== '/pad' && kbOpen()) kb.blur();
+    if (dragging && r !== '/pad') { setDrag(false); push({ up: 'left' }); }
+  }
+  PH.on('route', sync);
+  document.addEventListener('visibilitychange', sync);
+  addEventListener('online', sync);
+  addEventListener('pageshow', e => { if (e.persisted) sync(); });
+  render(); setTimeout(sync, 0);
+})();
+/* service worker: provided by Phosphor OS */
+
+  </script>
+<script>
+/* Phosphor OS embed shim: injected at the end of each bundled app's <body>.
+   The app runs inside the OS's screen in an iframe, keeps its own data (same origin,
+   same localStorage keys as the standalone version), and is driven by the OS's three keys. */
+(() => {
+  const os = window.parent !== window && window.parent.PhosphorOS;
+  if (!os || typeof PH === 'undefined') return;
+  const route = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
+  const atHome = () => route() === '/';
+  const exit = () => os.closeApp();
+  const openDialog = () => document.querySelector('dialog[open]');
+  // The app's own page key (Pause, Undo, Add…), shown on the OS's right key when Settings allows
+  const keyEl = () => [...document.querySelectorAll('.app-controls .page-keys:not([hidden]) button')].find(b => !b.disabled);
+
+  window.OSChild = {
+    atHome: () => atHome() && !openDialog(),
+    back: () => { const d = openDialog(); if (d) d.close(); else PH.back(); },
+    route,
+    home: () => { document.querySelectorAll('dialog[open]').forEach(d => d.close()); location.replace(location.href.split('#')[0] + '#/'); },
+    openMenu: () => { const m = document.getElementById('menu'); if (!m) return; if (m.open) m.close(); else m.showModal(); },
+    pageKey: () => { const b = keyEl(); if (!b) return null;
+      return { text: b.textContent.trim(), svg: b.querySelector('svg')?.outerHTML || '', label: b.getAttribute('aria-label') || b.textContent.trim(), pressed: b.getAttribute('aria-pressed') }; },
+    pressKey: () => { const b = keyEl(); if (b) b.click(); },
+    // An app can define window.osBeforeClose() (returning a promise) to tidy up before the OS closes it
+    prepareClose: () => typeof window.osBeforeClose === 'function' ? window.osBeforeClose() : null,
+  };
+
+  PH.on('route', () => { os.saveRoute(route()); os.keysChanged(); });
+  // Pause ↔ play and similar key changes happen without a route change
+  const ctl = document.querySelector('.app-controls');
+  if (ctl) new MutationObserver(() => os.keysChanged()).observe(ctl, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden', 'aria-pressed', 'disabled'] });
+
+  // Edge swipe right on the app's home page returns to the OS
+  let sx = null, sy = 0;
+  addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX < 24 ? t.clientX : null; sy = t.clientY; }, { passive: true });
+  addEventListener('touchend', e => {
+    if (sx === null || !atHome() || openDialog()) return;
+    const t = e.changedTouches[0];
+    if (t.clientX - sx > 70 && Math.abs(t.clientY - sy) < 60) exit();
+    sx = null;
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

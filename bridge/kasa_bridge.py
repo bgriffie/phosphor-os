@@ -1,4 +1,4 @@
-"""Phosphor OS lights relay.
+"""Phosphor OS relay: lights, and PC control when pc_control.py sits next to this file.
 
 Runs on a computer at home that stays on. It finds the Kasa bulbs and plugs on the home
 network and lets the Phosphor OS Lights app control them over HTTPS (through Tailscale).
@@ -178,7 +178,9 @@ def make_app(lights, key):
                 'Access-Control-Max-Age': '600'} if origin in ORIGINS else {}
         if request.method == 'OPTIONS':
             return web.Response(status=204, headers=cors)
-        if not secrets.compare_digest(request.headers.get('Authorization', ''), 'Bearer ' + key):
+        # ?key= is for the PC app's WebSocket, which can't send an Authorization header
+        auth = request.headers.get('Authorization') or 'Bearer ' + request.query.get('key', '')
+        if not secrets.compare_digest(auth, 'Bearer ' + key):
             return web.json_response({'error': 'Wrong or missing key'}, status=401, headers=cors)
         try:
             resp = await handler(request)
@@ -216,6 +218,13 @@ def make_app(lights, key):
     app.add_routes([web.get('/lights', list_lights), web.post('/lights/rescan', rescan),
                     web.post('/lights/all', set_all), web.post('/lights/{id}', set_light),
                     web.route('OPTIONS', '/{tail:.*}', lambda r: web.Response())])
+    # PC control (trackpad, keyboard, monitors) lives in pc_control.py next to this file, if it's there
+    try:
+        import pc_control
+    except ImportError:
+        pc_control = None
+    if pc_control:
+        pc_control.setup(app, demo=isinstance(lights, DemoLights))
     return app
 
 
