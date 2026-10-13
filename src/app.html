@@ -162,6 +162,63 @@
     .app-frame.is-ready { opacity: 1; }
     .screen.has-frame > :not(.app-frame) { visibility: hidden; }
 
+    /* Wide screen (landscape): the home screen sits side by side, clock left and tiles right (Floyd, v1.17) */
+    html.os-wide .home-view { display: grid; grid-template-columns: minmax(150px, 32%) 1fr; grid-template-rows: 1fr auto; gap: 0 var(--sp-3); }
+    html.os-wide .home-view:not(.is-active) { display: none; }
+    html.os-wide .home-view .home-clock { grid-column: 1; grid-row: 1; align-self: center; padding: 0; }
+    html.os-wide .home-view .home-clock .readout { font-size: 46px; }
+    html.os-wide .home-view .home-hint { grid-column: 1; grid-row: 2; margin: 0; padding-bottom: var(--sp-2); }
+    html.os-wide .home-view .sphere, html.os-wide .home-view .grid { grid-column: 2; grid-row: 1 / 3; }
+    html.os-wide .home-view .sphere { min-height: 0; height: 100%; }
+    html.os-wide .menu-group { break-inside: avoid; }
+
+    /* The ~/path line opens a terminal menu: everything in the OS, the page you're on, and quick actions */
+    .path { padding-right: 84px; cursor: pointer; }
+    .path-cmd {
+      position: absolute; top: 0; right: var(--sp-3); z-index: 2; height: 32px; display: flex; align-items: center; gap: 4px;
+      appearance: none; -webkit-appearance: none; background: none; border: 0; padding: 0 var(--sp-2);
+      color: var(--accent); font-size: var(--fs-xs); letter-spacing: var(--tracking-label); text-transform: uppercase; cursor: pointer;
+    }
+    .path-cmd svg { width: 12px; height: 12px; }
+    .screen.has-frame > .term { visibility: visible; }
+    .term {
+      position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column;
+      background: var(--bg); border-radius: inherit;
+    }
+    .term[hidden] { display: none; }
+    .term-bar { flex: none; display: flex; align-items: center; gap: var(--sp-2); min-height: 40px; padding: var(--sp-1) var(--sp-3) 0 var(--sp-4); border-bottom: 1px solid var(--line); }
+    .term-prompt { flex: 1; display: flex; align-items: center; gap: var(--sp-2); min-width: 0; color: var(--accent); font-size: var(--fs-sm); }
+    .term-prompt input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; padding: 8px 0; color: var(--text); font-size: 16px; caret-color: var(--accent); }
+    .term-prompt input::placeholder { color: var(--text-faint); }
+    .term-x { appearance: none; -webkit-appearance: none; background: none; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); color: var(--text-dim); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .1em; padding: 6px 10px; cursor: pointer; }
+    .term-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: var(--sp-3) var(--sp-3) var(--sp-5); display: grid; grid-template-columns: 1fr; gap: var(--sp-4); align-content: start; }
+    html.os-wide .term-body { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+    .term-group h3 { margin: 0 0 var(--sp-1); padding-left: var(--sp-1); font-size: var(--fs-xs); font-weight: 400; color: var(--text-faint); letter-spacing: var(--tracking-label); text-transform: uppercase; }
+    .term-group h3::before { content: "# "; color: var(--text-faint); }
+    .term-line {
+      appearance: none; -webkit-appearance: none; display: flex; align-items: center; gap: var(--sp-2); width: 100%; min-height: 40px;
+      background: none; border: 0; border-radius: var(--radius-sm); padding: 6px var(--sp-2); text-align: left; cursor: pointer;
+      color: var(--text); font-size: var(--fs-md);
+    }
+    .term-line::before { content: ">"; color: var(--accent); flex: none; }
+    .term-line .tl-l { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .term-line .tl-h { flex: none; color: var(--text-faint); font-size: var(--fs-xs); text-transform: lowercase; }
+    .term-line[aria-current="page"] { color: var(--accent); text-shadow: var(--glow); }
+    .term-line:active, .term-line.is-first { background: var(--surface-2); }
+    .term-chips { grid-column: 1 / -1; }
+    .term-chips .tg-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: var(--sp-2); }
+    .term-chip {
+      appearance: none; -webkit-appearance: none; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0;
+      background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 4px 8px; cursor: pointer;
+      color: var(--accent); font-size: var(--fs-xs);
+    }
+    .term-chip svg { width: 22px; height: 22px; filter: drop-shadow(0 0 3px rgba(57, 255, 106, .45)); }
+    .term-chip .tl-l { max-width: 100%; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .term-chip[aria-current="page"] { border-color: var(--accent); box-shadow: var(--glow-box); }
+    .term-chip[aria-current="page"] .tl-l { color: var(--accent); }
+    .term-chip:active, .term-chip.is-first { background: var(--surface-3); border-color: var(--accent); }
+    .term-empty { color: var(--text-faint); font-size: var(--fs-sm); padding: var(--sp-2); }
+
     /* Spotify remote */
     .mu-now { display: flex; flex-direction: column; }
     .mu-mini { display: flex; align-items: center; gap: var(--sp-3); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); padding: var(--sp-3); }
@@ -223,17 +280,25 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.16</span>
+      <span class="app-meta">v1.17</span>
     </header>
     <div class="screen-slot">
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
       <div class="boot-screen" id="boot" hidden aria-hidden="true"></div>
       <nav class="path" data-path aria-label="Location"></nav>
+      <button class="path-cmd" id="path-cmd" aria-label="Open the menu" aria-haspopup="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M4 7l8 8 8-8"/></svg>menu</button>
+      <div class="term" id="term" hidden role="dialog" aria-label="Menu">
+        <div class="term-bar">
+          <label class="term-prompt"><span aria-hidden="true">~ $</span><input id="term-q" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="type to find" aria-label="Find"></label>
+          <button class="term-x" id="term-x" aria-label="Close the menu">esc</button>
+        </div>
+        <div class="term-body" id="term-body"></div>
+      </div>
       <div class="screen-body">
 
       <!-- ===== Home ===== -->
-      <section class="view" data-route="/" data-title="Phosphor OS">
+      <section class="view home-view" data-route="/" data-title="Phosphor OS">
         <div class="home-clock" aria-live="off">
           <div class="readout" id="clock">--:--</div>
           <div class="date" id="date"></div>
@@ -491,7 +556,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.16</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.17</span></a>
           </div>
         </div>
       </section>
@@ -535,7 +600,7 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.16</span></div>
+          <div class="kv"><span>Version</span><span>1.17</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>

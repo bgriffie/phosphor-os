@@ -29,6 +29,17 @@
   const ctl = document.querySelector('.app-controls');
   if (ctl) new MutationObserver(() => os.keysChanged()).observe(ctl, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden', 'aria-pressed', 'disabled'] });
 
+  // The app's ~/path line opens the OS's terminal menu, as it does on the OS's own pages
+  const path = document.querySelector('.screen > .path');
+  if (path && os.openTerm) {
+    const cmd = document.createElement('button');
+    cmd.className = 'os-path-cmd'; cmd.setAttribute('aria-label', 'Open the menu');
+    cmd.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M4 7l8 8 8-8"/></svg>menu';
+    cmd.addEventListener('click', () => os.openTerm());
+    path.after(cmd);
+    path.addEventListener('click', e => { if (!e.target.closest('a')) os.openTerm(); });
+  }
+
   // Edge swipe right on the app's home page returns to the OS
   let sx = null, sy = 0;
   addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX < 24 ? t.clientX : null; sy = t.clientY; }, { passive: true });

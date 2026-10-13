@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.16';
+  const VERSION = '1.17';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -151,7 +151,7 @@
   const sphere = (() => {
     const wrap = $('#sphere'), cv = $('#sphere-lines'), cx2 = cv.getContext('2d');
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let nodes = [], edges = [], pulses = [], R = 120, cx = 0, cy = 0, W = 0, H = 0;
+    let nodes = [], edges = [], pulses = [], R = 120, SX = 1, cx = 0, cy = 0, W = 0, H = 0;
     let M = [1, 0, 0, 0, 1, 0, 0, 0, 1], vx = 0, vy = 0, raf = null, idleAt = 0, frames = 0;
     const mul = (a, b) => { const r = []; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) r[i * 3 + j] = a[i * 3] * b[j] + a[i * 3 + 1] * b[3 + j] + a[i * 3 + 2] * b[6 + j]; return r; };
     const rotate = (ax, ay) => {   // drag right spins the front to the right, drag down spins it down
@@ -190,13 +190,14 @@
       cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
       cx2.setTransform(dpr, 0, 0, dpr, 0, 0);
       R = Math.min(W * .4, H * .36); cx = W / 2; cy = H / 2;
+      SX = Math.max(1, Math.min(W * .42 / R, 1.7));   // a wide screen stretches the web sideways to use the room
     }
     function draw() {
       if (!W) size(); if (!W) return;
       nodes.forEach(nd => {
         const p = nd.p, q = [M[0] * p[0] + M[1] * p[1] + M[2] * p[2], M[3] * p[0] + M[4] * p[1] + M[5] * p[2], M[6] * p[0] + M[7] * p[1] + M[8] * p[2]];
         const d = (q[2] + 1) / 2, k = R * (.82 + .3 * d);   // d: 0 at the back, 1 facing you
-        nd.q = q; nd.d = d; nd.x = cx + q[0] * k; nd.y = cy - q[1] * k;
+        nd.q = q; nd.d = d; nd.x = cx + q[0] * k * SX; nd.y = cy - q[1] * k;
         const st = nd.el.style;
         st.transform = `translate3d(${(nd.x - 30).toFixed(1)}px,${(nd.y - 30).toFixed(1)}px,0) scale(${(.5 + .62 * d).toFixed(3)})`;
         st.opacity = (.15 + .85 * d * d).toFixed(3); st.zIndex = 1 + Math.round(d * 100);
@@ -207,9 +208,9 @@
       // core glow + outer ring
       const rad = g.createRadialGradient(cx, cy, 0, cx, cy, R * 1.25);
       rad.addColorStop(0, 'rgba(57,255,106,.10)'); rad.addColorStop(1, 'rgba(57,255,106,0)');
-      g.fillStyle = rad; g.beginPath(); g.arc(cx, cy, R * 1.25, 0, 7); g.fill();
+      g.fillStyle = rad; g.beginPath(); g.ellipse(cx, cy, R * 1.25 * SX, R * 1.25, 0, 0, 7); g.fill();
       g.strokeStyle = 'rgba(57,255,106,.22)'; g.lineWidth = 1; g.setLineDash([2, 6]);
-      g.beginPath(); g.arc(cx, cy, R * 1.18, 0, 7); g.stroke(); g.setLineDash([]);
+      g.beginPath(); g.ellipse(cx, cy, R * 1.18 * SX, R * 1.18, 0, 0, 7); g.stroke(); g.setLineDash([]);
       // two wireframe rings that turn with the sphere
       [[1, 0, 0], [0, 1, 0]].forEach(axis => {
         g.beginPath();
@@ -217,7 +218,7 @@
           const a = i / 48 * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
           const p = axis[0] ? [0, c, s] : [c, 0, s];
           const q = [M[0] * p[0] + M[1] * p[1] + M[2] * p[2], M[3] * p[0] + M[4] * p[1] + M[5] * p[2], M[6] * p[0] + M[7] * p[1] + M[8] * p[2]];
-          const k = R * (.82 + .3 * (q[2] + 1) / 2), x = cx + q[0] * k, y = cy - q[1] * k;
+          const k = R * (.82 + .3 * (q[2] + 1) / 2), x = cx + q[0] * k * SX, y = cy - q[1] * k;
           i ? g.lineTo(x, y) : g.moveTo(x, y);
         }
         g.strokeStyle = 'rgba(57,255,106,.10)'; g.stroke();
@@ -622,6 +623,7 @@
     closeApp: () => { hideFrame(); location.replace(home()); },
     saveRoute: r => { if (frameId) save(routeKey(frameId), r); },
     keysChanged: () => renderKeys(),
+    openTerm: () => openTerm(),
   };
   // v1.8: Lights is the bundled Kasa Lights app now; old #/lights links open it
   if (/^#\/lights(\/|$)/.test(location.hash)) location.replace('#/app/lights');
@@ -665,6 +667,7 @@
     const was = turned;
     turned = PH.store.get('orient') === 'landscape' && innerHeight >= innerWidth;
     document.documentElement.classList.toggle('os-land', turned);
+    document.documentElement.classList.toggle('os-wide', turned || r.width > r.height);
     if (was !== turned) dispatchEvent(new Event('resize'));   // canvases (sphere, rain) re-measure
     renderKeys();
   }
@@ -689,6 +692,7 @@
 
   function closeDialogs() { $$('dialog[open]').forEach(d => d.close()); }
   $('#k-back').addEventListener('click', () => {
+    if (!term.hidden) { closeTerm(); return; }
     if (frameId) {
       const c = child(); if (!c || c.atHome()) { PhosphorOS.closeApp(); return; }
       // if the app's own Back doesn't move it (its history can get out of step inside the frame), go to its first page
@@ -700,20 +704,96 @@
     closeDialogs(); PH.back();
   });
   $('#k-home').addEventListener('click', () => {
-    closeDialogs();
+    closeDialogs(); closeTerm();
     if (frameId) { PhosphorOS.closeApp(); return; }
     if (curRoute() !== '/') location.replace(home());
   });
-  function openMenu() {
-    const c = child();
-    if (frameId && c) { c.openMenu(); return; }
-    const m = $('#menu'); if (m.open) m.close(); else m.showModal();
+  function openMenu() { if (term.hidden) openTerm(); else closeTerm(); }
+
+  /* ---------- Terminal menu: tap the ~/path line (or hold the right key) ---------- */
+  // Everything in one list on the screen: the page you're on, every tile, Spotify, and quick actions.
+  // Type to narrow it; Enter runs the top line.
+  const term = $('#term'), termQ = $('#term-q'), termBody = $('#term-body');
+  const HIDE_PAGES = new Set(['/app', '/tiles/edit', '/notes/edit']);
+  const goTo = to => () => {
+    if (frameId) { hideFrame(); location.replace(location.href.split('#')[0] + '#' + to); }
+    else if (to === '/') location.replace(home()); else PH.go(to);
+  };
+  function termGroups() {
+    const r = curRoute(), c = child(), groups = [];
+    if (frameId && c) {
+      const name = APPS[frameId][0], k = appKey(), here = [];
+      let hasMenu = false; try { hasMenu = !!frame.contentDocument.getElementById('menu'); } catch {}
+      if (hasMenu) here.push([name + ' menu', 'menu', () => c.openMenu()]);
+      if (k) here.push([k.label || k.text, 'button', () => c.pressKey()]);
+      if (!c.atHome()) here.push([name + ' start', 'page', () => c.home()]);
+      here.push(['Close ' + name, 'exit', () => PhosphorOS.closeApp()]);
+      groups.push(['Here: ' + name.toLowerCase(), here]);
+    } else if (r !== '/') {
+      const sec = '/' + r.split('/')[1];
+      const pages = $$('.view[data-route]').map(v => v.dataset.route).filter(x => (x === sec || x.startsWith(sec + '/')) && !HIDE_PAGES.has(x));
+      groups.push(['Here: ~' + sec, pages.map(x => [$(`.view[data-route="${x}"]`).dataset.title, x === r ? 'here' : x === sec ? 'top' : 'page', goTo(x), x === r])]);
+    }
+    const open = [['Home', 'home', goTo('/'), !frameId && r === '/', keySvg('home')]];
+    tiles.forEach(t => {
+      const a = t.kind === 'app' && APPS[t.target];
+      const cur = a && (a[2] ? frameId === t.target : !frameId && (r === a[1] || r.startsWith(a[1] + '/')));
+      open.push([t.label, t.kind === 'app' ? 'app' : t.kind, a && !a[2] ? goTo(a[1]) : () => launch(t), cur, svg(t.glyph)]);
+    });
+    if (!tiles.some(t => t.kind === 'app' && t.target === 'settings')) open.push(['Settings', 'app', goTo('/settings'), !frameId && r.startsWith('/settings'), svg('gear')]);
+    groups.push(['Open', open]);
+    const playing = !!(window.PhosphorMusic && PhosphorMusic.playing());
+    groups.push(['Spotify', [
+      [playing ? 'Pause' : 'Play', 'music', () => window.PhosphorMusic && PhosphorMusic.toggle()],
+      ['Now playing', 'page', goTo('/music/now')], ['Recently played', 'page', goTo('/music')],
+      ['Stuff You Should Know', 'page', goTo('/music/episodes')], ['Play on…', 'page', goTo('/music/devices')]]]);
+    const land = PH.store.get('orient') === 'landscape';
+    groups.push(['Do', [
+      [land ? 'Turn to portrait' : 'Turn to landscape', 'screen', () => PH.store.set('orient', land ? 'portrait' : 'landscape')],
+      ['New note', 'notes', () => { if (frameId) hideFrame(); actions['new-note'](); }],
+      ['Add tile', 'tiles', () => { if (frameId) hideFrame(); actions['add-tile'](); }],
+      ['Edit tiles', 'tiles', goTo('/tiles')],
+      ['Display', 'settings', goTo('/settings/display')], ['Orientation', 'settings', goTo('/settings/orient')]]]);
+    return groups;
   }
+  let termRun = [];
+  function renderTerm() {
+    const q = termQ.value.trim().toLowerCase();
+    termBody.textContent = ''; termRun = [];
+    termGroups().forEach(([title, items]) => {
+      const hits = items.filter(([l, h]) => !q || l.toLowerCase().includes(q) || h.includes(q)); if (!hits.length) return;
+      const chips = title === 'Open';   // every tile as a small icon grid, so the list stays short
+      const g = document.createElement('div'); g.className = 'term-group' + (chips ? ' term-chips' : '');
+      g.innerHTML = '<h3></h3><div class="tg-items"></div>'; g.firstChild.textContent = title;
+      hits.forEach(([label, hint, fn, cur, ico]) => {
+        const b = document.createElement('button'); b.className = (chips ? 'term-chip' : 'term-line') + (q && !termRun.length ? ' is-first' : '');
+        b.innerHTML = chips ? `${ico || ''}<span class="tl-l"></span>` : '<span class="tl-l"></span><span class="tl-h"></span>';
+        b.querySelector('.tl-l').textContent = label; if (!chips) b.lastChild.textContent = hint;
+        if (cur) b.setAttribute('aria-current', 'page');
+        b.addEventListener('click', () => { closeTerm(); fn(); });
+        termRun.push(fn); g.lastChild.appendChild(b);
+      });
+      termBody.appendChild(g);
+    });
+    if (!termRun.length) termBody.innerHTML = '<p class="term-empty">command not found</p>';
+  }
+  function openTerm() { closeDialogs(); termQ.value = ''; renderTerm(); term.hidden = false; termBody.scrollTop = 0; $('#path-cmd').setAttribute('aria-expanded', 'true'); }
+  function closeTerm() { if (term.hidden) return; term.hidden = true; termQ.blur(); $('#path-cmd').setAttribute('aria-expanded', 'false'); }
+  termQ.addEventListener('input', renderTerm);
+  termQ.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && termRun[0]) { e.preventDefault(); const fn = termRun[0]; closeTerm(); fn(); }
+    if (e.key === 'Escape') closeTerm();
+  });
+  $('#term-x').addEventListener('click', closeTerm);
+  $('#path-cmd').addEventListener('click', openMenu);
+  $('.path').addEventListener('click', e => { if (!e.target.closest('a')) openTerm(); });
+  addEventListener('hashchange', closeTerm);
+  addEventListener('keydown', e => { if (e.key === 'Escape') closeTerm(); });
   // Right key: tap turns the screen; hold opens the menu, or presses the app's own button when it shows one
   let rkHold = null, rkHeld = false;
   $('#k-right').addEventListener('pointerdown', () => { rkHeld = false; clearTimeout(rkHold); rkHold = setTimeout(() => {
-    rkHeld = true; const c = child();
-    if (appKey()) c.pressKey(); else openMenu();
+    rkHeld = true;
+    if (appKey()) child().pressKey(); else openMenu();
   }, 550); });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(n => $('#k-right').addEventListener(n, () => clearTimeout(rkHold)));
   $('#k-right').addEventListener('contextmenu', e => e.preventDefault());

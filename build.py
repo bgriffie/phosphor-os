@@ -25,6 +25,9 @@ html.os-embed .app-header, html.os-embed .app-controls { display: none !importan
 html.os-embed .screen { margin: 0; border-radius: 0; box-shadow: none; }
 html.os-embed .screen::before, html.os-embed .screen::after { display: none; }
 html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none; }
+html.os-embed .screen > .path { padding-right: 84px; cursor: pointer; }
+html.os-embed .os-path-cmd { position: absolute; top: 0; right: var(--sp-3); z-index: 2; height: 32px; display: flex; align-items: center; gap: 4px; appearance: none; -webkit-appearance: none; background: none; border: 0; padding: 0 var(--sp-2); color: var(--accent); font-size: var(--fs-xs); letter-spacing: var(--tracking-label); text-transform: uppercase; cursor: pointer; }
+html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 </style>"""
 embed = open('src/embed.js').read()
 for app_id, src in APPS.items():

@@ -821,6 +821,9 @@ html.os-embed .app-header, html.os-embed .app-controls { display: none !importan
 html.os-embed .screen { margin: 0; border-radius: 0; box-shadow: none; }
 html.os-embed .screen::before, html.os-embed .screen::after { display: none; }
 html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none; }
+html.os-embed .screen > .path { padding-right: 84px; cursor: pointer; }
+html.os-embed .os-path-cmd { position: absolute; top: 0; right: var(--sp-3); z-index: 2; height: 32px; display: flex; align-items: center; gap: 4px; appearance: none; -webkit-appearance: none; background: none; border: 0; padding: 0 var(--sp-2); color: var(--accent); font-size: var(--fs-xs); letter-spacing: var(--tracking-label); text-transform: uppercase; cursor: pointer; }
+html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 </style>
 </head>
 <body>
@@ -2190,6 +2193,17 @@ const PH = (() => {
   // Pause ↔ play and similar key changes happen without a route change
   const ctl = document.querySelector('.app-controls');
   if (ctl) new MutationObserver(() => os.keysChanged()).observe(ctl, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden', 'aria-pressed', 'disabled'] });
+
+  // The app's ~/path line opens the OS's terminal menu, as it does on the OS's own pages
+  const path = document.querySelector('.screen > .path');
+  if (path && os.openTerm) {
+    const cmd = document.createElement('button');
+    cmd.className = 'os-path-cmd'; cmd.setAttribute('aria-label', 'Open the menu');
+    cmd.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M4 7l8 8 8-8"/></svg>menu';
+    cmd.addEventListener('click', () => os.openTerm());
+    path.after(cmd);
+    path.addEventListener('click', e => { if (!e.target.closest('a')) os.openTerm(); });
+  }
 
   // Edge swipe right on the app's home page returns to the OS
   let sx = null, sy = 0;
