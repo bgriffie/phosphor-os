@@ -26,6 +26,32 @@
     .app-controls .key.word { font-size: var(--fs-sm); }
     .app { padding-top: max(var(--sp-2), calc(var(--safe-top) - 4px)); }
 
+    /* Landscape (v1.16, Floyd): the right key turns the screen a quarter turn so the phone can be held
+       sideways (top to the left) with rotation lock on. The case and keys stay exactly where they are;
+       the screen's contents are laid out at its swapped size and turned +90deg, and the key icons turn with them. */
+    .app > .screen-slot { flex: 1 1 auto; min-height: 0; position: relative; }
+    .screen-slot > .screen { position: absolute; inset: 0; }
+    html.os-land .screen-slot > .screen {
+      inset: auto; left: 50%; top: 50%; margin: 0;
+      width: calc(var(--slot-h, 100vh) - 8px); height: calc(var(--slot-w, 100vw) - 8px);
+      transform: translate(-50%, -50%) rotate(90deg);
+    }
+    html.os-land .app-controls .key > * { transform: rotate(90deg); }
+    html.os-land .app-controls .key.word { writing-mode: vertical-rl; }
+    /* dialogs and toasts live outside the screen, so they turn on their own, centred on it */
+    html.os-land dialog[open] {
+      inset: auto !important; left: var(--slot-cx, 50%) !important; top: var(--slot-cy, 50%) !important; margin: 0 !important;
+      transform: translate(-50%, -50%) rotate(90deg); animation: none !important;
+      width: min(calc(var(--slot-h, 100vh) - 40px), 420px) !important; max-width: none !important;
+      height: fit-content; max-height: calc(var(--slot-w, 100vw) - 40px) !important;
+      border: 1px solid var(--accent) !important; border-radius: var(--radius) !important; padding-bottom: var(--sp-3) !important;
+    }
+    html.os-land dialog.sheet:not(.dropdown)::before { content: none; }
+    html.os-land .toast-host {
+      left: var(--slot-cx, 50%); right: auto; bottom: auto; top: var(--slot-cy, 50%); padding: 0; width: calc(var(--slot-h, 100vh) - 24px);
+      transform: translate(-50%, -50%) rotate(90deg) translateY(calc(var(--slot-w, 100vw) / 2 - 64px));
+    }
+
     /* Boot screen: covers the CRT on a cold start, tap to skip */
     .boot-screen {
       position: absolute; inset: 0; z-index: 5; padding: 56px var(--sp-5) var(--sp-5);
@@ -197,8 +223,9 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.15</span>
+      <span class="app-meta">v1.16</span>
     </header>
+    <div class="screen-slot">
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
       <div class="boot-screen" id="boot" hidden aria-hidden="true"></div>
@@ -439,8 +466,7 @@
             <a class="menu-item" href="#/tiles"><span class="mi-label">Tiles</span><span class="mi-value" id="tile-count"></span></a>
             <a class="menu-item" href="#/music/setup"><span class="mi-label">Spotify</span><span class="mi-value" id="set-spotify"></span></a>
                         <a class="menu-item" href="#/settings/clock"><span class="mi-label">Clock</span><span class="mi-value" data-setting-value="clock"></span></a>
-            <a class="menu-item" href="#/settings/rkey"><span class="mi-label">Right button</span><span class="mi-value" data-setting-value="rkey"></span></a>
-            <label class="menu-item"><span class="mi-label">App buttons first<small>Inside Arcade, Kitchen and Lights, show the app's own button (like Pause) past its first page. Hold the right key for the menu anytime.</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="rkeyApp"></label>
+            <a class="menu-item" href="#/settings/orient"><span class="mi-label">Orientation<small>The right key switches it. Hold the right key for the menu, or an app's own button.</small></span><span class="mi-value" data-setting-value="orient"></span></a>
             <a class="menu-item" href="#/settings/home"><span class="mi-label">Home screen</span><span class="mi-value" data-setting-value="home"></span></a>
             <a class="menu-item" href="#/settings/columns"><span class="mi-label">Grid columns</span><span class="mi-value" data-setting-value="cols"></span></a>
             <label class="menu-item"><span class="mi-label">Boot screen<small>Short start-up text when the app cold starts</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="boot"></label>
@@ -465,7 +491,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.15</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.16</span></a>
           </div>
         </div>
       </section>
@@ -477,16 +503,10 @@
         </div>
       </section>
 
-      <section class="view" data-route="/settings/rkey" data-title="Right button">
-        <div class="menu" role="radiogroup" aria-label="Right button">
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="menu" data-back-on-pick><span class="mi-label">Menu<small>Sections and quick actions</small></span></button>
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="play" data-back-on-pick><span class="mi-label">Play / pause<small>Spotify, from anywhere</small></span></button>
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="music" data-back-on-pick><span class="mi-label">Spotify</span></button>
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="notes" data-back-on-pick><span class="mi-label">Notes</span></button>
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="phone" data-back-on-pick><span class="mi-label">Phone</span></button>
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="calc" data-back-on-pick><span class="mi-label">Calculator</span></button>
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="lights" data-back-on-pick><span class="mi-label">Lights</span></button>
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="settings" data-back-on-pick><span class="mi-label">Settings</span></button>
+      <section class="view" data-route="/settings/orient" data-title="Orientation">
+        <div class="menu" role="radiogroup" aria-label="Orientation">
+          <button class="menu-item" role="radio" data-setting="orient" data-value="portrait" data-back-on-pick><span class="mi-label">Portrait</span></button>
+          <button class="menu-item" role="radio" data-setting="orient" data-value="landscape" data-back-on-pick><span class="mi-label">Landscape<small>Turn the phone a quarter turn to the left. The case stays put; the screen turns.</small></span></button>
         </div>
       </section>
 
@@ -515,7 +535,7 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.15</span></div>
+          <div class="kv"><span>Version</span><span>1.16</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
@@ -548,6 +568,7 @@
 
       </div><!-- /.screen-body -->
     </div><!-- /.screen -->
+    </div><!-- /.screen-slot -->
 
     <nav class="app-controls" aria-label="Controls">
       <button class="key key-sm" id="k-back" aria-label="Back"></button>

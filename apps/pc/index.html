@@ -773,10 +773,9 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .tp-btns .btn { min-height: 52px; touch-action: manipulation; }
     .tp-btns .btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
     /* Right-edge scroll strip, like a mouse wheel */
-    .tp-scroll { position: absolute; top: 0; right: 0; bottom: 0; width: 44px; border-left: 1px dashed var(--line-strong);
-      background: repeating-linear-gradient(0deg, transparent 0 9px, rgba(57,255,106,.14) 9px 11px); }
-    .tp-scroll.on { background-color: rgba(57,255,106,.08); border-left-color: var(--accent); }
-    .tp-scroll::after { content: ''; position: absolute; left: 50%; top: 50%; width: 10px; height: 30px; margin: -15px 0 0 -5px; border: 1px solid var(--text-faint); border-radius: 5px; }
+    .tp-scroll { position: absolute; top: 0; right: 0; bottom: 0; width: 26px; }   /* the touch area is wider than the line you see */
+    .tp-scroll::after { content: ''; position: absolute; top: 12px; bottom: 12px; right: 5px; width: 3px; border-radius: 2px; background: var(--line); transition: background var(--dur) var(--ease-steps); }
+    .tp-scroll.on::after { background: var(--accent); box-shadow: var(--glow-box); }
     /* Sideways: the whole trackpad turns with the phone (rotation lock can stay on) */
     #pad-view { padding: 0; }
     .tp-rot { position: absolute; inset: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
@@ -785,7 +784,10 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .tp-rot.wide .tp-mid { flex-direction: row; }
     .tp-rot.wide .tp-btns { grid-template-columns: none; grid-template-rows: 1fr 1fr; width: 84px; }
     .tp-rot.wide .tp-btns .btn { min-height: 0; }
-    .tp-rot.wide .tp-pad { min-height: 60px; }
+    .tp-rot.wide .tp-pad { min-height: 48px; }
+    .tp-rot { overflow: hidden; }
+    /* With the drawn keyboard up there's little height left: the pad takes the rest, taps still click */
+    .tp-rot.vk-on .tp-btns { display: none; }
     /* Sideways the key row has the phone's full length: fit every key instead of scrolling it */
     .tp-rot.wide .tp-strip { overflow: hidden; gap: 4px; }
     .tp-rot.wide .tp-k { flex: 1 1 0; min-width: 0; padding: 0 2px; font-size: 10px; letter-spacing: 0; }
@@ -795,7 +797,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .vk { flex: none; display: flex; flex-direction: column; gap: 5px; touch-action: none; -webkit-user-select: none; user-select: none; }
     .vk[hidden] { display: none; }
     .vk-row { display: flex; gap: 5px; justify-content: center; }
-    .vk-k { flex: 1 1 0; min-width: 0; height: 34px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1);
+    .vk-k { flex: 1 1 0; min-width: 0; height: var(--vk-h, 34px); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1);
       color: var(--text); font: inherit; font-size: var(--fs-md); display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
     .vk-k.wide { flex-grow: 1.6; font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; }
     .vk-k.space { flex-grow: 5; }
@@ -875,7 +877,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>PC Remote</h1>
-      <span class="app-meta">v1.2</span>
+      <span class="app-meta">v1.3</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -904,7 +906,6 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
         <textarea id="pc-kb" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Type on the PC"></textarea>
         <div class="tp-rot" id="tp-rot">
         <div class="tp-strip" id="tp-strip">
-          <button class="tp-k" id="tp-orient" aria-label="Turn trackpad sideways"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M8 2h8v13H8zM11 12h2M4 9a8 8 0 0 0 3 10M4 19h3v-3"/></svg></button>
           <button class="tp-k" data-kb-toggle aria-label="Keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 6h20v12H2zM6 10h1M10 10h1M14 10h1M18 10h1M7 14h10"/></svg></button>
           <button class="tp-k" data-key="esc">Esc</button>
           <button class="tp-k" data-key="tab">Tab</button>
@@ -1012,7 +1013,6 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
             <a class="menu-item" href="#/settings/speed"><span class="mi-label">Trackpad speed</span><span class="mi-value" data-setting-value="speed"></span></a>
             <label class="menu-item"><span class="mi-label">Natural scrolling<small>Content follows your fingers, like the iPhone</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="natural"></label>
             <a class="menu-item" href="#/settings/browser"><span class="mi-label">Browser for shows<small>Use the one you're signed in to</small></span><span class="mi-value" data-setting-value="browser"></span></a>
-            <a class="menu-item" href="#/settings/orient"><span class="mi-label">Trackpad direction<small>Turn it to use the phone sideways</small></span><span class="mi-value" data-setting-value="orient"></span></a>
             <button class="menu-item" id="pc-identify"><span class="mi-label">Identify monitors<small>Shows each monitor's number on it</small></span></button>
           </div>
         </div>
@@ -1033,7 +1033,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.2</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.3</span></a>
           </div>
         </div>
       </section>
@@ -1046,14 +1046,6 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
         </div>
       </section>
 
-      <section class="view" data-route="/settings/orient" data-title="Direction">
-        <div class="menu" role="radiogroup" aria-label="Trackpad direction">
-          <button class="menu-item" role="radio" data-setting="orient" data-value="up" data-back-on-pick><span class="mi-label">Upright</span></button>
-          <button class="menu-item" role="radio" data-setting="orient" data-value="left" data-back-on-pick><span class="mi-label">Sideways left<small>Phone turned with its top to the left</small></span></button>
-          <button class="menu-item" role="radio" data-setting="orient" data-value="right" data-back-on-pick><span class="mi-label">Sideways right<small>Phone turned with its top to the right</small></span></button>
-        </div>
-        <p class="menu-note">Works with rotation lock on. Sideways, a keyboard appears on the screen instead of the iPhone one. The button at the start of the trackpad's key row switches too.</p>
-      </section>
 
       <section class="view" data-route="/settings/browser" data-title="Browser">
         <div class="menu" role="radiogroup" aria-label="Browser for shows">
@@ -1094,7 +1086,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="PC Remote">
-          <div class="kv"><span>Version</span><span>1.2</span></div>
+          <div class="kv"><span>Version</span><span>1.3</span></div>
           <div class="kv"><span>Monitors</span><span id="ab-mons">—</span></div>
           <div class="kv"><span>Saved shows</span><span id="ab-shows">0</span></div>
           <div class="kv"><span>Needs</span><span>Relay + Tailscale</span></div>
@@ -1135,7 +1127,6 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
     <div class="sheet-title">Actions</div>
     <div class="menu">
       <button class="menu-item" data-action="identify" id="m-identify"><span class="mi-label">Identify monitors</span></button>
-      <button class="menu-item" data-action="orient" id="m-orient"><span class="mi-label">Turn trackpad sideways</span></button>
       <button class="menu-item" data-action="add" id="m-add"><span class="mi-label">Add a show</span></button>
       <button class="menu-item" data-route="/settings/relay"><span class="mi-label">Relay setup</span></button>
     </div>
@@ -1372,7 +1363,7 @@ const PH = (() => {
 /* PC Remote. Uses the phone as a trackpad and keyboard for the PC, and puts shows, videos and windows
    on a chosen monitor. Talks to the relay on the PC (kasa_bridge.py + pc_control.py in
    bgriffie/phosphor-os/bridge) over HTTPS through Tailscale, with the same link and key as Lights. */
-PH.init({ speed: 'normal', natural: true, browser: 'auto', orient: 'up' });
+PH.init({ speed: 'normal', natural: true, browser: 'auto' });
 (() => {
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const KEY = 'pc-remote:data:';   // every tool shares bgriffie.github.io, so keys are prefixed
@@ -1569,17 +1560,20 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto', orient: 'up' });
     else if (kbOpen()) kb.blur(); else { resetKb(); kb.focus({ preventScroll: true }); }
     renderKb();
   }
-  const renderKb = () => $$('[data-kb-toggle]').forEach(b => b.setAttribute('aria-pressed', String(kbOpen())));
+  const renderKb = () => { $$('[data-kb-toggle]').forEach(b => b.setAttribute('aria-pressed', String(kbOpen()))); $('#tp-rot').classList.toggle('vk-on', wide && !vk.hidden); };
 
   const SVG = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="${d}"/></svg>`;
   const VK_ICON = { shift: SVG('M12 3 3 12h5v8h8v-8h5z'), backspace: SVG('M8 5h13v14H8l-6-7zM11 9l6 6M17 9l-6 6'), enter: SVG('M20 5v8H5M9 9l-4 4 4 4') };
   const LAYERS = {
-    abc: ['1234567890', 'qwertyuiop', 'asdfghjkl', ['shift', ...'zxcvbnm', 'backspace'], ['sym', ',', 'space', '.', 'enter']],
-    sym: ['1234567890', '!@#$%^&*()', '-_=+[]{}\\|', ['shift', ...';:\'"/?~`', 'backspace'], ['abc', '<', 'space', '>', 'enter']],
+    abc: ['qwertyuiop', 'asdfghjkl', ['shift', ...'zxcvbnm', 'backspace'], ['sym', ',', 'space', '.', 'enter']],
+    sym: ['1234567890', '!@#$%^&*()', '-_=+[]{}<>', [...';:\'"/?\\|~`', 'backspace'], ['abc', ',', 'space', '.', 'enter']],
   };
   let layer = 'abc', shift = 0;   // shift: 0 off, 1 next letter, 2 caps lock
   function renderVk() {
     if (vk.hidden) return;
+    // keys as tall as fits: what's left after the key row and a usable strip of trackpad
+    const room = $('#tp-rot').clientHeight - $('#tp-strip').offsetHeight - 48 - 16, n = LAYERS[layer].length;
+    vk.style.setProperty('--vk-h', Math.max(22, Math.min(38, Math.floor((room - (n - 1) * 5) / n))) + 'px');
     vk.textContent = '';
     LAYERS[layer].forEach(row => {
       const r = document.createElement('div'); r.className = 'vk-row';
@@ -1609,31 +1603,21 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto', orient: 'up' });
     if (shift === 1) { shift = 0; renderVk(); }
   });
 
-  /* ---------- Sideways ---------- */
-  // 'up', 'left' (phone turned so its top is on the left) or 'right'. If the phone really rotates the
-  // page (rotation lock off), nothing needs turning: the page is already wide.
-  const ORIENT_NEXT = { up: 'left', left: 'right', right: 'up' };
+  /* ---------- Wide ---------- */
+  // When Phosphor OS is turned to landscape the app's frame is wider than tall: the trackpad gets the
+  // wide layout and the drawn keyboard, since the iPhone keyboard stays upright.
   const rot = $('#tp-rot'), padView = $('#pad-view');
   function layoutPad() {
     const W = padView.clientWidth, H = padView.clientHeight; if (!W || !H) return;
-    const o = PH.store.get('orient'), landscape = W > H;
-    turn = landscape || o === 'up' ? 0 : o === 'left' ? 90 : -90;
-    const wasWide = wide; wide = landscape || turn !== 0;
-    rot.classList.toggle('wide', wide); rot.classList.toggle('turned', turn !== 0);
-    if (turn) { rot.style.width = H + 'px'; rot.style.height = W + 'px'; rot.style.transform = `translate(-50%, -50%) rotate(${turn}deg)`; }
-    else { rot.style.width = rot.style.height = rot.style.transform = ''; }
+    const wasWide = wide; wide = W > H;
+    rot.classList.toggle('wide', wide); renderVk();
     if (wide !== wasWide) {   // switch between the iPhone keyboard and the drawn one
       const open = wasWide ? !vk.hidden : document.activeElement === kb;
       if (wasWide) vk.hidden = true; else kb.blur();
       if (open) toggleKb();
     }
-    const ob = $('#tp-orient'); ob.setAttribute('aria-pressed', String(o !== 'up')); ob.setAttribute('aria-label', o === 'up' ? 'Turn trackpad sideways' : 'Trackpad direction: ' + o);
     renderKb();
   }
-  const cycleOrient = () => { const n = ORIENT_NEXT[PH.store.get('orient')] || 'left'; PH.store.set('orient', n); if (route() !== '/pad') PH.go('/pad'); };
-  $('#tp-orient').addEventListener('click', cycleOrient);
-  $('#m-orient').addEventListener('click', cycleOrient);
-  PH.on('orient', layoutPad);
   if (window.ResizeObserver) new ResizeObserver(layoutPad).observe(padView);
   addEventListener('resize', layoutPad);
   kb.addEventListener('blur', renderKb);

@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.15';
+  const VERSION = '1.16';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -258,7 +258,7 @@
     });
     wrap.addEventListener('pointermove', e => {
       if (!drag) return;
-      const dx = e.clientX - drag.lx, dy = e.clientY - drag.ly;
+      const [dx, dy] = toScreen(e.clientX - drag.lx, e.clientY - drag.ly);
       if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 7) { drag.moved = true; clearTimeout(drag.hold); }
       if (drag.moved) { const k = 1.6 / Math.max(160, R * 2); rotate(dy * k * Math.PI, dx * k * Math.PI); vx = dy * k * Math.PI; vy = dx * k * Math.PI; if (!raf) draw(); }
       drag.lx = e.clientX; drag.ly = e.clientY;
@@ -628,7 +628,7 @@
   const syncFrame = () => { const m = /^#\/app\/([\w-]+)/.exec(location.hash); if (m) showFrame(m[1]); else hideFrame(); };
   addEventListener('hashchange', syncFrame);
 
-  /* ---------- Keys under the screen: Back, Home, and a right key picked in Settings ---------- */
+  /* ---------- Keys under the screen: Back, Home, and the turn key ---------- */
   const KI = {
     back: '<path d="M15 4 7 12l8 8"/>',
     home: '<path d="M3 11 12 3l9 8M6 9v11h12V9"/>',
@@ -639,42 +639,54 @@
     music: G.music, lights: G.bulb, notes: G.note, phone: G.phone, calc: G.calc, settings: G.gear,
   };
   const keySvg = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">${KI[n]}</svg>`;
-  const FILLED = {   // solid shapes, so they read cleanly at key size (text glyphs like "II" don't)
-    play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>',
-    pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16"/><rect x="14" y="4" width="5" height="16"/></svg>',
-  };
-  const RKEY = { menu: ['Menu'], play: ['Play or pause'], music: ['Spotify', '/music'], notes: ['Notes', '/notes'], phone: ['Phone', '/phone'], calc: ['Calculator', '/calc'], lights: ['Lights', null, 'lights'], settings: ['Settings', '/settings'] };
-  const APP_GLYPH = { 'II': 'pause', '▸': 'play', '▶': 'play', '+': 'plus', '⟳': 'retry', '▲': 'flag' };
+  KI.turn = '<rect x="3" y="4" width="9" height="16" rx="1"/><path d="M6 17h3M15 5a8 8 0 0 1 6 8M18 11l3 2 2-3"/>';
   const curRoute = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
-  function rightKey() {
-    const c = child();
-    // An app's own key (Pause, Party…) takes over below its first page; on the first page the
-    // right key stays the Menu, so the app's menu (settings, Party mode…) is always reachable
-    if (frameId && c && PH.store.get('rkeyApp') && !c.atHome()) { const k = c.pageKey(); if (k) return { app: k }; }
-    const m = PH.store.get('rkey');
-    return { mode: RKEY[m] ? m : 'menu' };
-  }
+  // The app's own button (Keyboard, Pause, Party…) past its first page; reached by holding the right key
+  const appKey = () => { const c = child(); return frameId && c && !c.atHome() ? c.pageKey() : null; };
   function renderKeys() {
     const back = $('#k-back'), hm = $('#k-home'), right = $('#k-right');
-    if (!back.dataset.icon) { back.innerHTML = keySvg('back'); hm.innerHTML = keySvg('home'); back.dataset.icon = hm.dataset.icon = '1'; }
+    if (!back.dataset.icon) { back.innerHTML = keySvg('back'); hm.innerHTML = keySvg('home'); right.innerHTML = keySvg('turn'); back.dataset.icon = hm.dataset.icon = '1'; }
     back.disabled = !frameId && curRoute() === '/';
-    const r = rightKey(); let html, label, word = false;
-    if (r.app) {
-      const g = APP_GLYPH[r.app.text];
-      html = g ? (FILLED[g] || keySvg(g)) : null; label = r.app.label || r.app.text;
-      if (!html && r.app.svg) html = r.app.svg;
-      if (!html) { html = ''; word = true; }
-      if (r.app.pressed == null) right.removeAttribute('aria-pressed'); else right.setAttribute('aria-pressed', r.app.pressed);
-    } else {
-      right.removeAttribute('aria-pressed');
-      if (r.mode === 'play') { const on = !!(window.PhosphorMusic && PhosphorMusic.playing()); html = on ? FILLED.pause : FILLED.play; label = on ? 'Pause' : 'Play'; }
-      else { html = keySvg(r.mode); label = RKEY[r.mode][0]; }
-    }
-    const sig = (word ? 'w:' + r.app.text : html);
-    if (right.dataset.icon !== sig) { right.dataset.icon = sig; if (word) right.textContent = r.app.text; else right.innerHTML = html; }
-    right.classList.toggle('word', word);
-    right.setAttribute('aria-label', label);
+    const land = PH.store.get('orient') === 'landscape', k = appKey();
+    right.setAttribute('aria-label', (land ? 'Portrait' : 'Landscape') + (k ? '. Hold for ' + (k.label || k.text) : '. Hold for the menu'));
+    right.setAttribute('aria-pressed', String(land));
   }
+
+  /* ---------- Orientation: the screen turns, the case doesn't ---------- */
+  // Landscape means the phone is held a quarter turn to the left (top on the left) with rotation lock
+  // on, so the screen's contents turn +90deg at its swapped size. If iOS really turns the page (lock off)
+  // it's already wide, and nothing is turned.
+  const slot = $('.screen-slot'), rootSt = document.documentElement.style;
+  let turned = false;
+  function applyOrient() {
+    const r = slot.getBoundingClientRect();
+    rootSt.setProperty('--slot-w', r.width + 'px'); rootSt.setProperty('--slot-h', r.height + 'px');
+    rootSt.setProperty('--slot-cx', (r.left + r.width / 2) + 'px'); rootSt.setProperty('--slot-cy', (r.top + r.height / 2) + 'px');
+    const was = turned;
+    turned = PH.store.get('orient') === 'landscape' && innerHeight >= innerWidth;
+    document.documentElement.classList.toggle('os-land', turned);
+    if (was !== turned) dispatchEvent(new Event('resize'));   // canvases (sphere, rain) re-measure
+    renderKeys();
+  }
+  new ResizeObserver(() => applyOrient()).observe(slot);
+  PH.on('orient', applyOrient);
+  // A finger's movement on the glass, turned back into the screen's own directions (for drags in the OS itself;
+  // bundled apps get proper coordinates from the browser because their whole frame is turned)
+  const toScreen = (dx, dy) => turned ? [dy, -dx] : [dx, dy];
+  // Edge-swipe back from the screen's left edge, which is the top of the glass when turned
+  let es = null;
+  document.addEventListener('touchstart', e => {
+    if (!turned) return; e.stopPropagation();   // the brand's own edge swipe watches the glass's left edge, which is wrong here
+    const t = e.touches[0], top = $('.screen').getBoundingClientRect().top;
+    es = t.clientY - top < 24 ? { x: t.clientX, y: t.clientY } : null;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (!turned) return; e.stopPropagation();
+    const t = e.changedTouches[0];
+    if (es && !frameId && curRoute() !== '/' && t.clientY - es.y > 70 && Math.abs(t.clientX - es.x) < 60 && !$('dialog[open]')) PH.back();
+    es = null;
+  }, { passive: true });
+
   function closeDialogs() { $$('dialog[open]').forEach(d => d.close()); }
   $('#k-back').addEventListener('click', () => {
     if (frameId) {
@@ -697,26 +709,19 @@
     if (frameId && c) { c.openMenu(); return; }
     const m = $('#menu'); if (m.open) m.close(); else m.showModal();
   }
-  // Hold the right key: the menu, whatever the key is showing
+  // Right key: tap turns the screen; hold opens the menu, or presses the app's own button when it shows one
   let rkHold = null, rkHeld = false;
-  $('#k-right').addEventListener('pointerdown', () => { rkHeld = false; clearTimeout(rkHold); rkHold = setTimeout(() => { rkHeld = true; openMenu(); }, 550); });
+  $('#k-right').addEventListener('pointerdown', () => { rkHeld = false; clearTimeout(rkHold); rkHold = setTimeout(() => {
+    rkHeld = true; const c = child();
+    if (appKey()) c.pressKey(); else openMenu();
+  }, 550); });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(n => $('#k-right').addEventListener(n, () => clearTimeout(rkHold)));
   $('#k-right').addEventListener('contextmenu', e => e.preventDefault());
   $('#k-right').addEventListener('click', () => {
     if (rkHeld) { rkHeld = false; return; }
-    const r = rightKey(), c = child();
-    if (r.app) { c.pressKey(); return; }
-    if (r.mode === 'menu') { openMenu(); return; }
-    if (r.mode === 'play') { PhosphorMusic.toggle(); return; }
-    closeDialogs();
-    if (RKEY[r.mode][2]) { openApp(RKEY[r.mode][2]); return; }
-    const to = RKEY[r.mode][1];
-    if (frameId) { hideFrame(); location.replace(location.href.split('#')[0] + '#' + to); }
-    else PH.go(to);
+    PH.store.set('orient', PH.store.get('orient') === 'landscape' ? 'portrait' : 'landscape');
   });
   addEventListener('hashchange', renderKeys);
-  addEventListener('os-music', renderKeys);
-  PH.on('rkey', renderKeys); PH.on('rkeyApp', renderKeys);
 
   /* ---------- Routes ---------- */
   let prevRoute = null;
@@ -765,8 +770,8 @@
 
   /* ---------- Start ---------- */
   renderGrid(); renderTileList(); renderNotes(); renderDial(); renderCalc();
-  PH.init({ clock: '12', cols: '4', boot: true, home: 'sphere', rkey: 'menu', rkeyApp: true });
-  renderGrid(); renderKeys();
+  PH.init({ clock: '12', cols: '4', boot: true, home: 'sphere', orient: 'portrait' });
+  renderGrid(); applyOrient();
   startClock();
   if (/^#\/app\//.test(location.hash)) syncFrame(); else boot();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');

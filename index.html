@@ -749,6 +749,32 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .app-controls .key.word { font-size: var(--fs-sm); }
     .app { padding-top: max(var(--sp-2), calc(var(--safe-top) - 4px)); }
 
+    /* Landscape (v1.16, Floyd): the right key turns the screen a quarter turn so the phone can be held
+       sideways (top to the left) with rotation lock on. The case and keys stay exactly where they are;
+       the screen's contents are laid out at its swapped size and turned +90deg, and the key icons turn with them. */
+    .app > .screen-slot { flex: 1 1 auto; min-height: 0; position: relative; }
+    .screen-slot > .screen { position: absolute; inset: 0; }
+    html.os-land .screen-slot > .screen {
+      inset: auto; left: 50%; top: 50%; margin: 0;
+      width: calc(var(--slot-h, 100vh) - 8px); height: calc(var(--slot-w, 100vw) - 8px);
+      transform: translate(-50%, -50%) rotate(90deg);
+    }
+    html.os-land .app-controls .key > * { transform: rotate(90deg); }
+    html.os-land .app-controls .key.word { writing-mode: vertical-rl; }
+    /* dialogs and toasts live outside the screen, so they turn on their own, centred on it */
+    html.os-land dialog[open] {
+      inset: auto !important; left: var(--slot-cx, 50%) !important; top: var(--slot-cy, 50%) !important; margin: 0 !important;
+      transform: translate(-50%, -50%) rotate(90deg); animation: none !important;
+      width: min(calc(var(--slot-h, 100vh) - 40px), 420px) !important; max-width: none !important;
+      height: fit-content; max-height: calc(var(--slot-w, 100vw) - 40px) !important;
+      border: 1px solid var(--accent) !important; border-radius: var(--radius) !important; padding-bottom: var(--sp-3) !important;
+    }
+    html.os-land dialog.sheet:not(.dropdown)::before { content: none; }
+    html.os-land .toast-host {
+      left: var(--slot-cx, 50%); right: auto; bottom: auto; top: var(--slot-cy, 50%); padding: 0; width: calc(var(--slot-h, 100vh) - 24px);
+      transform: translate(-50%, -50%) rotate(90deg) translateY(calc(var(--slot-w, 100vw) / 2 - 64px));
+    }
+
     /* Boot screen: covers the CRT on a cold start, tap to skip */
     .boot-screen {
       position: absolute; inset: 0; z-index: 5; padding: 56px var(--sp-5) var(--sp-5);
@@ -920,8 +946,9 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.15</span>
+      <span class="app-meta">v1.16</span>
     </header>
+    <div class="screen-slot">
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
       <div class="boot-screen" id="boot" hidden aria-hidden="true"></div>
@@ -1162,8 +1189,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
             <a class="menu-item" href="#/tiles"><span class="mi-label">Tiles</span><span class="mi-value" id="tile-count"></span></a>
             <a class="menu-item" href="#/music/setup"><span class="mi-label">Spotify</span><span class="mi-value" id="set-spotify"></span></a>
                         <a class="menu-item" href="#/settings/clock"><span class="mi-label">Clock</span><span class="mi-value" data-setting-value="clock"></span></a>
-            <a class="menu-item" href="#/settings/rkey"><span class="mi-label">Right button</span><span class="mi-value" data-setting-value="rkey"></span></a>
-            <label class="menu-item"><span class="mi-label">App buttons first<small>Inside Arcade, Kitchen and Lights, show the app's own button (like Pause) past its first page. Hold the right key for the menu anytime.</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="rkeyApp"></label>
+            <a class="menu-item" href="#/settings/orient"><span class="mi-label">Orientation<small>The right key switches it. Hold the right key for the menu, or an app's own button.</small></span><span class="mi-value" data-setting-value="orient"></span></a>
             <a class="menu-item" href="#/settings/home"><span class="mi-label">Home screen</span><span class="mi-value" data-setting-value="home"></span></a>
             <a class="menu-item" href="#/settings/columns"><span class="mi-label">Grid columns</span><span class="mi-value" data-setting-value="cols"></span></a>
             <label class="menu-item"><span class="mi-label">Boot screen<small>Short start-up text when the app cold starts</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="boot"></label>
@@ -1188,7 +1214,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.15</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.16</span></a>
           </div>
         </div>
       </section>
@@ -1200,16 +1226,10 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         </div>
       </section>
 
-      <section class="view" data-route="/settings/rkey" data-title="Right button">
-        <div class="menu" role="radiogroup" aria-label="Right button">
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="menu" data-back-on-pick><span class="mi-label">Menu<small>Sections and quick actions</small></span></button>
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="play" data-back-on-pick><span class="mi-label">Play / pause<small>Spotify, from anywhere</small></span></button>
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="music" data-back-on-pick><span class="mi-label">Spotify</span></button>
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="notes" data-back-on-pick><span class="mi-label">Notes</span></button>
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="phone" data-back-on-pick><span class="mi-label">Phone</span></button>
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="calc" data-back-on-pick><span class="mi-label">Calculator</span></button>
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="lights" data-back-on-pick><span class="mi-label">Lights</span></button>
-          <button class="menu-item" role="radio" data-setting="rkey" data-value="settings" data-back-on-pick><span class="mi-label">Settings</span></button>
+      <section class="view" data-route="/settings/orient" data-title="Orientation">
+        <div class="menu" role="radiogroup" aria-label="Orientation">
+          <button class="menu-item" role="radio" data-setting="orient" data-value="portrait" data-back-on-pick><span class="mi-label">Portrait</span></button>
+          <button class="menu-item" role="radio" data-setting="orient" data-value="landscape" data-back-on-pick><span class="mi-label">Landscape<small>Turn the phone a quarter turn to the left. The case stays put; the screen turns.</small></span></button>
         </div>
       </section>
 
@@ -1238,7 +1258,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.15</span></div>
+          <div class="kv"><span>Version</span><span>1.16</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
@@ -1271,6 +1291,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 
       </div><!-- /.screen-body -->
     </div><!-- /.screen -->
+    </div><!-- /.screen-slot -->
 
     <nav class="app-controls" aria-label="Controls">
       <button class="key key-sm" id="k-back" aria-label="Back"></button>
@@ -1970,7 +1991,7 @@ const PH = (() => {
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.15';
+  const VERSION = '1.16';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -2225,7 +2246,7 @@ const PH = (() => {
     });
     wrap.addEventListener('pointermove', e => {
       if (!drag) return;
-      const dx = e.clientX - drag.lx, dy = e.clientY - drag.ly;
+      const [dx, dy] = toScreen(e.clientX - drag.lx, e.clientY - drag.ly);
       if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 7) { drag.moved = true; clearTimeout(drag.hold); }
       if (drag.moved) { const k = 1.6 / Math.max(160, R * 2); rotate(dy * k * Math.PI, dx * k * Math.PI); vx = dy * k * Math.PI; vy = dx * k * Math.PI; if (!raf) draw(); }
       drag.lx = e.clientX; drag.ly = e.clientY;
@@ -2595,7 +2616,7 @@ const PH = (() => {
   const syncFrame = () => { const m = /^#\/app\/([\w-]+)/.exec(location.hash); if (m) showFrame(m[1]); else hideFrame(); };
   addEventListener('hashchange', syncFrame);
 
-  /* ---------- Keys under the screen: Back, Home, and a right key picked in Settings ---------- */
+  /* ---------- Keys under the screen: Back, Home, and the turn key ---------- */
   const KI = {
     back: '<path d="M15 4 7 12l8 8"/>',
     home: '<path d="M3 11 12 3l9 8M6 9v11h12V9"/>',
@@ -2606,42 +2627,54 @@ const PH = (() => {
     music: G.music, lights: G.bulb, notes: G.note, phone: G.phone, calc: G.calc, settings: G.gear,
   };
   const keySvg = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">${KI[n]}</svg>`;
-  const FILLED = {   // solid shapes, so they read cleanly at key size (text glyphs like "II" don't)
-    play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>',
-    pause: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16"/><rect x="14" y="4" width="5" height="16"/></svg>',
-  };
-  const RKEY = { menu: ['Menu'], play: ['Play or pause'], music: ['Spotify', '/music'], notes: ['Notes', '/notes'], phone: ['Phone', '/phone'], calc: ['Calculator', '/calc'], lights: ['Lights', null, 'lights'], settings: ['Settings', '/settings'] };
-  const APP_GLYPH = { 'II': 'pause', '▸': 'play', '▶': 'play', '+': 'plus', '⟳': 'retry', '▲': 'flag' };
+  KI.turn = '<rect x="3" y="4" width="9" height="16" rx="1"/><path d="M6 17h3M15 5a8 8 0 0 1 6 8M18 11l3 2 2-3"/>';
   const curRoute = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
-  function rightKey() {
-    const c = child();
-    // An app's own key (Pause, Party…) takes over below its first page; on the first page the
-    // right key stays the Menu, so the app's menu (settings, Party mode…) is always reachable
-    if (frameId && c && PH.store.get('rkeyApp') && !c.atHome()) { const k = c.pageKey(); if (k) return { app: k }; }
-    const m = PH.store.get('rkey');
-    return { mode: RKEY[m] ? m : 'menu' };
-  }
+  // The app's own button (Keyboard, Pause, Party…) past its first page; reached by holding the right key
+  const appKey = () => { const c = child(); return frameId && c && !c.atHome() ? c.pageKey() : null; };
   function renderKeys() {
     const back = $('#k-back'), hm = $('#k-home'), right = $('#k-right');
-    if (!back.dataset.icon) { back.innerHTML = keySvg('back'); hm.innerHTML = keySvg('home'); back.dataset.icon = hm.dataset.icon = '1'; }
+    if (!back.dataset.icon) { back.innerHTML = keySvg('back'); hm.innerHTML = keySvg('home'); right.innerHTML = keySvg('turn'); back.dataset.icon = hm.dataset.icon = '1'; }
     back.disabled = !frameId && curRoute() === '/';
-    const r = rightKey(); let html, label, word = false;
-    if (r.app) {
-      const g = APP_GLYPH[r.app.text];
-      html = g ? (FILLED[g] || keySvg(g)) : null; label = r.app.label || r.app.text;
-      if (!html && r.app.svg) html = r.app.svg;
-      if (!html) { html = ''; word = true; }
-      if (r.app.pressed == null) right.removeAttribute('aria-pressed'); else right.setAttribute('aria-pressed', r.app.pressed);
-    } else {
-      right.removeAttribute('aria-pressed');
-      if (r.mode === 'play') { const on = !!(window.PhosphorMusic && PhosphorMusic.playing()); html = on ? FILLED.pause : FILLED.play; label = on ? 'Pause' : 'Play'; }
-      else { html = keySvg(r.mode); label = RKEY[r.mode][0]; }
-    }
-    const sig = (word ? 'w:' + r.app.text : html);
-    if (right.dataset.icon !== sig) { right.dataset.icon = sig; if (word) right.textContent = r.app.text; else right.innerHTML = html; }
-    right.classList.toggle('word', word);
-    right.setAttribute('aria-label', label);
+    const land = PH.store.get('orient') === 'landscape', k = appKey();
+    right.setAttribute('aria-label', (land ? 'Portrait' : 'Landscape') + (k ? '. Hold for ' + (k.label || k.text) : '. Hold for the menu'));
+    right.setAttribute('aria-pressed', String(land));
   }
+
+  /* ---------- Orientation: the screen turns, the case doesn't ---------- */
+  // Landscape means the phone is held a quarter turn to the left (top on the left) with rotation lock
+  // on, so the screen's contents turn +90deg at its swapped size. If iOS really turns the page (lock off)
+  // it's already wide, and nothing is turned.
+  const slot = $('.screen-slot'), rootSt = document.documentElement.style;
+  let turned = false;
+  function applyOrient() {
+    const r = slot.getBoundingClientRect();
+    rootSt.setProperty('--slot-w', r.width + 'px'); rootSt.setProperty('--slot-h', r.height + 'px');
+    rootSt.setProperty('--slot-cx', (r.left + r.width / 2) + 'px'); rootSt.setProperty('--slot-cy', (r.top + r.height / 2) + 'px');
+    const was = turned;
+    turned = PH.store.get('orient') === 'landscape' && innerHeight >= innerWidth;
+    document.documentElement.classList.toggle('os-land', turned);
+    if (was !== turned) dispatchEvent(new Event('resize'));   // canvases (sphere, rain) re-measure
+    renderKeys();
+  }
+  new ResizeObserver(() => applyOrient()).observe(slot);
+  PH.on('orient', applyOrient);
+  // A finger's movement on the glass, turned back into the screen's own directions (for drags in the OS itself;
+  // bundled apps get proper coordinates from the browser because their whole frame is turned)
+  const toScreen = (dx, dy) => turned ? [dy, -dx] : [dx, dy];
+  // Edge-swipe back from the screen's left edge, which is the top of the glass when turned
+  let es = null;
+  document.addEventListener('touchstart', e => {
+    if (!turned) return; e.stopPropagation();   // the brand's own edge swipe watches the glass's left edge, which is wrong here
+    const t = e.touches[0], top = $('.screen').getBoundingClientRect().top;
+    es = t.clientY - top < 24 ? { x: t.clientX, y: t.clientY } : null;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (!turned) return; e.stopPropagation();
+    const t = e.changedTouches[0];
+    if (es && !frameId && curRoute() !== '/' && t.clientY - es.y > 70 && Math.abs(t.clientX - es.x) < 60 && !$('dialog[open]')) PH.back();
+    es = null;
+  }, { passive: true });
+
   function closeDialogs() { $$('dialog[open]').forEach(d => d.close()); }
   $('#k-back').addEventListener('click', () => {
     if (frameId) {
@@ -2664,26 +2697,19 @@ const PH = (() => {
     if (frameId && c) { c.openMenu(); return; }
     const m = $('#menu'); if (m.open) m.close(); else m.showModal();
   }
-  // Hold the right key: the menu, whatever the key is showing
+  // Right key: tap turns the screen; hold opens the menu, or presses the app's own button when it shows one
   let rkHold = null, rkHeld = false;
-  $('#k-right').addEventListener('pointerdown', () => { rkHeld = false; clearTimeout(rkHold); rkHold = setTimeout(() => { rkHeld = true; openMenu(); }, 550); });
+  $('#k-right').addEventListener('pointerdown', () => { rkHeld = false; clearTimeout(rkHold); rkHold = setTimeout(() => {
+    rkHeld = true; const c = child();
+    if (appKey()) c.pressKey(); else openMenu();
+  }, 550); });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(n => $('#k-right').addEventListener(n, () => clearTimeout(rkHold)));
   $('#k-right').addEventListener('contextmenu', e => e.preventDefault());
   $('#k-right').addEventListener('click', () => {
     if (rkHeld) { rkHeld = false; return; }
-    const r = rightKey(), c = child();
-    if (r.app) { c.pressKey(); return; }
-    if (r.mode === 'menu') { openMenu(); return; }
-    if (r.mode === 'play') { PhosphorMusic.toggle(); return; }
-    closeDialogs();
-    if (RKEY[r.mode][2]) { openApp(RKEY[r.mode][2]); return; }
-    const to = RKEY[r.mode][1];
-    if (frameId) { hideFrame(); location.replace(location.href.split('#')[0] + '#' + to); }
-    else PH.go(to);
+    PH.store.set('orient', PH.store.get('orient') === 'landscape' ? 'portrait' : 'landscape');
   });
   addEventListener('hashchange', renderKeys);
-  addEventListener('os-music', renderKeys);
-  PH.on('rkey', renderKeys); PH.on('rkeyApp', renderKeys);
 
   /* ---------- Routes ---------- */
   let prevRoute = null;
@@ -2732,8 +2758,8 @@ const PH = (() => {
 
   /* ---------- Start ---------- */
   renderGrid(); renderTileList(); renderNotes(); renderDial(); renderCalc();
-  PH.init({ clock: '12', cols: '4', boot: true, home: 'sphere', rkey: 'menu', rkeyApp: true });
-  renderGrid(); renderKeys();
+  PH.init({ clock: '12', cols: '4', boot: true, home: 'sphere', orient: 'portrait' });
+  renderGrid(); applyOrient();
   startClock();
   if (/^#\/app\//.test(location.hash)) syncFrame(); else boot();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
