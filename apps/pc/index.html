@@ -810,6 +810,9 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .wm { position: relative; width: 100%; }
     .wm-mon { position: absolute; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--surface-1); padding: 22px 5px 5px;
       display: flex; flex-wrap: wrap; align-content: flex-start; gap: 4px; overflow: hidden; cursor: pointer; }
+    .wm-shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; opacity: .85; pointer-events: none; }
+    .wm-mon .wm-chip { z-index: 1; opacity: .92; }
+    .wm-mon .wm-num { z-index: 1; background: rgba(3,7,3,.75); padding: 0 4px; border-radius: 2px; }
     .wm-mon::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(57,255,106,.035) 3px 4px); pointer-events: none; }
     .wm-num { position: absolute; top: 3px; left: 6px; font-size: var(--fs-xs); font-weight: 700; color: var(--text-dim); letter-spacing: var(--tracking-label); text-transform: uppercase; pointer-events: none; }
     .wm-big { position: absolute; right: 6px; bottom: -6px; font-size: 44px; font-weight: 700; line-height: 1; color: rgba(57,255,106,.10); pointer-events: none; }
@@ -828,6 +831,17 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .wm-acts .btn { min-height: 44px; padding: 0 4px; font-size: var(--fs-xs); }
     #wi-groups .menu-group { margin-top: var(--sp-4); }
     .wm-row.is-sel { border-color: var(--accent); box-shadow: var(--glow-box); }
+    /* Live view of one monitor */
+    .ls-top { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; flex: none; }
+    .ls-top .mon { height: 40px; min-width: 44px; }
+    .ls-swap { margin-left: auto; display: flex; gap: var(--sp-2); }
+    .ls-swap .btn { min-height: 40px; padding: 0 var(--sp-2); font-size: var(--fs-xs); }
+    .ls-box { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
+    .ls-pic { position: relative; max-width: 100%; max-height: 100%; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    .ls-pic img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); pointer-events: none; }
+    .ls-cur { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border: 2px solid var(--accent); border-radius: 50%; box-shadow: var(--glow-box); pointer-events: none; }
+    .ls-cur[hidden] { display: none; }
+    .ls-hint { flex: none; text-align: center; }
     #pc-kb { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; font-size: 16px; resize: none; caret-color: transparent; background: transparent; color: transparent; }
 
     /* Monitor picks */
@@ -880,7 +894,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>PC Remote</h1>
-      <span class="app-meta">v1.3</span>
+      <span class="app-meta">v1.4</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -982,6 +996,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
       <section class="view" data-route="/windows" data-title="Windows">
         <p class="pc-note" id="wi-note" hidden></p>
         <div class="wm" id="wm"></div>
+        <p class="hint" id="wm-hint">Tap a monitor to see it live and use it. Tap a window, then a monitor, to move it.</p>
         <div class="wm-tray" id="wm-tray" hidden></div>
         <div class="wm-bar" id="wm-bar" hidden>
           <div class="wm-bar-t" id="wm-bar-t"></div>
@@ -994,6 +1009,14 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           </div>
         </div>
         <div id="wi-groups"></div>
+      </section>
+
+      <section class="view fill" data-route="/windows/live" data-title="Live" id="live-view">
+        <div class="ls-top"><div class="mons" id="ls-mons"></div><div class="ls-swap" id="ls-swap"></div></div>
+        <div class="ls-box" id="ls-box">
+          <div class="ls-pic" id="ls-pic"><img id="ls-img" alt="Live picture of the monitor" width="1600" height="900"><span class="ls-cur" id="ls-cur" hidden></span></div>
+        </div>
+        <p class="hint ls-hint">Tap to click · hold to right-click · drag to point · two fingers to scroll</p>
       </section>
 
       <section class="view" data-route="/media" data-title="Media">
@@ -1036,7 +1059,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.3</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.4</span></a>
           </div>
         </div>
       </section>
@@ -1089,7 +1112,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="PC Remote">
-          <div class="kv"><span>Version</span><span>1.3</span></div>
+          <div class="kv"><span>Version</span><span>1.4</span></div>
           <div class="kv"><span>Monitors</span><span id="ab-mons">—</span></div>
           <div class="kv"><span>Saved shows</span><span id="ab-shows">0</span></div>
           <div class="kv"><span>Needs</span><span>Relay + Tailscale</span></div>
@@ -1739,7 +1762,7 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
   /* ---------- Windows: a map of the monitors ---------- */
   // Each monitor is drawn where it sits on the desk, with a chip for every window on it.
   // Tap a window, then a monitor, to move it (or drag the chip there). Tap a monitor, then another, to swap them.
-  let selWin = null, selMon = null, wBusy = false, wPoll = 0;
+  let selWin = null, wBusy = false, wPoll = 0;
   const winById = id => wins.find(w => w.id === id);
   async function loadWins() {
     if (!ready() || wBusy) return;
@@ -1760,12 +1783,13 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
       const minX = Math.min(...list.map(m => m.x)), maxX = Math.max(...list.map(m => m.x + m.w));
       const minY = Math.min(...list.map(m => m.y)), maxY = Math.max(...list.map(m => m.y + m.h));
       const W = map.clientWidth || 320, sx = W / (maxX - minX);
-      const sy = Math.min(Math.max(sx, 92 / Math.min(...list.map(m => m.h))), 300 / (maxY - minY));
+      const sy = sx;   // true proportions, so the live pictures aren't squashed
       map.style.height = Math.round((maxY - minY) * sy) + 'px';
       list.forEach(m => {
-        const el = document.createElement('div'); el.className = 'wm-mon' + (m.n === selMon ? ' is-sel' : ''); el.dataset.mon = m.n;
+        const el = document.createElement('div'); el.className = 'wm-mon'; el.dataset.mon = m.n;
         Object.assign(el.style, { left: (m.x - minX) * sx + 2 + 'px', top: (m.y - minY) * sy + 2 + 'px', width: m.w * sx - 4 + 'px', height: m.h * sy - 4 + 'px' });
         el.innerHTML = `<span class="wm-num">${m.n}${m.primary ? ' · main' : ''}</span><span class="wm-big" aria-hidden="true">${m.n}</span>`;
+        if (shots[m.n]) { const img = document.createElement('img'); img.className = 'wm-shot'; img.dataset.shot = m.n; img.src = shots[m.n]; img.alt = ''; el.prepend(img); }
         wins.filter(w => !w.min && w.monitor === m.n).forEach(w => el.appendChild(chip(w)));
         map.appendChild(el);
       });
@@ -1776,16 +1800,13 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
 
     // What's selected, and what tapping a monitor will do
     const w = selWin && winById(selWin), bar = $('#wm-bar');
-    bar.hidden = !w && !selMon;
+    bar.hidden = !w;
     $('#wm-acts').hidden = !w;
     if (w) {
       $('#wm-bar-t').textContent = w.title;
       $('#wm-bar-h').textContent = w.min ? 'Minimised. Tap Restore, or tap a monitor to put it there.' : 'On monitor ' + w.monitor + '. Tap another monitor, or drag it there. Tap it again to let go.';
       $('[data-wact="focus"]').textContent = w.min ? 'Restore' : 'Front';
       $('[data-wact="minimize"]').hidden = !!w.min;
-    } else if (selMon) {
-      $('#wm-bar-t').textContent = 'Monitor ' + selMon;
-      $('#wm-bar-h').textContent = list.length > 1 ? 'Tap another monitor to swap everything on the two.' : 'There\'s only one monitor.';
     }
 
     // The full list, by monitor
@@ -1826,10 +1847,9 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
   function tapMonitor(n) {
     if (wBusy) return;
     if (selWin) { const id = selWin; moveTo(id, n); return; }
-    if (selMon && selMon !== n) { const a = selMon; selMon = null; renderWins(); swap(a, n).then(renderWins); return; }
-    selMon = selMon === n ? null : n; renderWins();
+    liveMon = n; PH.go('/windows/live');   // nothing picked: open that monitor's live view
   }
-  const selectWin = id => { selMon = null; selWin = selWin === id ? null : id; renderWins(); };
+  const selectWin = id => { selWin = selWin === id ? null : id; renderWins(); };
 
   // Drag a chip onto a monitor; a tap without moving just selects it
   let wd = null;
@@ -1871,6 +1891,101 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
   const pollWins = on => { clearInterval(wPoll); wPoll = on ? setInterval(() => { if (!wd && !document.hidden) loadWins(); }, 5000) : 0; };
   addEventListener('resize', () => { if (route() === '/windows') renderWins(); });
 
+  /* ---------- Live pictures ---------- */
+  // The relay sends a small picture of a monitor on request. The map refreshes each monitor in turn;
+  // the live view refreshes one monitor as fast as the connection allows.
+  const shots = {};   // monitor -> object URL of its latest picture
+  let liveMon = load('live', 1), liveGen = 0, liveOff = false;
+  async function grab(n, width, q) {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
+    try {
+      const r = await fetch(`${link.url}/pc/shot?mon=${n}&w=${Math.round(width)}&q=${q}`, { headers: { Authorization: 'Bearer ' + link.key }, cache: 'no-store', signal: ctl.signal });
+      if (r.status === 404 && !mons().some(m => m.n === n)) return null;
+      if (r.status === 404) { liveOff = true; $('#wi-note').textContent = 'Update the relay on the PC to see live pictures (Settings › Relay).'; $('#wi-note').hidden = false; return null; }
+      if (!r.ok) return null;
+      const url = URL.createObjectURL(await r.blob());
+      if (shots[n]) URL.revokeObjectURL(shots[n]);
+      shots[n] = url;
+      return { url, cursor: r.headers.get('X-Cursor') };
+    } catch { return null; } finally { clearTimeout(t); }
+  }
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  async function liveLoop() {
+    const gen = ++liveGen, dpr = Math.min(2, devicePixelRatio || 1);
+    while (gen === liveGen && !liveOff && ready() && !document.hidden) {
+      const r = route();
+      if (r === '/windows/live') {
+        const t0 = Date.now(), box = $('#ls-box');
+        const got = await grab(liveMon, Math.min(1600, box.clientWidth * dpr), 55);
+        if (gen !== liveGen) break;
+        if (got) { $('#ls-img').src = got.url; showCursor(got.cursor); }
+        await sleep(Math.max(120, 250 - (Date.now() - t0)));
+      } else if (r === '/windows') {
+        for (const m of mons()) {
+          const el = $(`.wm-mon[data-mon="${m.n}"]`); if (!el) continue;
+          const got = await grab(m.n, Math.min(640, el.clientWidth * dpr), 50);
+          if (gen !== liveGen || route() !== '/windows') break;
+          if (got) {
+            let img = el.querySelector('.wm-shot');
+            if (!img) { img = document.createElement('img'); img.className = 'wm-shot'; img.alt = ''; el.prepend(img); }
+            img.src = got.url;
+          }
+        }
+        await sleep(1200);
+      } else break;
+    }
+  }
+  const stopLive = () => { liveGen++; };
+  function showCursor(c) {
+    const el = $('#ls-cur'), m = /^([\d.]+),([\d.]+)$/.exec(c || '');
+    el.hidden = !m; if (m) { el.style.left = m[1] * 100 + '%'; el.style.top = m[2] * 100 + '%'; }
+  }
+  function renderLive() {
+    const list = mons(); if (list.length && !list.some(m => m.n === liveMon)) liveMon = list[0].n;
+    const m = list.find(x => x.n === liveMon);
+    if (m) { const img = $('#ls-img'); if (+img.getAttribute('width') !== m.w) { img.setAttribute('width', m.w); img.setAttribute('height', m.h); img.removeAttribute('src'); } }
+    if (shots[liveMon]) $('#ls-img').src = shots[liveMon];
+    monButtons($('#ls-mons'), { here: liveMon, label: false, pick: n => { liveMon = n; save('live', n); showCursor(''); renderLive(); } });
+    const sw = $('#ls-swap'); sw.textContent = '';
+    list.filter(x => x.n !== liveMon).forEach(x => {
+      const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Swap with ' + x.n;
+      b.addEventListener('click', () => busy(b, async () => { await swap(liveMon, x.n); loadWins(); })); sw.appendChild(b);
+    });
+  }
+  // Touch on the picture = the mouse on that monitor
+  const pic = $('#ls-pic');
+  let lt = null, ltHold = 0;
+  const frac = t => { const r = $('#ls-img').getBoundingClientRect(); return [(t.clientX - r.left) / r.width, (t.clientY - r.top) / r.height]; };
+  const at = t => { const [fx, fy] = frac(t); push({ at: [liveMon, +fx.toFixed(4), +fy.toFixed(4)] }); showCursor(fx.toFixed(4) + ',' + fy.toFixed(4)); };
+  pic.addEventListener('touchstart', e => {
+    e.preventDefault(); e.stopPropagation();
+    if (!lt) {
+      const t = e.touches[0];
+      lt = { x: t.clientX, y: t.clientY, moved: false, held: false, fingers: e.touches.length, last: centroid(e.touches) };
+      clearTimeout(ltHold);
+      ltHold = setTimeout(() => { if (lt && !lt.moved && lt.fingers === 1) { lt.held = true; at(t); push({ c: 'right' }); } }, 550);
+    } else { lt.fingers = Math.max(lt.fingers, e.touches.length); lt.last = centroid(e.touches); clearTimeout(ltHold); }
+    if (e.touches.length === 2) at(centroid(e.touches));
+  }, { passive: false });
+  pic.addEventListener('touchmove', e => {
+    e.preventDefault(); e.stopPropagation(); if (!lt) return;
+    const c = centroid(e.touches);
+    if (!lt.moved && Math.hypot(c.x - lt.x, c.y - lt.y) > 8) { lt.moved = true; clearTimeout(ltHold); }
+    if (!lt.moved) return;
+    if (e.touches.length >= 2) { const k = PH.store.get('natural') ? 3 : -3; sy += (c.y - lt.last.y) * k; sx += -(c.x - lt.last.x) * k; schedule(); }
+    else if (lt.fingers === 1) at(e.touches[0]);
+    lt.last = c;
+  }, { passive: false });
+  const ltEnd = e => {
+    e.preventDefault(); e.stopPropagation();
+    if (!lt || e.touches.length) return;
+    clearTimeout(ltHold);
+    if (!lt.moved && !lt.held) { const t = e.changedTouches[0]; at(t); push({ c: lt.fingers === 2 ? 'right' : 'left' }); }
+    lt = null;
+  };
+  pic.addEventListener('touchend', ltEnd, { passive: false }); pic.addEventListener('touchcancel', ltEnd, { passive: false });
+  pic.addEventListener('click', e => { if (e.pointerType === 'mouse' || e.detail) { at(e); push({ c: 'left' }); } });   // clicking with a mouse, on a computer
+
   /* ---------- Setup and settings ---------- */
   $('#pc-save').addEventListener('click', async () => {
     const p = parseLink($('#pc-link').value);
@@ -1908,11 +2023,13 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
 
   // Connect while the app is on screen; the trackpad's live link only on its page
   function sync() {
-    if (document.hidden) { closeWS(); pollWins(false); return; }
+    if (document.hidden) { closeWS(); pollWins(false); stopLive(); return; }
     check();
     const r = route();
-    if (r === '/pad') { wsTries = 0; openWS(); } else closeWS();
-    if (r === '/windows') loadWins();
+    if (r === '/pad' || r === '/windows/live') { wsTries = 0; openWS(); } else closeWS();
+    if (r === '/windows' || r === '/windows/live') loadWins();
+    if (r === '/windows/live') renderLive();
+    if (r === '/windows' || r === '/windows/live') { liveOff = false; liveLoop(); } else stopLive();
     pollWins(r === '/windows' && !document.hidden);
     if (r !== '/pad' && kbOpen()) kb.blur();
     if (dragging && r !== '/pad') { setDrag(false); push({ up: 'left' }); }

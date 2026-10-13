@@ -7,7 +7,7 @@ Every request needs the same secret key as the lights, and Tailscale keeps out e
 
     python pc_control.py --identify     show each monitor's number on that monitor for 3 s
 """
-import asyncio, json, os, re, subprocess, sys, time
+import asyncio, json, os, re, struct, subprocess, sys, time, zlib
 
 from aiohttp import web, WSMsgType
 
@@ -113,6 +113,23 @@ if WINDOWS:
     kernel32.OpenProcess.restype = wintypes.HANDLE
     kernel32.QueryFullProcessImageNameW.argtypes = (wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR, ctypes.POINTER(wintypes.DWORD))
     kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+    gdi32 = ctypes.WinDLL('gdi32', use_last_error=True)
+
+    class BITMAPINFOHEADER(ctypes.Structure):
+        _fields_ = [('biSize', wintypes.DWORD), ('biWidth', wintypes.LONG), ('biHeight', wintypes.LONG), ('biPlanes', wintypes.WORD),
+                    ('biBitCount', wintypes.WORD), ('biCompression', wintypes.DWORD), ('biSizeImage', wintypes.DWORD),
+                    ('biXPelsPerMeter', wintypes.LONG), ('biYPelsPerMeter', wintypes.LONG), ('biClrUsed', wintypes.DWORD), ('biClrImportant', wintypes.DWORD)]
+
+    user32.GetDC.argtypes = (wintypes.HWND,); user32.GetDC.restype = wintypes.HDC
+    user32.ReleaseDC.argtypes = (wintypes.HWND, wintypes.HDC)
+    gdi32.CreateCompatibleDC.argtypes = (wintypes.HDC,); gdi32.CreateCompatibleDC.restype = wintypes.HDC
+    gdi32.CreateDIBSection.argtypes = (wintypes.HDC, ctypes.POINTER(BITMAPINFOHEADER), wintypes.UINT, ctypes.POINTER(ctypes.c_void_p), wintypes.HANDLE, wintypes.DWORD)
+    gdi32.CreateDIBSection.restype = wintypes.HBITMAP
+    gdi32.SelectObject.argtypes = (wintypes.HDC, wintypes.HGDIOBJ); gdi32.SelectObject.restype = wintypes.HGDIOBJ
+    gdi32.SetStretchBltMode.argtypes = (wintypes.HDC, ctypes.c_int)
+    gdi32.SetBrushOrgEx.argtypes = (wintypes.HDC, ctypes.c_int, ctypes.c_int, ctypes.c_void_p)
+    gdi32.StretchBlt.argtypes = (wintypes.HDC, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wintypes.HDC, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wintypes.DWORD)
+    gdi32.DeleteObject.argtypes = (wintypes.HGDIOBJ,); gdi32.DeleteDC.argtypes = (wintypes.HDC,)
     try:
         dwmapi = ctypes.WinDLL('dwmapi')
     except OSError:
@@ -180,8 +197,37 @@ class WinPC:
         vks = [key_vk(n) for n in names]
         self._send(*[self._key(v) for v in vks], *[self._key(v, True) for v in reversed(vks)])
 
+    def point(self, n, fx, fy):
+        """Put the pointer at a spot on monitor n (fractions of its width and height), for the live view."""
+        m = next((m for m in self.monitors() if m['n'] == n), None)
+        if m:
+            user32.SetCursorPos(m['x'] + round(max(0, min(1, fx)) * (m['w'] - 1)), m['y'] + round(max(0, min(1, fy)) * (m['h'] - 1)))
+
+    def cursor(self):
+        p = wintypes.POINT(); user32.GetCursorPos(ctypes.byref(p)); return p.x, p.y
+
+    def shot(self, m, width):
+        """A picture of monitor m, scaled to width: (width, height, BGRA bytes)."""
+        x, y, w, h = m['x'], m['y'], m['w'], m['h']
+        tw = max(32, min(int(width), w)); th = max(18, round(h * tw / w))
+        hdc = user32.GetDC(None); mdc = gdi32.CreateCompatibleDC(hdc)
+        bi = BITMAPINFOHEADER(ctypes.sizeof(BITMAPINFOHEADER), tw, -th, 1, 32, 0, 0, 0, 0, 0, 0)   # top-down
+        bits = ctypes.c_void_p()
+        bmp = gdi32.CreateDIBSection(mdc, ctypes.byref(bi), 0, ctypes.byref(bits), None, 0)
+        try:
+            old = gdi32.SelectObject(mdc, bmp)
+            gdi32.SetStretchBltMode(mdc, 4); gdi32.SetBrushOrgEx(mdc, 0, 0, None)   # HALFTONE: smooth scaling
+            gdi32.StretchBlt(mdc, 0, 0, tw, th, hdc, x, y, w, h, 0x00CC0020 | 0x40000000)   # SRCCOPY | CAPTUREBLT
+            data = ctypes.string_at(bits, tw * th * 4)
+            gdi32.SelectObject(mdc, old)
+        finally:
+            gdi32.DeleteObject(bmp); gdi32.DeleteDC(mdc); user32.ReleaseDC(None, hdc)
+        return tw, th, data
+
     # --- monitors ---
     def monitors(self):
+        if time.time() - getattr(self, '_mt', 0) < 3:   # the live view asks often; the layout rarely changes
+            return self._mons
         found = []
         def cb(hmon, hdc, rect, lp):
             mi = MONITORINFOEXW(); mi.cbSize = ctypes.sizeof(MONITORINFOEXW)
@@ -192,7 +238,8 @@ class WinPC:
                           'device': mi.szDevice})
             return True
         user32.EnumDisplayMonitors(None, None, MONITORENUMPROC(cb), 0)
-        return number_monitors(found)
+        self._mons, self._mt = number_monitors(found), time.time()
+        return self._mons
 
     # --- windows ---
     @staticmethod
@@ -317,6 +364,21 @@ class FakePC:
     def keys(self, names): [key_vk(n) for n in names]; print('  [pc] keys', '+'.join(names))
     def monitors(self): return self.mons
     def windows(self): return self.wins
+    def point(self, n, fx, fy):
+        m = next(m for m in self.mons if m['n'] == n); self.cur = (m['x'] + int(fx * m['w']), m['y'] + int(fy * m['h'])); print('  [pc] point', n, round(fx, 2), round(fy, 2))
+    def cursor(self): return getattr(self, 'cur', (100, 100))
+
+    def shot(self, m, width):
+        # a test card: dark screen, a green band per window on it, brighter on the main monitor
+        tw = max(32, min(int(width), m['w'])); th = max(18, round(m['h'] * tw / m['w']))
+        row = bytearray([10, 20 + 15 * m['n'], 8, 255]) * tw
+        band = bytearray([60, 200, 90, 255]) * (tw // 2) + bytearray([10, 30, 10, 255]) * (tw - tw // 2)
+        rows = []
+        on = [w for w in self.wins if w['monitor'] == m['n'] and not w['min']]
+        for yy in range(th):
+            k = yy * 8 // th
+            rows.append(band if k < len(on) * 2 and k % 2 == 0 else row)
+        return tw, th, bytes(b''.join(rows))
 
     def _win(self, h):
         w = next((w for w in self.wins if w['id'] == h), None)
@@ -351,6 +413,29 @@ def nice_app(exe):
             'vlc': 'VLC', 'applicationframehost': 'App'}.get(base.lower(), base[:1].upper() + base[1:])
 
 
+# ---------- Pictures ----------
+try:
+    from PIL import Image   # optional: with Pillow the live view sends small JPEGs; without it, PNGs
+except ImportError:
+    Image = None
+
+
+def encode(w, h, bgra, quality=60):
+    """BGRA pixels -> (bytes, content type)."""
+    if Image:
+        import io
+        out = io.BytesIO()
+        Image.frombuffer('RGB', (w, h), bgra, 'raw', 'BGRX', 0, 1).save(out, 'JPEG', quality=quality)
+        return out.getvalue(), 'image/jpeg'
+    rgb = bytearray(w * h * 3)
+    rgb[0::3] = bgra[2::4]; rgb[1::3] = bgra[1::4]; rgb[2::3] = bgra[0::4]
+    rw = w * 3
+    raw = b''.join(b'\x00' + rgb[i * rw:(i + 1) * rw] for i in range(h))
+    chunk = lambda t, d: struct.pack('>I', len(d)) + t + d + struct.pack('>I', zlib.crc32(t + d) & 0xFFFFFFFF)
+    png = b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw, 3)) + chunk(b'IEND', b'')
+    return png, 'image/png'
+
+
 # ---------- HTTP ----------
 def setup(app, demo=False):
     """Add the /pc routes to the relay's aiohttp app (behind its key check)."""
@@ -373,12 +458,13 @@ def setup(app, demo=False):
         elif 'up' in ev: pc.button(ev['up'], False)
         elif 't' in ev: pc.type(str(ev['t'])[:2000])
         elif 'k' in ev: pc.keys(ev['k'] if isinstance(ev['k'], list) else [ev['k']])
+        elif 'at' in ev: pc.point(int(ev['at'][0]), float(ev['at'][1]), float(ev['at'][2]))
 
     def public(m):
         return {k: m[k] for k in ('n', 'x', 'y', 'w', 'h', 'primary')}
 
     async def info(request):
-        return web.json_response({'ok': True, 'demo': pc.fake, 'monitors': [public(m) for m in pc.monitors()],
+        return web.json_response({'ok': True, 'demo': pc.fake, 'live': True, 'monitors': [public(m) for m in pc.monitors()],
                                   'browsers': sorted(find_browsers()) if not pc.fake else ['chrome', 'edge']})
 
     async def windows(request):
@@ -409,6 +495,17 @@ def setup(app, demo=False):
                 await asyncio.to_thread(pc.window_action, h, b['action'])
         return web.json_response({'windows': await asyncio.to_thread(pc.windows)})
 
+    async def shot(request):
+        m = monitor(request.query.get('mon', 1))
+        width = max(64, min(1600, int(request.query.get('w', 480))))
+        w, h, px = await asyncio.to_thread(pc.shot, m, width)
+        body, ctype = await asyncio.to_thread(encode, w, h, px, int(request.query.get('q', 60)))
+        cx, cy = pc.cursor()
+        on = m['x'] <= cx < m['x'] + m['w'] and m['y'] <= cy < m['y'] + m['h']
+        return web.Response(body=body, content_type=ctype, headers={
+            'Cache-Control': 'no-store', 'Access-Control-Expose-Headers': 'X-Cursor',
+            'X-Cursor': f'{(cx - m["x"]) / m["w"]:.4f},{(cy - m["y"]) / m["h"]:.4f}' if on else ''})
+
     async def identify(request):
         if not pc.fake:
             subprocess.Popen([sys.executable, os.path.abspath(__file__), '--identify'], close_fds=True)
@@ -431,7 +528,7 @@ def setup(app, demo=False):
         return sock
 
     app.add_routes([web.get('/pc', info), web.get('/pc/windows', windows), web.post('/pc/input', input_),
-                    web.post('/pc/open', open_), web.post('/pc/window', window), web.post('/pc/identify', identify),
+                    web.post('/pc/open', open_), web.post('/pc/window', window), web.post('/pc/identify', identify), web.get('/pc/shot', shot),
                     web.get('/pc/ws', ws)])
     n = len(pc.monitors())
     print(f'PC control: on ({n} monitor{"s" if n != 1 else ""}{", demo" if pc.fake else ""}).')
