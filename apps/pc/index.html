@@ -772,6 +772,55 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .tp-btns { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); flex: none; }
     .tp-btns .btn { min-height: 52px; touch-action: manipulation; }
     .tp-btns .btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+    /* Right-edge scroll strip, like a mouse wheel */
+    .tp-scroll { position: absolute; top: 0; right: 0; bottom: 0; width: 44px; border-left: 1px dashed var(--line-strong);
+      background: repeating-linear-gradient(0deg, transparent 0 9px, rgba(57,255,106,.14) 9px 11px); }
+    .tp-scroll.on { background-color: rgba(57,255,106,.08); border-left-color: var(--accent); }
+    .tp-scroll::after { content: ''; position: absolute; left: 50%; top: 50%; width: 10px; height: 30px; margin: -15px 0 0 -5px; border: 1px solid var(--text-faint); border-radius: 5px; }
+    /* Sideways: the whole trackpad turns with the phone (rotation lock can stay on) */
+    #pad-view { padding: 0; }
+    .tp-rot { position: absolute; inset: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+    .tp-rot.turned { inset: auto; top: 50%; left: 50%; }
+    .tp-mid { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+    .tp-rot.wide .tp-mid { flex-direction: row; }
+    .tp-rot.wide .tp-btns { grid-template-columns: none; grid-template-rows: 1fr 1fr; width: 84px; }
+    .tp-rot.wide .tp-btns .btn { min-height: 0; }
+    .tp-rot.wide .tp-pad { min-height: 60px; }
+    /* On-screen keyboard for sideways use (the iPhone keyboard can't turn with the trackpad) */
+    .vk { flex: none; display: flex; flex-direction: column; gap: 5px; touch-action: none; -webkit-user-select: none; user-select: none; }
+    .vk[hidden] { display: none; }
+    .vk-row { display: flex; gap: 5px; justify-content: center; }
+    .vk-k { flex: 1 1 0; min-width: 0; height: 34px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1);
+      color: var(--text); font: inherit; font-size: var(--fs-md); display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
+    .vk-k.wide { flex-grow: 1.6; font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; }
+    .vk-k.space { flex-grow: 5; }
+    .vk-k svg { width: 18px; height: 18px; }
+    .vk-k.down { background: var(--surface-3); border-color: var(--accent); }
+    .vk-k[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+    .vk-k[aria-pressed="lock"] { background: var(--accent); color: var(--on-accent); box-shadow: var(--glow-box); }
+
+    /* Windows: a map of the monitors with what's on each */
+    .wm { position: relative; width: 100%; }
+    .wm-mon { position: absolute; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--surface-1); padding: 22px 5px 5px;
+      display: flex; flex-wrap: wrap; align-content: flex-start; gap: 4px; overflow: hidden; cursor: pointer; }
+    .wm-mon::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(57,255,106,.035) 3px 4px); pointer-events: none; }
+    .wm-num { position: absolute; top: 3px; left: 6px; font-size: var(--fs-xs); font-weight: 700; color: var(--text-dim); letter-spacing: var(--tracking-label); text-transform: uppercase; pointer-events: none; }
+    .wm-big { position: absolute; right: 6px; bottom: -6px; font-size: 44px; font-weight: 700; line-height: 1; color: rgba(57,255,106,.10); pointer-events: none; }
+    .wm-mon.is-sel, .wm-mon.is-target { border-color: var(--accent); box-shadow: var(--glow-box); }
+    .wm-mon.is-sel .wm-num, .wm-mon.is-target .wm-num { color: var(--accent); }
+    .wm-chip { position: relative; max-width: 100%; height: 24px; padding: 0 6px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-2);
+      color: var(--text); font: inherit; font-size: 11px; display: inline-flex; align-items: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: grab; touch-action: none; }
+    .wm-chip.is-sel { background: var(--accent); color: var(--on-accent); border-color: var(--accent); box-shadow: var(--glow-box); }
+    .wm-chip.is-lifted { opacity: .35; }
+    .wm-ghost { position: fixed; z-index: 50; pointer-events: none; transform: translate(-50%, -130%); }
+    .wm-tray { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 24px; }
+    .wm-tray .label { margin: 0 var(--sp-2) 0 0; }
+    .wm-bar { border: 1px solid var(--accent); border-radius: var(--radius-sm); background: var(--surface-2); padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); box-shadow: var(--glow-box); }
+    .wm-bar-t { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wm-acts { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-2); }
+    .wm-acts .btn { min-height: 44px; padding: 0 4px; font-size: var(--fs-xs); }
+    #wi-groups .menu-group { margin-top: var(--sp-4); }
+    .wm-row.is-sel { border-color: var(--accent); box-shadow: var(--glow-box); }
     #pc-kb { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; font-size: 16px; resize: none; caret-color: transparent; background: transparent; color: transparent; }
 
     /* Monitor picks */
@@ -821,7 +870,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>PC Remote</h1>
-      <span class="app-meta">v1.0</span>
+      <span class="app-meta">v1.1</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -848,7 +897,9 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
 
       <section class="view fill" data-route="/pad" data-title="Trackpad" id="pad-view">
         <textarea id="pc-kb" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Type on the PC"></textarea>
+        <div class="tp-rot" id="tp-rot">
         <div class="tp-strip" id="tp-strip">
+          <button class="tp-k" id="tp-orient" aria-label="Turn trackpad sideways"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M8 2h8v13H8zM11 12h2M4 9a8 8 0 0 0 3 10M4 19h3v-3"/></svg></button>
           <button class="tp-k" data-kb-toggle aria-label="Keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 6h20v12H2zM6 10h1M10 10h1M14 10h1M18 10h1M7 14h10"/></svg></button>
           <button class="tp-k" data-key="esc">Esc</button>
           <button class="tp-k" data-key="tab">Tab</button>
@@ -866,13 +917,18 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
           <button class="tp-k" data-key="space">Space</button>
           <button class="tp-k" data-key="f11">F11</button>
         </div>
+        <div class="tp-mid">
         <div class="tp-pad" id="tp-pad" aria-label="Trackpad: drag to move, tap to click, two fingers to scroll or right-click, hold to drag">
           <span class="tp-tag" id="tp-tag">Trackpad</span>
           <span class="tp-dot" id="tp-dot" aria-hidden="true"></span>
+          <span class="tp-scroll" id="tp-scroll" aria-label="Scroll strip: run a finger up and down to scroll"></span>
         </div>
         <div class="tp-btns">
           <button class="btn" data-click="left" id="tp-left">Left</button>
           <button class="btn" data-click="right">Right</button>
+        </div>
+        </div>
+        <div class="vk" id="vk" hidden></div>
         </div>
       </section>
 
@@ -916,7 +972,19 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
 
       <section class="view" data-route="/windows" data-title="Windows">
         <p class="pc-note" id="wi-note" hidden></p>
-        <div class="cards" id="wi-list"></div>
+        <div class="wm" id="wm"></div>
+        <div class="wm-tray" id="wm-tray" hidden></div>
+        <div class="wm-bar" id="wm-bar" hidden>
+          <div class="wm-bar-t" id="wm-bar-t"></div>
+          <div class="hint" id="wm-bar-h"></div>
+          <div class="wm-acts" id="wm-acts">
+            <button class="btn" data-wact="focus">Front</button>
+            <button class="btn" data-wact="fullscreen">Full screen</button>
+            <button class="btn" data-wact="minimize">Minimise</button>
+            <button class="btn btn-danger" data-wact="close">Close</button>
+          </div>
+        </div>
+        <div id="wi-groups"></div>
       </section>
 
       <section class="view" data-route="/media" data-title="Media">
@@ -939,6 +1007,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
             <a class="menu-item" href="#/settings/speed"><span class="mi-label">Trackpad speed</span><span class="mi-value" data-setting-value="speed"></span></a>
             <label class="menu-item"><span class="mi-label">Natural scrolling<small>Content follows your fingers, like the iPhone</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="natural"></label>
             <a class="menu-item" href="#/settings/browser"><span class="mi-label">Browser for shows<small>Use the one you're signed in to</small></span><span class="mi-value" data-setting-value="browser"></span></a>
+            <a class="menu-item" href="#/settings/orient"><span class="mi-label">Trackpad direction<small>Turn it to use the phone sideways</small></span><span class="mi-value" data-setting-value="orient"></span></a>
             <button class="menu-item" id="pc-identify"><span class="mi-label">Identify monitors<small>Shows each monitor's number on it</small></span></button>
           </div>
         </div>
@@ -959,7 +1028,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.0</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.1</span></a>
           </div>
         </div>
       </section>
@@ -970,6 +1039,15 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
           <button class="menu-item" role="radio" data-setting="speed" data-value="normal" data-back-on-pick><span class="mi-label">Normal</span></button>
           <button class="menu-item" role="radio" data-setting="speed" data-value="fast" data-back-on-pick><span class="mi-label">Fast<small>For big or several monitors</small></span></button>
         </div>
+      </section>
+
+      <section class="view" data-route="/settings/orient" data-title="Direction">
+        <div class="menu" role="radiogroup" aria-label="Trackpad direction">
+          <button class="menu-item" role="radio" data-setting="orient" data-value="up" data-back-on-pick><span class="mi-label">Upright</span></button>
+          <button class="menu-item" role="radio" data-setting="orient" data-value="left" data-back-on-pick><span class="mi-label">Sideways left<small>Phone turned with its top to the left</small></span></button>
+          <button class="menu-item" role="radio" data-setting="orient" data-value="right" data-back-on-pick><span class="mi-label">Sideways right<small>Phone turned with its top to the right</small></span></button>
+        </div>
+        <p class="menu-note">Works with rotation lock on. Sideways, a keyboard appears on the screen instead of the iPhone one. The button at the start of the trackpad's key row switches too.</p>
       </section>
 
       <section class="view" data-route="/settings/browser" data-title="Browser">
@@ -1011,7 +1089,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="PC Remote">
-          <div class="kv"><span>Version</span><span>1.0</span></div>
+          <div class="kv"><span>Version</span><span>1.1</span></div>
           <div class="kv"><span>Monitors</span><span id="ab-mons">—</span></div>
           <div class="kv"><span>Saved shows</span><span id="ab-shows">0</span></div>
           <div class="kv"><span>Needs</span><span>Relay + Tailscale</span></div>
@@ -1022,6 +1100,7 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
           <div class="kv"><span>Right-click</span><span>Two-finger tap</span></div>
           <div class="kv"><span>Scroll</span><span>Two fingers</span></div>
           <div class="kv"><span>Drag</span><span>Hold, then move</span></div>
+          <div class="kv"><span>Scroll fast</span><span>Right edge strip</span></div>
         </section>
       </section>
       </div><!-- /.screen-body -->
@@ -1051,21 +1130,12 @@ html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none;
     <div class="sheet-title">Actions</div>
     <div class="menu">
       <button class="menu-item" data-action="identify" id="m-identify"><span class="mi-label">Identify monitors</span></button>
+      <button class="menu-item" data-action="orient" id="m-orient"><span class="mi-label">Turn trackpad sideways</span></button>
       <button class="menu-item" data-action="add" id="m-add"><span class="mi-label">Add a show</span></button>
       <button class="menu-item" data-route="/settings/relay"><span class="mi-label">Relay setup</span></button>
     </div>
   </dialog>
 
-  <dialog class="sheet" id="win-sheet" aria-label="Window">
-    <div class="sheet-title" id="ws-title">Window</div>
-    <div class="menu">
-      <button class="menu-item" data-wact="focus"><span class="mi-label">Bring to front</span></button>
-      <button class="menu-item" data-wact="fullscreen"><span class="mi-label">Full screen<small>Presses F11 in that window</small></span></button>
-      <button class="menu-item" data-wact="minimize"><span class="mi-label">Minimise</span></button>
-      <button class="menu-item danger" data-wact="close"><span class="mi-label">Close</span></button>
-    </div>
-    <div class="actions"><button class="btn btn-ghost" data-close>Cancel</button></div>
-  </dialog>
 
   <div class="toast-host" aria-live="polite"></div>
   <script>
@@ -1297,7 +1367,7 @@ const PH = (() => {
 /* PC Remote. Uses the phone as a trackpad and keyboard for the PC, and puts shows, videos and windows
    on a chosen monitor. Talks to the relay on the PC (kasa_bridge.py + pc_control.py in
    bgriffie/phosphor-os/bridge) over HTTPS through Tailscale, with the same link and key as Lights. */
-PH.init({ speed: 'normal', natural: true, browser: 'auto' });
+PH.init({ speed: 'normal', natural: true, browser: 'auto', orient: 'up' });
 (() => {
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const KEY = 'pc-remote:data:';   // every tool shares bgriffie.github.io, so keys are prefixed
@@ -1377,36 +1447,50 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
   }
 
   /* ---------- Trackpad ---------- */
-  const pad = $('#tp-pad'), dot = $('#tp-dot');
+  const pad = $('#tp-pad'), dot = $('#tp-dot'), strip = $('#tp-scroll');
   const GAIN = { slow: 1.0, normal: 1.6, fast: 2.4 };
   let g = null, holdT = 0, dragging = false;
   const centroid = ts => { let x = 0, y = 0; for (const t of ts) { x += t.clientX; y += t.clientY; } return { x: x / ts.length, y: y / ts.length }; };
+  // When the trackpad is turned sideways, finger movement on the glass is turned back to match
+  let turn = 0;   // degrees the trackpad is drawn turned: 0, 90 (phone turned left) or -90 (turned right)
+  const local = (dx, dy) => turn === 90 ? [dy, -dx] : turn === -90 ? [-dy, dx] : [dx, dy];
   const setDrag = on => { dragging = on; pad.classList.toggle('is-drag', on); $('#tp-tag').textContent = on ? 'Dragging' : 'Trackpad'; $('#tp-left').setAttribute('aria-pressed', String(on)); };
-  const showDot = t => { if (!t) { dot.classList.remove('on'); return; } const r = pad.getBoundingClientRect(); dot.style.left = (t.clientX - r.left) + 'px'; dot.style.top = (t.clientY - r.top) + 'px'; dot.classList.add('on'); };
+  const showDot = t => {
+    if (!t) { dot.classList.remove('on'); return; }
+    const r = pad.getBoundingClientRect(), x = t.clientX - r.left, y = t.clientY - r.top;
+    const [lx, ly] = turn === 90 ? [y, r.width - x] : turn === -90 ? [r.height - y, x] : [x, y];
+    dot.style.left = lx + 'px'; dot.style.top = ly + 'px'; dot.classList.add('on');
+  };
   pad.addEventListener('touchstart', e => {
     e.preventDefault(); e.stopPropagation();   // keep the screen still and the edge-swipe Back out of it
     const c = centroid(e.touches);
     if (!g) {
-      g = { t0: performance.now(), fingers: e.touches.length, moved: 0, last: c, lt: performance.now() };
+      // A finger that lands on the right-edge strip scrolls instead of moving the pointer
+      const onStrip = !!e.changedTouches[0].target.closest?.('.tp-scroll');
+      g = { t0: performance.now(), fingers: e.touches.length, moved: 0, last: c, lt: performance.now(), strip: onStrip };
       clearTimeout(holdT);
-      holdT = setTimeout(() => { if (g && g.fingers === 1 && g.moved < 10 && !dragging) { setDrag(true); push({ down: 'left' }); } }, 450);
+      if (onStrip) strip.classList.add('on');
+      else holdT = setTimeout(() => { if (g && g.fingers === 1 && g.moved < 10 && !dragging) { setDrag(true); push({ down: 'left' }); } }, 450);
     } else {
       g.fingers = Math.max(g.fingers, e.touches.length); g.last = c;
       if (g.fingers > 1) clearTimeout(holdT);
     }
-    showDot(e.touches.length === 1 ? e.touches[0] : null);
+    showDot(e.touches.length === 1 && !g.strip ? e.touches[0] : null);
   }, { passive: false });
   pad.addEventListener('touchmove', e => {
     e.preventDefault(); e.stopPropagation();
     if (!g) return;
     const c = centroid(e.touches), now = performance.now();
-    const dx = c.x - g.last.x, dy = c.y - g.last.y, dt = Math.max(1, now - g.lt);
+    const [dx, dy] = local(c.x - g.last.x, c.y - g.last.y), dt = Math.max(1, now - g.lt);
     g.last = c; g.lt = now; g.moved += Math.hypot(dx, dy);
     if (g.moved >= 10) clearTimeout(holdT);
-    if (e.touches.length >= 2) {
+    const nat = PH.store.get('natural') ? 1 : -1;
+    if (g.strip) {
+      // the strip is a scroll wheel: up and down only, a bit quicker than two fingers
+      sy += dy * 5 * nat; schedule();
+    } else if (e.touches.length >= 2) {
       // two fingers scroll; wheel units are 120 per notch, so ~3 per pixel feels like a trackpad
-      const k = PH.store.get('natural') ? 3 : -3;
-      sy += dy * k; sx += -dx * k; schedule();
+      sy += dy * 3 * nat; sx += -dx * 3 * nat; schedule();
     } else if (g.fingers === 1 || dragging) {
       const v = Math.hypot(dx, dy) / dt;   // px per ms: faster swipes go further
       const gain = (GAIN[PH.store.get('speed')] || 1.6) * (1 + Math.min(v, 2.5) * 0.9);
@@ -1417,10 +1501,10 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
   const endTouch = e => {
     e.preventDefault(); e.stopPropagation();
     if (!g || e.touches.length) { if (g && e.touches.length) g.last = centroid(e.touches); return; }
-    clearTimeout(holdT); showDot(null);
+    clearTimeout(holdT); showDot(null); strip.classList.remove('on');
     const quick = performance.now() - g.t0 < 300 && g.moved < 10;
     if (dragging) { setDrag(false); push({ up: 'left' }); }
-    else if (quick) push({ c: g.fingers === 1 ? 'left' : g.fingers === 2 ? 'right' : 'middle' });
+    else if (quick && !g.strip) push({ c: g.fingers === 1 ? 'left' : g.fingers === 2 ? 'right' : 'middle' });
     g = null;
   };
   pad.addEventListener('touchend', endTouch, { passive: false });
@@ -1470,9 +1554,83 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     resetKb();
   });
   kb.addEventListener('focus', resetKb);
-  const kbOpen = () => document.activeElement === kb;
-  function toggleKb() { if (kbOpen()) kb.blur(); else { resetKb(); kb.focus({ preventScroll: true }); } renderKb(); }
+  // Upright, the iPhone keyboard types. Sideways it can't turn with the trackpad, so a keyboard
+  // drawn on the screen (.vk) takes its place.
+  const vk = $('#vk');
+  let wide = false;
+  const kbOpen = () => wide ? !vk.hidden : document.activeElement === kb;
+  function toggleKb() {
+    if (wide) { vk.hidden = !vk.hidden; renderVk(); }
+    else if (kbOpen()) kb.blur(); else { resetKb(); kb.focus({ preventScroll: true }); }
+    renderKb();
+  }
   const renderKb = () => $$('[data-kb-toggle]').forEach(b => b.setAttribute('aria-pressed', String(kbOpen())));
+
+  const SVG = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="${d}"/></svg>`;
+  const VK_ICON = { shift: SVG('M12 3 3 12h5v8h8v-8h5z'), backspace: SVG('M8 5h13v14H8l-6-7zM11 9l6 6M17 9l-6 6'), enter: SVG('M20 5v8H5M9 9l-4 4 4 4') };
+  const LAYERS = {
+    abc: ['1234567890', 'qwertyuiop', 'asdfghjkl', ['shift', ...'zxcvbnm', 'backspace'], ['sym', ',', 'space', '.', 'enter']],
+    sym: ['1234567890', '!@#$%^&*()', '-_=+[]{}\\|', ['shift', ...';:\'"/?~`', 'backspace'], ['abc', '<', 'space', '>', 'enter']],
+  };
+  let layer = 'abc', shift = 0;   // shift: 0 off, 1 next letter, 2 caps lock
+  function renderVk() {
+    if (vk.hidden) return;
+    vk.textContent = '';
+    LAYERS[layer].forEach(row => {
+      const r = document.createElement('div'); r.className = 'vk-row';
+      [...row].forEach(k => {
+        const b = document.createElement('button'); b.className = 'vk-k'; b.dataset.vk = k;
+        if (VK_ICON[k]) { b.innerHTML = VK_ICON[k]; b.classList.add('wide'); b.setAttribute('aria-label', k); }
+        else if (k === 'space') { b.classList.add('space'); b.setAttribute('aria-label', 'Space'); }
+        else if (k === 'sym' || k === 'abc') { b.textContent = k === 'sym' ? '#+=' : 'ABC'; b.classList.add('wide'); }
+        else b.textContent = layer === 'abc' && shift ? k.toUpperCase() : k;
+        if (k === 'shift') b.setAttribute('aria-pressed', shift === 2 ? 'lock' : String(!!shift));
+        r.appendChild(b);
+      });
+      vk.appendChild(r);
+    });
+  }
+  let lastShift = 0;
+  vk.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });   // no edge-swipe Back from the keys
+  vk.addEventListener('pointerdown', e => {
+    const b = e.target.closest('[data-vk]'); if (!b) return;
+    e.preventDefault(); b.classList.add('down'); setTimeout(() => b.classList.remove('down'), 120);
+    const k = b.dataset.vk;
+    if (k === 'shift') { const now = performance.now(); shift = shift ? (now - lastShift < 350 ? 2 : 0) : 1; lastShift = now; renderVk(); return; }
+    if (k === 'sym' || k === 'abc') { layer = k; shift = 0; renderVk(); return; }
+    if (k === 'backspace' || k === 'enter') { sendKey(k); return; }
+    if (k === 'space') { sendText(' '); return; }
+    sendText(layer === 'abc' && shift ? k.toUpperCase() : k);
+    if (shift === 1) { shift = 0; renderVk(); }
+  });
+
+  /* ---------- Sideways ---------- */
+  // 'up', 'left' (phone turned so its top is on the left) or 'right'. If the phone really rotates the
+  // page (rotation lock off), nothing needs turning: the page is already wide.
+  const ORIENT_NEXT = { up: 'left', left: 'right', right: 'up' };
+  const rot = $('#tp-rot'), padView = $('#pad-view');
+  function layoutPad() {
+    const W = padView.clientWidth, H = padView.clientHeight; if (!W || !H) return;
+    const o = PH.store.get('orient'), landscape = W > H;
+    turn = landscape || o === 'up' ? 0 : o === 'left' ? 90 : -90;
+    const wasWide = wide; wide = landscape || turn !== 0;
+    rot.classList.toggle('wide', wide); rot.classList.toggle('turned', turn !== 0);
+    if (turn) { rot.style.width = H + 'px'; rot.style.height = W + 'px'; rot.style.transform = `translate(-50%, -50%) rotate(${turn}deg)`; }
+    else { rot.style.width = rot.style.height = rot.style.transform = ''; }
+    if (wide !== wasWide) {   // switch between the iPhone keyboard and the drawn one
+      const open = wasWide ? !vk.hidden : document.activeElement === kb;
+      if (wasWide) vk.hidden = true; else kb.blur();
+      if (open) toggleKb();
+    }
+    const ob = $('#tp-orient'); ob.setAttribute('aria-pressed', String(o !== 'up')); ob.setAttribute('aria-label', o === 'up' ? 'Turn trackpad sideways' : 'Trackpad direction: ' + o);
+    renderKb();
+  }
+  const cycleOrient = () => { const n = ORIENT_NEXT[PH.store.get('orient')] || 'left'; PH.store.set('orient', n); if (route() !== '/pad') PH.go('/pad'); };
+  $('#tp-orient').addEventListener('click', cycleOrient);
+  $('#m-orient').addEventListener('click', cycleOrient);
+  PH.on('orient', layoutPad);
+  if (window.ResizeObserver) new ResizeObserver(layoutPad).observe(padView);
+  addEventListener('resize', layoutPad);
   kb.addEventListener('blur', renderKb);
   // Keep the keyboard up while tapping keys in the strip
   $('#tp-strip').addEventListener('pointerdown', e => { if (kbOpen() && e.target.closest('button')) e.preventDefault(); });
@@ -1586,35 +1744,140 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     catch { $('#sh-url').focus(); PH.toast('Tap the box and choose Paste.', 'warn'); }
   });
 
-  /* ---------- Windows ---------- */
-  let sheetWin = null;
+  /* ---------- Windows: a map of the monitors ---------- */
+  // Each monitor is drawn where it sits on the desk, with a chip for every window on it.
+  // Tap a window, then a monitor, to move it (or drag the chip there). Tap a monitor, then another, to swap them.
+  let selWin = null, selMon = null, wBusy = false, wPoll = 0;
+  const winById = id => wins.find(w => w.id === id);
   async function loadWins() {
-    if (!ready()) return;
+    if (!ready() || wBusy) return;
     try { wins = (await call('/pc/windows')).windows || []; $('#wi-note').hidden = true; }
     catch (e) { $('#wi-note').textContent = e.message; $('#wi-note').hidden = false; }
+    if (selWin && !winById(selWin)) selWin = null;
     renderWins();
   }
+  const shortApp = w => (w.app && w.app !== 'App' ? w.app : w.title).slice(0, 18);
+  function chip(w) {
+    const c = document.createElement('button'); c.className = 'wm-chip' + (w.id === selWin ? ' is-sel' : ''); c.dataset.win = w.id;
+    c.textContent = shortApp(w); c.setAttribute('aria-label', w.title); return c;
+  }
   function renderWins() {
-    const box = $('#wi-list'); box.textContent = '';
-    if (!wins.length) { box.innerHTML = `<p class="menu-note">${ready() ? 'No open windows yet.' : 'Connect to the PC first.'}</p>`; return; }
-    wins.forEach(w => {
-      const c = document.createElement('div'); c.className = 'card' + (w.min ? ' is-min' : '');
-      c.innerHTML = '<div class="card-top"><button class="card-main"><span class="card-name"></span><span class="card-sub"></span></button></div><div class="mons"></div>';
-      c.querySelector('.card-name').textContent = w.title;
-      c.querySelector('.card-sub').textContent = w.app + (w.min ? ' · minimised' : w.monitor ? ' · on monitor ' + w.monitor : '');
-      c.querySelector('.card-main').addEventListener('click', () => { sheetWin = w; $('#ws-title').textContent = w.app || 'Window'; $('#win-sheet').showModal(); });
-      monButtons(c.querySelector('.mons'), { here: w.min ? null : w.monitor, pick: (n, b) => busy(b, async () => {
-        wins = (await call('/pc/window', { id: w.id, action: 'move', monitor: n })).windows || wins; renderWins();
-      }) });
-      box.appendChild(c);
+    const map = $('#wm'), list = mons(); map.textContent = '';
+    if (list.length) {
+      // Fit the desk to the screen's width; keep each monitor tall enough for a few chips
+      const minX = Math.min(...list.map(m => m.x)), maxX = Math.max(...list.map(m => m.x + m.w));
+      const minY = Math.min(...list.map(m => m.y)), maxY = Math.max(...list.map(m => m.y + m.h));
+      const W = map.clientWidth || 320, sx = W / (maxX - minX);
+      const sy = Math.min(Math.max(sx, 92 / Math.min(...list.map(m => m.h))), 300 / (maxY - minY));
+      map.style.height = Math.round((maxY - minY) * sy) + 'px';
+      list.forEach(m => {
+        const el = document.createElement('div'); el.className = 'wm-mon' + (m.n === selMon ? ' is-sel' : ''); el.dataset.mon = m.n;
+        Object.assign(el.style, { left: (m.x - minX) * sx + 2 + 'px', top: (m.y - minY) * sy + 2 + 'px', width: m.w * sx - 4 + 'px', height: m.h * sy - 4 + 'px' });
+        el.innerHTML = `<span class="wm-num">${m.n}${m.primary ? ' · main' : ''}</span><span class="wm-big" aria-hidden="true">${m.n}</span>`;
+        wins.filter(w => !w.min && w.monitor === m.n).forEach(w => el.appendChild(chip(w)));
+        map.appendChild(el);
+      });
+    } else map.style.height = '0';
+    const mins = wins.filter(w => w.min), tray = $('#wm-tray');
+    tray.hidden = !mins.length; tray.innerHTML = '<span class="label">Minimised</span>';
+    mins.forEach(w => tray.appendChild(chip(w)));
+
+    // What's selected, and what tapping a monitor will do
+    const w = selWin && winById(selWin), bar = $('#wm-bar');
+    bar.hidden = !w && !selMon;
+    $('#wm-acts').hidden = !w;
+    if (w) {
+      $('#wm-bar-t').textContent = w.title;
+      $('#wm-bar-h').textContent = w.min ? 'Minimised. Tap Restore, or tap a monitor to put it there.' : 'On monitor ' + w.monitor + '. Tap another monitor, or drag it there. Tap it again to let go.';
+      $('[data-wact="focus"]').textContent = w.min ? 'Restore' : 'Front';
+      $('[data-wact="minimize"]').hidden = !!w.min;
+    } else if (selMon) {
+      $('#wm-bar-t').textContent = 'Monitor ' + selMon;
+      $('#wm-bar-h').textContent = list.length > 1 ? 'Tap another monitor to swap everything on the two.' : 'There\'s only one monitor.';
+    }
+
+    // The full list, by monitor
+    const box = $('#wi-groups'); box.textContent = '';
+    if (!wins.length) { box.innerHTML = `<p class="menu-note">${ready() ? (state === 'ok' ? 'No open windows.' : 'Connecting…') : 'Connect to the PC first.'}</p>`; return; }
+    const groups = list.map(m => ['Monitor ' + m.n, wins.filter(x => !x.min && x.monitor === m.n)]).concat([['Minimised', mins]]);
+    groups.forEach(([title, ws]) => {
+      if (!ws.length) return;
+      const g = document.createElement('div'); g.className = 'menu-group';
+      g.innerHTML = '<span class="label"></span><div class="menu"></div>'; g.firstChild.textContent = title;
+      ws.forEach(x => {
+        const r = document.createElement('button'); r.className = 'menu-item wm-row' + (x.id === selWin ? ' is-sel' : ''); r.dataset.win = x.id;
+        r.innerHTML = '<span class="mi-label"><span></span><small></small></span>';
+        r.querySelector('span span').textContent = x.title; r.querySelector('small').textContent = x.app;
+        g.lastChild.appendChild(r);
+      });
+      box.appendChild(g);
     });
   }
+  async function winCall(body, label) {
+    wBusy = true; $('#wm-bar-h').textContent = label || 'Working…';
+    try { wins = (await call('/pc/window', body)).windows || wins; }
+    catch (e) { PH.toast(e.message, 'warn'); }
+    finally { wBusy = false; }
+  }
+  async function moveTo(id, n) {
+    const w = winById(id); if (!w || (!w.min && w.monitor === n)) return;
+    await winCall({ id, action: 'move', monitor: n }, 'Moving to monitor ' + n + '…');
+    renderWins();
+  }
+  async function swap(a, b) {
+    const onA = wins.filter(w => !w.min && w.monitor === a), onB = wins.filter(w => !w.min && w.monitor === b);
+    if (!onA.length && !onB.length) { PH.toast('Nothing is open on either monitor.', 'warn'); return; }
+    for (const w of onA) await winCall({ id: w.id, action: 'move', monitor: b }, `Swapping ${a} and ${b}…`);
+    for (const w of onB) await winCall({ id: w.id, action: 'move', monitor: a }, `Swapping ${a} and ${b}…`);
+    PH.toast(`Swapped monitors ${a} and ${b}.`);
+  }
+  function tapMonitor(n) {
+    if (wBusy) return;
+    if (selWin) { const id = selWin; moveTo(id, n); return; }
+    if (selMon && selMon !== n) { const a = selMon; selMon = null; renderWins(); swap(a, n).then(renderWins); return; }
+    selMon = selMon === n ? null : n; renderWins();
+  }
+  const selectWin = id => { selMon = null; selWin = selWin === id ? null : id; renderWins(); };
+
+  // Drag a chip onto a monitor; a tap without moving just selects it
+  let wd = null;
+  const page = $('[data-route="/windows"]');
+  page.addEventListener('pointerdown', e => {
+    const c = e.target.closest('.wm-chip');
+    if (c) { wd = { id: +c.dataset.win, el: c, x: e.clientX, y: e.clientY, ghost: null, over: null }; c.setPointerCapture?.(e.pointerId); }
+  });
+  page.addEventListener('pointermove', e => {
+    if (!wd) return;
+    if (!wd.ghost && Math.hypot(e.clientX - wd.x, e.clientY - wd.y) < 8) return;
+    if (!wd.ghost) { wd.ghost = wd.el.cloneNode(true); wd.ghost.classList.add('wm-ghost', 'is-sel'); document.body.appendChild(wd.ghost); wd.el.classList.add('is-lifted'); }
+    wd.ghost.style.left = e.clientX + 'px'; wd.ghost.style.top = e.clientY + 'px';
+    const m = document.elementFromPoint(e.clientX, e.clientY)?.closest('.wm-mon');
+    $$('.wm-mon.is-target').forEach(x => x !== m && x.classList.remove('is-target'));
+    if (m) m.classList.add('is-target'); wd.over = m ? +m.dataset.mon : null;
+  });
+  const dropChip = e => {
+    if (!wd) return;
+    const d = wd; wd = null;
+    if (d.ghost) { d.ghost.remove(); d.el.classList.remove('is-lifted'); $$('.wm-mon.is-target').forEach(x => x.classList.remove('is-target')); if (e.type === 'pointerup' && d.over) moveTo(d.id, d.over); }
+    else if (e.type === 'pointerup') selectWin(d.id);
+  };
+  page.addEventListener('pointerup', dropChip); page.addEventListener('pointercancel', dropChip);
+  page.addEventListener('click', e => {
+    if (e.target.closest('.wm-chip')) return;   // handled on pointerup
+    const r = e.target.closest('.wm-row'); if (r) { selectWin(+r.dataset.win); return; }
+    const m = e.target.closest('.wm-mon'); if (m) tapMonitor(+m.dataset.mon);
+  });
   $('#k-refresh').addEventListener('click', loadWins);
   $$('[data-wact]').forEach(b => b.addEventListener('click', async () => {
-    const w = sheetWin, act = b.dataset.wact; $('#win-sheet').close(); if (!w) return;
+    const w = winById(selWin), act = b.dataset.wact; if (!w || wBusy) return;
     if (act === 'close' && !await PH.confirm(`Close "${w.title}"?`, { title: 'Close window', ok: 'Close', danger: true })) return;
-    await busy(null, async () => { wins = (await call('/pc/window', { id: w.id, action: act })).windows || wins; renderWins(); });
+    await winCall({ id: w.id, action: act });
+    if (act === 'close' || act === 'minimize') selWin = act === 'close' ? null : selWin;
+    renderWins();
   }));
+  // Keep the map current while it's on screen
+  const pollWins = on => { clearInterval(wPoll); wPoll = on ? setInterval(() => { if (!wd && !document.hidden) loadWins(); }, 5000) : 0; };
+  addEventListener('resize', () => { if (route() === '/windows') renderWins(); });
 
   /* ---------- Setup and settings ---------- */
   $('#pc-save').addEventListener('click', async () => {
@@ -1653,11 +1916,12 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
 
   // Connect while the app is on screen; the trackpad's live link only on its page
   function sync() {
-    if (document.hidden) { closeWS(); return; }
+    if (document.hidden) { closeWS(); pollWins(false); return; }
     check();
     const r = route();
     if (r === '/pad') { wsTries = 0; openWS(); } else closeWS();
     if (r === '/windows') loadWins();
+    pollWins(r === '/windows' && !document.hidden);
     if (r !== '/pad' && kbOpen()) kb.blur();
     if (dragging && r !== '/pad') { setDrag(false); push({ up: 'left' }); }
   }
