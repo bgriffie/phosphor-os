@@ -188,8 +188,6 @@
     .term[hidden] { display: none; }
     .term-bar { flex: none; display: flex; align-items: center; gap: var(--sp-2); min-height: 40px; padding: var(--sp-1) var(--sp-3) 0 var(--sp-4); border-bottom: 1px solid var(--line); }
     .term-prompt { flex: 1; display: flex; align-items: center; gap: var(--sp-2); min-width: 0; color: var(--accent); font-size: var(--fs-sm); }
-    .term-prompt input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; padding: 8px 0; color: var(--text); font-size: 16px; caret-color: var(--accent); }
-    .term-prompt input::placeholder { color: var(--text-faint); }
     .term-x { appearance: none; -webkit-appearance: none; background: none; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); color: var(--text-dim); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .1em; padding: 6px 10px; cursor: pointer; }
     .term-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: var(--sp-3) var(--sp-3) var(--sp-5); display: grid; grid-template-columns: 1fr; gap: var(--sp-4); align-content: start; }
     html.os-wide .term-body { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
@@ -204,7 +202,7 @@
     .term-line .tl-l { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .term-line .tl-h { flex: none; color: var(--text-faint); font-size: var(--fs-xs); text-transform: lowercase; }
     .term-line[aria-current="page"] { color: var(--accent); text-shadow: var(--glow); }
-    .term-line:active, .term-line.is-first { background: var(--surface-2); }
+    .term-line:active { background: var(--surface-2); }
     .term-chips { grid-column: 1 / -1; }
     .term-chips .tg-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: var(--sp-2); }
     .term-chip {
@@ -216,7 +214,7 @@
     .term-chip .tl-l { max-width: 100%; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .term-chip[aria-current="page"] { border-color: var(--accent); box-shadow: var(--glow-box); }
     .term-chip[aria-current="page"] .tl-l { color: var(--accent); }
-    .term-chip:active, .term-chip.is-first { background: var(--surface-3); border-color: var(--accent); }
+    .term-chip:active { background: var(--surface-3); border-color: var(--accent); }
     .term-empty { color: var(--text-faint); font-size: var(--fs-sm); padding: var(--sp-2); }
 
     /* Spotify remote */
@@ -280,7 +278,7 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.23</span>
+      <span class="app-meta">v1.24</span>
     </header>
     <div class="screen-slot">
     <div class="screen">
@@ -290,7 +288,7 @@
       <button class="path-cmd" id="path-cmd" aria-label="Open the menu" aria-haspopup="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M4 7l8 8 8-8"/></svg>menu</button>
       <div class="term" id="term" hidden role="dialog" aria-label="Menu">
         <div class="term-bar">
-          <label class="term-prompt"><span aria-hidden="true">~ $</span><input id="term-q" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="type to find" aria-label="Find"></label>
+          <span class="term-prompt">~ $ menu</span>
           <button class="term-x" id="term-x" aria-label="Close the menu">esc</button>
         </div>
         <div class="term-body" id="term-body"></div>
@@ -556,7 +554,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.23</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.24</span></a>
           </div>
         </div>
       </section>
@@ -600,7 +598,7 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.23</span></div>
+          <div class="kv"><span>Version</span><span>1.24</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>

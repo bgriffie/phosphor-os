@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.23';
+  const VERSION = '1.24';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -710,11 +710,10 @@
   });
   function openMenu() { if (term.hidden) openTerm(); else closeTerm(); }
 
-  /* ---------- Terminal menu: tap the ~/path line (or hold the right key) ---------- */
-  // Everything in one list on the screen: the page you're on, every tile, Spotify, and quick actions.
-  // Type to narrow it; Enter runs the top line.
-  const term = $('#term'), termQ = $('#term-q'), termBody = $('#term-body');
-  const HIDE_PAGES = new Set(['/app', '/tiles/edit', '/notes/edit']);
+  /* ---------- Menu: tap the ~/path line (or hold the right key) ---------- */
+  // Kept short on purpose (Floyd, v1.24: the first version was far too busy): the open app's own
+  // menu and Close, the apps that run inside the OS, and play/pause.
+  const term = $('#term'), termBody = $('#term-body');
   const goTo = to => () => {
     if (frameId) { hideFrame(); location.replace(location.href.split('#')[0] + '#' + to); }
     else if (to === '/') location.replace(home()); else PH.go(to);
@@ -722,71 +721,45 @@
   function termGroups() {
     const r = curRoute(), c = child(), groups = [];
     if (frameId && c) {
-      const name = APPS[frameId][0], k = appKey(), here = [];
+      const name = APPS[frameId][0], here = [];
       let hasMenu = false; try { hasMenu = !!frame.contentDocument.getElementById('menu'); } catch {}
-      if (hasMenu) here.push([name + ' menu', 'menu', () => c.openMenu()]);
-      if (k) here.push([k.label || k.text, 'button', () => c.pressKey()]);
-      if (!c.atHome()) here.push([name + ' start', 'page', () => c.home()]);
-      here.push(['Close ' + name, 'exit', () => PhosphorOS.closeApp()]);
-      groups.push(['Here: ' + name.toLowerCase(), here]);
-    } else if (r !== '/') {
-      const sec = '/' + r.split('/')[1];
-      const pages = $$('.view[data-route]').map(v => v.dataset.route).filter(x => (x === sec || x.startsWith(sec + '/')) && !HIDE_PAGES.has(x));
-      groups.push(['Here: ~' + sec, pages.map(x => [$(`.view[data-route="${x}"]`).dataset.title, x === r ? 'here' : x === sec ? 'top' : 'page', goTo(x), x === r])]);
+      if (hasMenu) here.push([name + ' options', () => c.openMenu()]);
+      here.push(['Close ' + name, () => PhosphorOS.closeApp()]);
+      groups.push(['', here]);
     }
-    const open = [['Home', 'home', goTo('/'), !frameId && r === '/', keySvg('home')]];
-    tiles.forEach(t => {
-      const a = t.kind === 'app' && APPS[t.target];
-      const cur = a && (a[2] ? frameId === t.target : !frameId && (r === a[1] || r.startsWith(a[1] + '/')));
-      open.push([t.label, t.kind === 'app' ? 'app' : t.kind, a && !a[2] ? goTo(a[1]) : () => launch(t), cur, svg(t.glyph)]);
+    // only apps that stay inside the OS; links and Shortcuts that leave it stay on the home screen
+    const apps = [['Home', goTo('/'), !frameId && r === '/', keySvg('home')]];
+    tiles.filter(t => t.kind === 'app' && APPS[t.target]).forEach(t => {
+      const a = APPS[t.target], cur = a[2] ? frameId === t.target : !frameId && (r === a[1] || r.startsWith(a[1] + '/'));
+      apps.push([t.label, a[2] ? () => launch(t) : goTo(a[1]), cur, svg(t.glyph)]);
     });
-    if (!tiles.some(t => t.kind === 'app' && t.target === 'settings')) open.push(['Settings', 'app', goTo('/settings'), !frameId && r.startsWith('/settings'), svg('gear')]);
-    groups.push(['Open', open]);
-    const playing = !!(window.PhosphorMusic && PhosphorMusic.playing());
-    groups.push(['Spotify', [
-      [playing ? 'Pause' : 'Play', 'music', () => window.PhosphorMusic && PhosphorMusic.toggle()],
-      ['Now playing', 'page', goTo('/music/now')], ['Recently played', 'page', goTo('/music')],
-      ['Stuff You Should Know', 'page', goTo('/music/episodes')], ['Play on…', 'page', goTo('/music/devices')]]]);
-    const land = PH.store.get('orient') === 'landscape';
-    groups.push(['Do', [
-      [land ? 'Turn to portrait' : 'Turn to landscape', 'screen', () => PH.store.set('orient', land ? 'portrait' : 'landscape')],
-      ['New note', 'notes', () => { if (frameId) hideFrame(); actions['new-note'](); }],
-      ['Add tile', 'tiles', () => { if (frameId) hideFrame(); actions['add-tile'](); }],
-      ['Edit tiles', 'tiles', goTo('/tiles')],
-      ['Display', 'settings', goTo('/settings/display')], ['Orientation', 'settings', goTo('/settings/orient')]]]);
+    if (!tiles.some(t => t.kind === 'app' && t.target === 'settings')) apps.push(['Settings', goTo('/settings'), !frameId && r.startsWith('/settings'), svg('gear')]);
+    groups.push(['apps', apps]);
+    if (window.PhosphorMusic) { const on = PhosphorMusic.playing(); groups.push(['', [[on ? 'Pause music' : 'Play music', () => PhosphorMusic.toggle()]]]); }
     return groups;
   }
-  let termRun = [];
   function renderTerm() {
-    const q = termQ.value.trim().toLowerCase();
-    termBody.textContent = ''; termRun = [];
-    termGroups().forEach(([title, items]) => {
-      const hits = items.filter(([l, h]) => !q || l.toLowerCase().includes(q) || h.includes(q)); if (!hits.length) return;
-      const chips = title === 'Open';   // every tile as a small icon grid, so the list stays short
+    termBody.textContent = '';
+    termGroups().forEach(([kind, items]) => {
+      const chips = kind === 'apps';
       const g = document.createElement('div'); g.className = 'term-group' + (chips ? ' term-chips' : '');
-      g.innerHTML = '<h3></h3><div class="tg-items"></div>'; g.firstChild.textContent = title;
-      hits.forEach(([label, hint, fn, cur, ico]) => {
-        const b = document.createElement('button'); b.className = (chips ? 'term-chip' : 'term-line') + (q && !termRun.length ? ' is-first' : '');
-        b.innerHTML = chips ? `${ico || ''}<span class="tl-l"></span>` : '<span class="tl-l"></span><span class="tl-h"></span>';
-        b.querySelector('.tl-l').textContent = label; if (!chips) b.lastChild.textContent = hint;
+      g.innerHTML = '<div class="tg-items"></div>';
+      items.forEach(([label, fn, cur, ico]) => {
+        const b = document.createElement('button'); b.className = chips ? 'term-chip' : 'term-line';
+        b.innerHTML = chips ? `${ico || ''}<span class="tl-l"></span>` : '<span class="tl-l"></span>';
+        b.querySelector('.tl-l').textContent = label;
         if (cur) b.setAttribute('aria-current', 'page');
         b.addEventListener('click', () => { closeTerm(); fn(); });
-        termRun.push(fn); g.lastChild.appendChild(b);
+        g.lastChild.appendChild(b);
       });
       termBody.appendChild(g);
     });
-    if (!termRun.length) termBody.innerHTML = '<p class="term-empty">command not found</p>';
   }
-  function openTerm() { closeDialogs(); termQ.value = ''; renderTerm(); term.hidden = false; termBody.scrollTop = 0; $('#path-cmd').setAttribute('aria-expanded', 'true'); }
+  function openTerm() { closeDialogs(); renderTerm(); term.hidden = false; termBody.scrollTop = 0; $('#path-cmd').setAttribute('aria-expanded', 'true'); }
   // A bundled app keeps keyboard focus, so a paired Bluetooth keyboard keeps typing into it after the case keys are used
   const focusFrame = () => setTimeout(() => { if (frame && term.hidden) try { frame.contentWindow.focus(); } catch {} }, 0);
   $('.app-controls').addEventListener('click', focusFrame);
-  function closeTerm() { if (term.hidden) return; term.hidden = true; termQ.blur(); $('#path-cmd').setAttribute('aria-expanded', 'false'); focusFrame(); }
-  termQ.addEventListener('input', renderTerm);
-  termQ.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && termRun[0]) { e.preventDefault(); const fn = termRun[0]; closeTerm(); fn(); }
-    if (e.key === 'Escape') closeTerm();
-  });
+  function closeTerm() { if (term.hidden) return; term.hidden = true; $('#path-cmd').setAttribute('aria-expanded', 'false'); focusFrame(); }
   $('#term-x').addEventListener('click', closeTerm);
   $('#path-cmd').addEventListener('click', openMenu);
   $('.path').addEventListener('click', e => { if (!e.target.closest('a')) openTerm(); });
