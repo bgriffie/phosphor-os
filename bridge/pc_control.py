@@ -135,6 +135,9 @@ if WINDOWS:
                     ('hwndCapture', wintypes.HWND), ('hwndMenuOwner', wintypes.HWND), ('hwndMoveSize', wintypes.HWND),
                     ('hwndCaret', wintypes.HWND), ('rcCaret', wintypes.RECT)]
 
+    user32.OpenInputDesktop.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD); user32.OpenInputDesktop.restype = wintypes.HANDLE
+    user32.GetUserObjectInformationW.argtypes = (wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD))
+    user32.CloseDesktop.argtypes = (wintypes.HANDLE,)
     user32.GetGUIThreadInfo.argtypes = (wintypes.DWORD, ctypes.POINTER(GUITHREADINFO))
     try:
         dwmapi = ctypes.WinDLL('dwmapi')
@@ -217,6 +220,19 @@ class WinPC:
         gi = GUITHREADINFO(); gi.cbSize = ctypes.sizeof(GUITHREADINFO)
         tid = user32.GetWindowThreadProcessId(user32.GetForegroundWindow(), None)
         return bool(tid and user32.GetGUIThreadInfo(tid, ctypes.byref(gi)) and gi.hwndCaret)
+
+    def locked(self):
+        """True on the lock screen (or a UAC prompt): Windows lets no app type or click there, so the phone says so."""
+        h = user32.OpenInputDesktop(0, False, 0x0001)   # DESKTOP_READOBJECTS
+        if not h:
+            return True
+        try:
+            buf = ctypes.create_unicode_buffer(64); need = wintypes.DWORD()
+            if not user32.GetUserObjectInformationW(h, 2, buf, ctypes.sizeof(buf), ctypes.byref(need)):   # UOI_NAME
+                return False
+            return buf.value.lower() != 'default'
+        finally:
+            user32.CloseDesktop(h)
 
     def shot(self, m, width, crop=None):
         """A picture of monitor m (or the crop of it, in fractions x0 y0 x1 y1), scaled to width:
@@ -381,6 +397,7 @@ class FakePC:
         m = next(m for m in self.mons if m['n'] == n); self.typing = fy > 0.85; self.cur = (m['x'] + int(fx * m['w']), m['y'] + int(fy * m['h'])); print('  [pc] point', n, round(fx, 2), round(fy, 2))
     def cursor(self): return getattr(self, 'cur', (100, 100))
     def caret(self): return getattr(self, 'typing', False)
+    def locked(self): return os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'demo-locked'))
 
     def shot(self, m, width, crop=None):
         # a test card: a 1-pixel checker grid with a band per window, so zoomed-in sharpness shows
@@ -576,10 +593,10 @@ def setup(app, demo=False):
                     if sock.closed or st['cfg'] is not cfg:
                         continue
                     try:
-                        caret = pc.caret()
+                        caret, locked = pc.caret(), pc.locked()
                     except Exception:
-                        caret = False
-                    await sock.send_json({'frame': {'mon': m['n'], 'type': ctype, 'crop': cfg['crop'] or [0, 0, 1, 1], 'caret': caret,
+                        caret = locked = False
+                    await sock.send_json({'frame': {'mon': m['n'], 'type': ctype, 'crop': cfg['crop'] or [0, 0, 1, 1], 'caret': caret, 'locked': locked,
                                                     'cursor': f'{(cx - m["x"]) / m["w"]:.4f},{(cy - m["y"]) / m["h"]:.4f}' if on else ''}})
                     await sock.send_bytes(body)
                     st['unacked'] += 1

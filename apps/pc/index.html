@@ -912,7 +912,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>PC Remote</h1>
-      <span class="app-meta">v1.8</span>
+      <span class="app-meta">v1.9</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1085,7 +1085,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.8</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.9</span></a>
           </div>
         </div>
       </section>
@@ -1138,7 +1138,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="PC Remote">
-          <div class="kv"><span>Version</span><span>1.8</span></div>
+          <div class="kv"><span>Version</span><span>1.9</span></div>
           <div class="kv"><span>Monitors</span><span id="ab-mons">—</span></div>
           <div class="kv"><span>Saved shows</span><span id="ab-shows">0</span></div>
           <div class="kv"><span>Needs</span><span>Relay + Tailscale</span></div>
@@ -2084,7 +2084,7 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     lastFrame = Date.now();
     showBlob(blob.type ? blob : new Blob([blob], { type: meta.type || 'image/jpeg' }), meta.crop, meta.mon);
     curAt = /^([\d.]+),([\d.]+)$/.exec(meta.cursor || '') ? meta.cursor : '';
-    liveMsg(''); caret(!!meta.caret);
+    liveMsg(meta.locked ? 'The PC is on its lock screen. Windows doesn\'t let any app type or click there, so unlock it at the PC once. After that, everything works from here again.' : '', meta.locked); caret(!!meta.caret);
   }
   // A text box on the PC got the typing cursor just after a tap: bring up a keyboard. Sideways the drawn
   // one opens by itself; upright iOS only shows its keyboard after a tap, so a Keyboard button pops up.
