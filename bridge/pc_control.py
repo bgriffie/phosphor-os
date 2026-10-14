@@ -130,6 +130,12 @@ if WINDOWS:
     gdi32.SetBrushOrgEx.argtypes = (wintypes.HDC, ctypes.c_int, ctypes.c_int, ctypes.c_void_p)
     gdi32.StretchBlt.argtypes = (wintypes.HDC, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wintypes.HDC, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wintypes.DWORD)
     gdi32.DeleteObject.argtypes = (wintypes.HGDIOBJ,); gdi32.DeleteDC.argtypes = (wintypes.HDC,)
+    class GUITHREADINFO(ctypes.Structure):
+        _fields_ = [('cbSize', wintypes.DWORD), ('flags', wintypes.DWORD), ('hwndActive', wintypes.HWND), ('hwndFocus', wintypes.HWND),
+                    ('hwndCapture', wintypes.HWND), ('hwndMenuOwner', wintypes.HWND), ('hwndMoveSize', wintypes.HWND),
+                    ('hwndCaret', wintypes.HWND), ('rcCaret', wintypes.RECT)]
+
+    user32.GetGUIThreadInfo.argtypes = (wintypes.DWORD, ctypes.POINTER(GUITHREADINFO))
     try:
         dwmapi = ctypes.WinDLL('dwmapi')
     except OSError:
@@ -206,9 +212,16 @@ class WinPC:
     def cursor(self):
         p = wintypes.POINT(); user32.GetCursorPos(ctypes.byref(p)); return p.x, p.y
 
-    def shot(self, m, width):
-        """A picture of monitor m, scaled to width: (width, height, BGRA bytes)."""
-        x, y, w, h = m['x'], m['y'], m['w'], m['h']
+    def caret(self):
+        """True while a text box on the PC has the typing cursor, so the phone can bring up its keyboard."""
+        gi = GUITHREADINFO(); gi.cbSize = ctypes.sizeof(GUITHREADINFO)
+        tid = user32.GetWindowThreadProcessId(user32.GetForegroundWindow(), None)
+        return bool(tid and user32.GetGUIThreadInfo(tid, ctypes.byref(gi)) and gi.hwndCaret)
+
+    def shot(self, m, width, crop=None):
+        """A picture of monitor m (or the crop of it, in fractions x0 y0 x1 y1), scaled to width:
+        (width, height, BGRA bytes). Zoomed in, the crop is small, so the phone gets it at full sharpness."""
+        x, y, w, h = crop_rect(m, crop)
         tw = max(32, min(int(width), w)); th = max(18, round(h * tw / w))
         hdc = user32.GetDC(None); mdc = gdi32.CreateCompatibleDC(hdc)
         bi = BITMAPINFOHEADER(ctypes.sizeof(BITMAPINFOHEADER), tw, -th, 1, 32, 0, 0, 0, 0, 0, 0)   # top-down
@@ -365,20 +378,26 @@ class FakePC:
     def monitors(self): return self.mons
     def windows(self): return self.wins
     def point(self, n, fx, fy):
-        m = next(m for m in self.mons if m['n'] == n); self.cur = (m['x'] + int(fx * m['w']), m['y'] + int(fy * m['h'])); print('  [pc] point', n, round(fx, 2), round(fy, 2))
+        m = next(m for m in self.mons if m['n'] == n); self.typing = fy > 0.85; self.cur = (m['x'] + int(fx * m['w']), m['y'] + int(fy * m['h'])); print('  [pc] point', n, round(fx, 2), round(fy, 2))
     def cursor(self): return getattr(self, 'cur', (100, 100))
+    def caret(self): return getattr(self, 'typing', False)
 
-    def shot(self, m, width):
-        # a test card: dark screen, a green band per window on it, brighter on the main monitor
-        tw = max(32, min(int(width), m['w'])); th = max(18, round(m['h'] * tw / m['w']))
-        row = bytearray([10, 20 + 15 * m['n'], 8, 255]) * tw
-        band = bytearray([60, 200, 90, 255]) * (tw // 2) + bytearray([10, 30, 10, 255]) * (tw - tw // 2)
-        rows = []
-        on = [w for w in self.wins if w['monitor'] == m['n'] and not w['min']]
+    def shot(self, m, width, crop=None):
+        # a test card: a 1-pixel checker grid with a band per window, so zoomed-in sharpness shows
+        x, y, w, h = crop_rect(m, crop)
+        tw = max(32, min(int(width), w)); th = max(18, round(h * tw / w))
+        on = len([v for v in self.wins if v['monitor'] == m['n'] and not v['min']])
+        out = bytearray(tw * th * 4)
         for yy in range(th):
-            k = yy * 8 // th
-            rows.append(band if k < len(on) * 2 and k % 2 == 0 else row)
-        return tw, th, bytes(b''.join(rows))
+            py = y - m['y'] + yy * h // th
+            for xx in range(tw):
+                px = x - m['x'] + xx * w // tw
+                if (px // 40 + py // 40) % 2 and py * 8 // m['h'] < on * 2:
+                    c = (60, 200, 90) if (px + py) % 2 else (10, 30, 10)
+                else:
+                    c = (10, 20 + 15 * m['n'], 8) if (px % 100 and py % 100) else (90, 255, 120)
+                out[(yy * tw + xx) * 4:(yy * tw + xx) * 4 + 3] = bytes(c)
+        return tw, th, bytes(out)
 
     def _win(self, h):
         w = next((w for w in self.wins if w['id'] == h), None)
@@ -405,6 +424,23 @@ def number_monitors(found):
     for i, m in enumerate(found, 1):
         m['n'] = i
     return found
+
+
+def crop_rect(m, crop):
+    """The part of monitor m a live view is zoomed into, in desktop pixels: (x, y, w, h)."""
+    if not crop:
+        return m['x'], m['y'], m['w'], m['h']
+    x0, y0, x1, y1 = [max(0.0, min(1.0, float(v))) for v in crop]
+    x, y = m['x'] + int(x0 * m['w']), m['y'] + int(y0 * m['h'])
+    return x, y, max(16, int(x1 * m['w']) + m['x'] - x), max(16, int(y1 * m['h']) + m['y'] - y)
+
+
+def parse_crop(c):
+    try:
+        c = [float(v) for v in (c.split(',') if isinstance(c, str) else c)]
+        return c if len(c) == 4 and c[2] > c[0] and c[3] > c[1] else None
+    except (TypeError, ValueError, AttributeError):
+        return None
 
 
 def nice_app(exe):
@@ -464,7 +500,7 @@ def setup(app, demo=False):
         return {k: m[k] for k in ('n', 'x', 'y', 'w', 'h', 'primary')}
 
     async def info(request):
-        return web.json_response({'ok': True, 'demo': pc.fake, 'live': True, 'stream': True, 'monitors': [public(m) for m in pc.monitors()],
+        return web.json_response({'ok': True, 'demo': pc.fake, 'live': True, 'stream': True, 'crop': True, 'monitors': [public(m) for m in pc.monitors()],
                                   'browsers': sorted(find_browsers()) if not pc.fake else ['chrome', 'edge']})
 
     async def windows(request):
@@ -498,7 +534,7 @@ def setup(app, demo=False):
     async def shot(request):
         m = monitor(request.query.get('mon', 1))
         width = max(64, min(1600, int(request.query.get('w', 480))))
-        w, h, px = await asyncio.to_thread(pc.shot, m, width)
+        w, h, px = await asyncio.to_thread(pc.shot, m, width, parse_crop(request.query.get('crop')))
         body, ctype = await asyncio.to_thread(encode, w, h, px, int(request.query.get('q', 60)))
         cx, cy = pc.cursor()
         on = m['x'] <= cx < m['x'] + m['w'] and m['y'] <= cy < m['y'] + m['h']
@@ -533,13 +569,17 @@ def setup(app, demo=False):
                 t0 = time.monotonic()
                 try:
                     m = monitor(cfg['mon'])
-                    w, h, px = await asyncio.to_thread(pc.shot, m, cfg['w'])
+                    w, h, px = await asyncio.to_thread(pc.shot, m, cfg['w'], cfg['crop'])
                     body, ctype = await asyncio.to_thread(encode, w, h, px, cfg['q'])
                     cx, cy = pc.cursor()
                     on = m['x'] <= cx < m['x'] + m['w'] and m['y'] <= cy < m['y'] + m['h']
                     if sock.closed or st['cfg'] is not cfg:
                         continue
-                    await sock.send_json({'frame': {'mon': m['n'], 'type': ctype,
+                    try:
+                        caret = pc.caret()
+                    except Exception:
+                        caret = False
+                    await sock.send_json({'frame': {'mon': m['n'], 'type': ctype, 'crop': cfg['crop'] or [0, 0, 1, 1], 'caret': caret,
                                                     'cursor': f'{(cx - m["x"]) / m["w"]:.4f},{(cy - m["y"]) / m["h"]:.4f}' if on else ''}})
                     await sock.send_bytes(body)
                     st['unacked'] += 1
@@ -560,7 +600,8 @@ def setup(app, demo=False):
                     for ev in json.loads(msg.data):
                         if 'stream' in ev:
                             c = ev['stream']
-                            st['cfg'] = c and {'mon': int(c.get('mon', 1)), 'w': max(64, min(1600, int(c.get('w', 960)))), 'q': int(c.get('q', 55))}
+                            st['cfg'] = c and {'mon': int(c.get('mon', 1)), 'w': max(64, min(1600, int(c.get('w', 960)))), 'q': int(c.get('q', 55)),
+                                               'crop': parse_crop(c.get('crop'))}
                             st['unacked'] = 0; st['kick'].set()
                         elif 'ack' in ev:
                             st['unacked'] = max(0, st['unacked'] - 1); st['kick'].set()

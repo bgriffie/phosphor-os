@@ -831,22 +831,35 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .wm-acts .btn { min-height: 44px; padding: 0 4px; font-size: var(--fs-xs); }
     #wi-groups .menu-group { margin-top: var(--sp-4); }
     .wm-row.is-sel { border-color: var(--accent); box-shadow: var(--glow-box); }
-    /* Live view of one monitor */
-    .ls-top { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; flex: none; }
-    .ls-top .mon { height: 40px; min-width: 44px; }
-    .ls-swap { margin-left: auto; display: flex; gap: var(--sp-2); }
-    .ls-swap .btn { min-height: 40px; padding: 0 var(--sp-2); font-size: var(--fs-xs); }
-    .ls-box { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
-    .ls-pic { position: relative; max-width: 100%; max-height: 100%; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-    .ls-pic img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); pointer-events: none; }
-    .ls-cur { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border: 2px solid var(--accent); border-radius: 50%; box-shadow: var(--glow-box); pointer-events: none; }
+    /* Live view of one monitor: the whole screen is the picture; pinch to zoom, drag to scroll */
+    .screen-body:has(> #live-view.is-active) { padding: 0; }
+    #live-view { gap: 0; }
+    .ls-box { flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    .ls-box canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .ls-cur { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border: 2px solid var(--accent); border-radius: 50%; box-shadow: var(--glow-box); pointer-events: none; z-index: 1; }
+    .ls-cur.hold { width: 44px; height: 44px; margin: -22px 0 0 -22px; background: rgba(57,255,106,.15); }
     .ls-cur[hidden] { display: none; }
-    .ls-hint { flex: none; text-align: center; }
-    .ls-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: var(--sp-4);
-      color: var(--text-dim); font-size: var(--fs-sm); background: rgba(3,7,3,.82); pointer-events: none; }
+    .ls-pill { position: absolute; top: 10px; left: 12px; z-index: 2; height: 30px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 15px; background: rgba(3,7,3,.72);
+      color: var(--accent); font: inherit; font-size: var(--fs-xs); font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    .ls-pill svg { width: 16px; height: 16px; }
+    .ls-pill[aria-expanded="true"] { border-color: var(--accent); box-shadow: var(--glow-box); }
+    .ls-menu { position: absolute; top: 46px; left: 12px; z-index: 3; width: min(340px, calc(100% - 24px)); max-height: calc(100% - 56px); overflow: auto;
+      background: var(--surface-2); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); box-shadow: var(--glow-box); }
+    .ls-menu[hidden] { display: none; }
+    .ls-menu .label { margin: 0; }
+    .ls-menu .mon { height: 40px; min-width: 44px; }
+    .ls-acts { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+    .ls-acts .btn { min-height: 40px; padding: 0 var(--sp-3); font-size: var(--fs-xs); }
+    .ls-type { position: absolute; left: 50%; bottom: 14px; z-index: 2; transform: translateX(-50%); height: 40px; padding: 0 14px; border: 1px solid var(--accent); border-radius: 20px;
+      background: rgba(3,7,3,.85); color: var(--accent); font: inherit; font-size: var(--fs-xs); font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: var(--glow-box); }
+    .ls-type svg { width: 18px; height: 18px; }
+    .ls-type[hidden] { display: none; }
+    .ls-msg { position: absolute; left: 12px; right: 12px; top: 50%; transform: translateY(-50%); z-index: 1; text-align: center; padding: var(--sp-4);
+      color: var(--text-dim); font-size: var(--fs-sm); background: rgba(3,7,3,.82); border-radius: var(--radius-sm); pointer-events: none; }
     .ls-msg.warn { color: var(--amber); }
     .ls-msg[hidden] { display: none; }
-    #pc-kb { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; font-size: 16px; resize: none; caret-color: transparent; background: transparent; color: transparent; }
+    #live-view .vk { padding: var(--sp-2) var(--sp-3) var(--sp-3); }
+    #pc-kb { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; font-size: 16px; resize: none; caret-color: transparent; background: transparent; color: transparent; }
 
     /* Monitor picks */
     .mons { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
@@ -895,10 +908,11 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 </style>
 </head>
 <body>
+  <textarea id="pc-kb" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Type on the PC"></textarea>
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>PC Remote</h1>
-      <span class="app-meta">v1.6</span>
+      <span class="app-meta">v1.7</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -924,7 +938,6 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
       </section>
 
       <section class="view fill" data-route="/pad" data-title="Trackpad" id="pad-view">
-        <textarea id="pc-kb" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Type on the PC"></textarea>
         <div class="tp-rot" id="tp-rot">
         <div class="tp-strip" id="tp-strip">
           <button class="tp-k" data-kb-toggle aria-label="Keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 6h20v12H2zM6 10h1M10 10h1M14 10h1M18 10h1M7 14h10"/></svg></button>
@@ -1016,11 +1029,20 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
       </section>
 
       <section class="view fill" data-route="/windows/live" data-title="Live" id="live-view">
-        <div class="ls-top"><div class="mons" id="ls-mons"></div><div class="ls-swap" id="ls-swap"></div></div>
-        <div class="ls-box" id="ls-box">
-          <div class="ls-pic" id="ls-pic"><img id="ls-img" alt="" width="1600" height="900"><span class="ls-msg" id="ls-msg">Getting the first picture…</span><span class="ls-cur" id="ls-cur" hidden></span></div>
+        <div class="ls-box" id="ls-box" aria-label="Live picture of the monitor: tap to click, drag to scroll, pinch to zoom, hold to right-click, hold then drag to select">
+          <canvas id="ls-cv"></canvas>
+          <span class="ls-cur" id="ls-cur" hidden></span>
+          <span class="ls-msg" id="ls-msg">Getting the first picture…</span>
+          <button class="ls-pill" id="ls-pill" aria-expanded="false" aria-controls="ls-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v12H3zM9 20h6M12 16v4"/></svg><span id="ls-pill-t">1</span></button>
+          <div class="ls-menu" id="ls-menu" hidden>
+            <p class="label">Monitor</p>
+            <div class="mons" id="ls-mons"></div>
+            <div class="ls-acts" id="ls-swap"></div>
+            <div class="ls-acts"><button class="btn" id="ls-fit">Fit to screen</button></div>
+            <p class="hint">Tap to click · drag to scroll · pinch to zoom · two fingers to move around · hold to right-click · hold then drag to select</p>
+          </div>
+          <button class="ls-type" id="ls-type" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 6h20v12H2zM6 10h1M10 10h1M14 10h1M18 10h1M7 14h10"/></svg>Keyboard</button>
         </div>
-        <p class="hint ls-hint">Tap to click · hold to right-click · drag to point · two fingers to scroll</p>
       </section>
 
       <section class="view" data-route="/media" data-title="Media">
@@ -1063,7 +1085,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.6</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.7</span></a>
           </div>
         </div>
       </section>
@@ -1116,7 +1138,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="PC Remote">
-          <div class="kv"><span>Version</span><span>1.6</span></div>
+          <div class="kv"><span>Version</span><span>1.7</span></div>
           <div class="kv"><span>Monitors</span><span id="ab-mons">—</span></div>
           <div class="kv"><span>Saved shows</span><span id="ab-shows">0</span></div>
           <div class="kv"><span>Needs</span><span>Relay + Tailscale</span></div>
@@ -1138,7 +1160,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
       <div class="page-keys" data-show-on="/pad" hidden><button class="key key-sm" data-kb-toggle aria-label="Keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 6h20v12H2zM6 10h1M10 10h1M14 10h1M18 10h1M7 14h10"/></svg></button></div>
       <div class="page-keys" data-show-on="/shows/edit" hidden><button class="key key-sm" id="k-save" aria-label="Save show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></button></div>
       <div class="page-keys" data-show-on="/shows" hidden><button class="key key-sm" id="k-add" data-hide-on="/shows/edit" aria-label="Add show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></div>
-      <div class="page-keys" data-show-on="/windows" hidden><button class="key key-sm" id="k-refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg></button></div>
+      <div class="page-keys" data-show-on="/windows" hidden><button class="key key-sm" id="k-refresh" data-hide-on="/windows/live" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg></button><button class="key key-sm" data-kb-toggle data-show-on="/windows/live" aria-label="Keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 6h20v12H2zM6 10h1M10 10h1M14 10h1M18 10h1M7 14h10"/></svg></button></div>
       <div class="page-keys" data-show-on="/media" hidden><button class="key key-sm" data-key="playpause" aria-label="Play or pause"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5v14l9-7zM14 5h3v14h-3zM19 5h3v14h-3z"/></svg></button></div>
       <button class="key key-sm" data-route="/pad" data-hide-on="/pad /shows /windows /media" aria-label="Trackpad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v16H3zM3 15h18M12 15v5"/></svg></button>
     </nav>
@@ -1598,7 +1620,11 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     else if (kbOpen()) kb.blur(); else { resetKb(); kb.focus({ preventScroll: true }); }
     renderKb();
   }
-  const renderKb = () => { $$('[data-kb-toggle]').forEach(b => b.setAttribute('aria-pressed', String(kbOpen()))); $('#tp-rot').classList.toggle('vk-on', wide && !vk.hidden); };
+  const renderKb = () => {
+    $$('[data-kb-toggle]').forEach(b => b.setAttribute('aria-pressed', String(kbOpen())));
+    $('#tp-rot').classList.toggle('vk-on', wide && !vk.hidden && vk.parentNode === $('#tp-rot'));
+    $('#ls-type').hidden = true; kbInset();
+  };
 
   const SVG = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="${d}"/></svg>`;
   const VK_ICON = { shift: SVG('M12 3 3 12h5v8h8v-8h5z'), backspace: SVG('M8 5h13v14H8l-6-7zM11 9l6 6M17 9l-6 6'), enter: SVG('M20 5v8H5M9 9l-4 4 4 4') };
@@ -1610,7 +1636,8 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
   function renderVk() {
     if (vk.hidden) return;
     // keys as tall as fits: what's left after the key row and a usable strip of trackpad
-    const room = $('#tp-rot').clientHeight - $('#tp-strip').offsetHeight - 48 - 16, n = LAYERS[layer].length;
+    const n = LAYERS[layer].length, room = vk.parentNode === $('#live-view') ? $('#live-view').clientHeight * 0.4
+      : $('#tp-rot').clientHeight - $('#tp-strip').offsetHeight - 48 - 16;
     vk.style.setProperty('--vk-h', Math.max(22, Math.min(38, Math.floor((room - (n - 1) * 5) / n))) + 'px');
     vk.textContent = '';
     LAYERS[layer].forEach(row => {
@@ -1644,9 +1671,9 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
   /* ---------- Wide ---------- */
   // When Phosphor OS is turned to landscape the app's frame is wider than tall: the trackpad gets the
   // wide layout and the drawn keyboard, since the iPhone keyboard stays upright.
-  const rot = $('#tp-rot'), padView = $('#pad-view');
+  const rot = $('#tp-rot'), padView = $('#pad-view'), liveView = $('#live-view');
   function layoutPad() {
-    const W = padView.clientWidth, H = padView.clientHeight; if (!W || !H) return;
+    const W = innerWidth, H = innerHeight; if (!W || !H) return;
     const wasWide = wide; wide = W > H;
     rot.classList.toggle('wide', wide); renderVk();
     if (wide !== wasWide) {   // switch between the iPhone keyboard and the drawn one
@@ -1657,6 +1684,25 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     renderKb();
   }
   if (window.ResizeObserver) new ResizeObserver(layoutPad).observe(padView);
+  // The drawn keyboard sits under whichever page is typing: the trackpad or the live view
+  const placeVk = () => { const home = route() === '/windows/live' ? liveView : rot; if (vk.parentNode !== home) { home.appendChild(vk); renderVk(); renderKb(); } };
+  // Upright on the live view, the iPhone keyboard covers the bottom of the picture: shrink the picture
+  // to the part still showing (Phosphor OS runs this app in a frame, so ask the top window)
+  function kbInset() {
+    let inset = 0;
+    if (route() === '/windows/live' && !wide && document.activeElement === kb) {
+      try {
+        const vv = window.top.visualViewport, fe = window.frameElement;
+        if (vv) {
+          const bottom = (fe ? fe.getBoundingClientRect().top : 0) + liveView.getBoundingClientRect().bottom;
+          inset = Math.max(0, Math.min(liveView.clientHeight * 0.6, bottom - (vv.offsetTop + vv.height)));
+        }
+      } catch {}
+    }
+    liveView.style.paddingBottom = inset ? Math.round(inset) + 'px' : '';
+  }
+  try { const vv = window.top.visualViewport; if (vv) { vv.addEventListener('resize', () => setTimeout(kbInset, 50)); vv.addEventListener('scroll', kbInset); } } catch {}
+  kb.addEventListener('focus', () => setTimeout(kbInset, 350));
   addEventListener('resize', layoutPad);
   kb.addEventListener('blur', renderKb);
   // Keep the keyboard up while tapping keys in the strip
@@ -1664,7 +1710,7 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
 
   document.addEventListener('click', e => {
     const tg = e.target.closest('[data-kb-toggle]');
-    if (tg) { if (route() !== '/pad') PH.go('/pad'); toggleKb(); return; }
+    if (tg) { if (route() !== '/pad' && route() !== '/windows/live') PH.go('/pad'); toggleKb(); return; }
     const md = e.target.closest('[data-mod]');
     if (md) {
       // Tap once to hold it for the next key; tap again to press it on its own (Win opens Start)
@@ -1904,14 +1950,16 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
   addEventListener('resize', () => { if (route() === '/windows') renderWins(); });
 
   /* ---------- Live pictures ---------- */
-  // The relay sends a small picture of a monitor on request. The map refreshes each monitor in turn;
-  // the live view refreshes one monitor as fast as the connection allows.
-  const shots = {};   // monitor -> object URL of its latest picture
+  // The relay sends pictures of a monitor. The map refreshes each monitor in turn; the live view streams
+  // one monitor down the WebSocket as fast as the connection allows, cropped to the part on screen, so
+  // zooming in gets the PC's real pixels and text stays sharp.
+  const shots = {};   // monitor -> object URL of its latest map picture
+  const blobs = {};   // monitor -> its latest picture, to start the live view with
   let liveMon = load('live', 1), liveGen = 0, liveOff = false;
-  async function grab(n, width, q) {
+  async function grab(n, width, q, crop) {
     const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
     try {
-      const r = await fetch(`${link.url}/pc/shot?mon=${n}&w=${Math.round(width)}&q=${q}`, { headers: { Authorization: 'Bearer ' + link.key }, cache: 'no-store', signal: ctl.signal });
+      const r = await fetch(`${link.url}/pc/shot?mon=${n}&w=${Math.round(width)}&q=${q}${crop ? '&crop=' + crop.join(',') : ''}`, { headers: { Authorization: 'Bearer ' + link.key }, cache: 'no-store', signal: ctl.signal });
       if ((r.status === 404 || r.status === 405) && mons().some(m => m.n === n)) {   // 405: unknown path on the relay
         // the relay answers but has no picture endpoint: it's running an older pc_control.py
         liveOff = true; liveMsg(OLD_RELAY, true);
@@ -1919,31 +1967,114 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
       }
       if (r.status === 401) { liveMsg('The relay rejected the key. Paste the relay link again in Settings › Relay.', true); return null; }
       if (!r.ok) { const d = await r.json().catch(() => ({})); liveMsg('The PC couldn\'t take a picture: ' + (d.error || 'error ' + r.status), true); return null; }
-      const url = URL.createObjectURL(await r.blob());
-      if (shots[n]) URL.revokeObjectURL(shots[n]);
-      shots[n] = url;
-      return { url, cursor: r.headers.get('X-Cursor') };
+      const blob = await r.blob();
+      if (!crop) blobs[n] = blob;
+      return { blob, cursor: r.headers.get('X-Cursor') };
     } catch (e) { liveMsg(e.name === 'AbortError' ? 'The picture took too long to arrive. Retrying…' : 'Can\'t reach the PC. Is the relay window open, and Tailscale on here?', true); return null; } finally { clearTimeout(t); }
   }
-  // Streaming: on relays that support it, the live view's pictures come down the WebSocket as fast as
-  // the link allows (up to ~15 a second) instead of being asked for one by one.
-  let streaming = false, frameMeta = null, lastFrame = 0, liveUrl = null;
-  const streamCfg = () => ({ mon: liveMon, w: Math.round(Math.min(1600, $('#ls-box').clientWidth * Math.min(2, devicePixelRatio || 1))), q: 55 });
+
+  // The picture is drawn on a canvas: a new frame is decoded first and then painted over the last one,
+  // so the screen never blanks between frames (swapping an <img> flashed black, mostly sideways)
+  const box = $('#ls-box'), cv = $('#ls-cv'), cx = cv.getContext('2d');
+  let full = null, part = null, frameSeq = 0, drawn = 0;   // full: last whole-monitor frame; part: last frame
+  const toBmp = blob => window.createImageBitmap ? createImageBitmap(blob)
+    : new Promise((ok, bad) => { const i = new Image(), u = URL.createObjectURL(blob); i.onload = () => { URL.revokeObjectURL(u); ok(i); }; i.onerror = bad; i.src = u; });
+  const isFull = c => !c || (c[0] <= 0.001 && c[1] <= 0.001 && c[2] >= 0.999 && c[3] >= 0.999);
+  async function showBlob(blob, crop, mon) {
+    const seq = ++frameSeq;
+    let bmp; try { bmp = await toBmp(blob); } catch { return; }
+    if (seq !== frameSeq || mon !== liveMon) { bmp.close?.(); return; }   // a newer frame got there first
+    const old = new Set([full, part]);
+    part = { bmp, crop: isFull(crop) ? [0, 0, 1, 1] : crop };
+    if (isFull(crop)) full = part;
+    old.forEach(o => { if (o && o !== part && o !== full) o.bmp.close?.(); });
+    draw();
+  }
+  function clearPics() { new Set([full, part]).forEach(o => o && o.bmp.close?.()); full = part = null; frameSeq++; draw(); }
+
+  // View: zoom (1 = whole monitor fits) and the point of the monitor at the middle of the screen
+  let vz = 1, vfx = 0.5, vfy = 0.5;
+  const curMon = () => mons().find(m => m.n === liveMon) || (part ? { n: liveMon, w: part.bmp.width / (part.crop[2] - part.crop[0]), h: part.bmp.height / (part.crop[3] - part.crop[1]) } : { n: liveMon, w: 1920, h: 1080 });
+  function geo(z = vz, fx = vfx, fy = vfy) {
+    const m = curMon(), BW = box.clientWidth || 1, BH = box.clientHeight || 1;
+    const s0 = Math.min(BW / m.w, BH / m.h), s = s0 * z, DW = m.w * s, DH = m.h * s;
+    let ox = BW / 2 - fx * DW, oy = BH / 2 - fy * DH;
+    ox = DW <= BW ? (BW - DW) / 2 : Math.min(0, Math.max(BW - DW, ox));
+    oy = DH <= BH ? (BH - DH) / 2 : Math.min(0, Math.max(BH - DH, oy));
+    return { m, BW, BH, s0, s, DW, DH, ox, oy, z };
+  }
+  const maxZoom = () => Math.max(1, 3 / geo(1).s0);   // up to 3 screen points per PC pixel
+  function setView(z, ox, oy) {
+    // z with the monitor's top-left corner at (ox, oy) on screen; kept inside the monitor's edges
+    const g0 = geo(z, 0.5, 0.5);
+    vz = Math.max(1, Math.min(maxZoom(), z));
+    const g = geo(vz, (g0.BW / 2 - ox) / g0.DW, (g0.BH / 2 - oy) / g0.DH);
+    vfx = (g.BW / 2 - g.ox) / g.DW; vfy = (g.BH / 2 - g.oy) / g.DH;
+    draw(); restream();
+  }
+  const fit = () => { vz = 1; vfx = vfy = 0.5; draw(); restream(); };
+  function visibleCrop(g = geo()) {
+    if (g.z <= 1.001) return null;
+    const r = v => Math.round(Math.max(0, Math.min(1, v)) * 10000) / 10000;
+    return [r(-g.ox / g.DW), r(-g.oy / g.DH), r((g.BW - g.ox) / g.DW), r((g.BH - g.oy) / g.DH)];
+  }
+  let drawQ = 0;
+  function draw() {
+    if (drawQ) return;
+    drawQ = requestAnimationFrame(() => {
+      drawQ = 0;
+      const dpr = Math.min(3, devicePixelRatio || 1), g = geo();
+      const W = Math.round(g.BW * dpr), H = Math.round(g.BH * dpr);
+      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+      cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.clearRect(0, 0, g.BW, g.BH);
+      cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high';
+      for (const p of full && full !== part ? [full, part] : [part]) {
+        if (!p) continue;
+        const c = p.crop;
+        cx.drawImage(p.bmp, g.ox + c[0] * g.DW, g.oy + c[1] * g.DH, (c[2] - c[0]) * g.DW, (c[3] - c[1]) * g.DH);
+      }
+      placeCursor(); drawn++;
+      $('#ls-pill-t').textContent = liveMon + (vz > 1.05 ? ' · ' + (vz < 10 ? vz.toFixed(1) : Math.round(vz)) + '×' : '');
+    });
+  }
+  if (window.ResizeObserver) new ResizeObserver(() => { draw(); restream(); }).observe(box);
+
+  // Streaming: on relays that support it, the pictures come down the WebSocket as fast as the link
+  // allows (up to ~15 a second) instead of being asked for one by one.
+  let streaming = false, frameMeta = null, lastFrame = 0, sentCfg = '';
+  function streamCfg() {
+    const g = geo(), crop = info && info.crop ? visibleCrop(g) : null, dpr = Math.min(3, devicePixelRatio || 1);
+    const shown = crop ? (crop[2] - crop[0]) * g.DW : Math.min(g.DW, g.BW);
+    return { mon: liveMon, w: Math.round(Math.min(1600, Math.max(64, shown * dpr))), q: vz > 1.5 ? 70 : 55, ...(crop ? { crop } : {}) };
+  }
   function startStream() {
     if (!(info && info.stream) || !ws || ws.readyState !== 1) return false;
-    ws.send(JSON.stringify([{ stream: streamCfg() }])); streaming = true; lastFrame = Date.now(); return true;
+    const cfg = streamCfg(); sentCfg = JSON.stringify(cfg);
+    ws.send(JSON.stringify([{ stream: cfg }])); streaming = true; lastFrame = Date.now(); return true;
   }
+  let restreamT = 0;
+  const restream = () => { clearTimeout(restreamT); restreamT = setTimeout(() => { if (streaming && JSON.stringify(streamCfg()) !== sentCfg) startStream(); }, 120); };
   function stopStream() { if (streaming && ws && ws.readyState === 1) ws.send(JSON.stringify([{ stream: null }])); streaming = false; }
+  let caretWas = false, lastTap = 0, autoKb = false;
   function gotFrame(blob) {
     try { ws && ws.readyState === 1 && ws.send('[{"ack":1}]'); } catch {}
     const meta = frameMeta || {}; frameMeta = null;
     if (route() !== '/windows/live' || meta.mon !== liveMon) return;
-    const url = URL.createObjectURL(blob.type ? blob : new Blob([blob], { type: meta.type || 'image/jpeg' }));
-    const img = $('#ls-img'); img.src = url;
-    if (liveUrl) { const old = liveUrl; img.decode?.().catch(() => {}).finally(() => URL.revokeObjectURL(old)); }
-    liveUrl = url; lastFrame = Date.now();
-    showCursor(meta.cursor); liveMsg('');
+    lastFrame = Date.now();
+    showBlob(blob.type ? blob : new Blob([blob], { type: meta.type || 'image/jpeg' }), meta.crop, meta.mon);
+    curAt = /^([\d.]+),([\d.]+)$/.exec(meta.cursor || '') ? meta.cursor : '';
+    liveMsg(''); caret(!!meta.caret);
   }
+  // A text box on the PC got the typing cursor just after a tap: bring up a keyboard. Sideways the drawn
+  // one opens by itself; upright iOS only shows its keyboard after a tap, so a Keyboard button pops up.
+  function caret(on) {
+    if (on && !caretWas && performance.now() - lastTap < 2000 && !kbOpen()) {
+      if (wide) { toggleKb(); autoKb = true; } else $('#ls-type').hidden = false;
+    }
+    if (!on && caretWas) { $('#ls-type').hidden = true; if (autoKb && kbOpen()) toggleKb(); autoKb = false; }
+    caretWas = on;
+  }
+  $('#ls-type').addEventListener('click', () => { if (!kbOpen()) toggleKb(); autoKb = true; });
   const OLD_RELAY = 'The relay on the PC is the older version, without live pictures. Download the new pc_control.py into the relay folder (next to kasa_bridge.py, keeping both), then restart the relay.';
   function liveMsg(text, warn) { const m = $('#ls-msg'); m.textContent = text || ''; m.hidden = !text; m.classList.toggle('warn', !!warn); }
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1958,10 +2089,10 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
           if (ws && ws.readyState === 1 && (streaming || startStream()) && Date.now() - lastFrame < 5000) { await sleep(500); continue; }
           if (streaming && Date.now() - lastFrame >= 5000) { liveMsg('The picture stopped arriving. Reconnecting…', true); streaming = false; }
         }
-        const t0 = Date.now(), box = $('#ls-box');
-        const got = await grab(liveMon, Math.min(1600, box.clientWidth * dpr), 55);
+        const t0 = Date.now(), cfg = streamCfg();
+        const got = await grab(liveMon, cfg.w, cfg.q, cfg.crop);
         if (gen !== liveGen) break;
-        if (got) { $('#ls-img').src = got.url; showCursor(got.cursor); liveMsg(''); }
+        if (got) { showBlob(got.blob, cfg.crop, cfg.mon); curAt = got.cursor || ''; liveMsg(''); }
         await sleep(Math.max(120, 250 - (Date.now() - t0)));
       } else if (r === '/windows') {
         for (const m of mons()) {
@@ -1971,7 +2102,8 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
           if (got) {
             let img = el.querySelector('.wm-shot');
             if (!img) { img = document.createElement('img'); img.className = 'wm-shot'; img.alt = ''; el.prepend(img); }
-            img.src = got.url;
+            if (shots[m.n]) URL.revokeObjectURL(shots[m.n]);
+            img.src = shots[m.n] = URL.createObjectURL(got.blob);
           }
         }
         await sleep(1200);
@@ -1979,55 +2111,125 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     }
   }
   const stopLive = () => { liveGen++; };
-  function showCursor(c) {
-    const el = $('#ls-cur'), m = /^([\d.]+),([\d.]+)$/.exec(c || '');
-    el.hidden = !m; if (m) { el.style.left = m[1] * 100 + '%'; el.style.top = m[2] * 100 + '%'; }
+  // The PC's pointer, drawn where it is on the picture (or the finger's ring while holding)
+  let curAt = '', holdAt = null;
+  function placeCursor() {
+    const el = $('#ls-cur'), m = /^([\d.]+),([\d.]+)$/.exec(holdAt || curAt || ''), g = geo();
+    el.hidden = !m; el.classList.toggle('hold', !!holdAt);
+    if (m) { el.style.left = g.ox + m[1] * g.DW + 'px'; el.style.top = g.oy + m[2] * g.DH + 'px'; }
   }
+  let liveShown = 0;
   function renderLive() {
     const list = mons(); if (list.length && !list.some(m => m.n === liveMon)) liveMon = list[0].n;
-    const m = list.find(x => x.n === liveMon);
-    if (m) { const img = $('#ls-img'); if (+img.getAttribute('width') !== m.w) { img.setAttribute('width', m.w); img.setAttribute('height', m.h); img.removeAttribute('src'); } }
-    if (shots[liveMon]) { $('#ls-img').src = shots[liveMon]; liveMsg(''); } else if (!liveOff) liveMsg('Getting the first picture…');
-    monButtons($('#ls-mons'), { here: liveMon, label: false, pick: n => { liveMon = n; save('live', n); showCursor(''); renderLive(); if (streaming) startStream(); } });
+    if (liveShown !== liveMon) {   // a different monitor: start from its map picture, whole
+      liveShown = liveMon; clearPics(); vz = 1; vfx = vfy = 0.5;
+      if (blobs[liveMon]) { showBlob(blobs[liveMon], null, liveMon); liveMsg(''); } else if (!liveOff) liveMsg('Getting the first picture…');
+    }
+    monButtons($('#ls-mons'), { here: liveMon, label: false, pick: n => { liveMon = n; save('live', n); curAt = ''; renderLive(); if (streaming) startStream(); } });
     const sw = $('#ls-swap'); sw.textContent = '';
     list.filter(x => x.n !== liveMon).forEach(x => {
       const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Swap with ' + x.n;
       b.addEventListener('click', () => busy(b, async () => { await swap(liveMon, x.n); loadWins(); })); sw.appendChild(b);
     });
+    draw();
   }
-  // Touch on the picture = the mouse on that monitor
-  const pic = $('#ls-pic');
-  let lt = null, ltHold = 0;
-  const frac = t => { const r = $('#ls-img').getBoundingClientRect(); return [(t.clientX - r.left) / r.width, (t.clientY - r.top) / r.height]; };
-  const at = t => { const [fx, fy] = frac(t); push({ at: [liveMon, +fx.toFixed(4), +fy.toFixed(4)] }); showCursor(fx.toFixed(4) + ',' + fy.toFixed(4)); };
-  pic.addEventListener('touchstart', e => {
-    e.preventDefault(); e.stopPropagation();
+  const menu = $('#ls-menu'), pill = $('#ls-pill');
+  const showMenu = on => { menu.hidden = !on; pill.setAttribute('aria-expanded', String(on)); };
+  pill.addEventListener('click', () => showMenu(menu.hidden));
+  $('#ls-fit').addEventListener('click', () => { fit(); showMenu(false); });
+  for (const el of [pill, menu, $('#ls-type')]) el.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+
+  /* Touch works like a phone: tap clicks, a finger dragged scrolls whatever is under it (and keeps
+     gliding after a flick), pinch zooms, two fingers move the view, hold right-clicks, hold then drag
+     selects or drags. */
+  const pcAt = (x, y, g = geo()) => { const r = box.getBoundingClientRect(); return [(x - r.left - g.ox) / g.DW, (y - r.top - g.oy) / g.DH]; };
+  const inside = ([fx, fy]) => fx >= 0 && fx <= 1 && fy >= 0 && fy <= 1;
+  const pointTo = f => push({ at: [liveMon, +Math.max(0, Math.min(1, f[0])).toFixed(4), +Math.max(0, Math.min(1, f[1])).toFixed(4)] });
+  const pinchOf = ts => ({ c: centroid(ts), d: Math.hypot(ts[0].clientX - ts[1].clientX, ts[0].clientY - ts[1].clientY) });
+  let lt = null, ltHold = 0, glide = 0;
+  const WHEEL = 1.2;   // wheel units per PC pixel: 120 a notch, which most apps scroll ~100 px
+  function wheel(dx, dy) { const s = geo().s; sy += dy / s * WHEEL; sx += -dx / s * WHEEL; schedule(); }
+  function stopGlide() { cancelAnimationFrame(glide); glide = 0; }
+  function startGlide(vx, vy) {
+    let t = performance.now();
+    const step = now => {
+      const dt = Math.min(50, now - t); t = now;
+      const k = Math.pow(0.95, dt / 16); vx *= k; vy *= k;
+      if (Math.hypot(vx, vy) < 0.03) { glide = 0; return; }
+      wheel(vx * dt, vy * dt); glide = requestAnimationFrame(step);
+    };
+    glide = requestAnimationFrame(step);
+  }
+  box.addEventListener('touchstart', e => {
+    if (e.target.closest('.ls-pill, .ls-menu, .ls-type')) return;
+    e.preventDefault(); e.stopPropagation(); stopGlide();
+    if (!menu.hidden) { showMenu(false); lt = { done: true }; return; }
     if (!lt) {
-      const t = e.touches[0];
-      lt = { x: t.clientX, y: t.clientY, moved: false, held: false, fingers: e.touches.length, last: centroid(e.touches) };
+      const t = e.touches[0], f = pcAt(t.clientX, t.clientY);
+      lt = { x: t.clientX, y: t.clientY, f, mode: '', fingers: e.touches.length, last: centroid(e.touches), vx: 0, vy: 0, lt: performance.now() };
       clearTimeout(ltHold);
-      ltHold = setTimeout(() => { if (lt && !lt.moved && lt.fingers === 1) { lt.held = true; at(t); push({ c: 'right' }); } }, 550);
-    } else { lt.fingers = Math.max(lt.fingers, e.touches.length); lt.last = centroid(e.touches); clearTimeout(ltHold); }
-    if (e.touches.length === 2) at(centroid(e.touches));
+      if (inside(f)) ltHold = setTimeout(() => {
+        if (lt && !lt.mode && lt.fingers === 1) { lt.mode = 'held'; pointTo(lt.f); holdAt = lt.f.map(v => v.toFixed(4)).join(','); placeCursor(); navigator.vibrate?.(10); }
+      }, 500);
+    } else { clearTimeout(ltHold); lt.fingers = Math.max(lt.fingers, e.touches.length); }
+    if (e.touches.length >= 2 && lt.mode !== 'drag' && !lt.done) {
+      if (lt.mode === 'held') { holdAt = null; placeCursor(); }
+      const p = pinchOf(e.touches), g = geo();
+      lt.mode = 'pinch'; lt.p0 = p; lt.z0 = vz; lt.o0 = [g.ox, g.oy];
+    }
   }, { passive: false });
-  pic.addEventListener('touchmove', e => {
-    e.preventDefault(); e.stopPropagation(); if (!lt) return;
-    const c = centroid(e.touches);
-    if (!lt.moved && Math.hypot(c.x - lt.x, c.y - lt.y) > 8) { lt.moved = true; clearTimeout(ltHold); }
-    if (!lt.moved) return;
-    if (e.touches.length >= 2) { const k = PH.store.get('natural') ? 3 : -3; sy += (c.y - lt.last.y) * k; sx += -(c.x - lt.last.x) * k; schedule(); }
-    else if (lt.fingers === 1) at(e.touches[0]);
-    lt.last = c;
+  box.addEventListener('touchmove', e => {
+    if (!lt || lt.done || e.target.closest('.ls-menu')) return;
+    e.preventDefault(); e.stopPropagation();
+    const c = centroid(e.touches), now = performance.now();
+    if (lt.mode === 'pinch') {
+      if (e.touches.length < 2) return;
+      const p = pinchOf(e.touches), r = box.getBoundingClientRect();
+      const z = Math.max(1, Math.min(maxZoom(), lt.z0 * p.d / Math.max(1, lt.p0.d))), k = z / lt.z0;
+      // the spot under the fingers stays under them while they spread and move
+      const ax = lt.p0.c.x - r.left, ay = lt.p0.c.y - r.top;
+      setView(z, c.x - r.left - (ax - lt.o0[0]) * k, c.y - r.top - (ay - lt.o0[1]) * k);
+      return;
+    }
+    const dx = c.x - lt.last.x, dy = c.y - lt.last.y, dt = Math.max(1, now - lt.lt);
+    lt.last = c; lt.lt = now;
+    if (!lt.mode && Math.hypot(c.x - lt.x, c.y - lt.y) > 8) {
+      clearTimeout(ltHold);
+      lt.mode = 'scroll'; if (inside(lt.f)) pointTo(lt.f);   // the wheel goes to whatever is under the finger
+      lt.axis = Math.abs(c.x - lt.x) > Math.abs(c.y - lt.y) * 1.5 ? 'x' : Math.abs(c.y - lt.y) > Math.abs(c.x - lt.x) * 1.5 ? 'y' : '';
+    } else if (lt.mode === 'held' && Math.hypot(c.x - lt.x, c.y - lt.y) > 8) {
+      lt.mode = 'drag'; holdAt = null; push({ down: 'left' });
+    }
+    if (lt.mode === 'scroll') {
+      const ux = lt.axis === 'y' ? 0 : dx, uy = lt.axis === 'x' ? 0 : dy;
+      wheel(ux, uy); lt.vx = lt.vx * 0.6 + (ux / dt) * 0.4; lt.vy = lt.vy * 0.6 + (uy / dt) * 0.4;
+    } else if (lt.mode === 'drag') {
+      const f = pcAt(c.x, c.y); pointTo(f); curAt = f.map(v => Math.max(0, Math.min(1, v)).toFixed(4)).join(','); placeCursor();
+    }
   }, { passive: false });
   const ltEnd = e => {
+    if (!lt || e.target.closest?.('.ls-menu')) return;
     e.preventDefault(); e.stopPropagation();
-    if (!lt || e.touches.length) return;
+    if (e.touches.length) { if (lt.mode === 'pinch' && e.touches.length === 1) lt.mode = 'pinched'; return; }
     clearTimeout(ltHold);
-    if (!lt.moved && !lt.held) { const t = e.changedTouches[0]; at(t); push({ c: lt.fingers === 2 ? 'right' : 'left' }); }
-    lt = null;
+    const m = lt.mode;
+    if (!lt.done) {
+      if (!m && inside(lt.f)) { pointTo(lt.f); push({ c: 'left' }); lastTap = performance.now(); curAt = lt.f.map(v => v.toFixed(4)).join(','); }
+      else if (m === 'held') { push({ c: 'right' }); }
+      else if (m === 'drag') { push({ up: 'left' }); }
+      else if (m === 'scroll' && performance.now() - lt.lt < 80) startGlide(lt.vx, lt.vy);
+    }
+    holdAt = null; placeCursor(); lt = null;
   };
-  pic.addEventListener('touchend', ltEnd, { passive: false }); pic.addEventListener('touchcancel', ltEnd, { passive: false });
-  pic.addEventListener('click', e => { if (e.pointerType === 'mouse' || e.detail) { at(e); push({ c: 'left' }); } });   // clicking with a mouse, on a computer
+  box.addEventListener('touchend', ltEnd, { passive: false }); box.addEventListener('touchcancel', ltEnd, { passive: false });
+  for (const t of ['gesturestart', 'gesturechange']) box.addEventListener(t, e => e.preventDefault());
+  // With a mouse, on a computer (for trying it out): click clicks, the wheel scrolls, ctrl+wheel zooms
+  box.addEventListener('mousedown', e => { if (e.target === cv && e.button === 0) { const f = pcAt(e.clientX, e.clientY); if (inside(f)) { pointTo(f); push({ c: 'left' }); lastTap = performance.now(); } } });
+  box.addEventListener('wheel', e => {
+    if (e.target !== cv) return; e.preventDefault();
+    if (e.ctrlKey) { const r = box.getBoundingClientRect(), g = geo(), z = Math.max(1, Math.min(maxZoom(), vz * Math.exp(-e.deltaY / 200))), k = z / vz, x = e.clientX - r.left, y = e.clientY - r.top; setView(z, x - (x - g.ox) * k, y - (y - g.oy) * k); }
+    else { pointTo(pcAt(e.clientX, e.clientY)); wheel(-e.deltaX, -e.deltaY); }
+  }, { passive: false });
 
   /* ---------- Setup and settings ---------- */
   $('#pc-save').addEventListener('click', async () => {
@@ -2076,7 +2278,8 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     if (r !== '/windows/live') stopStream();
     if (r === '/windows' || r === '/windows/live') { liveOff = false; liveLoop(); } else stopLive();
     pollWins(r === '/windows' && !document.hidden);
-    if (r !== '/pad' && kbOpen()) kb.blur();
+    if (r !== '/pad' && r !== '/windows/live' && kbOpen()) { kb.blur(); vk.hidden = true; }
+    placeVk(); renderKb();
     if (dragging && r !== '/pad') { setDrag(false); push({ up: 'left' }); }
   }
   PH.on('route', sync);
