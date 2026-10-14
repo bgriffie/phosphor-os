@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.22';
+  const VERSION = '1.23';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -778,7 +778,10 @@
     if (!termRun.length) termBody.innerHTML = '<p class="term-empty">command not found</p>';
   }
   function openTerm() { closeDialogs(); termQ.value = ''; renderTerm(); term.hidden = false; termBody.scrollTop = 0; $('#path-cmd').setAttribute('aria-expanded', 'true'); }
-  function closeTerm() { if (term.hidden) return; term.hidden = true; termQ.blur(); $('#path-cmd').setAttribute('aria-expanded', 'false'); }
+  // A bundled app keeps keyboard focus, so a paired Bluetooth keyboard keeps typing into it after the case keys are used
+  const focusFrame = () => setTimeout(() => { if (frame && term.hidden) try { frame.contentWindow.focus(); } catch {} }, 0);
+  $('.app-controls').addEventListener('click', focusFrame);
+  function closeTerm() { if (term.hidden) return; term.hidden = true; termQ.blur(); $('#path-cmd').setAttribute('aria-expanded', 'false'); focusFrame(); }
   termQ.addEventListener('input', renderTerm);
   termQ.addEventListener('keydown', e => {
     if (e.key === 'Enter' && termRun[0]) { e.preventDefault(); const fn = termRun[0]; closeTerm(); fn(); }

@@ -912,7 +912,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>PC Remote</h1>
-      <span class="app-meta">v1.7</span>
+      <span class="app-meta">v1.8</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1085,7 +1085,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.7</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.8</span></a>
           </div>
         </div>
       </section>
@@ -1138,7 +1138,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="PC Remote">
-          <div class="kv"><span>Version</span><span>1.7</span></div>
+          <div class="kv"><span>Version</span><span>1.8</span></div>
           <div class="kv"><span>Monitors</span><span id="ab-mons">—</span></div>
           <div class="kv"><span>Saved shows</span><span id="ab-shows">0</span></div>
           <div class="kv"><span>Needs</span><span>Relay + Tailscale</span></div>
@@ -1570,6 +1570,7 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
   let mdown = null;
   pad.addEventListener('mousedown', e => { mdown = { x: e.clientX, y: e.clientY, moved: 0 }; });
   addEventListener('mousemove', e => { if (!mdown) return; const dx = e.clientX - mdown.x, dy = e.clientY - mdown.y; mdown.x = e.clientX; mdown.y = e.clientY; mdown.moved += Math.hypot(dx, dy); mx += dx * 2; my += dy * 2; schedule(); });
+  pad.addEventListener('wheel', e => { e.preventDefault(); sy += -e.deltaY * 1.2; sx += e.deltaX * 1.2; schedule(); }, { passive: false });
   addEventListener('mouseup', () => { if (mdown && mdown.moved < 4) push({ c: 'left' }); mdown = null; });
 
   // Left button holds while pressed (drag with the other finger); Right is a click
@@ -1611,6 +1612,25 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     resetKb();
   });
   kb.addEventListener('focus', resetKb);
+  // A Bluetooth keyboard paired with the phone types straight onto the PC on the trackpad and live
+  // pages, shortcuts included. Cmd counts as Ctrl, so Cmd+C copies on the PC as it would on a Mac.
+  const HW = { Enter: 'enter', Backspace: 'backspace', Tab: 'tab', Escape: 'esc', Delete: 'delete', Insert: 'insert', Home: 'home', End: 'end',
+    PageUp: 'pageup', PageDown: 'pagedown', ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', ' ': 'space', ContextMenu: 'apps' };
+  for (let i = 1; i <= 12; i++) HW['F' + i] = 'f' + i;
+  document.addEventListener('keydown', e => {
+    const r = route();
+    if ((r !== '/pad' && r !== '/windows/live') || !ready() || e.isComposing) return;
+    if (e.target !== kb && e.target.closest?.('input, textarea, select, [contenteditable]')) return;
+    if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Dead', 'Process', 'Unidentified'].includes(e.key)) return;
+    const m = [...(e.ctrlKey || e.metaKey ? ['ctrl'] : []), ...(e.altKey ? ['alt'] : [])];
+    const named = HW[e.key] || (e.key.length === 1 && m.length && /[a-z0-9]/i.test(e.key) ? e.key.toLowerCase() : null);
+    if (named && (m.length || HW[e.key])) {
+      if (named === 'space' && !m.length && !e.shiftKey) push({ t: ' ' });
+      else push({ k: [...m, ...(e.shiftKey ? ['shift'] : []), named] });
+    } else if (e.key.length === 1 && !m.length) push({ t: e.key });
+    else return;
+    e.preventDefault();
+  });
   // Upright, the iPhone keyboard types. Sideways it can't turn with the trackpad, so a keyboard
   // drawn on the screen (.vk) takes its place.
   const vk = $('#vk');
@@ -2226,6 +2246,12 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
   for (const t of ['gesturestart', 'gesturechange']) box.addEventListener(t, e => e.preventDefault());
   // With a mouse, on a computer (for trying it out): click clicks, the wheel scrolls, ctrl+wheel zooms
   box.addEventListener('mousedown', e => { if (e.target === cv && e.button === 0) { const f = pcAt(e.clientX, e.clientY); if (inside(f)) { pointTo(f); push({ c: 'left' }); lastTap = performance.now(); } } });
+  box.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse' || e.buttons || e.target !== cv) return;
+    const now = performance.now(); if (now - (box._hov || 0) < 30) return; box._hov = now;
+    const f = pcAt(e.clientX, e.clientY); if (inside(f)) { pointTo(f); curAt = f.map(v => v.toFixed(4)).join(','); placeCursor(); }
+  });
+  box.addEventListener('contextmenu', e => { if (e.target === cv) { e.preventDefault(); const f = pcAt(e.clientX, e.clientY); if (inside(f)) { pointTo(f); push({ c: 'right' }); } } });
   box.addEventListener('wheel', e => {
     if (e.target !== cv) return; e.preventDefault();
     if (e.ctrlKey) { const r = box.getBoundingClientRect(), g = geo(), z = Math.max(1, Math.min(maxZoom(), vz * Math.exp(-e.deltaY / 200))), k = z / vz, x = e.clientX - r.left, y = e.clientY - r.top; setView(z, x - (x - g.ox) * k, y - (y - g.oy) * k); }
