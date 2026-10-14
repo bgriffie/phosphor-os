@@ -842,6 +842,10 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .ls-cur { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border: 2px solid var(--accent); border-radius: 50%; box-shadow: var(--glow-box); pointer-events: none; }
     .ls-cur[hidden] { display: none; }
     .ls-hint { flex: none; text-align: center; }
+    .ls-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: var(--sp-4);
+      color: var(--text-dim); font-size: var(--fs-sm); background: rgba(3,7,3,.82); pointer-events: none; }
+    .ls-msg.warn { color: var(--amber); }
+    .ls-msg[hidden] { display: none; }
     #pc-kb { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; font-size: 16px; resize: none; caret-color: transparent; background: transparent; color: transparent; }
 
     /* Monitor picks */
@@ -894,7 +898,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>PC Remote</h1>
-      <span class="app-meta">v1.4</span>
+      <span class="app-meta">v1.5</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1014,7 +1018,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
       <section class="view fill" data-route="/windows/live" data-title="Live" id="live-view">
         <div class="ls-top"><div class="mons" id="ls-mons"></div><div class="ls-swap" id="ls-swap"></div></div>
         <div class="ls-box" id="ls-box">
-          <div class="ls-pic" id="ls-pic"><img id="ls-img" alt="Live picture of the monitor" width="1600" height="900"><span class="ls-cur" id="ls-cur" hidden></span></div>
+          <div class="ls-pic" id="ls-pic"><img id="ls-img" alt="" width="1600" height="900"><span class="ls-msg" id="ls-msg">Getting the first picture…</span><span class="ls-cur" id="ls-cur" hidden></span></div>
         </div>
         <p class="hint ls-hint">Tap to click · hold to right-click · drag to point · two fingers to scroll</p>
       </section>
@@ -1059,7 +1063,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.4</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.5</span></a>
           </div>
         </div>
       </section>
@@ -1112,7 +1116,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="PC Remote">
-          <div class="kv"><span>Version</span><span>1.4</span></div>
+          <div class="kv"><span>Version</span><span>1.5</span></div>
           <div class="kv"><span>Monitors</span><span id="ab-mons">—</span></div>
           <div class="kv"><span>Saved shows</span><span id="ab-shows">0</span></div>
           <div class="kv"><span>Needs</span><span>Relay + Tailscale</span></div>
@@ -1427,7 +1431,7 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     } finally { clearTimeout(t); }
     const d = await r.json().catch(() => ({}));
     if (r.status === 401) throw new Error('The relay rejected the key. Paste the relay link again.');
-    if (r.status === 404 && path === '/pc') { const e = new Error('The relay needs the PC control update. See Settings › Relay.'); e.old = true; throw e; }
+    if ((r.status === 404 || r.status === 405) && path === '/pc') { const e = new Error('The relay needs the PC control update. See Settings › Relay.'); e.old = true; throw e; }
     if (!r.ok) throw new Error(d.error || 'Relay error ' + r.status);
     return d;
   }
@@ -1900,15 +1904,21 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
     try {
       const r = await fetch(`${link.url}/pc/shot?mon=${n}&w=${Math.round(width)}&q=${q}`, { headers: { Authorization: 'Bearer ' + link.key }, cache: 'no-store', signal: ctl.signal });
-      if (r.status === 404 && !mons().some(m => m.n === n)) return null;
-      if (r.status === 404) { liveOff = true; $('#wi-note').textContent = 'Update the relay on the PC to see live pictures (Settings › Relay).'; $('#wi-note').hidden = false; return null; }
-      if (!r.ok) return null;
+      if ((r.status === 404 || r.status === 405) && mons().some(m => m.n === n)) {   // 405: unknown path on the relay
+        // the relay answers but has no picture endpoint: it's running an older pc_control.py
+        liveOff = true; liveMsg(OLD_RELAY, true);
+        $('#wi-note').textContent = OLD_RELAY; $('#wi-note').hidden = false; return null;
+      }
+      if (r.status === 401) { liveMsg('The relay rejected the key. Paste the relay link again in Settings › Relay.', true); return null; }
+      if (!r.ok) { const d = await r.json().catch(() => ({})); liveMsg('The PC couldn\'t take a picture: ' + (d.error || 'error ' + r.status), true); return null; }
       const url = URL.createObjectURL(await r.blob());
       if (shots[n]) URL.revokeObjectURL(shots[n]);
       shots[n] = url;
       return { url, cursor: r.headers.get('X-Cursor') };
-    } catch { return null; } finally { clearTimeout(t); }
+    } catch (e) { liveMsg(e.name === 'AbortError' ? 'The picture took too long to arrive. Retrying…' : 'Can\'t reach the PC. Is the relay window open, and Tailscale on here?', true); return null; } finally { clearTimeout(t); }
   }
+  const OLD_RELAY = 'The relay on the PC is the older version, without live pictures. Download the new pc_control.py into the relay folder (next to kasa_bridge.py, keeping both), then restart the relay.';
+  function liveMsg(text, warn) { const m = $('#ls-msg'); m.textContent = text || ''; m.hidden = !text; m.classList.toggle('warn', !!warn); }
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   async function liveLoop() {
     const gen = ++liveGen, dpr = Math.min(2, devicePixelRatio || 1);
@@ -1918,7 +1928,7 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
         const t0 = Date.now(), box = $('#ls-box');
         const got = await grab(liveMon, Math.min(1600, box.clientWidth * dpr), 55);
         if (gen !== liveGen) break;
-        if (got) { $('#ls-img').src = got.url; showCursor(got.cursor); }
+        if (got) { $('#ls-img').src = got.url; showCursor(got.cursor); liveMsg(''); }
         await sleep(Math.max(120, 250 - (Date.now() - t0)));
       } else if (r === '/windows') {
         for (const m of mons()) {
@@ -1944,7 +1954,7 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     const list = mons(); if (list.length && !list.some(m => m.n === liveMon)) liveMon = list[0].n;
     const m = list.find(x => x.n === liveMon);
     if (m) { const img = $('#ls-img'); if (+img.getAttribute('width') !== m.w) { img.setAttribute('width', m.w); img.setAttribute('height', m.h); img.removeAttribute('src'); } }
-    if (shots[liveMon]) $('#ls-img').src = shots[liveMon];
+    if (shots[liveMon]) { $('#ls-img').src = shots[liveMon]; liveMsg(''); } else if (!liveOff) liveMsg('Getting the first picture…');
     monButtons($('#ls-mons'), { here: liveMon, label: false, pick: n => { liveMon = n; save('live', n); showCursor(''); renderLive(); } });
     const sw = $('#ls-swap'); sw.textContent = '';
     list.filter(x => x.n !== liveMon).forEach(x => {
