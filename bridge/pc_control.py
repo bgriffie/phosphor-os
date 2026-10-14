@@ -464,7 +464,7 @@ def setup(app, demo=False):
         return {k: m[k] for k in ('n', 'x', 'y', 'w', 'h', 'primary')}
 
     async def info(request):
-        return web.json_response({'ok': True, 'demo': pc.fake, 'live': True, 'monitors': [public(m) for m in pc.monitors()],
+        return web.json_response({'ok': True, 'demo': pc.fake, 'live': True, 'stream': True, 'monitors': [public(m) for m in pc.monitors()],
                                   'browsers': sorted(find_browsers()) if not pc.fake else ['chrome', 'edge']})
 
     async def windows(request):
@@ -515,16 +515,63 @@ def setup(app, demo=False):
         # The key check happens before this, using ?key= (browsers can't add headers to a WebSocket)
         sock = web.WebSocketResponse(heartbeat=20)
         await sock.prepare(request)
-        async for msg in sock:
-            if msg.type != WSMsgType.TEXT:
-                continue
-            try:
-                for ev in json.loads(msg.data):
-                    handle(ev)
-            except web.HTTPException as e:
-                await sock.send_json({'error': e.text})
-            except Exception as e:
-                await sock.send_json({'error': str(e)})
+        # Live view: {"stream": {"mon": 2, "w": 1280, "q": 55}} starts a stream of pictures of that
+        # monitor down this socket (a JSON "frame" line, then the JPEG/PNG), {"stream": null} stops it.
+        # The phone acks each picture; with two unacked the stream waits, so a slow link never lags behind.
+        st = {'cfg': None, 'unacked': 0, 'kick': asyncio.Event()}
+
+        async def streamer():
+            while not sock.closed:
+                cfg = st['cfg']
+                if not cfg or st['unacked'] >= 2:
+                    st['kick'].clear()
+                    try:
+                        await asyncio.wait_for(st['kick'].wait(), 3)
+                    except asyncio.TimeoutError:
+                        st['unacked'] = 0   # a lost ack shouldn't stall the stream for good
+                    continue
+                t0 = time.monotonic()
+                try:
+                    m = monitor(cfg['mon'])
+                    w, h, px = await asyncio.to_thread(pc.shot, m, cfg['w'])
+                    body, ctype = await asyncio.to_thread(encode, w, h, px, cfg['q'])
+                    cx, cy = pc.cursor()
+                    on = m['x'] <= cx < m['x'] + m['w'] and m['y'] <= cy < m['y'] + m['h']
+                    if sock.closed or st['cfg'] is not cfg:
+                        continue
+                    await sock.send_json({'frame': {'mon': m['n'], 'type': ctype,
+                                                    'cursor': f'{(cx - m["x"]) / m["w"]:.4f},{(cy - m["y"]) / m["h"]:.4f}' if on else ''}})
+                    await sock.send_bytes(body)
+                    st['unacked'] += 1
+                except web.HTTPException as e:
+                    await sock.send_json({'error': e.text}); await asyncio.sleep(2)
+                except Exception as e:
+                    if sock.closed:
+                        break
+                    await sock.send_json({'error': 'Picture failed: ' + str(e)}); await asyncio.sleep(2)
+                await asyncio.sleep(max(0.0, 1 / 15 - (time.monotonic() - t0)))   # at most ~15 pictures a second
+
+        task = asyncio.create_task(streamer())
+        try:
+            async for msg in sock:
+                if msg.type != WSMsgType.TEXT:
+                    continue
+                try:
+                    for ev in json.loads(msg.data):
+                        if 'stream' in ev:
+                            c = ev['stream']
+                            st['cfg'] = c and {'mon': int(c.get('mon', 1)), 'w': max(64, min(1600, int(c.get('w', 960)))), 'q': int(c.get('q', 55))}
+                            st['unacked'] = 0; st['kick'].set()
+                        elif 'ack' in ev:
+                            st['unacked'] = max(0, st['unacked'] - 1); st['kick'].set()
+                        else:
+                            handle(ev)
+                except web.HTTPException as e:
+                    await sock.send_json({'error': e.text})
+                except Exception as e:
+                    await sock.send_json({'error': str(e)})
+        finally:
+            task.cancel()
         return sock
 
     app.add_routes([web.get('/pc', info), web.get('/pc/windows', windows), web.post('/pc/input', input_),

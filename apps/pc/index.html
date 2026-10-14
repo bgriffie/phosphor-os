@@ -898,7 +898,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>PC Remote</h1>
-      <span class="app-meta">v1.5</span>
+      <span class="app-meta">v1.6</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1063,7 +1063,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.5</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.6</span></a>
           </div>
         </div>
       </section>
@@ -1116,7 +1116,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="PC Remote">
-          <div class="kv"><span>Version</span><span>1.5</span></div>
+          <div class="kv"><span>Version</span><span>1.6</span></div>
           <div class="kv"><span>Monitors</span><span id="ab-mons">—</span></div>
           <div class="kv"><span>Saved shows</span><span id="ab-shows">0</span></div>
           <div class="kv"><span>Needs</span><span>Relay + Tailscale</span></div>
@@ -1450,9 +1450,17 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
   function openWS() {
     if (!ready() || (ws && ws.readyState <= 1) || wsTries > 2) return;
     try { ws = new WebSocket(link.url.replace(/^http/, 'ws') + '/pc/ws?key=' + encodeURIComponent(link.key)); } catch { ws = null; wsTries++; return; }
-    ws.onopen = () => { wsTries = 0; };
-    ws.onclose = () => { ws = null; wsTries++; };
-    ws.onmessage = e => { try { const d = JSON.parse(e.data); if (d.error) PH.toast(d.error, 'warn'); } catch {} };
+    ws.binaryType = 'blob';
+    ws.onopen = () => { wsTries = 0; if (route() === '/windows/live') startStream(); };
+    ws.onclose = () => { ws = null; wsTries++; streaming = false; };
+    ws.onmessage = e => {
+      if (typeof e.data !== 'string') { gotFrame(e.data); return; }
+      try {
+        const d = JSON.parse(e.data);
+        if (d.frame) frameMeta = d.frame;
+        else if (d.error) { if (route() === '/windows/live') liveMsg(d.error, true); else PH.toast(d.error, 'warn'); }
+      } catch {}
+    };
   }
   const closeWS = () => { if (ws) { ws.onclose = null; ws.close(); ws = null; } };
   function push(ev) { queue.push(ev); schedule(); }
@@ -1917,6 +1925,25 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
       return { url, cursor: r.headers.get('X-Cursor') };
     } catch (e) { liveMsg(e.name === 'AbortError' ? 'The picture took too long to arrive. Retrying…' : 'Can\'t reach the PC. Is the relay window open, and Tailscale on here?', true); return null; } finally { clearTimeout(t); }
   }
+  // Streaming: on relays that support it, the live view's pictures come down the WebSocket as fast as
+  // the link allows (up to ~15 a second) instead of being asked for one by one.
+  let streaming = false, frameMeta = null, lastFrame = 0, liveUrl = null;
+  const streamCfg = () => ({ mon: liveMon, w: Math.round(Math.min(1600, $('#ls-box').clientWidth * Math.min(2, devicePixelRatio || 1))), q: 55 });
+  function startStream() {
+    if (!(info && info.stream) || !ws || ws.readyState !== 1) return false;
+    ws.send(JSON.stringify([{ stream: streamCfg() }])); streaming = true; lastFrame = Date.now(); return true;
+  }
+  function stopStream() { if (streaming && ws && ws.readyState === 1) ws.send(JSON.stringify([{ stream: null }])); streaming = false; }
+  function gotFrame(blob) {
+    try { ws && ws.readyState === 1 && ws.send('[{"ack":1}]'); } catch {}
+    const meta = frameMeta || {}; frameMeta = null;
+    if (route() !== '/windows/live' || meta.mon !== liveMon) return;
+    const url = URL.createObjectURL(blob.type ? blob : new Blob([blob], { type: meta.type || 'image/jpeg' }));
+    const img = $('#ls-img'); img.src = url;
+    if (liveUrl) { const old = liveUrl; img.decode?.().catch(() => {}).finally(() => URL.revokeObjectURL(old)); }
+    liveUrl = url; lastFrame = Date.now();
+    showCursor(meta.cursor); liveMsg('');
+  }
   const OLD_RELAY = 'The relay on the PC is the older version, without live pictures. Download the new pc_control.py into the relay folder (next to kasa_bridge.py, keeping both), then restart the relay.';
   function liveMsg(text, warn) { const m = $('#ls-msg'); m.textContent = text || ''; m.hidden = !text; m.classList.toggle('warn', !!warn); }
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1925,6 +1952,12 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     while (gen === liveGen && !liveOff && ready() && !document.hidden) {
       const r = route();
       if (r === '/windows/live') {
+        // Stream when the relay can; otherwise (or if the stream goes quiet) ask for pictures one by one
+        if (info && info.stream) {
+          if (!ws || ws.readyState > 1) openWS();
+          if (ws && ws.readyState === 1 && (streaming || startStream()) && Date.now() - lastFrame < 5000) { await sleep(500); continue; }
+          if (streaming && Date.now() - lastFrame >= 5000) { liveMsg('The picture stopped arriving. Reconnecting…', true); streaming = false; }
+        }
         const t0 = Date.now(), box = $('#ls-box');
         const got = await grab(liveMon, Math.min(1600, box.clientWidth * dpr), 55);
         if (gen !== liveGen) break;
@@ -1955,7 +1988,7 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     const m = list.find(x => x.n === liveMon);
     if (m) { const img = $('#ls-img'); if (+img.getAttribute('width') !== m.w) { img.setAttribute('width', m.w); img.setAttribute('height', m.h); img.removeAttribute('src'); } }
     if (shots[liveMon]) { $('#ls-img').src = shots[liveMon]; liveMsg(''); } else if (!liveOff) liveMsg('Getting the first picture…');
-    monButtons($('#ls-mons'), { here: liveMon, label: false, pick: n => { liveMon = n; save('live', n); showCursor(''); renderLive(); } });
+    monButtons($('#ls-mons'), { here: liveMon, label: false, pick: n => { liveMon = n; save('live', n); showCursor(''); renderLive(); if (streaming) startStream(); } });
     const sw = $('#ls-swap'); sw.textContent = '';
     list.filter(x => x.n !== liveMon).forEach(x => {
       const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Swap with ' + x.n;
@@ -2029,6 +2062,7 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     $('#br-found').textContent = br && br.length ? 'Found on the PC: ' + br.map(b => b[0].toUpperCase() + b.slice(1)).join(', ') + '.' : '';
     renderShows();
     if (route() === '/shows/edit') renderEditMons();
+    if (route() === '/windows/live') renderLive();
   }
 
   // Connect while the app is on screen; the trackpad's live link only on its page
@@ -2039,6 +2073,7 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     if (r === '/pad' || r === '/windows/live') { wsTries = 0; openWS(); } else closeWS();
     if (r === '/windows' || r === '/windows/live') loadWins();
     if (r === '/windows/live') renderLive();
+    if (r !== '/windows/live') stopStream();
     if (r === '/windows' || r === '/windows/live') { liveOff = false; liveLoop(); } else stopLive();
     pollWins(r === '/windows' && !document.hidden);
     if (r !== '/pad' && kbOpen()) kb.blur();
