@@ -42,7 +42,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '1.3'           # the phone app compares this to know which features the relay has
+VERSION = '1.3.1'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 FAHRENHEIT = ('US', 'LR', 'MM', 'BS', 'BZ', 'KY', 'PW', 'FM', 'MH')
 
@@ -147,15 +147,33 @@ class RealCasts:
 
     def get(self, cid):
         cc = self.objs.get(cid)
+        # A connection that has ended (the Chromecast restarted, changed address or dropped off the Wi-Fi)
+        # can't be started again, so make a fresh one instead
+        if cc is not None and not cc.socket_client.is_alive() and cc.socket_client.ident is not None:
+            self.forget(cid)
+            cc = None
         if cc is None:
             info = next((i for u, i in self.browser.devices.items() if str(u) == cid), None)
             if info is None:
                 raise web.HTTPNotFound(text='That Chromecast isn\'t on the Wi-Fi right now. Is it plugged in?')
             cc = self.objs[cid] = self.pc.get_chromecast_from_cast_info(info, self.zc, tries=2, timeout=8)
-        cc.wait(timeout=10)
+        try:
+            cc.wait(timeout=10)
+        except Exception:
+            self.forget(cid)
+            raise web.HTTPGatewayTimeout(text='The Chromecast didn\'t answer. Try again in a moment.')
         if not cc.status:
+            self.forget(cid)
             raise web.HTTPGatewayTimeout(text='The Chromecast didn\'t answer.')
         return cc
+
+    def forget(self, cid):
+        cc = self.objs.pop(cid, None)
+        if cc is not None:
+            try:
+                cc.disconnect(timeout=1)
+            except Exception:
+                pass
 
     def status(self, cid):
         cc = self.get(cid)
