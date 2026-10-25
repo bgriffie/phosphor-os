@@ -827,7 +827,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.3</span>
+      <span class="app-meta">v1.4</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -962,7 +962,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <div class="menu" role="radiogroup" aria-label="Background sound" id="amb-list"></div>
           <div class="segmented lvl" role="radiogroup" aria-label="Background level" id="amb-lvl"><button role="radio" data-v="35">Low</button><button role="radio" data-v="65">Medium</button><button role="radio" data-v="100">High</button></div>
         </div>
-        <p class="menu-note">Play one of each, like jazz with rain. Music is ad-free internet radio from Radio Swiss and SomaFM. Rain, fire and the rest are made on the TV, so they need no internet. The TV's own volume is on the remote page.</p>
+        <p class="menu-note">Play one of each, like jazz with rain. Music is internet radio from Radio Swiss, SomaFM and HearMe.fm. Rain, fire and the rest are made on the TV, so they need no internet. With music on, the background plays softer underneath it. The TV's own volume is on the remote page.</p>
       </section>
 
       <section class="view" data-route="/settings" data-title="Settings">
@@ -990,7 +990,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.3</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.4</span></a>
           </div>
         </div>
       </section>
@@ -1048,7 +1048,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor TV">
-          <div class="kv"><span>Version</span><span>1.3</span></div>
+          <div class="kv"><span>Version</span><span>1.4</span></div>
           <div class="kv"><span>Chromecast</span><span id="ab-cast">—</span></div>
           <div class="kv"><span>Needs</span><span>Relay with --cast</span></div>
         </section>
@@ -1333,7 +1333,7 @@ PH.init({});
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
   let lastErr = '', pollT = 0, busyPower = false;
   const ready = () => !!(link && link.url && link.key);
-  const RELAY_WANTS = '1.3';   // tv_control.py version this app expects
+  const RELAY_WANTS = '1.4';   // tv_control.py version this app expects
   const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
   // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
   const toast = PH.toast;
@@ -1463,7 +1463,7 @@ PH.init({});
   // Ids match MUSIC / AMBIENCE in tv_control.py and src/sound.js on the TV
   const MUSIC = [['swiss-classic', 'Classical', 'Radio Swiss Classic'], ['swiss-jazz', 'Classic jazz', 'Radio Swiss Jazz: swing, standards, soul'],
     ['sonic-universe', 'Modern jazz', 'SomaFM Sonic Universe'], ['bossa', 'Bossa nova', 'SomaFM Bossa Beyond'], ['secret-agent', 'Spy lounge', 'SomaFM Secret Agent: cool jazz and spy themes'],
-    ['lounge', 'Cocktail lounge', 'SomaFM Illinois Street Lounge'], ['fluid', 'Lo-fi beats', 'SomaFM Fluid: instrumental hip-hop'],
+    ['lounge', 'Cocktail lounge', 'SomaFM Illinois Street Lounge'], ['romantic-jazz', 'Romantic jazz', 'Love songs and slow jazz ballads (HearMe.fm)'], ['fluid', 'Lo-fi beats', 'SomaFM Fluid: instrumental hip-hop'],
     ['groove-salad', 'Chill', 'SomaFM Groove Salad: downtempo'], ['drone-zone', 'Deep ambient', 'SomaFM Drone Zone: for sleep or focus']];
   const AMB = [['rain', 'Rain'], ['storm', 'Thunderstorm'], ['fire', 'Fireplace'], ['ocean', 'Ocean waves'], ['wind', 'Wind'], ['brown', 'Brown noise']];
   const snd = () => (info && info.sound) || { music: '', amb: '', mv: 70, av: 60 };

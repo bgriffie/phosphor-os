@@ -196,7 +196,7 @@
     /* Art */
     #v-art { padding: 0; }
     .art-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-    .osd { position: absolute; top: calc(2 * var(--u)); left: calc(3 * var(--u)); z-index: 2; color: var(--accent); text-shadow: var(--glow-lg), 0 0 4px #000;
+    .osd { position: absolute; top: calc(2 * var(--u)); left: calc(3 * var(--u)); z-index: 3; color: var(--accent); text-shadow: var(--glow-lg), 0 0 4px #000;
       font-size: calc(2.6 * var(--u)); text-transform: uppercase; letter-spacing: var(--tracking-label); transition: opacity .6s steps(4); }
     .osd { background: rgba(3,7,3,.72); padding: calc(.4 * var(--u)) calc(1.2 * var(--u)); border-radius: var(--radius-sm); }
     .osd b { margin-right: calc(1 * var(--u)); }
@@ -314,7 +314,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.3</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.4</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -370,14 +370,14 @@ const Art = (() => {
     { name: 'Earth', sub: '3rd planet from the Sun', facts: ['1 AU from the Sun', 'One moon', 'About 71% covered by water'],
       spin: .02, size: .8, haze: [110, 170, 255], spec: true,
       surface(la, lo, p) { const alat = Math.abs(la) * 180 / Math.PI;
-        const h = fbm(p[0] * 1.7, p[1] * 1.7, p[2] * 1.7, 6) + .06, dry = fbm(p[0] * 3 + 9, p[1] * 3, p[2] * 3, 3);
+        const h = fbm(p[0] * 1.7, p[1] * 1.7, p[2] * 1.7, 5) + .06, dry = fbm(p[0] * 3 + 9, p[1] * 3, p[2] * 3, 3);
         let c;
         if (h < 0) c = mix([6, 28, 78], [22, 70, 140], clamp(1 + h * 3, 0, 1));
         else { c = mix([48, 104, 40], [120, 132, 70], clamp(h * 3, 0, 1));
           if (alat > 12 && alat < 38 && dry > .05) c = mix(c, [196, 168, 110], clamp((dry - .05) * 5, 0, 1));
           if (h > .32) c = mix(c, [120, 104, 90], clamp((h - .32) * 6, 0, 1)); }
         if (alat > 74 || (h > 0 && alat > 62)) c = mix(c, [236, 242, 250], clamp((alat - 60) / 8, 0, 1));
-        const cl = fbm(p[0] * 3.2 + 30, p[1] * 3.2, p[2] * 3.2 * 1.6, 5);
+        const cl = fbm(p[0] * 3.2 + 30, p[1] * 3.2, p[2] * 3.2 * 1.6, 4);
         if (cl > .06) c = mix(c, [250, 252, 255], clamp((cl - .06) * 3.2, 0, .92));
         return c; } },
     { name: 'Mars', sub: '4th planet from the Sun', facts: ['1.52 AU from the Sun', 'A day lasts 24 h 37 min', 'Two small moons: Phobos and Deimos'],
@@ -412,51 +412,66 @@ const Art = (() => {
         const dla = (la + .35) / .1, dlo = Math.atan2(Math.sin(lo + 2), Math.cos(lo + 2)) / .18; if (dla * dla + dlo * dlo < 1) c = mix(c, [18, 30, 90], .7);
         return c; } },
   ];
-  const TW = 512, TH = 256, VIEW = 22000, TRAVEL = 4500;
+  // Orbit size in AU, colour of the dot in the overview, dot size (in 1/360ths of the screen height)
+  const ORBIT = [[0, [255, 200, 90], 12], [.39, [150, 138, 126], 2.2], [.72, [236, 210, 150], 3.2], [1, [80, 130, 210], 3.4], [1.52, [210, 110, 60], 2.6],
+    [5.2, [214, 182, 140], 7], [9.5, [226, 206, 152], 6], [19.2, [170, 220, 225], 4.6], [30, [80, 116, 214], 4.5]];
+  const TW = 320, TH = 160, VIEW = 18000, ZOOM = 4500, OVER1 = 9000, OVER = 4000;
 
+  // The tour: the whole solar system from above, then a zoom in to each world, a look, and back out.
   function solar() {
-    return { name: 'Solar system', dur: BODIES.length * (VIEW + TRAVEL),
-      init() {
-        this.i = -1; this.t = 0; this.phase = 'travel'; this.pt = 0; this.cur = null; this.next = null; this.job = null; this.rot = 0;
-        // Stars: drawn once, then slid slowly
-        const sc = canvas(Math.round(W * 1.2), Math.round(H * 1.2)), sx = sc.getContext('2d');
-        sx.fillStyle = BG; sx.fillRect(0, 0, sc.width, sc.height);
-        for (let k = 0; k < sc.width * sc.height / 900; k++) { const b = Math.random() ** 3; sx.fillStyle = `rgba(${pick(['255,255,255', '200,220,255', '255,230,200'])},${.25 + b * .75})`; const s = b > .9 ? 2 : 1; sx.fillRect(Math.random() * sc.width, Math.random() * sc.height, s, s); }
-        this.stars = sc; this.drift = 0;
-        this.streaks = Array.from({ length: 160 }, () => ({ a: rnd(0, TAU), r: rnd(.05, 1) }));
-        this.go();
-      },
-      go() { this.i = (this.i + 1) % BODIES.length; const b = BODIES[this.i]; if (b.init) b.init(); this.job = this.build(b); this.next = null; this.phase = 'travel'; this.pt = 0; },
-      // Builds the surface texture a few rows per frame (it's the slow part), then the sphere's pixel map
-      *build(b) {
+    const cache = [];     // built surfaces and sphere maps, kept for the whole session
+    let job = null, H0 = 0;
+    function* builder() {
+      for (let i = 0; i < BODIES.length; i++) {
+        if (cache[i]) continue;
+        const b = BODIES[i]; if (b.init) b.init();
         const tex = new Uint32Array(TW * TH);
         for (let j = 0; j < TH; j++) {
           const la = (.5 - (j + .5) / TH) * Math.PI, cl = Math.cos(la), sl = Math.sin(la);
-          for (let i = 0; i < TW; i++) { const lo = ((i + .5) / TW - .5) * TAU, p = [cl * Math.cos(lo), cl * Math.sin(lo), sl], c = b.surface(la, lo, p);
-            tex[j * TW + i] = 255 << 24 | clamp(c[2] | 0, 0, 255) << 16 | clamp(c[1] | 0, 0, 255) << 8 | clamp(c[0] | 0, 0, 255); }
-          if (j % 4 === 3) yield;
+          for (let k = 0; k < TW; k++) { const lo = ((k + .5) / TW - .5) * TAU, pt = [cl * Math.cos(lo), cl * Math.sin(lo), sl], c = b.surface(la, lo, pt);
+            tex[j * TW + k] = 255 << 24 | clamp(c[2] | 0, 0, 255) << 16 | clamp(c[1] | 0, 0, 255) << 8 | clamp(c[0] | 0, 0, 255); }
+          if (j % 2) yield;
         }
-        const R = Math.min(130, Math.round(H * .34 * b.size)), D = R * 2 + 2, n = D * D;
-        const u0 = new Float32Array(n), v0 = new Uint16Array(n), sh = new Uint16Array(n), al = new Uint8Array(n);
-        const L = [-.72, -.3, .62], ll = Math.hypot(...L); L[0] /= ll; L[1] /= ll; L[2] /= ll;
-        for (let yy = 0; yy < D; yy++) for (let xx = 0; xx < D; xx++) {
+        const R = Math.min(120, Math.round(H0 * .34 * b.size)), D = R * 2 + 2, n = D * D;
+        const u0 = new Float32Array(n), v0 = new Uint16Array(n), nx = new Float32Array(n), ny = new Float32Array(n), nz = new Float32Array(n), al = new Uint8Array(n);
+        for (let yy = 0; yy < D; yy++) { for (let xx = 0; xx < D; xx++) {
           const q = yy * D + xx, dx = (xx + .5 - D / 2) / R, dy = (yy + .5 - D / 2) / R, r2 = dx * dx + dy * dy, edge = (1 - Math.sqrt(r2)) * R + .5;
           if (edge <= 0) continue;
-          const nz = Math.sqrt(Math.max(0, 1 - r2)), la = Math.asin(clamp(-dy, -1, 1)), lo = Math.atan2(dx, nz);
+          const z = Math.sqrt(Math.max(0, 1 - r2)), la = Math.asin(clamp(-dy, -1, 1)), lo = Math.atan2(dx, z);
           u0[q] = (lo / TAU + .5) * TW; v0[q] = clamp(Math.floor((.5 - la / Math.PI) * TH), 0, TH - 1); al[q] = clamp(edge, 0, 1) * 255;
-          let s;
-          if (b.sun) s = .62 + .38 * Math.pow(nz, .45);
-          else { const d = Math.max(0, dx * L[0] + dy * L[1] + nz * L[2]); s = .018 + .982 * Math.pow(d, .8); if (b.giant) s *= .72 + .28 * nz; }
-          sh[q] = s * 256;
-        }
-        this.next = { b, tex, R, D, u0, v0, sh, al, img: canvas(D, D), rot: rnd(0, TW) };
+          nx[q] = dx; ny[q] = dy; nz[q] = z; }
+          if (yy % 16 === 15) yield; }
+        cache[i] = { b, tex, R, D, u0, v0, nx, ny, nz, al, img: canvas(D, D), rot: rnd(0, TW), L: [-.7, -.3, .65] };
+        yield;
+      }
+    }
+    return { name: 'Solar system', dur: BODIES.length * (VIEW + 2 * ZOOM + OVER) + OVER1,
+      init() {
+        if (!H0) H0 = H;
+        this.ang = ORBIT.map(() => rnd(0, TAU)); this.tgt = 0; this.phase = 'over'; this.pt = 0; this.first = true; this.pf = 0;
+        this.makeStars();
+        if (!job && cache.length < BODIES.length) job = builder();
       },
-      paint(p) {   // the visible half of the globe, turned by p.rot
-        const g = p.img.getContext('2d'), im = g.createImageData(p.D, p.D), out = new Uint32Array(im.data.buffer), { tex, u0, v0, sh, al } = p;
+      resized() { this.makeStars(); },     // the quality step-down: keep the tour where it is
+      makeStars() {
+        const sc = canvas(W, H), sx = sc.getContext('2d');
+        sx.fillStyle = BG; sx.fillRect(0, 0, W, H);
+        for (let k = 0; k < W * H / 700; k++) { const br = Math.random() ** 3; sx.fillStyle = `rgba(${pick(['255,255,255', '200,220,255', '255,230,200'])},${.2 + br * .7})`; sx.fillRect(Math.random() * W, Math.random() * H, br > .92 ? 2 : 1, br > .92 ? 2 : 1); }
+        this.stars = sc;
+      },
+      // Overview geometry, recomputed from the screen size every frame
+      geo() { const cx = W * .5, cy = H * .52, rx = W * .47, sq = .36, u = H / 360;
+        const pos = ORBIT.map(([au], i) => { const r = rx * Math.sqrt(au / 30); return [cx + Math.cos(this.ang[i]) * r, cy + Math.sin(this.ang[i]) * r * sq, r]; });
+        return { cx, cy, sq, u, pos }; },
+      paint(p) {   // the visible half of the globe, turned by p.rot and lit from the Sun's side
+        const g = p.img.getContext('2d'), im = g.createImageData(p.D, p.D), out = new Uint32Array(im.data.buffer), { tex, u0, v0, nx, ny, nz, al, L, b } = p;
         for (let q = 0; q < out.length; q++) { const a = al[q]; if (!a) continue;
           let u = (u0[q] + p.rot) % TW | 0; if (u < 0) u += TW;
-          const c = tex[v0[q] * TW + u], s = sh[q];
-          out[q] = a << 24 | Math.min(255, ((c >> 16) & 255) * s >> 8) << 16 | Math.min(255, ((c >> 8) & 255) * s >> 8) << 8 | Math.min(255, (c & 255) * s >> 8); }
+          let s;
+          if (b.sun) s = .62 + .38 * Math.sqrt(Math.sqrt(nz[q]));
+          else { const d = nx[q] * L[0] + ny[q] * L[1] + nz[q] * L[2]; s = d > 0 ? .02 + .98 * Math.pow(d, .8) : .02; if (b.giant) s *= .72 + .28 * nz[q]; }
+          const c = tex[v0[q] * TW + u], m = s * 256 | 0;
+          out[q] = a << 24 | Math.min(255, ((c >> 16) & 255) * m >> 8) << 16 | Math.min(255, ((c >> 8) & 255) * m >> 8) << 8 | Math.min(255, (c & 255) * m >> 8); }
         g.putImageData(im, 0, 0);
       },
       rings(p, cx, cy, k, front) {
@@ -467,20 +482,46 @@ const Art = (() => {
           x.arc(0, 0, (r1 + r2) / 2 * p.R * k, front ? 0 : Math.PI, front ? Math.PI : TAU); x.stroke(); }
         x.restore();
       },
-      body(p, cx, cy, k, alpha) {
-        if (!p) return;
-        const b = p.b, r = p.R * k;
+      globe(p, cx, cy, r, alpha) {   // r: radius on screen
+        const b = p.b, k = r / p.R;
         x.globalAlpha = alpha;
         if (b.sun) { const g = x.createRadialGradient(cx, cy, r * .9, cx, cy, r * 2.4); g.addColorStop(0, 'rgba(255,190,90,.55)'); g.addColorStop(.4, 'rgba(255,140,40,.16)'); g.addColorStop(1, 'rgba(255,120,30,0)'); x.fillStyle = g; x.fillRect(cx - r * 2.5, cy - r * 2.5, r * 5, r * 5); }
         this.rings(p, cx, cy, k, false);
         x.save(); x.translate(cx, cy); if (b.tilt && b.name === 'Uranus') x.rotate(b.tilt);
         x.drawImage(p.img, -p.D / 2 * k, -p.D / 2 * k, p.D * k, p.D * k); x.restore();
-        if (b.haze) { const g = x.createRadialGradient(cx, cy, r * .96, cx, cy, r * 1.07); const [h1, h2, h3] = b.haze;
+        if (b.haze) { const [h1, h2, h3] = b.haze, g = x.createRadialGradient(cx, cy, r * .96, cx, cy, r * 1.07);
           g.addColorStop(0, `rgba(${h1},${h2},${h3},0)`); g.addColorStop(.45, `rgba(${h1},${h2},${h3},.32)`); g.addColorStop(1, `rgba(${h1},${h2},${h3},0)`);
           x.fillStyle = g; x.beginPath(); x.arc(cx, cy, r * 1.08, 0, TAU); x.fill(); }
-        if (b.spec) { const sx = cx - r * .42, sy = cy - r * .2, g = x.createRadialGradient(sx, sy, 0, sx, sy, r * .35); g.addColorStop(0, 'rgba(255,255,255,.16)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(sx - r * .4, sy - r * .4, r * .8, r * .8); }
+        if (b.spec) { const L = p.L, sx = cx + L[0] * r * .45, sy = cy + L[1] * r * .45, g = x.createRadialGradient(sx, sy, 0, sx, sy, r * .35); g.addColorStop(0, 'rgba(255,255,255,.14)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(sx - r * .4, sy - r * .4, r * .8, r * .8); }
         this.rings(p, cx, cy, k, true);
         x.globalAlpha = 1;
+      },
+      // Draws the overview through a camera: world point q lands at S + (q - P0) * z
+      scene(G, P0, S, z, fade, hide) {
+        const T = q => [S[0] + (q[0] - P0[0]) * z, S[1] + (q[1] - P0[1]) * z];
+        const [scx, scy] = T([G.cx, G.cy]), u = G.u;
+        if (fade > 0) {   // orbits
+          x.strokeStyle = `rgba(120,160,200,${.28 * fade})`; x.lineWidth = 1; x.beginPath();
+          for (let i = 1; i < ORBIT.length; i++) { const r = G.pos[i][2] * z; if (r > W * 40) continue; x.moveTo(scx + r, scy); x.ellipse(scx, scy, r, r * G.sq, 0, 0, TAU); }
+          x.stroke(); }
+        const order = ORBIT.map((_, i) => i).sort((a, b) => G.pos[a][1] - G.pos[b][1]);
+        for (const i of order) {
+          if (i === hide) continue;
+          // the others are tiny next to the distances between them: they grow a little, never into blobs
+          const [px, py] = T(G.pos[i]), r = ORBIT[i][2] * u * Math.min(z, 2.5), c = ORBIT[i][1];
+          if (px < -r * 3 || px > W + r * 3 || py < -r * 3 || py > H + r * 3) continue;
+          x.globalAlpha = 1 - (1 - fade) * .5;
+          if (i === 0) { const g = x.createRadialGradient(px, py, 0, px, py, r * 3.2); g.addColorStop(0, 'rgba(255,240,200,1)'); g.addColorStop(.3, 'rgba(255,190,80,.9)'); g.addColorStop(.32, 'rgba(255,160,60,.35)'); g.addColorStop(1, 'rgba(255,120,30,0)');
+            x.fillStyle = g; x.fillRect(px - r * 3.2, py - r * 3.2, r * 6.4, r * 6.4); x.globalAlpha = 1; continue; }
+          let lx = scx - px, ly = scy - py; const ln = Math.hypot(lx, ly) || 1; lx /= ln; ly /= ln;
+          const g = x.createRadialGradient(px + lx * r * .5, py + ly * r * .5, r * .1, px, py, r * 1.05);
+          g.addColorStop(0, `rgb(${c[0]},${c[1]},${c[2]})`); g.addColorStop(.7, `rgb(${c[0] * .45 | 0},${c[1] * .45 | 0},${c[2] * .45 | 0})`); g.addColorStop(1, 'rgba(0,0,0,.2)');
+          x.fillStyle = g; x.beginPath(); x.arc(px, py, r, 0, TAU); x.fill();
+          if (i === 6) { x.strokeStyle = `rgba(226,206,152,.8)`; x.lineWidth = Math.max(1, r * .35); x.beginPath(); x.ellipse(px, py, r * 2.1, r * .6, -.38, 0, TAU); x.stroke(); }
+          x.globalAlpha = 1;
+          if (fade > .3) { x.globalAlpha = fade; x.fillStyle = '#86C295'; x.font = `${Math.round(H / 34)}px ui-monospace, Menlo, monospace`; x.textBaseline = 'middle';
+            x.fillText(BODIES[i].name.replace('The ', ''), px + r + 5 * u, py); x.globalAlpha = 1; }
+        }
       },
       card(p, a) {
         if (a <= 0) return; const b = p.b, fs = Math.round(H / 15), sm = Math.round(H / 34), x0 = Math.round(W * .06); let y = Math.round(H * .62);
@@ -491,37 +532,35 @@ const Art = (() => {
         x.globalAlpha = 1;
       },
       frame(dt) {
-        // keep building the next world in small steps
-        if (this.job) { const t0 = performance.now(); while (this.job && performance.now() - t0 < 9) { if (this.job.next().done) this.job = null; } }
-        this.drift += dt * .004;
-        const sw = this.stars.width - W, sh = this.stars.height - H;
-        x.drawImage(this.stars, -(this.drift % sw), -sh / 2, this.stars.width, this.stars.height);
-        if (this.drift % sw > sw - 1) this.drift = 0;
-        const cx = W * .62, cy = H * .48;
-        if (this.phase === 'travel') {
-          this.pt += dt / TRAVEL; const t = this.pt, ready = !!this.next;
-          const out = this.cur ? clamp(1 - t * 2.5, 0, 1) : 0;
-          if (out > 0) this.body(this.cur, cx + (1 - out) * W * .5, cy, 1 + (1 - out) * 1.5, out);
-          // rushing stars
-          const k = Math.sin(clamp(t, 0, 1) * Math.PI);
-          if (k > .02) { x.strokeStyle = `rgba(200,225,255,${.55 * k})`; x.lineWidth = 1; x.beginPath();
-            for (const s of this.streaks) { s.r += dt * .0009 * (1 + s.r * 3); if (s.r > 1.4) { s.r = rnd(.02, .2); s.a = rnd(0, TAU); }
-              const r0 = s.r * W * .6, r1 = r0 + 4 + s.r * W * .12 * k; x.moveTo(W / 2 + Math.cos(s.a) * r0, H / 2 + Math.sin(s.a) * r0); x.lineTo(W / 2 + Math.cos(s.a) * r1, H / 2 + Math.sin(s.a) * r1); }
-            x.stroke(); }
-          if (ready && t > .55) { const g = ease(clamp((t - .55) / .45, 0, 1)); if (!this.next.painted) { this.paint(this.next); this.next.painted = true; }
-            this.body(this.next, lerp(W / 2, cx, g), lerp(H / 2, cy, g), .04 + .96 * g, clamp(g * 3, 0, 1)); }
-          if (t >= 1 && ready) { this.cur = this.next; this.next = null; this.phase = 'view'; this.vt = 0; }
-          if (t >= 1 && !ready) this.pt = .99;   // a slow box: wait here until the next world is built
+        // build the worlds in small steps, a bit more while just looking at the overview
+        if (job) { const t0 = performance.now(), budget = this.phase === 'over' ? 14 : 8; while (job && performance.now() - t0 < budget) { if (job.next().done) job = null; } }
+        x.drawImage(this.stars, 0, 0, W, H);
+        const G = this.geo(), i = this.tgt, p = cache[i];
+        if (this.phase === 'over') {
+          for (let k = 1; k < ORBIT.length; k++) this.ang[k] += dt / 1000 * .5 * Math.pow(ORBIT[k][0], -1.5) * .35;   // planets keep orbiting
+          this.scene(G, G.pos[0], [G.cx, G.cy], 1, 1, -1);
+          this.pt += dt;
+          if (this.pt > (this.first ? OVER1 : OVER) && p) {   // wait here until the next world is built
+            this.first = false; this.phase = 'in'; this.pt = 0; this.P0 = G.pos[i].slice(0, 2);
+            const sun = [G.cx - this.P0[0], G.cy - this.P0[1]], ln = Math.hypot(...sun) || 1;
+            p.L = i ? [sun[0] / ln * .82, sun[1] / ln * .82 - .12, .55] : [0, 0, 1];
+            const l = Math.hypot(...p.L); p.L = p.L.map(v => v / l);
+            p.rot = rnd(0, TW); this.paint(p);
+          }
           return;
         }
-        // looking at one world, turning slowly
-        this.vt += dt; const p = this.cur;
-        p.rot += dt * p.b.spin * TW / 1000 / 6;
-        this.pf = (this.pf || 0) + dt; if (this.pf > 66) { this.pf = 0; this.paint(p); }   // 15 globe updates a second is plenty
-        const z = 1 + this.vt / VIEW * .06;
-        this.body(p, cx, cy, z, 1);
-        this.card(p, clamp((this.vt - 600) / 900, 0, 1) * clamp((VIEW - this.vt) / 700, 0, 1));
-        if (this.vt > VIEW) this.go();
+        // zooming in, looking, zooming out
+        const T = [W * .62, H * .48], rView = p.R * H / H0, rDot = ORBIT[i][2] * G.u, Z = rView / rDot;
+        let e;
+        if (this.phase === 'in') { this.pt += dt; e = ease(clamp(this.pt / ZOOM, 0, 1)); if (this.pt >= ZOOM) { this.phase = 'view'; this.pt = 0; } }
+        else if (this.phase === 'view') { this.pt += dt; e = 1; if (this.pt >= VIEW) { this.phase = 'out'; this.pt = 0; } }
+        else { this.pt += dt; e = ease(1 - clamp(this.pt / ZOOM, 0, 1)); if (this.pt >= ZOOM) { this.phase = 'over'; this.pt = 0; this.tgt = (i + 1) % BODIES.length; } }
+        const z = Math.exp(Math.log(Z) * e), S = [lerp(this.P0[0], T[0], e), lerp(this.P0[1], T[1], e)];
+        this.scene(G, this.P0, S, z, 1 - e, e > .55 ? i : -1);
+        if (this.phase === 'view') { p.rot += dt * p.b.spin * TW / 1000 / 6; this.pf += dt; if (this.pf > 80) { this.pf = 0; this.paint(p); } }
+        const ga = clamp((e - .45) / .3, 0, 1);
+        if (ga > 0) this.globe(p, S[0], S[1], rDot * z, ga);
+        if (this.phase === 'view') this.card(p, clamp((this.pt - 400) / 900, 0, 1) * clamp((VIEW - this.pt) / 700, 0, 1));
       } };
   }
 
@@ -542,6 +581,8 @@ const Art = (() => {
         g.fillStyle = gr; g.fillRect(0, 0, 48, 48); return sp; });
     };
     return { name: 'Fireplace', dur: 600000,
+      // Filmed fire first (free Mixkit clips, 720p); the drawn fire below only shows if none of them will play
+      video: ['https://assets.mixkit.co/videos/17158/17158-720.mp4', 'https://assets.mixkit.co/videos/30252/30252-720.mp4', 'https://assets.mixkit.co/videos/1242/1242-720.mp4'],
       init() {
         sprites = sprites || makeSprites();
         this.ps = []; this.sparks = []; this.t = 0; this.flick = 1; this.wind = 0; this.windTo = 0; this.spawnAcc = 0;
@@ -754,8 +795,44 @@ const Art = (() => {
     const sc = Math.min(1, lines / Math.max(1, cv.clientHeight));
     W = cv.width = Math.round(cv.clientWidth * sc); H = cv.height = Math.round(cv.clientHeight * sc);
   }
+  /* ---------- Filmed pieces ----------
+     Two <video>s over the canvas take turns: just before one clip ends the other starts from the top and fades
+     in over it, so the loop has no jump. If a clip won't load, the next address is tried; if none play, the
+     piece's drawn version carries on underneath. */
+  const vid = { els: null, urls: null, at: 0, cur: 0, live: false, t: 0 };
+  function vidEls() {
+    if (vid.els) return vid.els;
+    vid.els = [0, 1].map(() => { const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'auto';
+      v.setAttribute('muted', ''); v.className = 'art-vid'; v.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1s linear;z-index:1;pointer-events:none;background:#000';
+      v.addEventListener('error', () => { if (vid.urls && v === vid.els[vid.cur]) { vid.at++; vidLoad(); } });
+      v.addEventListener('playing', () => { if (vid.urls && v === vid.els[vid.cur]) { vid.live = true; v.style.opacity = 1;
+        const o = vid.els[1 - vid.cur]; if (o.src !== v.src) { o.src = v.src; o.load(); } } });   // the other one gets ready for the loop
+      cv.parentNode.insertBefore(v, cv.nextSibling); return v; });
+    return vid.els;
+  }
+  function vidLoad() {
+    const v = vidEls()[vid.cur];
+    if (vid.at >= vid.urls.length) { vid.live = false; vid.els.forEach(e => { e.style.opacity = 0; e.pause(); }); return; }   // none play: drawn fire
+    v.src = vid.urls[vid.at]; v.load(); v.play().catch(() => {});
+  }
+  function vidStart(urls) { vidEls(); vid.urls = urls; vid.at = 0; vid.cur = 0; vid.live = false; vidLoad(); clearInterval(vid.t); vid.t = setInterval(vidTick, 200); }
+  function vidStop() {
+    clearInterval(vid.t); vid.urls = null; vid.live = false;
+    if (vid.els) vid.els.forEach(e => { e.style.opacity = 0; e.pause(); e.removeAttribute('src'); e.load(); });
+  }
+  function vidTick() {
+    const a = vid.els[vid.cur], b = vid.els[1 - vid.cur];
+    if (!vid.live || !a.duration || a.currentTime < a.duration - 1.3) return;
+    if (b.src !== a.src) b.src = a.src;
+    b.currentTime = 0; b.play().catch(() => {});
+    b.style.zIndex = 2; a.style.zIndex = 1; b.style.opacity = 1;
+    vid.cur = 1 - vid.cur;
+    setTimeout(() => { if (vid.urls) { a.pause(); a.style.opacity = 0; } }, 1300);
+  }
+
   function show(i) {
     idx = (i + pieces.length) % pieces.length; piece = pieces[idx]; since = performance.now();
+    if (piece.video) vidStart(piece.video); else vidStop();
     x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.lineCap = 'butt';
     staticT = 240; snowFrame = null; piece.init(); onChange(idx, piece.name, hold);
   }
@@ -776,10 +853,10 @@ const Art = (() => {
     if (!hold && t - since > (piece.dur || DUR)) show(idx + 1);
     if (staticT > 0) { staticT -= dt; snow(); if (staticT <= 0) piece.init(); return; }
     const t0 = performance.now();
-    piece.frame(dt);
+    if (!(piece.video && vid.live)) piece.frame(dt);   // a playing film needs no drawing
     // If frames keep costing more than the box can afford, draw at a lower resolution
     cost += performance.now() - t0; if (++costN === 90) { const avg = cost / costN; cost = costN = 0;
-      if (avg > 24 && lines > 240) { lines = Math.max(240, Math.round(lines * .8)); size(); piece.init(); } }
+      if (avg > 24 && lines > 240) { lines = Math.max(240, Math.round(lines * .8)); size(); piece.resized ? piece.resized() : piece.init(); } }
   }
   return {
     pieces: () => pieces.map(p => p.name),
@@ -787,17 +864,17 @@ const Art = (() => {
       cv = c; x = cv.getContext('2d', { alpha: false }); onChange = cb || onChange; on = true; size();
       cancelAnimationFrame(raf); last = 0; acc = 0; show(at == null ? idx : at); raf = requestAnimationFrame(loop);
     },
-    stop() { on = false; cancelAnimationFrame(raf); raf = 0; },
+    stop() { on = false; cancelAnimationFrame(raf); raf = 0; vidStop(); },
     go(i) { show(i); }, next() { show(idx + 1); }, prev() { show(idx - 1); },
     setHold(v) { hold = !!v; since = performance.now(); onChange(idx, piece.name, hold); return hold; },
     toggleHold() { return this.setHold(!hold); },
-    resize() { if (on) { size(); piece.init(); } },
+    resize() { if (on) { size(); piece.resized ? piece.resized() : piece.init(); } },
     get index() { return idx; }, get hold() { return hold; },
   };
 })();
 
 /* Background sound for the TV: one music station and one ambient sound, each with its own level.
-   Music is a fixed list of ad-free internet radio stations (https only, listed here, never sent in).
+   Music is a fixed list of internet radio stations (http/https only, listed here, never sent in).
    The ambient sounds are made right here with Web Audio from noise, so they need nothing from the internet. */
 const Sound = (() => {
   const soma = id => [1, 2, 4, 6].map(n => `https://ice${n}.somafm.com/${id}-128-mp3`);
@@ -810,11 +887,12 @@ const Sound = (() => {
     'secret-agent': { name: 'Spy lounge', urls: soma('secretagent') },
     'lounge': { name: 'Cocktail lounge', urls: soma('illstreet') },
     'fluid': { name: 'Lo-fi beats', urls: soma('fluid') },
+    'romantic-jazz': { name: 'Romantic jazz', urls: [9680, 8690, 8820].map(p => `http://radio.hearme.fm:${p}/stream`) },   // Love Smooth Jazz, Jazz Ballads, Smooth Vocals
     'groove-salad': { name: 'Chill', urls: soma('groovesalad') },
     'drone-zone': { name: 'Deep ambient', urls: soma('dronezone') },
   };
   const AMB = { rain: 'Rain', storm: 'Thunderstorm', fire: 'Fireplace', ocean: 'Ocean waves', wind: 'Wind', brown: 'Brown noise' };
-  const rnd = (a, b) => a + Math.random() * (b - a);
+  const rnd = (a, b) => a + Math.random() * (b - a), TAU = Math.PI * 2;
   let want = { music: '', amb: '', mv: 70, av: 60 }, onState = () => {};
   let mState = 'off', aState = 'off';
 
@@ -824,29 +902,39 @@ const Sound = (() => {
   function music(id) {
     if (id === mId) return;
     mId = id; mTry = 0; clearTimeout(mRetry);
-    if (!id || !MUSIC[id]) { au.pause(); au.removeAttribute('src'); au.load(); setM('off'); return; }
-    load();
+    if (!id || !MUSIC[id]) { fadeTo(0, () => { au.pause(); au.removeAttribute('src'); au.load(); }); setM('off'); return; }
+    if (au.src && !au.paused) fadeTo(0, load); else load();
   }
   function load() {
     const urls = MUSIC[mId].urls;
     if (mTry >= urls.length * 2) { setM('error'); mRetry = setTimeout(() => { mTry = 0; load(); }, 60000); return; }   // try again in a minute
-    au.src = urls[mTry % urls.length]; au.volume = want.mv / 100; setM('loading');
+    au.src = urls[mTry % urls.length]; au.volume = 0; setM('loading');
     au.play().catch(e => { if (e && e.name === 'NotAllowedError') setM('blocked'); });
   }
   const again = () => { if (!mId) return; clearTimeout(mRetry); mTry++; mRetry = setTimeout(load, 1500); };
-  au.addEventListener('playing', () => { mTry = 0; setM('playing'); });
+  au.addEventListener('playing', () => { mTry = 0; setM('playing'); fadeTo(want.mv / 100); });
+  // Music volume always glides (about a second), so switching stations or levels never jumps
+  let fadeT = 0;
+  function fadeTo(v, done) {
+    clearInterval(fadeT); const from = au.volume, steps = 12; let k = 0;
+    fadeT = setInterval(() => { k++; au.volume = Math.max(0, Math.min(1, from + (v - from) * k / steps)); if (k >= steps) { clearInterval(fadeT); if (done) done(); } }, 80);
+  }
   au.addEventListener('error', again);
   au.addEventListener('ended', again);   // a radio stream "ending" means the connection dropped
   let stallT = 0;
   au.addEventListener('waiting', () => { clearTimeout(stallT); stallT = setTimeout(() => { if (mId && mState === 'playing' && au.readyState < 3) again(); }, 15000); });
-  const setM = s => { mState = s; onState(); };
+  const setM = s => { mState = s; mixLevels(); onState(); };
 
-  /* ---------- Ambient sounds ---------- */
-  let ctx = null, out = null, cur = null, aId = '';
-  const bufs = {};
-  function noise(kind) {
-    if (bufs[kind]) return bufs[kind];
-    const n = ctx.sampleRate * 4, b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0);
+  /* ---------- Ambient sounds ----------
+     Each sound is made once, ahead of time, as a 30-second stereo loop (an OfflineAudioContext renders it,
+     then the end is blended into the start so the loop has no seam). Playing it is then just one looping
+     buffer: nothing is built while it plays, so it can't stutter or crackle under the music.
+     With music on, the background sits lower (ducked) and its top end is softened so the two don't fight. */
+  const LOOP = 30, BLEND = 3;
+  let ctx = null, bus = null, duck = null, tone = null, cur = null, aId = '', want2 = 0;
+  const made = {};
+  function noise(c, kind, secs = 4) {
+    const n = c.sampleRate * secs, b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
     let l = 0, b0 = 0, b1 = 0, b2 = 0;
     for (let i = 0; i < n; i++) {
       const w = Math.random() * 2 - 1;
@@ -854,106 +942,140 @@ const Sound = (() => {
       else if (kind === 'brown') { l = (l + .02 * w) / 1.02; d[i] = l * 3.5; }
       else { b0 = .99765 * b0 + w * .099046; b1 = .963 * b1 + w * .2965164; b2 = .57 * b2 + w * 1.0526913; d[i] = (b0 + b1 + b2 + w * .1848) * .2; }
     }
-    return bufs[kind] = b;
+    return b;
   }
-  // A looping noise source run through a chain of filters into a gain; returns that gain
-  function bed(kind, filters, level, dest) {
-    const s = ctx.createBufferSource(); s.buffer = noise(kind); s.loop = true; s.loopStart = 0; s.start(0, Math.random() * 3);
-    let node = s;
-    for (const [type, f, q] of filters) { const bq = ctx.createBiquadFilter(); bq.type = type; bq.frequency.value = f; if (q) bq.Q.value = q; node.connect(bq); node = bq; }
-    const g = ctx.createGain(); g.gain.value = level; node.connect(g); g.connect(dest);
-    return { g, s, f: node };
-  }
-  // A short burst of noise: one raindrop, one crackle, one pop
-  function burst(dest, at, len, freq, q, level, kind = 'white') {
-    const s = ctx.createBufferSource(); s.buffer = noise(kind);
-    const bq = ctx.createBiquadFilter(); bq.type = 'bandpass'; bq.frequency.value = freq; bq.Q.value = q;
-    const g = ctx.createGain(); g.gain.setValueAtTime(level, at); g.gain.exponentialRampToValueAtTime(.0001, at + len);
-    s.connect(bq); bq.connect(g); g.connect(dest); s.start(at, Math.random() * 3, len + .02);
-  }
-  function thunder(dest) {
-    const t = ctx.currentTime, big = rnd(.5, 1);
-    const r = bed('brown', [['lowpass', rnd(90, 160)]], 0, dest);
-    r.g.gain.setValueAtTime(0, t); r.g.gain.linearRampToValueAtTime(big * 1.6, t + rnd(.3, 1.2));
-    let at = t + 1.2; for (let k = 0; k < 4; k++) { at += rnd(.6, 1.6); r.g.gain.linearRampToValueAtTime(big * rnd(.4, 1.4), at); }
-    r.g.gain.linearRampToValueAtTime(0, at + rnd(3, 6));
-    r.s.stop(at + 7);
-    if (Math.random() < .5) burst(dest, t + .2, .5, 1200, .4, big * .5);   // a close crack first, sometimes
-  }
-  const MAKERS = {
-    rain(o) {
-      bed('pink', [['highpass', 500], ['lowpass', 7000]], .55, o);
-      bed('brown', [['lowpass', 300]], .3, o);
-      return [setInterval(() => { const t = ctx.currentTime; for (let k = 0; k < 4; k++) if (Math.random() < .5) burst(o, t + Math.random() * .04, rnd(.008, .025), rnd(2000, 6500), 2.5, rnd(.04, .2)); }, 40)];
+  // The recipes. Each gets an offline context, its output, the noise buffers and how long to fill.
+  const RECIPES = {
+    rain(c, o, N, T) {
+      bed(c, o, N.pink, [['highpass', 500], ['lowpass', 6500]], .5, T, true);
+      bed(c, o, N.brown, [['lowpass', 300]], .3, T);
+      for (let t = 0; t < T; t += rnd(.008, .03)) drop(c, o, N.white, t, rnd(.006, .02), rnd(2200, 6500), 2.5, rnd(.03, .16), rnd(-.9, .9));
     },
-    storm(o) {
-      const ts = MAKERS.rain(o); bed('pink', [['lowpass', 1500]], .35, o);
-      let next = 0; const tick = setInterval(() => { if (ctx.currentTime > next) { if (next) thunder(o); next = ctx.currentTime + rnd(14, 45); } }, 1000);
-      return ts.concat(tick);
+    storm(c, o, N, T) {
+      RECIPES.rain(c, o, N, T); bed(c, o, N.pink, [['lowpass', 1400]], .32, T, true);
+      for (let t = rnd(4, 9); t < T - 9; t += rnd(11, 18)) thunder(c, o, N.brown, N.white, t);
     },
-    fire(o) {
-      const roar = bed('brown', [['lowpass', 380]], .6, o);
-      bed('pink', [['highpass', 3000]], .025, o);
-      const wander = setInterval(() => roar.g.gain.setTargetAtTime(rnd(.35, .8), ctx.currentTime, .4), 900);
-      const crackle = setInterval(() => {
-        const t = ctx.currentTime;
-        if (Math.random() < .3) { let at = t; const n = 1 + (Math.random() * 5 | 0); for (let k = 0; k < n; k++) { at += rnd(.004, .05); burst(o, at, rnd(.002, .008), rnd(1500, 5500), 1, rnd(.1, .55)); } }
-        if (Math.random() < .015) burst(o, t + .01, rnd(.015, .03), rnd(500, 1100), 1.2, rnd(.5, .9));   // a bigger pop now and then
-      }, 35);
-      return [wander, crackle];
+    fire(c, o, N, T) {
+      const g = bed(c, o, N.brown, [['lowpass', 360]], .55, T, true);
+      for (let t = 0; t < T; t += .7) g.gain.setTargetAtTime(rnd(.35, .75), t, .35);
+      bed(c, o, N.pink, [['highpass', 3200]], .02, T);
+      for (let t = 0; t < T; t += rnd(.03, .25)) {   // crackles come in little clusters, now and then a pop
+        let at = t; const n = 1 + (Math.random() * 4 | 0), pan = rnd(-.6, .6);
+        for (let k = 0; k < n; k++) { at += rnd(.004, .04); drop(c, o, N.white, at, rnd(.002, .007), rnd(1500, 5500), 1, rnd(.08, .45), pan); }
+        if (Math.random() < .03) drop(c, o, N.white, t + .01, rnd(.015, .03), rnd(500, 1100), 1.2, rnd(.4, .75), pan);
+      }
     },
-    ocean(o) {
-      bed('brown', [['lowpass', 500]], .15, o);
-      const w = bed('pink', [['lowpass', 600]], .05, o), lp = w.f;
-      const wave = () => { const t = ctx.currentTime, up = rnd(2.5, 4), down = rnd(4, 7), peak = rnd(.6, 1);
-        w.g.gain.cancelScheduledValues(t); w.g.gain.setValueAtTime(w.g.gain.value, t);
-        w.g.gain.linearRampToValueAtTime(peak, t + up); w.g.gain.linearRampToValueAtTime(.05, t + up + down);
-        lp.frequency.cancelScheduledValues(t); lp.frequency.setValueAtTime(lp.frequency.value, t);
+    ocean(c, o, N, T) {
+      bed(c, o, N.brown, [['lowpass', 500]], .15, T, true);
+      const w = bed(c, o, N.pink, [['lowpass', 600]], .05, T, true), lp = w.filter;
+      let t = 0; while (t < T) { const up = rnd(2.5, 4), down = rnd(4, 6.5), pk = rnd(.6, 1);
+        w.gain.linearRampToValueAtTime(pk, t + up); w.gain.linearRampToValueAtTime(.05, t + up + down);
         lp.frequency.linearRampToValueAtTime(rnd(1400, 2200), t + up); lp.frequency.linearRampToValueAtTime(400, t + up + down);
-        timer = setTimeout(wave, (up + down - rnd(.5, 1.5)) * 1000); };
-      let timer = setTimeout(wave, 100);
-      return [{ clear: () => clearTimeout(timer) }];
+        t += up + down - rnd(.5, 1.2); }
     },
-    wind(o) {
-      const w = bed('pink', [['bandpass', 500, .9]], .5, o), bp = w.f;
-      bed('brown', [['lowpass', 200]], .2, o);
-      const gust = () => { const t = ctx.currentTime, d = rnd(2, 5);
-        bp.frequency.linearRampToValueAtTime(rnd(250, 1000), t + d); w.g.gain.linearRampToValueAtTime(rnd(.2, .9), t + d); };
-      gust(); return [setInterval(gust, 3500)];
+    wind(c, o, N, T) {
+      const w = bed(c, o, N.pink, [['bandpass', 500, .9]], .5, T, true), bp = w.filter;
+      bed(c, o, N.brown, [['lowpass', 200]], .2, T);
+      for (let t = 0; t < T; t += rnd(2, 4.5)) { bp.frequency.linearRampToValueAtTime(rnd(250, 1000), t); w.gain.linearRampToValueAtTime(rnd(.2, .85), t); }
     },
-    brown(o) { bed('brown', [['lowpass', 900]], .8, o); return []; },
+    brown(c, o, N, T) { bed(c, o, N.brown, [['lowpass', 900]], .8, T, true); },
   };
+  // A noise bed through filters. wide: a different stretch of noise in each ear, so it sounds spacious.
+  function bed(c, o, buf, filters, level, T, wide) {
+    const g = c.createGain(); g.gain.value = level; g.connect(o);
+    let first = null;
+    (wide ? [0, 1] : [-1]).forEach(side => {
+      const s = c.createBufferSource(); s.buffer = buf; s.loop = true; s.start(0, side === 1 ? 1.7 : 0); s.stop(T);
+      let node = s;
+      for (const [type, f, q] of filters) { const bq = c.createBiquadFilter(); bq.type = type; bq.frequency.value = f; if (q) bq.Q.value = q; node.connect(bq); node = bq; if (!first) first = bq; }
+      if (side < 0) node.connect(g);
+      else { const m = c.createChannelMerger(2); node.connect(m, 0, side); m.connect(g); }
+    });
+    g.filter = first; return g;
+  }
+  // Raindrops and crackles are thousands of tiny sounds: rather than one audio node each (slow to render),
+  // they're noted here and written straight into the finished loop by mixDrops.
+  function drop(c, o, buf, at, len, freq, q, level, pan) { (c.drops = c.drops || []).push([at, len, freq, q, level, pan || 0]); }
+  function mixDrops(drops, L, R, sr) {
+    for (const [at, len, freq, q, level, pan] of drops) {
+      const w0 = TAU * Math.min(freq, sr * .45) / sr, al = Math.sin(w0) / (2 * q), a0 = 1 + al, b0 = al / a0, b2 = -al / a0, a1 = -2 * Math.cos(w0) / a0, a2 = (1 - al) / a0;
+      const n = Math.round(len * sr), start = Math.round(at * sr), k = Math.log(1e-4) / n, gl = Math.cos((pan + 1) * Math.PI / 4) * level, gr = Math.sin((pan + 1) * Math.PI / 4) * level;
+      let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+      for (let i = 0; i < n; i++) {
+        const j = start + i; if (j >= L.length) break;
+        const xin = Math.random() * 2 - 1, y = b0 * xin + b2 * x2 - a1 * y1 - a2 * y2;
+        x2 = x1; x1 = xin; y2 = y1; y1 = y;
+        const e = y * Math.exp(k * i); L[j] += e * gl; R[j] += e * gr;
+      }
+    }
+  }
+  function thunder(c, o, brown, white, t) {
+    const big = rnd(.5, 1), r = c.createBufferSource(); r.buffer = brown; r.loop = true;
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = rnd(90, 160);
+    const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(big * 1.6, t + rnd(.3, 1.2));
+    let at = t + 1.2; for (let k = 0; k < 4; k++) { at += rnd(.6, 1.4); g.gain.linearRampToValueAtTime(big * rnd(.4, 1.4), at); }
+    g.gain.linearRampToValueAtTime(0, at + rnd(3, 5));
+    r.connect(lp); lp.connect(g); g.connect(o); r.start(t, 0); r.stop(at + 6);
+    if (Math.random() < .5) drop(c, o, white, t + .2, .5, 1200, .4, big * .5, rnd(-.5, .5));
+  }
+  function make(id) {
+    if (made[id]) return made[id];
+    const sr = 22050, T = LOOP + BLEND, OC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const c = new OC(2, sr * T, sr), o = c.createGain(); o.connect(c.destination);
+    const N = { white: noise(c, 'white'), pink: noise(c, 'pink'), brown: noise(c, 'brown') };
+    RECIPES[id](c, o, N, T);
+    return made[id] = new Promise((ok, no) => { c.oncomplete = e => ok(e.renderedBuffer); const p = c.startRendering(); if (p && p.catch) p.catch(no); })
+      .then(full => {   // add the drops, then blend the extra seconds at the end into the start: a seamless 30 s loop
+        if (c.drops) mixDrops(c.drops, full.getChannelData(0), full.getChannelData(1), sr);
+        const n = sr * LOOP, bl = sr * BLEND, out = ctx.createBuffer(2, n, sr);
+        for (let ch = 0; ch < 2; ch++) { const a = full.getChannelData(ch), d = out.getChannelData(ch);
+          d.set(a.subarray(0, n)); for (let i = 0; i < bl; i++) { const f = i / bl; d[i] = a[i] * f + a[n + i] * (1 - f); } }
+        return out; });
+  }
+  function ensureCtx() {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    bus = ctx.createGain(); duck = ctx.createGain(); tone = ctx.createBiquadFilter(); tone.type = 'lowpass'; tone.frequency.value = 20000;
+    bus.connect(tone); tone.connect(duck); duck.connect(ctx.destination);
+  }
+  // Background level: the chosen level, and lower and softer while music is playing
+  function mixLevels(fast) {
+    if (!ctx) return;
+    const t = ctx.currentTime, k = fast ? .05 : .8, withMusic = !!mId && mState !== 'error' && mState !== 'off';
+    bus.gain.setTargetAtTime(want.av / 100, t, .15);
+    duck.gain.setTargetAtTime(withMusic ? .5 : 1, t, k);
+    tone.frequency.setTargetAtTime(withMusic ? 5000 : 20000, t, k);
+  }
   function amb(id) {
     if (id === aId) return;
-    aId = id;
-    if (cur) {   // fade the old one out, then let it go
-      const c = cur; cur = null; c.timers.forEach(t => t && t.clear ? t.clear() : clearInterval(t));
-      c.g.gain.setTargetAtTime(0, ctx.currentTime, .3); setTimeout(() => c.g.disconnect(), 1500);
-    }
-    if (!id || !MAKERS[id]) { setA('off'); return; }
-    try {
-      if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); out = ctx.createGain(); out.connect(ctx.destination); }
-      out.gain.value = want.av / 100;
-      const g = ctx.createGain(); g.gain.value = 0; g.connect(out); g.gain.setTargetAtTime(1, ctx.currentTime, .5);
-      cur = { g, timers: MAKERS[id](g) };
+    aId = id; const my = ++want2;
+    if (cur) { const c = cur; cur = null; c.g.gain.setTargetAtTime(0, ctx.currentTime, .5); setTimeout(() => { try { c.s.stop(); } catch {} c.g.disconnect(); }, 3000); }
+    if (!id || !RECIPES[id]) { setA('off'); return; }
+    try { ensureCtx(); } catch { setA('error'); return; }
+    setA('loading'); mixLevels(true);
+    make(id).then(buf => {
+      if (my !== want2) return;   // changed again while it was being made
+      const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = buf; s.loop = true;
+      g.gain.value = 0; s.connect(g); g.connect(bus); s.start(); g.gain.setTargetAtTime(1, ctx.currentTime, .8);
+      cur = { s, g };
       ctx.resume().catch(() => {});
-      setTimeout(() => setA(ctx.state === 'running' ? 'playing' : 'blocked'), 600);
-    } catch { setA('error'); }
+      setTimeout(() => setA(ctx.state === 'running' ? 'playing' : 'blocked'), 400);
+    }).catch(() => { delete made[id]; if (my === want2) setA('error'); });
   }
   const setA = s => { aState = s; onState(); };
-
   return {
     MUSIC, AMB,
     set(s) {
       if (!s || typeof s !== 'object') return;
       for (const k of ['mv', 'av']) if (typeof s[k] === 'number' && s[k] >= 0 && s[k] <= 100) want[k] = s[k];
-      au.volume = want.mv / 100; if (out) out.gain.setTargetAtTime(want.av / 100, ctx.currentTime, .1);
+      if (mState === 'playing' && (!('music' in s) || s.music === mId)) fadeTo(want.mv / 100);
+      mixLevels();
       if ('music' in s) { want.music = MUSIC[s.music] ? s.music : ''; music(want.music); }
       if ('amb' in s) { want.amb = AMB[s.amb] ? s.amb : ''; amb(want.amb); }
       onState();
     },
     // If the TV refused to start sound without a button press, any key from the phone gets another go
-    nudge() { if (mState === 'blocked') { mTry = 0; load(); } if (ctx && ctx.state !== 'running') ctx.resume().then(() => aId && setA('playing')).catch(() => {}); },
+    nudge() { if (mState === 'blocked') { mTry = 0; load(); } if (ctx && ctx.state !== 'running') ctx.resume().then(() => aId && cur && setA('playing')).catch(() => {}); },
     label() { return [MUSIC[mId] && MUSIC[mId].name, AMB[aId]].filter(Boolean).join(' + '); },
     state() {
       const what = mId || aId, st = mId ? mState : aState;
