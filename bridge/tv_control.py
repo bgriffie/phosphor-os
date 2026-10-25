@@ -1,5 +1,5 @@
 """Phosphor TV for the Phosphor OS relay: puts a Phosphor screen (clock, lights, message board,
-Snake, rain) on a Chromecast and lets the phone's TV app drive it like a remote.
+art, background sound) on a Chromecast and lets the phone's TV app drive it like a remote.
 
 Drop this file next to kasa_bridge.py, install one library, and start the relay with --cast:
 
@@ -34,10 +34,15 @@ HERE = Path(__file__).resolve().parent
 CONFIG = HERE / 'tv_control.json'
 PAGE_CACHE = HERE / 'tv_page.html'
 PAGE_MAX_AGE = 600         # seconds before the TV page is fetched again
-SCREENS = ('home', 'today', 'art', 'clock', 'lights', 'board', 'snake', 'rain')
+SCREENS = ('home', 'today', 'art', 'clock', 'lights', 'board', 'rain')
+# Background sound. The TV page holds the station addresses (fixed https links) and makes the
+# rain/fire/ocean sounds itself; the relay only passes along which one to play.
+MUSIC = ('swiss-classic', 'swiss-jazz', 'sonic-universe', 'bossa', 'secret-agent', 'lounge', 'fluid', 'groove-salad', 'drone-zone')
+AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
+ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '1.2'           # the phone app compares this to know which features the relay has
+VERSION = '1.3'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 FAHRENHEIT = ('US', 'LR', 'MM', 'BS', 'BZ', 'KY', 'PW', 'FM', 'MH')
 
@@ -238,7 +243,8 @@ def setup(app, demo=False, lights=None, cast=False):
     enabled = cast or demo
     token = secrets.token_urlsafe(18)           # new every start; never the relay key
     host = '127.0.0.1' if demo else lan_ip()
-    hub = {'socks': set(), 'screen': '', 'focus': '', 'want': None, 'started': 0.0, 'board': cfg.get('board', [])[-12:], 'weather': None, 'weather_at': 0.0}
+    hub = {'socks': set(), 'screen': '', 'focus': '', 'want': None, 'started': 0.0, 'board': cfg.get('board', [])[-12:], 'weather': None, 'weather_at': 0.0,
+           'art': None, 'heard': None, 'sound': {'music': '', 'amb': '', 'mv': 70, 'av': 60, **cfg.get('sound', {})}}
     page = {'html': None, 'at': 0.0}
     casts, problem = None, ''
     if not enabled:
@@ -350,6 +356,7 @@ def setup(app, demo=False, lights=None, cast=False):
                    'stuck': bool(hub['want']) and not linked and since >= 30},
             'board': hub['board'], 'lights': lights is not None,
             'place': (cfg.get('place') or {}).get('name', ''), 'units': cfg.get('units') or '', 'unitsNow': units() if cfg.get('place') else '',
+            'art': hub['art'] if linked else None, 'sound': hub['sound'], 'heard': hub['heard'] if linked else None,
             'screenLink': tv_url() if c.fake else ''})
 
     async def choose(request):
@@ -445,6 +452,39 @@ def setup(app, demo=False, lights=None, cast=False):
         shown = await send_tv({'say': msg, 'board': hub['board']})
         return web.json_response({'ok': True, 'shown': shown, 'board': hub['board']})
 
+    async def art(request):
+        body = await body_of(request)
+        msg = {}
+        if isinstance(body.get('piece'), int) and 0 <= body['piece'] < ART_MAX:
+            msg['piece'] = body['piece']
+        if body.get('step') in (-1, 1):
+            msg['step'] = body['step']
+        if isinstance(body.get('hold'), bool):
+            msg['hold'] = body['hold']
+        if not msg:
+            raise web.HTTPBadRequest(text='Nothing to change.')
+        if not await send_tv({'art': msg}):
+            raise web.HTTPConflict(text='Phosphor TV isn\'t on the TV right now.')
+        return web.json_response({'ok': True})
+
+    async def sound(request):
+        body = await body_of(request)
+        snd = hub['sound']
+        if 'music' in body:
+            if body['music'] not in MUSIC + ('',):
+                raise web.HTTPBadRequest(text='Unknown station.')
+            snd['music'] = body['music']
+        if 'amb' in body:
+            if body['amb'] not in AMBIENCE + ('',):
+                raise web.HTTPBadRequest(text='Unknown sound.')
+            snd['amb'] = body['amb']
+        for k in ('mv', 'av'):
+            if isinstance(body.get(k), (int, float)):
+                snd[k] = max(0, min(100, int(body[k])))
+        cfg['sound'] = snd; save_config(cfg)
+        shown = await send_tv({'sound': snd})
+        return web.json_response({'ok': True, 'shown': shown, 'sound': snd})
+
     async def clear(request):
         hub['board'] = []
         cfg['board'] = []; save_config(cfg)
@@ -453,7 +493,8 @@ def setup(app, demo=False, lights=None, cast=False):
 
     app.add_routes([web.get('/tv', info), web.post('/tv/choose', choose), web.post('/tv/start', start), web.post('/tv/stop', stop),
                     web.post('/tv/volume', volume), web.post('/tv/media', media), web.post('/tv/key', key),
-                    web.post('/tv/open', open_), web.post('/tv/say', say), web.post('/tv/board/clear', clear), web.post('/tv/place', place)])
+                    web.post('/tv/open', open_), web.post('/tv/say', say), web.post('/tv/board/clear', clear), web.post('/tv/place', place),
+                    web.post('/tv/art', art), web.post('/tv/sound', sound)])
 
     if casts is None:
         print('TV: off.', problem)
@@ -501,7 +542,7 @@ def setup(app, demo=False, lights=None, cast=False):
         try:
             if cfg.get('place') and time.time() - hub['weather_at'] > WEATHER_EVERY:
                 await refresh_weather(push=False)
-            await sock.send_json({'board': hub['board'], 'weather': hub['weather'], **(await lights_list() if lights is not None else {'lights': False})})
+            await sock.send_json({'board': hub['board'], 'weather': hub['weather'], 'sound': hub['sound'], **(await lights_list() if lights is not None else {'lights': False})})
             async for msg in sock:
                 if msg.type != WSMsgType.TEXT:
                     continue
@@ -519,10 +560,17 @@ def setup(app, demo=False, lights=None, cast=False):
                         await sock.send_json(await lights_list())
                 if isinstance(d.get('focus'), str):
                     hub['focus'] = d['focus'][:80]
+                a = d.get('art')
+                if isinstance(a, dict) and isinstance(a.get('i'), int) and 0 <= a['i'] < ART_MAX:
+                    hub['art'] = {'i': a['i'], 'hold': bool(a.get('hold'))}
+                h = d.get('heard')
+                if isinstance(h, dict) and h.get('state') in ('playing', 'loading', 'error', 'blocked', 'off'):
+                    hub['heard'] = {'state': h['state'], 'what': h.get('what') if h.get('what') in MUSIC + AMBIENCE else ''}
         finally:
             hub['socks'].discard(sock)
             if not hub['socks']:
                 hub['screen'] = hub['focus'] = ''
+                hub['art'] = hub['heard'] = None
                 print('TV: the screen disconnected.')
         return sock
 
