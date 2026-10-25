@@ -37,6 +37,7 @@ PAGE_MAX_AGE = 600         # seconds before the TV page is fetched again
 SCREENS = ('home', 'today', 'art', 'clock', 'lights', 'board', 'snake', 'rain')
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
+VERSION = '1.2'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 FAHRENHEIT = ('US', 'LR', 'MM', 'BS', 'BZ', 'KY', 'PW', 'FM', 'MH')
 
@@ -343,7 +344,7 @@ def setup(app, demo=False, lights=None, cast=False):
         linked = bool(hub['socks'])
         since = time.time() - hub['started']
         return web.json_response({
-            'ok': True, 'demo': c.fake, 'devices': devs, 'id': cid, 'cast': st, 'error': err,
+            'ok': True, 'version': VERSION, 'demo': c.fake, 'devices': devs, 'id': cid, 'cast': st, 'error': err,
             'tv': {'on': linked or (casting and bool(hub['want'])), 'linked': linked, 'screen': hub['screen'] if linked else '',
                    'waiting': bool(hub['want']) and not linked and since < 30,
                    'stuck': bool(hub['want']) and not linked and since >= 30},

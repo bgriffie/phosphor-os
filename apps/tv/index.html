@@ -816,7 +816,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.1</span>
+      <span class="app-meta">v1.2</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -927,7 +927,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.1</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.2</span></a>
           </div>
         </div>
       </section>
@@ -967,7 +967,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         </section>
         <section class="panel" data-title="Turn on TV control" style="margin-top:var(--sp-5)">
           <ol class="steps">
-            <li>On the PC, save <code>tv_control.py</code> and the new <code>kasa_bridge.py</code> into the relay folder (Desktop\PhosphorLights), replacing the old kasa_bridge.py.</li>
+            <li>On the PC, open Command Prompt in the relay folder (Desktop\PhosphorLights) and run:<br><code>curl -L -o tv_control.py https://raw.githubusercontent.com/bgriffie/phosphor-os/main/bridge/tv_control.py</code><br>(Same for <code>kasa_bridge.py</code> the first time.)</li>
             <li>In Command Prompt in that folder, run <code>py -m pip install pychromecast</code> once.</li>
             <li>Close the relay window and start it with <code>py kasa_bridge.py --cast</code>. It should print <code>TV: on</code>.</li>
             <li>If Windows asks whether Python can use the network, tick <b>Private networks</b> only and Allow.</li>
@@ -985,7 +985,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor TV">
-          <div class="kv"><span>Version</span><span>1.1</span></div>
+          <div class="kv"><span>Version</span><span>1.2</span></div>
           <div class="kv"><span>Chromecast</span><span id="ab-cast">—</span></div>
           <div class="kv"><span>Needs</span><span>Relay with --cast</span></div>
         </section>
@@ -1268,6 +1268,16 @@ PH.init({});
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
   let lastErr = '', pollT = 0, busyPower = false;
   const ready = () => !!(link && link.url && link.key);
+  const RELAY_WANTS = '1.2';   // tv_control.py version this app expects
+  const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
+  // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
+  const toast = PH.toast;
+  PH.toast = (msg, kind = '') => {
+    toast(msg, kind);
+    if (kind !== 'error') return;
+    const t = [...document.querySelectorAll('.toast-host .toast.error')].pop();
+    if (t) setTimeout(() => t.remove(), 6000);
+  };
   const route = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
@@ -1289,7 +1299,10 @@ PH.init({});
     } finally { clearTimeout(t); }
     const d = await r.json().catch(() => ({}));
     if (r.status === 401) throw new Error('The relay rejected the key. Paste the relay link again.');
-    if ((r.status === 404 || r.status === 405) && path.startsWith('/tv') && !d.error?.includes('Chromecast')) { const e = new Error('The relay needs the TV update. See Settings › Relay.'); e.old = true; throw e; }
+    // Only aiohttp's own "404: Not Found" means the relay doesn't have this feature; other 404s carry a real message
+    const missing = (r.status === 404 || r.status === 405) && (!d.error || /^40[45]: /.test(d.error));
+    if (missing && path === '/tv') { const e = new Error('The relay has no TV control yet. See Settings › Relay.'); e.old = true; throw e; }
+    if (missing || (r.status === 400 && d.error === 'Unknown screen.')) throw new Error('The TV file on your PC is out of date. Download tv_control.py again (Settings › Relay).');
     if (!r.ok) throw new Error(d.error || 'Relay error ' + r.status);
     return d;
   }
@@ -1477,6 +1490,7 @@ PH.init({});
     if (busyPower) { sub = 'One moment…'; led = 'wait'; }
     $('#tv-sub').textContent = sub;
     $('#tv-led').className = 'tv-led' + (led ? ' ' + led : '');
+    if (!note && relayOld()) note = 'The TV file on your PC is older than this app, so Today, Art and Weather won\'t work yet. Download tv_control.py again (Settings › Relay).';
     $('#tv-note').textContent = note; $('#tv-note').hidden = !note; $('#tv-note').classList.toggle('err', noteErr);
     $('#tv-on').hidden = on || !!media || !(info && info.id) || !!(info && info.error);
     $('#tv-on').disabled = busyPower;
