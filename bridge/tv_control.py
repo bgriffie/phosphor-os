@@ -34,9 +34,62 @@ HERE = Path(__file__).resolve().parent
 CONFIG = HERE / 'tv_control.json'
 PAGE_CACHE = HERE / 'tv_page.html'
 PAGE_MAX_AGE = 600         # seconds before the TV page is fetched again
-SCREENS = ('home', 'clock', 'lights', 'board', 'snake', 'rain')
+SCREENS = ('home', 'today', 'art', 'clock', 'lights', 'board', 'snake', 'rain')
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
+WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
+FAHRENHEIT = ('US', 'LR', 'MM', 'BS', 'BZ', 'KY', 'PW', 'FM', 'MH')
+
+
+async def geocode(city):
+    """City name -> place, through Open-Meteo (free, no key)."""
+    async with ClientSession(timeout=ClientTimeout(total=10)) as s:
+        async with s.get('https://geocoding-api.open-meteo.com/v1/search', params={'name': city, 'count': 1, 'language': 'en'}) as r:
+            d = await r.json()
+    hit = (d.get('results') or [None])[0]
+    if not hit:
+        raise web.HTTPNotFound(text=f'Couldn\'t find "{city}". Try adding the state or country, like "Portland, Oregon".')
+    label = ', '.join(x for x in (hit.get('name'), hit.get('admin1') if hit.get('country_code') in FAHRENHEIT else hit.get('country')) if x)
+    return {'name': label, 'lat': hit['latitude'], 'lon': hit['longitude'], 'cc': hit.get('country_code', '')}
+
+
+async def forecast(place, units):
+    """Today's weather for the TV's Today page, from Open-Meteo, in the place's own time zone."""
+    f = units == 'F'
+    q = {'latitude': place['lat'], 'longitude': place['lon'], 'timezone': 'auto', 'forecast_days': 2,
+         'current': 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day',
+         'hourly': 'temperature_2m,precipitation_probability,weather_code,is_day',
+         'daily': 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,weather_code',
+         'temperature_unit': 'fahrenheit' if f else 'celsius', 'wind_speed_unit': 'mph' if f else 'kmh'}
+    async with ClientSession(timeout=ClientTimeout(total=12)) as s:
+        async with s.get('https://api.open-meteo.com/v1/forecast', params=q) as r:
+            if r.status != 200:
+                raise RuntimeError(f'weather service said {r.status}')
+            d = await r.json()
+    cur, hr, dy = d['current'], d['hourly'], d['daily']
+    start = next((i for i, t in enumerate(hr['time']) if t[:13] == cur['time'][:13]), 0)
+    hours = [{'t': hr['time'][i], 'temp': hr['temperature_2m'][i], 'rain': hr['precipitation_probability'][i],
+              'code': hr['weather_code'][i], 'day': bool(hr['is_day'][i])} for i in range(start + 1, min(start + 13, len(hr['time'])))]
+    return {'place': place['name'], 'units': units, 'at': int(time.time()),
+            'now': {'temp': cur['temperature_2m'], 'feels': cur['apparent_temperature'], 'code': cur['weather_code'],
+                    'wind': cur['wind_speed_10m'], 'day': bool(cur['is_day'])},
+            'today': {'hi': dy['temperature_2m_max'][0], 'lo': dy['temperature_2m_min'][0], 'rain': dy['precipitation_probability_max'][0],
+                      'sunrise': dy['sunrise'][0], 'sunset': dy['sunset'][0], 'code': dy['weather_code'][0]},
+            'hours': hours}
+
+
+def fake_forecast(place, units):
+    """Pretend weather for --demo (no network needed)."""
+    import datetime as dt
+    now = dt.datetime.now().replace(minute=0, second=0, microsecond=0)
+    base = 52 if units == 'F' else 11
+    hours = [{'t': (now + dt.timedelta(hours=i)).strftime('%Y-%m-%dT%H:%M'), 'temp': base + 6 - abs(i - 5), 'rain': [0, 0, 5, 10, 30, 60, 70, 40, 20, 5, 0, 0][i - 1],
+              'code': [1, 1, 2, 3, 3, 61, 63, 61, 3, 2, 1, 0][i - 1], 'day': 7 <= (now.hour + i) % 24 < 18} for i in range(1, 13)]
+    day = now.strftime('%Y-%m-%d')
+    return {'place': place['name'], 'units': units, 'at': int(time.time()),
+            'now': {'temp': base + 1, 'feels': base - 2, 'code': 2, 'wind': 9, 'day': 7 <= now.hour < 18},
+            'today': {'hi': base + 7, 'lo': base - 6, 'rain': 70, 'sunrise': day + 'T07:41', 'sunset': day + 'T18:12', 'code': 61},
+            'hours': hours}
 
 
 def load_config():
@@ -184,7 +237,7 @@ def setup(app, demo=False, lights=None, cast=False):
     enabled = cast or demo
     token = secrets.token_urlsafe(18)           # new every start; never the relay key
     host = '127.0.0.1' if demo else lan_ip()
-    hub = {'socks': set(), 'screen': '', 'focus': '', 'want': None, 'started': 0.0, 'board': cfg.get('board', [])[-12:]}
+    hub = {'socks': set(), 'screen': '', 'focus': '', 'want': None, 'started': 0.0, 'board': cfg.get('board', [])[-12:], 'weather': None, 'weather_at': 0.0}
     page = {'html': None, 'at': 0.0}
     casts, problem = None, ''
     if not enabled:
@@ -225,6 +278,26 @@ def setup(app, demo=False, lights=None, cast=False):
             return {'lights': await lights.list()}
         except Exception as e:
             return {'lights': [], 'lightsError': str(e) or 'Lights didn\'t answer'}
+
+    def units():
+        u = cfg.get('units') or ''
+        return u if u in ('F', 'C') else ('F' if (cfg.get('place') or {}).get('cc') in FAHRENHEIT else 'C')
+
+    async def refresh_weather(push=True):
+        p = cfg.get('place')
+        if not p:
+            hub['weather'] = None
+        else:
+            try:
+                hub['weather'] = fake_forecast(p, units()) if demo else await forecast(p, units())
+            except Exception as e:
+                print('  Weather failed:', e)
+                old = hub.get('weather')
+                if not old or time.time() - old.get('at', 0) > 3 * 3600:
+                    hub['weather'] = {'error': 'couldn\'t get the forecast', 'place': p['name']}
+        hub['weather_at'] = time.time()
+        if push:
+            await send_tv({'weather': hub['weather']})
 
     async def toggle_focused():
         """OK pressed on the phone while the TV shows Lights: switch the light the TV has selected."""
@@ -275,12 +348,37 @@ def setup(app, demo=False, lights=None, cast=False):
                    'waiting': bool(hub['want']) and not linked and since < 30,
                    'stuck': bool(hub['want']) and not linked and since >= 30},
             'board': hub['board'], 'lights': lights is not None,
+            'place': (cfg.get('place') or {}).get('name', ''), 'units': cfg.get('units') or '', 'unitsNow': units() if cfg.get('place') else '',
             'screenLink': tv_url() if c.fake else ''})
 
     async def choose(request):
         body = await body_of(request)
         cfg['cast'] = pick(body); save_config(cfg)
         return web.json_response({'ok': True})
+
+    async def place(request):
+        """The Today page's weather: {city} to look a place up ('' clears it), and/or {units: 'F'|'C'|''} ('' = automatic)."""
+        body = await body_of(request)
+        if 'units' in body:
+            u = str(body['units']).upper()
+            if u not in ('', 'F', 'C'):
+                raise web.HTTPBadRequest(text='Units are F, C or automatic.')
+            cfg['units'] = u
+        if 'city' in body:
+            city = ' '.join(str(body['city']).split())[:80]
+            if city:
+                try:
+                    cfg['place'] = {'name': city, 'lat': 0, 'lon': 0, 'cc': 'US'} if demo else await geocode(city)
+                except web.HTTPException:
+                    raise
+                except Exception as e:
+                    raise web.HTTPBadGateway(text='Couldn\'t look the city up: ' + (str(e) or type(e).__name__))
+            else:
+                cfg.pop('place', None)
+        save_config(cfg)
+        await refresh_weather()
+        return web.json_response({'ok': True, 'place': (cfg.get('place') or {}).get('name', ''), 'units': cfg.get('units') or '',
+                                  'unitsNow': units() if cfg.get('place') else '', 'weather': hub['weather']})
 
     async def start(request):
         body = await body_of(request)
@@ -354,7 +452,7 @@ def setup(app, demo=False, lights=None, cast=False):
 
     app.add_routes([web.get('/tv', info), web.post('/tv/choose', choose), web.post('/tv/start', start), web.post('/tv/stop', stop),
                     web.post('/tv/volume', volume), web.post('/tv/media', media), web.post('/tv/key', key),
-                    web.post('/tv/open', open_), web.post('/tv/say', say), web.post('/tv/board/clear', clear)])
+                    web.post('/tv/open', open_), web.post('/tv/say', say), web.post('/tv/board/clear', clear), web.post('/tv/place', place)])
 
     if casts is None:
         print('TV: off.', problem)
@@ -400,7 +498,9 @@ def setup(app, demo=False, lights=None, cast=False):
         hub['socks'].add(sock)
         print('TV: the screen is connected.')
         try:
-            await sock.send_json({'board': hub['board'], **(await lights_list() if lights is not None else {'lights': False})})
+            if cfg.get('place') and time.time() - hub['weather_at'] > WEATHER_EVERY:
+                await refresh_weather(push=False)
+            await sock.send_json({'board': hub['board'], 'weather': hub['weather'], **(await lights_list() if lights is not None else {'lights': False})})
             async for msg in sock:
                 if msg.type != WSMsgType.TEXT:
                     continue
@@ -412,7 +512,7 @@ def setup(app, demo=False, lights=None, cast=False):
                 if not isinstance(d, dict):
                     continue
                 if d.get('screen') in SCREENS:
-                    entering = d['screen'] == 'lights' and hub['screen'] != 'lights'
+                    entering = d['screen'] in ('lights', 'today') and hub['screen'] != d['screen']
                     hub['screen'] = d['screen']
                     if entering:
                         await sock.send_json(await lights_list())
@@ -434,6 +534,8 @@ def setup(app, demo=False, lights=None, cast=False):
         (Netflix, YouTube) counts as turning Phosphor TV off."""
         while True:
             await asyncio.sleep(30)
+            if hub['socks'] and cfg.get('place') and time.time() - hub['weather_at'] > WEATHER_EVERY:
+                await refresh_weather()
             cid = hub['want']
             if not cid or hub['socks'] or time.time() - hub['started'] < 40:
                 continue

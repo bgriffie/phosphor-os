@@ -785,8 +785,8 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .rm-b:disabled { opacity: .45; }
     .vol { display: grid; grid-template-columns: 56px 1fr 56px 56px; gap: var(--sp-2); align-items: center; }
     .vol .meter { height: 12px; }
-    .shortcuts { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--sp-2); }
-    .shortcuts .rm-b { flex-direction: column; min-height: 58px; gap: 4px; font-size: 10px; letter-spacing: .06em; }
+    .shortcuts { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+    .shortcuts .rm-b { min-height: 48px; font-size: 11px; letter-spacing: .06em; }
     .shortcuts .rm-b.cur { border-color: var(--accent); color: var(--accent); }
 
     /* Something else playing on the TV */
@@ -816,7 +816,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.0</span>
+      <span class="app-meta">v1.1</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -864,11 +864,12 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
               <button class="rm-b" data-route="/say"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v13H8l-5 4z"/></svg>Say</button>
             </div>
             <div class="shortcuts" id="shortcuts">
+              <button class="rm-b" data-screen="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="14" r="4"/><path d="M12 4v3M4.9 8.9l2.1 2.1M19.1 8.9 17 11M2 20h20"/></svg>Today</button>
+              <button class="rm-b" data-screen="art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v16H3z"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg>Art</button>
               <button class="rm-b" data-screen="clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Clock</button>
               <button class="rm-b" data-screen="lights"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>Lights</button>
               <button class="rm-b" data-screen="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v13H8l-5 4z"/><path d="M7 9h10M7 13h6"/></svg>Board</button>
               <button class="rm-b" data-screen="snake"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 20h6v-6h6V8h4M4 20v-2M20 8V4M18 4h4"/></svg>Snake</button>
-              <button class="rm-b" data-screen="rain"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M5 3v6M5 13v2M10 6v9M10 19v2M15 3v4M15 11v6M20 7v8M20 19v2"/></svg>Rain</button>
             </div>
           </div>
 
@@ -906,6 +907,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <span class="label">General</span>
           <div class="menu">
             <a class="menu-item" href="#/settings/cast"><span class="mi-label">Chromecast</span><span class="mi-value" id="set-cast">—</span></a>
+            <a class="menu-item" href="#/settings/weather"><span class="mi-label">Weather<small>For the Today page</small></span><span class="mi-value" id="set-weather">—</span></a>
             <a class="menu-item" href="#/settings/relay"><span class="mi-label">Relay</span><span class="mi-value" id="set-relay"></span></a>
           </div>
         </div>
@@ -925,7 +927,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.0</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.1</span></a>
           </div>
         </div>
       </section>
@@ -934,6 +936,24 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu" role="radiogroup" aria-label="Chromecast" id="cast-list"></div>
         <p class="menu-note" id="cast-note">Chromecasts on the same Wi-Fi as the PC show up here.</p>
         <button class="btn btn-block" id="cast-refresh" style="margin-top:var(--sp-4)">Look again</button>
+      </section>
+
+      <section class="view" data-route="/settings/weather" data-title="Weather">
+        <section class="panel" data-title="City">
+          <div class="field">
+            <label class="label" for="wx-city">City</label>
+            <input class="input" id="wx-city" maxlength="80" autocomplete="off" enterkeyhint="done" placeholder="Portland, Oregon">
+            <span class="hint" id="wx-hint">The Today page on the TV shows this city's weather.</span>
+          </div>
+          <button class="btn btn-primary btn-block" id="wx-save" style="margin-top:var(--sp-4)">Save</button>
+        </section>
+        <div class="menu-group">
+          <span class="label">Units</span>
+          <div class="segmented" role="radiogroup" aria-label="Units" id="wx-units">
+            <button role="radio" data-u="">Auto</button><button role="radio" data-u="F">°F</button><button role="radio" data-u="C">°C</button>
+          </div>
+        </div>
+        <p class="menu-note">Weather comes from Open-Meteo through the relay on your PC. Your city is kept there.</p>
       </section>
 
       <section class="view" data-route="/settings/relay" data-title="Relay">
@@ -965,7 +985,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor TV">
-          <div class="kv"><span>Version</span><span>1.0</span></div>
+          <div class="kv"><span>Version</span><span>1.1</span></div>
           <div class="kv"><span>Chromecast</span><span id="ab-cast">—</span></div>
           <div class="kv"><span>Needs</span><span>Relay with --cast</span></div>
         </section>
@@ -973,6 +993,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <div class="kv"><span>Move</span><span>Swipe or tap an arrow</span></div>
           <div class="kv"><span>OK</span><span>Tap the middle</span></div>
           <div class="kv"><span>Keyboard</span><span>Arrows, Enter, Esc</span></div>
+          <div class="kv"><span>Art</span><span>Arrows change, OK holds</span></div>
         </section>
       </section>
       </div><!-- /.screen-body -->
@@ -1401,6 +1422,19 @@ PH.init({});
     catch (e) { PH.toast(e.message, 'error'); }
   }
   $('#cast-refresh').addEventListener('click', check);
+  async function savePlace(body, done) {
+    try {
+      const d = await call('/tv/place', body, 20000);
+      Object.assign(info || {}, { place: d.place, units: d.units, unitsNow: d.unitsNow });
+      render(); if (done) done(d);
+    } catch (e) { PH.toast(e.message, 'error'); }
+  }
+  $('#wx-save').addEventListener('click', () => {
+    const city = $('#wx-city').value.trim();
+    savePlace({ city }, d => { $('#wx-city').blur(); PH.toast(d.place ? 'Weather for ' + d.place : 'Weather turned off'); if (d.place) PH.back(); });
+  });
+  $('#wx-city').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#wx-save').click(); } });
+  $$('#wx-units [data-u]').forEach(b => b.addEventListener('click', () => savePlace({ units: b.dataset.u })));
   function renderCasts() {
     const box = $('#cast-list'); box.textContent = '';
     const devs = (info && info.devices) || [];
@@ -1461,6 +1495,10 @@ PH.init({});
     $('#m-power-label').textContent = on ? 'Turn TV off' : 'Turn TV on';
 
     $('#set-cast').textContent = castName() || '—';
+    $('#set-weather').textContent = (info && info.place) || 'Not set';
+    if (route() === '/settings/weather' && document.activeElement !== $('#wx-city')) $('#wx-city').value = (info && info.place) || '';
+    $$('#wx-units [data-u]').forEach(b => b.setAttribute('aria-checked', String(((info && info.units) || '') === b.dataset.u)));
+    $('#wx-hint').textContent = info && info.place ? `Showing ${info.place} in °${info.unitsNow || 'F'}.` : 'The Today page on the TV shows this city\'s weather.';
     $('#ab-cast').textContent = castName() || '—';
     $('#set-relay').textContent = !ready() ? 'Not set' : state === 'ok' ? 'Connected' : state === 'old' ? 'Needs update' : state === 'down' ? 'Offline' : '…';
     if (route() === '/settings/relay' && ready() && !$('#tv-link').value) $('#tv-link').value = link.url + '#' + link.key;

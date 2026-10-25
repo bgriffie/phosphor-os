@@ -127,7 +127,6 @@
     .label { text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--text-dim); font-size: calc(1.7 * var(--u)); }
     .rain { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .16; z-index: 0; pointer-events: none; display: none; }
     .rain.on { display: block; }
-    #v-rain .rain { opacity: .5; }
 
     /* Home */
     .home-top { display: flex; align-items: flex-end; justify-content: space-between; gap: calc(3 * var(--u)); }
@@ -137,11 +136,11 @@
     .date { color: var(--text-dim); font-size: calc(2.6 * var(--u)); text-transform: uppercase; letter-spacing: var(--tracking-label); margin-top: calc(1.2 * var(--u)); }
     .home-note { text-align: right; color: var(--text-dim); max-width: 46%; }
     .home-note .msg { color: var(--text); font-size: calc(2.6 * var(--u)); display: block; margin-top: calc(.6 * var(--u)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .tiles { margin-top: auto; display: grid; grid-template-columns: repeat(5, 1fr); gap: calc(2.4 * var(--u)); }
+    .tiles { margin-top: auto; display: grid; grid-template-columns: repeat(6, 1fr); gap: calc(2 * var(--u)); }
     .tile { aspect-ratio: 1 / .92; border: 2px solid var(--line-strong); border-radius: var(--radius); background: var(--surface-1);
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(1.6 * var(--u)); color: var(--text-dim);
       text-transform: uppercase; letter-spacing: var(--tracking-label); font-size: calc(2.2 * var(--u)); font-weight: 700; transition: none; }
-    .tile svg { width: calc(8 * var(--u)); height: calc(8 * var(--u)); }
+    .tile svg { width: calc(7 * var(--u)); height: calc(7 * var(--u)); }
     .tile.focus { border-color: var(--accent); color: var(--accent); background: var(--surface-2); box-shadow: 0 0 0 2px var(--accent), 0 0 calc(3 * var(--u)) rgba(57,255,106,.35); text-shadow: var(--glow); }
     .tile.focus svg { filter: drop-shadow(0 0 calc(.8 * var(--u)) var(--accent)); }
     .hint { margin-top: calc(2.4 * var(--u)); color: var(--text-faint); font-size: calc(1.7 * var(--u)); text-transform: uppercase; letter-spacing: var(--tracking-label); }
@@ -193,9 +192,47 @@
     .ov-card p { margin: calc(.6 * var(--u)) 0 0; color: var(--text-dim); }
     .ov-card .btn { display: inline-block; margin-top: calc(2.4 * var(--u)); background: var(--accent); color: var(--on-accent); padding: calc(1.2 * var(--u)) calc(3 * var(--u)); font-weight: 700; text-transform: uppercase; letter-spacing: var(--tracking-label); border-radius: var(--radius-sm); box-shadow: var(--glow-box); }
 
-    /* Rain */
-    #v-rain { align-items: center; justify-content: flex-end; }
-    .rain-time { position: relative; z-index: 1; font-size: calc(7 * var(--u)); font-weight: 700; color: var(--accent); text-shadow: var(--glow-lg); background: rgba(3,7,3,.75); padding: 0 calc(2 * var(--u)); margin-bottom: calc(3 * var(--u)); }
+    /* Art */
+    #v-art { padding: 0; }
+    .art-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .osd { position: absolute; top: calc(2 * var(--u)); left: calc(3 * var(--u)); z-index: 2; color: var(--accent); text-shadow: var(--glow-lg), 0 0 4px #000;
+      font-size: calc(2.6 * var(--u)); text-transform: uppercase; letter-spacing: var(--tracking-label); transition: opacity .6s steps(4); }
+    .osd { background: rgba(3,7,3,.72); padding: calc(.4 * var(--u)) calc(1.2 * var(--u)); border-radius: var(--radius-sm); }
+    .osd b { margin-right: calc(1 * var(--u)); }
+    .osd i { font-style: normal; color: var(--amber); border: 1px solid var(--amber); padding: 0 calc(.8 * var(--u)); margin-left: calc(1 * var(--u)); font-size: .7em; vertical-align: middle; }
+    .osd.dim { opacity: 0; }
+
+    /* Today */
+    #v-today { padding: calc(2.6 * var(--u)) calc(4 * var(--u)); }
+    .today { display: grid; grid-template-columns: 42% 1fr; gap: calc(4 * var(--u)); height: 100%; min-height: 0; }
+    .t-left { display: flex; flex-direction: column; min-height: 0; }
+    .t-time { font-size: calc(11 * var(--u)); line-height: 1; font-weight: 700; color: var(--accent); text-shadow: var(--glow-lg); margin-top: calc(1 * var(--u)); }
+    .t-time small { font-size: .3em; color: var(--text-dim); text-shadow: none; margin-left: .3em; }
+    .t-day { margin-top: calc(2 * var(--u)); }
+    .t-daytxt { color: var(--text-dim); font-size: calc(1.8 * var(--u)); margin-top: calc(.8 * var(--u)); text-transform: uppercase; letter-spacing: var(--tracking-label); }
+    .t-now { margin-top: auto; display: flex; flex-direction: column; gap: calc(1 * var(--u)); }
+    .t-now .wx { display: flex; align-items: center; gap: calc(2.4 * var(--u)); }
+    .t-now .wx svg { width: calc(13 * var(--u)); height: calc(13 * var(--u)); color: var(--accent); filter: drop-shadow(0 0 calc(1 * var(--u)) rgba(57,255,106,.6)); flex: none; }
+    .t-now .deg { font-size: calc(10 * var(--u)); font-weight: 700; color: var(--text); line-height: 1; }
+    .t-now .cond { font-size: calc(3 * var(--u)); color: var(--text); }
+    .t-now .more { color: var(--text-dim); font-size: calc(2.1 * var(--u)); }
+    .t-now .hl b { color: var(--amber); } .t-now .hl b + b { color: var(--cyan); margin-left: calc(1.4 * var(--u)); }
+    .t-right { display: flex; flex-direction: column; gap: calc(2.4 * var(--u)); min-height: 0; }
+    .t-panel { position: relative; border: 1px solid var(--line-strong); border-radius: var(--radius); padding: calc(2.4 * var(--u)) calc(2.2 * var(--u)) calc(1.6 * var(--u)); background: var(--surface-1); min-width: 0; }
+    .t-panel::before { content: '[ ' attr(data-title) ' ]'; position: absolute; top: calc(-1.3 * var(--u)); left: calc(1.6 * var(--u)); background: var(--bg); padding: 0 calc(.6 * var(--u));
+      color: var(--text-dim); font-size: calc(1.6 * var(--u)); text-transform: uppercase; letter-spacing: var(--tracking-label); }
+    .t-row { display: grid; grid-template-columns: 1fr 1fr; gap: calc(2 * var(--u)); }
+    .hours { display: grid; grid-template-columns: repeat(12, 1fr); gap: calc(.6 * var(--u)); align-items: end; }
+    .hr { display: flex; flex-direction: column; align-items: center; gap: calc(.6 * var(--u)); font-size: calc(1.7 * var(--u)); color: var(--text-dim); }
+    .hr .tp { color: var(--text); font-weight: 700; font-size: calc(2 * var(--u)); }
+    .hr svg { width: calc(3.4 * var(--u)); height: calc(3.4 * var(--u)); color: var(--text-dim); }
+    .hr .rb { width: 60%; height: calc(5 * var(--u)); background: var(--surface-3); position: relative; }
+    .hr .rb span { position: absolute; left: 0; right: 0; bottom: 0; background: var(--cyan); opacity: .8; }
+    .hr .rp { color: var(--cyan); font-size: calc(1.5 * var(--u)); min-height: 1.2em; }
+    .t-fact { margin: 0; color: var(--text); font-size: calc(2.4 * var(--u)); line-height: 1.4; }
+    .t-small { margin: 0; color: var(--text); font-size: calc(2.2 * var(--u)); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .t-small .dim { color: var(--text-dim); }
+    .t-empty { color: var(--text-dim); font-size: calc(2.2 * var(--u)); }
 
     /* A message from the phone, over whatever is showing */
     .say { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center; background: rgba(3,7,3,.82); }
@@ -221,11 +258,12 @@
             <div class="home-note" id="h-note" hidden><span class="label">Latest message</span><span class="msg" id="h-msg"></span></div>
           </div>
           <div class="tiles" id="tiles">
+            <div class="tile" data-go="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><circle cx="12" cy="14" r="4"/><path d="M12 4v3M4.9 8.9l2.1 2.1M19.1 8.9 17 11M2 20h20"/></svg>Today</div>
+            <div class="tile" data-go="art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M3 4h18v16H3z"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8" r="1.5"/></svg>Art</div>
             <div class="tile" data-go="clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Clock</div>
             <div class="tile" data-go="lights"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>Lights</div>
             <div class="tile" data-go="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M3 4h18v13H8l-5 4z"/><path d="M7 9h10M7 13h6"/></svg>Board</div>
             <div class="tile" data-go="snake"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M4 20h6v-6h6V8h4M4 20v-2M20 8V4"/><path d="M18 4h4"/></svg>Snake</div>
-            <div class="tile" data-go="rain"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M5 3v6M5 13v2M10 6v9M10 19v2M15 3v4M15 11v6M20 7v8M20 19v2"/></svg>Rain</div>
           </div>
           <div class="hint" id="h-hint">Arrows to move · OK to open · use the TV app on your phone</div>
         </section>
@@ -252,26 +290,199 @@
           <div class="overlay" id="s-over"><div class="ov-card"><h2 id="s-title">Snake</h2><p id="s-sub">Steer with the arrows on your phone.</p><span class="btn">OK to play</span></div></div>
         </section>
 
-        <section class="view" id="v-rain">
-          <div class="rain-time" id="r-time">--:--</div>
+        <section class="view" id="v-art">
+          <canvas id="art" class="art-cv"></canvas>
+          <div class="osd" id="art-osd"><b id="art-ch">CH 01</b> <span id="art-name"></span> <i id="art-hold" hidden>Hold</i></div>
+        </section>
+
+        <section class="view" id="v-today">
+          <div class="today">
+            <div class="t-left">
+              <div class="label" id="t-greet">Good morning</div>
+              <div class="t-time" id="t-time">--:--</div>
+              <div class="date" id="t-date"></div>
+              <div class="t-day"><div class="meter" id="t-daybar"><span></span></div><div class="t-daytxt" id="t-daytxt"></div></div>
+              <div class="t-now" id="t-now"></div>
+            </div>
+            <div class="t-right">
+              <section class="t-panel" data-title="Next 12 hours"><div class="hours" id="t-hours"></div></section>
+              <section class="t-panel" data-title="Fact of the day"><p class="t-fact" id="t-fact"></p></section>
+              <div class="t-row">
+                <section class="t-panel" data-title="Board"><p class="t-small" id="t-board"></p></section>
+                <section class="t-panel" data-title="Lights"><p class="t-small" id="t-lights"></p></section>
+              </div>
+            </div>
+          </div>
         </section>
 
         <div class="say" id="say" hidden><div class="ov-card"><div class="label">Message</div><div class="board-text" id="say-text"></div></div></div>
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.0</span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.1</span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
+/* Art channel: generative pieces in phosphor colours, a new one every two minutes like flicking
+   through channels. Everything is drawn here; nothing is downloaded. Pieces draw on a canvas kept
+   at about 540 lines tall (TV boxes have slow graphics chips) and the browser scales it up. */
+const Art = (() => {
+  const G = '#39FF6A', GD = '#1E9E42', A = '#FFB13B', CY = '#5CE1FF', BG = '#030703';
+  const TAU = Math.PI * 2, rnd = (a, b) => a + Math.random() * (b - a), pick = a => a[Math.random() * a.length | 0];
+  const DUR = 120000;
+  let cv, x, W = 0, H = 0, raf = 0, idx = 0, piece = null, since = 0, last = 0, hold = false, staticT = 0, on = false, onChange = () => {};
+  const fade = a => { x.fillStyle = `rgba(3,7,3,${a})`; x.fillRect(0, 0, W, H); };
+  const clear = () => { x.fillStyle = BG; x.fillRect(0, 0, W, H); };
+
+  const pieces = [
+    { name: 'Harmonograph', init() { this.t = 0; this.new(); clear(); },
+      new() { const f = () => pick([2, 3, 4]) + rnd(-.012, .012);
+        this.p = { f1: f(), f2: f(), f3: f(), f4: f(), p1: rnd(0, TAU), p2: rnd(0, TAU), p3: rnd(0, TAU), p4: rnd(0, TAU), d: rnd(.0015, .004), col: pick([G, CY, A]) };
+        this.t = 0; this.prev = null; },
+      frame() { const p = this.p, s = Math.min(W, H) * .22;
+        fade(.006); x.strokeStyle = p.col; x.lineWidth = 1.2; x.shadowColor = p.col; x.shadowBlur = 4; x.beginPath();
+        for (let i = 0; i < 60; i++) { const t = this.t += .02, e = Math.exp(-p.d * t);
+          const px = W / 2 + s * e * (Math.sin(p.f1 * t + p.p1) + Math.sin(p.f2 * t + p.p2)), py = H / 2 + s * e * (Math.sin(p.f3 * t + p.p3) + Math.sin(p.f4 * t + p.p4));
+          if (this.prev) { x.moveTo(this.prev[0], this.prev[1]); x.lineTo(px, py); } this.prev = [px, py]; }
+        x.stroke(); x.shadowBlur = 0;
+        if (Math.exp(-p.d * this.t) < .06) { this.new(); } } },
+
+    { name: 'Flow field', init() { clear(); this.z = rnd(0, 100); this.f = [rnd(.002, .006), rnd(.002, .006), rnd(.001, .004)];
+        this.ps = Array.from({ length: 1400 }, () => this.spawn()); this.col = pick([[G, CY], [G, A], [CY, G]]); },
+      spawn() { return { x: rnd(0, W), y: rnd(0, H), life: rnd(60, 300), c: Math.random() < .8 ? 0 : 1 }; },
+      frame(dt) { fade(.03); this.z += dt * .00012; const [f1, f2, f3] = this.f, z = this.z;
+        for (const pt of this.ps) { const a = (Math.sin(pt.x * f1 + z) + Math.cos(pt.y * f2 - z * 1.3) + Math.sin((pt.x + pt.y) * f3 + z * .7)) * 1.5;
+          const nx = pt.x + Math.cos(a) * 1.4, ny = pt.y + Math.sin(a) * 1.4;
+          x.strokeStyle = this.col[pt.c]; x.globalAlpha = .55; x.beginPath(); x.moveTo(pt.x, pt.y); x.lineTo(nx, ny); x.stroke();
+          pt.x = nx; pt.y = ny; if (--pt.life < 0 || nx < 0 || ny < 0 || nx > W || ny > H) Object.assign(pt, this.spawn()); }
+        x.globalAlpha = 1; } },
+
+    { name: 'Life', init() { this.cs = Math.max(4, Math.round(H / 64)); this.cols = Math.ceil(W / this.cs); this.rows = Math.ceil(H / this.cs);
+        this.seed(); this.acc = 0; },
+      seed() { this.g = new Uint8Array(this.cols * this.rows).map(() => Math.random() < .28 ? 1 : 0); this.age = new Float32Array(this.cols * this.rows); this.same = 0; this.gen = 0; this.pop = -1; },
+      frame(dt) { this.acc += dt; if (this.acc < 110) return; this.acc = 0;
+        const { cols: c, rows: r, g } = this, n = new Uint8Array(c * r); let pop = 0;
+        for (let j = 0; j < r; j++) for (let i = 0; i < c; i++) { let k = 0;
+          for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) if (di || dj) k += g[((j + dj + r) % r) * c + (i + di + c) % c];
+          const v = g[j * c + i] ? (k === 2 || k === 3) : k === 3; n[j * c + i] = v; pop += v; }
+        this.g = n; this.same = Math.abs(pop - this.pop) < 3 ? this.same + 1 : 0; this.pop = pop;
+        if (this.same > 40 || ++this.gen > 900) this.seed();
+        clear(); const s = this.cs;
+        for (let q = 0; q < c * r; q++) { this.age[q] = this.g[q] ? Math.min(this.age[q] + 1, 30) : Math.max(this.age[q] - 4, 0);
+          if (!this.age[q]) continue; x.fillStyle = this.g[q] ? (this.age[q] < 3 ? CY : G) : GD; x.globalAlpha = this.g[q] ? 1 : this.age[q] / 30;
+          x.fillRect((q % c) * s + 1, (q / c | 0) * s + 1, s - 2, s - 2); }
+        x.globalAlpha = 1; } },
+
+    { name: 'Warp', init() { clear(); this.st = Array.from({ length: 420 }, () => this.star(true)); },
+      star(any) { return { x: rnd(-1, 1), y: rnd(-1, 1), z: any ? rnd(.05, 1) : 1, c: Math.random() < .12 ? pick([A, CY]) : G }; },
+      frame(dt) { fade(.25); const cx = W / 2, cy = H / 2, s = W * .5;
+        for (const p of this.st) { const z0 = p.z; p.z -= dt * .00028; if (p.z <= .02) { Object.assign(p, this.star(false)); continue; }
+          const x0 = cx + p.x / z0 * s, y0 = cy + p.y / z0 * s, x1 = cx + p.x / p.z * s, y1 = cy + p.y / p.z * s;
+          if (x1 < 0 || x1 > W || y1 < 0 || y1 > H) { Object.assign(p, this.star(false)); continue; }
+          x.strokeStyle = p.c; x.lineWidth = Math.max(.6, 2.2 * (1 - p.z)); x.beginPath(); x.moveTo(x0, y0); x.lineTo(x1, y1); x.stroke(); } } },
+
+    { name: 'Outrun', init() { this.o = 0; },
+      frame(dt) { clear(); this.o = (this.o + dt * .0006) % 1; const hz = H * .55;
+        // sun with stripes
+        const r = H * .2, sx = W / 2, sy = hz - r * .35;
+        for (let yy = -r; yy < r; yy += 2) { const gap = yy > 0 && ((yy / r * 8 + this.o * 2) % 1) < .35; if (gap) continue;
+          const w = Math.sqrt(r * r - yy * yy); x.fillStyle = A; x.globalAlpha = .9 - (yy + r) / (2 * r) * .4; x.fillRect(sx - w, sy + yy, w * 2, 2); }
+        x.globalAlpha = 1; x.fillStyle = BG; x.fillRect(0, hz, W, H - hz);
+        // mountains
+        x.strokeStyle = CY; x.lineWidth = 1.5; x.beginPath();
+        for (let i = 0; i <= 80; i++) { const px = i / 80 * W, m = Math.abs(i / 80 - .5) * 2;
+          const py = hz - m * H * (.12 + .08 * Math.sin(i * .9) * Math.sin(i * .37 + 1)); i ? x.lineTo(px, py) : x.moveTo(px, py); }
+        x.stroke();
+        // grid
+        x.strokeStyle = G; x.shadowColor = G; x.shadowBlur = 6; x.lineWidth = 1.4;
+        for (let i = -20; i <= 20; i++) { x.beginPath(); x.moveTo(W / 2 + i * W * .02, hz); x.lineTo(W / 2 + i * W * .25, H); x.stroke(); }
+        for (let k = 0; k < 14; k++) { const z = (k + 1 - this.o) / 14, py = hz + (H - hz) * z * z; x.globalAlpha = z; x.beginPath(); x.moveTo(0, py); x.lineTo(W, py); x.stroke(); }
+        x.globalAlpha = 1; x.shadowBlur = 0; } },
+
+    { name: 'Plasma', init() { this.lw = 128; this.lh = Math.round(128 * H / W); this.off = new OffscreenCanvasLike(this.lw, this.lh); this.t = rnd(0, 100);
+        this.pal = Array.from({ length: 8 }, (_, i) => { const v = i / 7; return [3 + v * 54, 7 + v * 248, 3 + v * 103]; }); },
+      frame(dt) { this.t += dt * .0007; const { lw, lh, t } = this, img = this.off.img, d = img.data;
+        for (let j = 0; j < lh; j++) for (let i = 0; i < lw; i++) {
+          const v = Math.sin(i * .09 + t) + Math.sin(j * .12 - t * 1.3) + Math.sin((i + j) * .06 + t * .7) + Math.sin(Math.hypot(i - lw / 2 - 20 * Math.sin(t * .5), j - lh / 2) * .14 - t);
+          const c = this.pal[Math.max(0, Math.min(7, Math.floor((v + 4) / 8 * 8)))], q = (j * lw + i) * 4; d[q] = c[0]; d[q + 1] = c[1]; d[q + 2] = c[2]; d[q + 3] = 255; }
+        this.off.put(); x.imageSmoothingEnabled = false; x.drawImage(this.off.c, 0, 0, W, H); } },
+
+    { name: 'Tunnel', init() { this.t = 0; this.spin = pick([-1, 1]); this.sides = pick([4, 6, 8, 40]); },
+      frame(dt) { clear(); this.t += dt * .0005; const cx = W / 2 + Math.sin(this.t * .7) * W * .05, cy = H / 2 + Math.cos(this.t * .5) * H * .05;
+        for (let k = 22; k > 0; k--) { const z = ((k - (this.t * 3) % 1) / 22), r = Math.min(W, H) * .05 / (z * z + .02) * .2;
+          if (r > W) continue; x.strokeStyle = k % 6 === 0 ? A : G; x.globalAlpha = Math.min(1, 1.2 - z); x.lineWidth = 1.5;
+          x.beginPath(); for (let s = 0; s <= this.sides; s++) { const a = s / this.sides * TAU + this.t * this.spin + k * .08; const px = cx + Math.cos(a) * r * 1.4, py = cy + Math.sin(a) * r; s ? x.lineTo(px, py) : x.moveTo(px, py); } x.stroke(); }
+        x.globalAlpha = 1; } },
+
+    { name: 'Matrix rain', init() { clear(); this.fs = Math.max(12, Math.round(H / 34)); this.cols = Math.ceil(W / this.fs); this.drops = Array.from({ length: this.cols }, () => rnd(-50, 0)); this.acc = 0; },
+      frame(dt) { this.acc += dt; if (this.acc < 55) return; this.acc = 0; const glyphs = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄ0123456789<>/=+*';
+        fade(.1); x.font = this.fs + 'px ui-monospace, monospace';
+        this.drops.forEach((y, i) => { x.fillStyle = Math.random() < .03 ? '#C9F5D3' : G; x.fillText(glyphs[Math.random() * glyphs.length | 0], i * this.fs, y * this.fs);
+          this.drops[i] = y * this.fs > H && Math.random() > .975 ? 0 : y + 1; }); } },
+
+    { name: '10 PRINT', init() { clear(); this.s = Math.max(10, Math.round(H / 24)); this.i = 0; this.n = Math.ceil(W / this.s) * Math.ceil(H / this.s); this.col = pick([G, CY, A]); this.acc = 0; },
+      frame(dt) { this.acc += dt; const c = Math.ceil(W / this.s); x.strokeStyle = this.col; x.lineWidth = Math.max(2, this.s / 6); x.lineCap = 'square';
+        while (this.acc > 6) { this.acc -= 6;
+          if (this.i >= this.n) { if (this.i++ > this.n + 300) this.init(); continue; }
+          const px = (this.i % c) * this.s, py = (this.i / c | 0) * this.s; x.beginPath();
+          if (Math.random() < .5) { x.moveTo(px, py); x.lineTo(px + this.s, py + this.s); } else { x.moveTo(px + this.s, py); x.lineTo(px, py + this.s); }
+          x.stroke(); this.i++; } } },
+
+    { name: 'Sunflower', init() { this.t = 0; this.ang = pick([137.508, 137.3, 137.6, 222.5]); },
+      frame(dt) { this.t += dt; clear(); const n = Math.min(1600, this.t / 8 | 0), s = Math.min(W, H) * .45 / Math.sqrt(1600), rot = this.t * .00004;
+        for (let i = 0; i < n; i++) { const a = i * this.ang * Math.PI / 180 + rot, r = s * Math.sqrt(i);
+          x.fillStyle = i % 21 === 0 ? A : i % 13 === 0 ? CY : G; x.globalAlpha = .4 + .6 * (1 - i / 1600);
+          x.beginPath(); x.arc(W / 2 + Math.cos(a) * r, H / 2 + Math.sin(a) * r, Math.max(1.2, 3.2 - i / 600), 0, TAU); x.fill(); }
+        x.globalAlpha = 1; if (this.t > 60000) this.init(); } },
+  ];
+
+  // A tiny off-screen canvas for pixel pieces (OffscreenCanvas isn't on every TV)
+  function OffscreenCanvasLike(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); this.c = c; this.img = g.createImageData(w, h); this.put = () => g.putImageData(this.img, 0, 0); }
+
+  function size() {
+    const sc = Math.min(1, 540 / Math.max(1, cv.clientHeight));
+    W = cv.width = Math.round(cv.clientWidth * sc); H = cv.height = Math.round(cv.clientHeight * sc);
+  }
+  function show(i) {
+    idx = (i + pieces.length) % pieces.length; piece = pieces[idx]; since = performance.now();
+    x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.shadowBlur = 0; x.lineCap = 'butt';
+    staticT = 260; piece.init(); onChange(idx, piece.name, hold);
+  }
+  function snow() {   // the channel-change crackle
+    const s = 3, img = x.createImageData(Math.ceil(W / s), Math.ceil(H / s)), d = img.data;
+    for (let q = 0; q < d.length; q += 4) { const v = Math.random() * 120; d[q] = v * .3; d[q + 1] = v; d[q + 2] = v * .45; d[q + 3] = 255; }
+    const t = document.createElement('canvas'); t.width = img.width; t.height = img.height; t.getContext('2d').putImageData(img, 0, 0);
+    x.imageSmoothingEnabled = false; x.drawImage(t, 0, 0, W, H);
+  }
+  function loop(t) {
+    raf = requestAnimationFrame(loop);
+    const dt = Math.min(100, t - (last || t)); last = t;
+    if (!hold && t - since > DUR) show(idx + 1);
+    if (staticT > 0) { staticT -= dt; snow(); if (staticT <= 0) piece.init(); return; }
+    piece.frame(dt);
+  }
+  return {
+    pieces: () => pieces.map(p => p.name),
+    start(canvas, cb, at) {
+      cv = canvas; x = cv.getContext('2d'); onChange = cb || onChange; on = true; size();
+      cancelAnimationFrame(raf); last = 0; show(at == null ? idx : at); raf = requestAnimationFrame(loop);
+    },
+    stop() { on = false; cancelAnimationFrame(raf); raf = 0; },
+    next() { show(idx + 1); }, prev() { show(idx - 1); },
+    toggleHold() { hold = !hold; since = performance.now(); onChange(idx, piece.name, hold); return hold; },
+    resize() { if (on) { size(); piece.init(); } },
+    get index() { return idx; },
+  };
+})();
+
 /* Phosphor TV, the screen side. The Chromecast opens it (through DashCast) from the relay's home-network
    port, as http://<pc>:7790/?k=<tv token>, and it keeps one WebSocket back to the relay. Control goes one
    way: the relay sends keys, messages and lights; this page only ever reports status (screen + selection).
    Everything shown that came from outside goes in with textContent, never as HTML. */
 (() => {
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-  const SCREENS = ['home', 'clock', 'lights', 'board', 'snake', 'rain'];
+  const SCREENS = ['home', 'today', 'art', 'clock', 'lights', 'board', 'snake', 'rain'];
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let screen = 'home', tileAt = 0, lightAt = 0, lights = null, lightsErr = '', hasLights = true, board = [], linked = false, idleT = 0;
+  let screen = 'home', weather = null, tileAt = 0, lightAt = 0, lights = null, lightsErr = '', hasLights = true, board = [], linked = false, idleT = 0;
   const store = { get: k => { try { return JSON.parse(localStorage.getItem('phosphor-tv:' + k)); } catch { return null; } },
                   set: (k, v) => { try { localStorage.setItem('phosphor-tv:' + k, JSON.stringify(v)); } catch {} } };
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -281,9 +492,10 @@
   function onMsg(d) {
     if (!d || typeof d !== 'object') return;
     if (!linked) { linked = true; showLinked(); }
-    if ('lights' in d && d.lights !== 'list') { if (d.lights === false || d.lights === null) { hasLights = false; lights = null; } else if (Array.isArray(d.lights)) { hasLights = true; lights = d.lights; lightsErr = ''; } if (screen === 'lights') { renderLights(); status(); } }
-    if (d.lightsError) { lightsErr = String(d.lightsError); if (screen === 'lights') { renderLights(); status(); } }
-    if (Array.isArray(d.board)) { board = d.board.filter(m => m && typeof m.text === 'string'); renderBoard(); }
+    if ('lights' in d && d.lights !== 'list') { if (d.lights === false || d.lights === null) { hasLights = false; lights = null; } else if (Array.isArray(d.lights)) { hasLights = true; lights = d.lights; lightsErr = ''; } if (screen === 'lights') { renderLights(); status(); } if (screen === 'today') renderToday(); }
+    if (d.lightsError) { lightsErr = String(d.lightsError); if (screen === 'lights') { renderLights(); status(); } if (screen === 'today') renderToday(); }
+    if (Array.isArray(d.board)) { board = d.board.filter(m => m && typeof m.text === 'string'); renderBoard(); if (screen === 'today') renderToday(); }
+    if ('weather' in d) { weather = d.weather && typeof d.weather === 'object' ? d.weather : null; if (screen === 'today') renderToday(); }
     if (d.say && typeof d.say.text === 'string') showSay(d.say.text);
     if (typeof d.key === 'string') press(d.key);
     if (typeof d.open === 'string' && SCREENS.includes(d.open)) go(d.open);
@@ -319,13 +531,16 @@
     $('#h-date').textContent = date;
     $('#c-time').textContent = `${hh}:${mm}`; $('#c-time').appendChild(el('small', '', ap));
     $('#c-date').textContent = date;
-    $('#r-time').textContent = `${hh}:${mm}`;
-    if (screen === 'lights' || screen === 'board') hud(`<b>${hh}:${mm}</b>`);
+    $('#t-time').textContent = `${hh}:${mm}`; $('#t-time').appendChild(el('small', '', ap));
+    $('#t-date').textContent = date;
+    if (screen === 'today') dayLine(d);
+    if (screen === 'lights' || screen === 'board' || screen === 'art') hud(`<b>${hh}:${mm}</b>`);
     if (d.getMinutes() !== lastMin) {
       lastMin = d.getMinutes();
       // Drift the big clock a little each minute so nothing sits still on the panel for hours
       if (!reduced) $('#clock-wrap').style.transform = `translate(${(Math.random() * 8 - 4).toFixed(1)}vh, ${(Math.random() * 8 - 4).toFixed(1)}vh)`;
       if (screen === 'board') renderBoard();
+      if (screen === 'today') renderToday();
     }
   }
   // The HUD only ever holds our own markup (time, score); nothing received goes in here.
@@ -334,17 +549,22 @@
   /* ---------- Screens ---------- */
   function go(name) {
     if (!SCREENS.includes(name)) return;
+    let art = null;
+    if (name === 'rain') { name = 'art'; art = Art.pieces().indexOf('Matrix rain'); }   // Rain is one of the art pieces now
     if (screen === 'snake' && name !== 'snake') snakePause();
+    if (screen === 'art' && name !== 'art') Art.stop();
     screen = name;
     $$('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + name));
     $('#path').textContent = name;
-    $('#rain').classList.toggle('on', name === 'rain' || name === 'clock');
-    rainRun(name === 'rain' || name === 'clock');
+    $('#rain').classList.toggle('on', name === 'clock');
+    rainRun(name === 'clock');
     hud('');
     if (name === 'home') focusTile(tileAt);
     if (name === 'lights') renderLights();
     if (name === 'board') renderBoard();
     if (name === 'snake') snakeEnter();
+    if (name === 'today') renderToday();
+    if (name === 'art') Art.start($('#art'), artChanged, art);
     tick(); idle();
     status();
   }
@@ -366,7 +586,8 @@
       else if (k === 'ok') go($$('.tile')[tileAt].dataset.go);
     } else if (screen === 'lights') lightsKey(k);
     else if (screen === 'snake') snakeKey(k);
-    else if (k === 'ok' && (screen === 'clock' || screen === 'rain' || screen === 'board')) go('home');
+    else if (screen === 'art') { if (k === 'right' || k === 'down') Art.next(); else if (k === 'left' || k === 'up') Art.prev(); else if (k === 'ok') Art.toggleHold(); }
+    else if (k === 'ok' && (screen === 'clock' || screen === 'today' || screen === 'board')) go('home');
   }
 
   /* ---------- Lights ---------- */
@@ -416,6 +637,147 @@
     renderLights(); status();
   }
   function focusId() { const it = lightItems()[lightAt]; return !it ? '' : it.l ? it.l.id : it.all ? 'all-on' : 'all-off'; }
+
+  /* ---------- Art ---------- */
+  let osdT = 0;
+  function artChanged(i, name, hold) {
+    $('#art-ch').textContent = 'CH ' + pad(i + 1); $('#art-name').textContent = name; $('#art-hold').hidden = !hold;
+    const o = $('#art-osd'); o.classList.remove('dim'); clearTimeout(osdT); if (!hold) osdT = setTimeout(() => o.classList.add('dim'), 4000);
+  }
+
+  /* ---------- Today ---------- */
+  // Weather glyphs, drawn (never font glyphs): [code range test, name, svg path]
+  const SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+  const MOON = '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>';
+  const CLOUD = '<path d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 18z"/>';
+  const PART = '<path d="M8 3v1.5M3.5 5.5l1 1M2 10h1.5M12.5 5.5l-1 1"/><path d="M5.3 11.6a3.5 3.5 0 0 1 6.1-3.3"/><path d="M9 20h8a3.5 3.5 0 0 0 .4-7 5 5 0 0 0-9.5 1.3A2.9 2.9 0 0 0 9 20z"/>';
+  const RAIN = '<path d="M7 14h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 14z"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/>';
+  const SNOW = '<path d="M7 14h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 14z"/><path d="M8 18h.01M12 20h.01M16 18h.01M10 22h.01M14 22h.01"/>';
+  const STORM = '<path d="M7 14h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 14z"/><path d="M12 14l-2 4h4l-2 4"/>';
+  const FOG = '<path d="M3 8h18M5 12h14M3 16h18M7 20h10"/>';
+  function wx(code, day) {
+    const c = +code;
+    if (c === 0) return ['Clear', day === false ? MOON : SUN];
+    if (c <= 2) return [c === 1 ? 'Mostly clear' : 'Partly cloudy', day === false ? MOON : PART];
+    if (c === 3) return ['Cloudy', CLOUD];
+    if (c <= 48) return ['Fog', FOG];
+    if (c <= 57) return ['Drizzle', RAIN];
+    if (c <= 67) return ['Rain', RAIN];
+    if (c <= 77) return ['Snow', SNOW];
+    if (c <= 82) return ['Showers', RAIN];
+    if (c <= 86) return ['Snow showers', SNOW];
+    return ['Thunderstorms', STORM];
+  }
+  const icon = path => { const ns = 'http://www.w3.org/2000/svg', s = document.createElementNS(ns, 'svg');
+    s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '1.8'); s.setAttribute('stroke-linecap', 'square');
+    s.innerHTML = path; return s; };   // path is one of the constants above, never received text
+  const num = v => typeof v === 'number' && isFinite(v) ? Math.round(v) : null;
+  const clock12 = iso => { const m = /T(\d\d):(\d\d)/.exec(String(iso || '')); if (!m) return ''; const h = +m[1]; return `${h % 12 || 12}:${m[2]} ${h < 12 ? 'AM' : 'PM'}`; };
+  const hour12 = iso => { const m = /T(\d\d)/.exec(String(iso || '')); if (!m) return ''; const h = +m[1]; return `${h % 12 || 12}${h < 12 ? 'a' : 'p'}`; };
+  const mins = iso => { const m = /T(\d\d):(\d\d)/.exec(String(iso || '')); return m ? +m[1] * 60 + +m[2] : null; };
+  function dayLine(d) {
+    const now = d.getHours() * 60 + d.getMinutes(), t = weather && weather.today, rise = t && mins(t.sunrise), set = t && mins(t.sunset);
+    let pct = now / 1440, txt = `Day ${Math.round(pct * 100)}% done`;
+    if (rise != null && set != null) {
+      if (now < rise) { pct = 0; txt = `Sunrise ${clock12(t.sunrise)} · in ${Math.round((rise - now) / 60 * 10) / 10} h`; }
+      else if (now < set) { pct = (now - rise) / (set - rise); const left = set - now; txt = `Sunset ${clock12(t.sunset)} · ${Math.floor(left / 60)} h ${left % 60} min of daylight left`; }
+      else { pct = 1; txt = `Sun set at ${clock12(t.sunset)}`; }
+    }
+    $('#t-daybar span').style.setProperty('--v', Math.round(pct * 100) + '%');
+    $('#t-daytxt').textContent = txt;
+  }
+  const FACTS = [
+    'Honey never spoils: edible honey has been found in Egyptian tombs thousands of years old.',
+    'Octopuses have three hearts and blue blood.',
+    'A day on Venus is longer than its year.',
+    'Bananas are berries, but strawberries are not.',
+    'The Eiffel Tower grows about 15 cm taller in summer as the iron expands.',
+    'Sharks were around before trees existed.',
+    'A group of flamingos is called a flamboyance.',
+    'Wombat poop is cube-shaped.',
+    'There are more possible games of chess than atoms in the observable universe.',
+    'The first computer bug was a real moth, taped into a Harvard logbook in 1947.',
+    'Sea otters hold hands while they sleep so they don\'t drift apart.',
+    'Lightning is about five times hotter than the surface of the Sun.',
+    'Your stomach gets a new lining every few days so it doesn\'t digest itself.',
+    'The dot over a lowercase i or j is called a tittle.',
+    'Cleopatra lived closer in time to the Moon landing than to the building of the Great Pyramid.',
+    'A bolt of lightning lasts about 30 microseconds.',
+    'Cows have best friends and get stressed when they are apart.',
+    'The Moon drifts about 3.8 cm farther from Earth every year.',
+    'Hot water can freeze faster than cold water. It\'s called the Mpemba effect.',
+    'Butterflies taste with their feet.',
+    'The longest hiccup bout on record lasted 68 years.',
+    'Saturn would float in a bathtub big enough to hold it: it is less dense than water.',
+    'The inventor of the Pringles can is buried in one.',
+    'A jiffy is a real unit: in physics it can mean the time light takes to cross a femtometre.',
+    'Koalas have fingerprints almost identical to humans\'.',
+    'Oxford University is older than the Aztec Empire.',
+    'Neutron stars are so dense that a teaspoon would weigh about a billion tonnes.',
+    'The heart of a blue whale is about the size of a small car.',
+    'Peanuts aren\'t nuts. They\'re legumes, like beans and peas.',
+    'The original name for the search engine Google was BackRub.',
+    'An ostrich\'s eye is bigger than its brain.',
+    'There\'s enough DNA in your body to stretch from the Sun to Pluto and back several times.',
+    'The QWERTY keyboard layout dates from typewriters in the 1870s.',
+    'Some turtles can breathe through their rear ends.',
+    'The Great Wall of China is not visible from the Moon with the naked eye.',
+    'A single cloud can weigh more than a million kilograms.',
+    'Venus spins backwards compared with most planets.',
+    'The first oranges weren\'t orange: early varieties in Southeast Asia were green.',
+    'Hummingbirds are the only birds that can fly backwards.',
+    'Light from the Sun takes about 8 minutes 20 seconds to reach Earth.',
+  ];
+  function renderToday() {
+    const now = new Date(), h = now.getHours();
+    $('#t-greet').textContent = h < 5 ? 'Up late' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    dayLine(now);
+    const doy = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 864e5);
+    $('#t-fact').textContent = FACTS[doy % FACTS.length];
+    // Weather now
+    const box = $('#t-now'); box.textContent = '';
+    const w = weather, u = w && w.units === 'F' ? '°F' : '°';
+    if (!w || !w.now) {
+      box.appendChild(el('div', 't-empty', w && w.error ? 'Weather: ' + w.error : 'Set your city in the TV app: Settings › Weather.'));
+    } else {
+      const [name, path] = wx(w.now.code, w.now.day), row = el('div', 'wx'), col = el('div');
+      row.appendChild(icon(path));
+      col.appendChild(el('div', 'deg', num(w.now.temp) != null ? num(w.now.temp) + '°' : '--'));
+      col.appendChild(el('div', 'cond', name));
+      row.appendChild(col); box.appendChild(row);
+      const t = w.today || {}, hl = el('div', 'more hl');
+      hl.appendChild(el('b', '', 'H ' + (num(t.hi) ?? '--') + '°')); hl.appendChild(el('b', '', 'L ' + (num(t.lo) ?? '--') + '°'));
+      if (num(t.rain) != null) hl.appendChild(el('span', '', '  ·  Rain ' + num(t.rain) + '%'));
+      box.appendChild(hl);
+      const bits = [];
+      if (num(w.now.feels) != null) bits.push('Feels ' + num(w.now.feels) + '°');
+      if (num(w.now.wind) != null) bits.push('Wind ' + num(w.now.wind) + (w.units === 'F' ? ' mph' : ' km/h'));
+      if (w.place) bits.push(String(w.place));
+      box.appendChild(el('div', 'more', bits.join('  ·  ')));
+    }
+    // Next 12 hours
+    const hrs = $('#t-hours'); hrs.textContent = '';
+    const list = (w && Array.isArray(w.hours) ? w.hours : []).slice(0, 12);
+    if (!list.length) hrs.appendChild(el('div', 't-empty', 'No forecast yet.'));
+    for (const x of list) {
+      const c = el('div', 'hr'), rp = num(x.rain) || 0;
+      c.appendChild(el('span', '', hour12(x.t)));
+      c.appendChild(icon(wx(x.code, x.day)[1]));
+      c.appendChild(el('span', 'tp', num(x.temp) != null ? num(x.temp) + '°' : '--'));
+      const bar = el('div', 'rb'), f = el('span'); f.style.height = rp + '%'; bar.appendChild(f); c.appendChild(bar);
+      c.appendChild(el('span', 'rp', rp >= 10 ? rp + '%' : ''));
+      hrs.appendChild(c);
+    }
+    hrs.style.gridTemplateColumns = `repeat(${Math.max(1, list.length)}, 1fr)`;
+    // Board and lights
+    const last = board[board.length - 1], tb = $('#t-board'); tb.textContent = '';
+    if (last) { tb.appendChild(document.createTextNode(last.text + ' ')); tb.appendChild(el('span', 'dim', '· ' + ago(last.t))); }
+    else tb.appendChild(el('span', 'dim', 'No messages'));
+    const tl = $('#t-lights');
+    if (!hasLights) tl.textContent = 'Not set up';
+    else if (!lights) tl.textContent = '…';
+    else { const onl = lights.filter(l => l.online), lit = onl.filter(l => l.on); tl.textContent = lit.length ? `${lit.length} of ${onl.length} on: ${lit.map(l => l.name).join(', ')}` : `All ${onl.length} off`; }
+  }
 
   /* ---------- Board ---------- */
   function ago(t) {
@@ -526,11 +888,19 @@
   }
 
   /* ---------- Keyboard, for trying it in a browser ---------- */
+  // Also any remote keys the Chromecast passes on to the page (a Google TV remote's D-pad does;
+  // most TV remotes over HDMI keep their arrows for the TV itself).
+  const KEYMAP = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Up: 'up', Down: 'down', Left: 'left', Right: 'right',
+    Enter: 'ok', ' ': 'ok', Select: 'ok', Accept: 'ok', MediaPlayPause: 'ok', Escape: 'back', Backspace: 'back', GoBack: 'back', BrowserBack: 'back', Back: 'back',
+    BrowserHome: 'home', GoHome: 'home', h: 'home', ChannelUp: 'up', ChannelDown: 'down', MediaTrackNext: 'right', MediaTrackPrevious: 'left',
+    MediaFastForward: 'right', MediaRewind: 'left' };
+  const CODEMAP = { 38: 'up', 40: 'down', 37: 'left', 39: 'right', 13: 'ok', 23: 'ok', 179: 'ok', 8: 'back', 27: 'back', 166: 'back', 461: 'back', 10009: 'back', 427: 'up', 428: 'down', 33: 'up', 34: 'down', 176: 'right', 177: 'left' };
   addEventListener('keydown', e => {
-    const k = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Enter: 'ok', ' ': 'ok', Escape: 'back', Backspace: 'back', h: 'home' }[e.key];
+    const k = KEYMAP[e.key] || CODEMAP[e.keyCode];
     if (k) { e.preventDefault(); press(k); }
   });
-  addEventListener('resize', () => { if (screen === 'snake' && snake.state !== 'run') snakeReset(); if (raf) rsize(); });
+  try { document.body.tabIndex = -1; document.body.focus(); } catch {}
+  addEventListener('resize', () => { if (screen === 'snake' && snake.state !== 'run') snakeReset(); if (raf) rsize(); if (screen === 'art') Art.resize(); });
 
   tick(); setInterval(tick, 1000);
   renderBoard(); go('home');
