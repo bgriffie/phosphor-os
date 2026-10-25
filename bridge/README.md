@@ -33,6 +33,13 @@ private, secure address that only your own devices can reach, so the OS can call
   `start-lights.bat` in the folder that opens.
 - **No sleep:** Settings › System › Power › Screen and sleep › set sleep to **Never** when plugged in.
 
+## TV (Phosphor TV on a Chromecast)
+
+1. Install the Chromecast library once: `py -m pip install pychromecast`
+2. Start the relay with `py kasa_bridge.py --cast`. Without `--cast`, the TV part stays off.
+3. If Windows asks whether Python may use the network, allow **Private networks** only.
+4. Open the TV app in Phosphor OS and turn the TV on from there.
+
 ## Mac or Raspberry Pi
 Same steps, but save [start-lights.sh](https://raw.githubusercontent.com/bgriffie/phosphor-os/main/bridge/start-lights.sh)
 instead of the .bat file and run `./start-lights.sh` in Terminal. On a Pi, install Tailscale with

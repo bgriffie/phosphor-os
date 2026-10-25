@@ -1,4 +1,4 @@
-"""Phosphor OS relay: lights, and PC control when pc_control.py sits next to this file.
+"""Phosphor OS relay: lights, plus PC control and Phosphor TV when pc_control.py / tv_control.py sit next to this file.
 
 Runs on a computer at home that stays on. It finds the Kasa bulbs and plugs on the home
 network and lets the Phosphor OS Lights app control them over HTTPS (through Tailscale).
@@ -168,7 +168,7 @@ class DemoLights:
 
 # ---------- HTTP ----------
 
-def make_app(lights, key):
+def make_app(lights, key, cast=False):
     @web.middleware
     async def guard(request, handler):
         origin = request.headers.get('Origin', '')
@@ -218,13 +218,20 @@ def make_app(lights, key):
     app.add_routes([web.get('/lights', list_lights), web.post('/lights/rescan', rescan),
                     web.post('/lights/all', set_all), web.post('/lights/{id}', set_light),
                     web.route('OPTIONS', '/{tail:.*}', lambda r: web.Response())])
-    # PC control (trackpad, keyboard, monitors) lives in pc_control.py next to this file, if it's there
-    try:
-        import pc_control
-    except ImportError:
-        pc_control = None
-    if pc_control:
-        pc_control.setup(app, demo=isinstance(lights, DemoLights))
+    # Add-ons next to this file, if they're there: pc_control.py (trackpad, keyboard, monitors)
+    # and tv_control.py (Phosphor TV on a Chromecast). Each adds its routes behind the key check above.
+    import importlib, inspect
+    extras = {'lights': lights,   # for add-ons that show the lights, like the TV
+              'cast': cast}       # --cast: let tv_control.py open its home-network port for the Chromecast
+    for name in ('pc_control', 'tv_control'):
+        try:
+            mod = importlib.import_module(name)
+        except ImportError as e:
+            if e.name != name:
+                print(f'{name}.py could not start: {e}')
+            continue
+        wants = inspect.signature(mod.setup).parameters
+        mod.setup(app, demo=isinstance(lights, DemoLights), **{k: v for k, v in extras.items() if k in wants})
     return app
 
 
@@ -233,6 +240,7 @@ def main():
     ap.add_argument('--demo', action='store_true', help='fake lights, no bulbs needed')
     ap.add_argument('--login', action='store_true', help='enter (or change) your Kasa login')
     ap.add_argument('--new-key', action='store_true', help='make a new secret key (the phone must be set up again)')
+    ap.add_argument('--cast', action='store_true', help='Phosphor TV: let the Chromecast reach this PC on the home network (port 7790)')
     args = ap.parse_args()
 
     cfg = load_config()
@@ -254,7 +262,7 @@ def main():
     async def start(app):
         n = await lights.scan()
         print(f'Found {n} light(s) and plug(s).' + ('' if n else ' Is this computer on the same Wi-Fi as the bulbs?'))
-    app = make_app(lights, cfg['key'])
+    app = make_app(lights, cfg['key'], cast=args.cast)
     app.on_startup.append(start)
 
     url = tailscale_url()

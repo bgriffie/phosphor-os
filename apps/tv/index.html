@@ -1,0 +1,1541 @@
+<!doctype html>
+<html lang="en" data-app="phosphor-tv">
+<head>
+  <meta charset="utf-8">
+  <script>/* Phosphor OS: this app runs inside the OS screen, which already clears the notch */(()=>{if(window.parent===window||!window.parent.PhosphorOS)return;const d=document.documentElement;d.classList.add("os-embed");for(const k of["top","right","bottom","left"])d.style.setProperty("--safe-"+k,"0px");})();</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Phosphor TV</title>
+  <meta name="theme-color" content="#D9CDB4">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TV">
+  <style>
+/* ==========================================================================
+   PHOSPHOR v1.9 — base stylesheet for Floyd's home-screen tools
+   Spec: brand-guidelines.md (same folder). Paste this whole file into a
+   <style> block in index.html. No external fonts, images or network calls.
+   ========================================================================== */
+
+/* ---------- 1. Tokens ---------- */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces (darkest -> lightest) */
+  --bg:        #030703;
+  --surface-1: #08110A;
+  --surface-2: #0D1A10;
+  --surface-3: #132418;
+
+  /* Lines */
+  --line:        #1F3D26;  /* dividers, panel outlines (decorative) */
+  --line-strong: #3F7A4B;  /* input / control borders (>=3:1 on bg) */
+
+  /* Text */
+  --text:       #C9F5D3;   /* body, 16.9:1 on bg */
+  --text-dim:   #86C295;   /* secondary, labels, 9.8:1 */
+  --text-faint: #4F7F5B;   /* placeholders, disabled ONLY, 4.4:1 */
+
+  /* Signal colors */
+  --accent:     #39FF6A;   /* phosphor green: primary actions, focus, key numbers */
+  --accent-dim: #1E9E42;   /* pressed / secondary fills */
+  --on-accent:  #021A08;   /* text on accent/amber fills */
+  --amber:      #FFB13B;   /* warnings, pending, "attention" */
+  --red:        #FF5C5C;   /* errors, destructive */
+  --cyan:       #5CE1FF;   /* info, links, neutral highlight */
+
+  /* Case plastic (vintage beige computer housing) */
+  --plastic:       #D9CDB4;  /* main housing */
+  --plastic-light: #E8DFCB;  /* top-lit edges, keycap tops */
+  --plastic-shade: #BFB193;  /* recesses, bezel slope */
+  --plastic-dark:  #9C8E70;  /* keycap sides, seams */
+  --trim:          #2B261E;  /* dark brown trim band, status-bar strip */
+  --plastic-band:  #D9CDB4;  /* v1.8: no separate band, the case is one colour up to the top edge */
+  /* iOS status bar: style "black-translucent" so the app draws under the clock; the
+     case continues behind the clock in one colour. theme-color #D9CDB4. */
+  --ink:           #2B261E;  /* text on plastic, 9.5:1 */
+  --ink-dim:       #5E5442;  /* labels on plastic, 4.7:1 */
+  --ink-red:       #8A3A1A;  /* destructive label on plastic, 4.9:1 */
+  --plastic-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .3 0 0 0 0 .2 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  --key-shadow: 0 3px 0 var(--plastic-dark), 0 4px 6px rgba(43, 38, 30, .35), inset 0 1px 0 rgba(255, 255, 255, .7);
+  --key-shadow-pressed: 0 1px 0 var(--plastic-dark), 0 1px 2px rgba(43, 38, 30, .3), inset 0 1px 2px rgba(43, 38, 30, .2);
+  --screen-radius: 38px;   /* follows the iPhone's own rounded display corners (v1.5) */
+
+  /* Glow (accent only, never body text) */
+  --glow:    0 0 6px rgba(57, 255, 106, .55);
+  --glow-lg: 0 0 4px rgba(57, 255, 106, .6), 0 0 16px rgba(57, 255, 106, .3);
+  --glow-box: 0 0 0 1px var(--accent), 0 0 12px rgba(57, 255, 106, .35);
+
+  /* Type */
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco,
+               "Cascadia Mono", Consolas, "Liberation Mono", "Courier New", monospace;
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-md: 16px;   /* base; inputs must never go below this (iOS zoom) */
+  --fs-lg: 20px;
+  --fs-xl: 28px;
+  --fs-2xl: 40px;  /* hero readouts */
+  --lh-tight: 1.15;
+  --lh: 1.5;
+  --tracking-label: .12em;
+
+  /* Space (4px grid) */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+
+  /* Shape */
+  --radius-sm: 2px;
+  --radius: 4px;
+  --tap: 44px;          /* min touch target */
+  --maxw: 560px;
+
+  /* Motion */
+  --dur-fast: 90ms;
+  --dur: 160ms;
+  --dur-slow: 280ms;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --ease-steps: steps(4, end);   /* "digital" transitions */
+
+  /* Safe areas */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ---------- 2. Reset & base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* The case never moves: html/body are locked to the viewport and only
+   .screen-body scrolls. */
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }
+html { background: var(--plastic); }
+body {
+  background: var(--plastic-noise), var(--plastic);
+  height: var(--app-h, 100dvh);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  line-height: var(--lh);
+  font-variant-numeric: tabular-nums slashed-zero;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+img, svg, canvas { display: block; max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+::selection { background: var(--accent); color: var(--on-accent); }
+
+/* ---------- 3. Case + CRT screen ---------- */
+/* (v1.6) No separate status-bar strip: the header band itself runs up behind the clock. */
+
+/* The screen: a fixed CRT frame. Structure:
+   <div class="screen">
+     <canvas class="rain">            (optional, stays put)
+     <nav class="path" data-path>     (status line, stays put)
+     <div class="screen-body">        (the ONLY scrolling area)  */
+.screen {
+  position: relative; isolation: isolate;
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+  border-radius: var(--screen-radius);
+  /* slim bezel: shaded slope, seam, lit lip below, deep glass inset */
+  box-shadow:
+    0 0 0 3px var(--plastic-shade),
+    0 0 0 4px var(--plastic-dark),
+    0 3px 0 4px var(--plastic-light),
+    inset 0 0 0 2px #000,
+    inset 0 0 28px rgba(0, 0, 0, .9);
+  margin: 4px;
+}
+.screen-body {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-3) var(--sp-6);
+  scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent;
+}
+.screen-body::-webkit-scrollbar { width: 4px; }
+.screen-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 2px; }
+/* glass reflection */
+.screen::before {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(120% 60% at 30% 0%, rgba(201, 245, 211, .06), rgba(0,0,0,0) 60%);
+}
+/* scanlines + vignette */
+.screen::after {
+  content: "";
+  position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+  background:
+    repeating-linear-gradient(to bottom,
+      rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, .22) 3px, rgba(0, 0, 0, 0) 4px),
+    radial-gradient(ellipse at center, rgba(0,0,0,0) 60%, rgba(0,0,0,.45) 100%);
+}
+.no-crt .screen::after { display: none; }
+
+/* ---------- 4. Layout ---------- */
+/* Pinned to the real screen edges: on iOS home-screen apps 100%/100dvh can come
+   up short and leave a strip of empty plastic at the bottom (v1.4 fix). */
+.app {
+  position: fixed; top: 0; right: 0; left: 0;
+  /* --app-h is set by phosphor.js to the real screen height in home-screen apps: with a
+     black-translucent status bar iOS reports a viewport one status bar too short and
+     leaves an empty strip at the bottom (v1.7 fix). */
+  height: var(--app-h, 100%);
+  max-width: var(--maxw);
+  margin: 0 auto;
+  /* keys sit low: the space under them matches the space above them (v1.9) */
+  padding: 0 calc(2px + var(--safe-right)) max(var(--sp-3), calc(var(--safe-bottom) - 20px)) calc(2px + var(--safe-left));
+  display: flex; flex-direction: column; gap: 6px;
+}
+.app > :not(.screen) { flex: none; }
+.stack   { display: flex; flex-direction: column; gap: var(--sp-3); }
+.row     { display: flex; align-items: center; gap: var(--sp-3); }
+.row.between { justify-content: space-between; }
+.grid-2  { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.grow    { flex: 1 1 auto; min-width: 0; }
+.divider { border: 0; border-top: 1px dashed var(--line); margin: var(--sp-2) 0; }
+
+/* ---------- 5. Type ---------- */
+h1, h2, h3 { margin: 0; font-weight: 700; line-height: var(--lh-tight); }
+h1 { font-size: var(--fs-xl); }
+h2 { font-size: var(--fs-lg); }
+h3 { font-size: var(--fs-md); }
+p  { margin: 0; }
+.label {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-dim);
+}
+.dim   { color: var(--text-dim); }
+.faint { color: var(--text-faint); }
+.small { font-size: var(--fs-sm); }
+.glow  { color: var(--accent); text-shadow: var(--glow); }
+.readout {
+  font-size: var(--fs-2xl); font-weight: 700; line-height: 1;
+  color: var(--accent); text-shadow: var(--glow-lg);
+  letter-spacing: -.02em;
+}
+.t-accent { color: var(--accent); }
+.t-amber  { color: var(--amber); }
+.t-red    { color: var(--red); }
+.t-cyan   { color: var(--cyan); }
+a { color: var(--cyan); text-underline-offset: 3px; }
+
+/* Blinking block cursor: <span class="cursor" aria-hidden="true"></span> */
+.cursor {
+  display: inline-block; width: .6em; height: 1.05em;
+  background: var(--accent); vertical-align: -.15em; margin-left: 2px;
+  box-shadow: var(--glow);
+  animation: blink 1.06s steps(1, end) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ---------- 6. Header (title only) + bottom controls (on the plastic case) ---------- */
+.app-header {   /* the top band: runs edge to edge and up behind the iOS clock */
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2);
+  margin: 0 calc(-2px - var(--safe-right)) 0 calc(-2px - var(--safe-left));
+  /* title tucked right under the clock row (v1.9) */
+  padding: max(0px, calc(var(--safe-top) - 10px)) calc(var(--sp-4) + var(--safe-right)) 0 calc(var(--sp-4) + var(--safe-left));
+  min-height: calc(max(0px, calc(var(--safe-top) - 10px)) + 26px);
+  background: none;   /* v1.8: same plastic as the rest of the case, no band */
+}
+.app-header .app-title { color: var(--ink); text-shadow: 0 1px 0 rgba(255, 255, 255, .45); font-size: 18px; }
+.app-header .app-meta { color: var(--ink-dim); }
+/* Three keys, centered under the screen, in thumb reach (v1.6):
+   <nav class="app-controls"> ‹ back · ☰ menu · page action (or ■ home) </nav> */
+.app-controls { display: flex; align-items: center; justify-content: center; gap: var(--sp-5); min-height: 44px; padding-top: 4px; }
+.app-controls > .grow { display: none; }
+.app-controls .key { min-width: 76px; min-height: 40px; font-size: var(--fs-lg); }
+.app-controls .key.word { font-size: var(--fs-sm); }
+.app-controls .page-keys { display: contents; }
+.app-title {
+  display: flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--fs-lg); font-weight: 700; text-transform: uppercase;
+  letter-spacing: .14em; color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .55);   /* moulded / debossed */
+}
+.app-title::before {  /* power LED */
+  content: ""; width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent), inset 0 -1px 1px rgba(0,0,0,.3);
+}
+.app-meta { font-size: var(--fs-xs); color: var(--ink-dim); text-transform: uppercase; letter-spacing: var(--tracking-label); text-shadow: 0 1px 0 rgba(255,255,255,.45); }
+.app-title .cursor { display: none; }
+
+/* Vent slots: <div class="vents" aria-hidden="true"></div> */
+.vents {
+  height: 14px; margin: 0 var(--sp-2);
+  background: repeating-linear-gradient(90deg,
+    var(--plastic-dark) 0 2px, var(--trim) 2px 4px, var(--plastic-light) 4px 5px, transparent 5px 12px);
+  opacity: .55; border-radius: 2px;
+}
+
+/* Embossed label on plastic, e.g. under a keypad */
+.emboss { color: var(--ink-dim); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+
+/* Keycap button, for controls ON the plastic (tab bar, keypads, header) */
+.key {
+  appearance: none; -webkit-appearance: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: var(--tap); min-width: var(--tap); padding: 0 var(--sp-3);
+  border: 1px solid var(--plastic-dark); border-radius: 6px;
+  background: linear-gradient(180deg, var(--plastic-light), #DDD2BB 70%, var(--plastic-shade));
+  color: var(--ink); font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  box-shadow: var(--key-shadow);
+  cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation;
+  transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.key:active, .key.is-pressed, .key[aria-pressed="true"], .key[aria-selected="true"] {
+  transform: translateY(3px); box-shadow: var(--key-shadow-pressed);
+  background: linear-gradient(180deg, #DDD2BB, var(--plastic-shade));
+}
+.key:disabled { opacity: .45; cursor: default; transform: translateY(3px); box-shadow: var(--key-shadow-pressed); }
+.key-dark {   /* "Return"-style accent key */
+  background: linear-gradient(180deg, #4A4236, var(--trim));
+  border-color: #17140F; color: var(--plastic-light);
+  box-shadow: 0 3px 0 #17140F, 0 4px 6px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15);
+}
+.key-danger { color: var(--ink-red); }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); padding: var(--sp-2) var(--sp-1) var(--sp-3); }
+.keypad .key { min-height: 52px; font-size: var(--fs-lg); }
+
+/* ---------- 7. Panels ---------- */
+.panel {
+  position: relative;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+}
+.panel[data-title] { padding-top: calc(var(--sp-4) + 4px); }
+.panel[data-title]::before {
+  content: "[ " attr(data-title) " ]";
+  position: absolute; top: -.75em; left: var(--sp-3);
+  padding: 0 var(--sp-1);
+  background: var(--bg);
+  font-size: var(--fs-xs); letter-spacing: var(--tracking-label);
+  text-transform: uppercase; color: var(--text-dim);
+}
+.panel.raised { background: var(--surface-2); }
+.panel.active { border-color: var(--accent); box-shadow: var(--glow-box); }
+
+/* ---------- 8. Buttons ---------- */
+.btn {
+  appearance: none; -webkit-appearance: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: var(--tap); padding: 0 var(--sp-4);
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  background: transparent; color: var(--accent);
+  font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+.btn:active { transform: translateY(1px); background: var(--surface-3); }
+.btn-primary {
+  background: var(--accent); color: var(--on-accent);
+  border-color: var(--accent); box-shadow: var(--glow);
+}
+.btn-primary:active { background: var(--accent-dim); border-color: var(--accent-dim); }
+.btn-ghost { border-color: transparent; color: var(--text-dim); }
+.btn-danger { color: var(--red); border-color: var(--red); }
+.btn-danger:active { background: rgba(255, 92, 92, .12); }
+.btn-block { width: 100%; }
+.btn-icon { width: var(--tap); padding: 0; }
+.btn:disabled, .btn[aria-disabled="true"] {
+  color: var(--text-faint); border-color: var(--line); background: transparent;
+  box-shadow: none; cursor: not-allowed; transform: none;
+}
+
+/* ---------- 9. Focus ---------- */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: var(--glow);
+}
+
+/* ---------- 10. Form fields ---------- */
+.field { display: flex; flex-direction: column; gap: var(--sp-1); }
+.field > .label { padding-left: 2px; }
+.input, .select, .textarea {
+  appearance: none; -webkit-appearance: none;
+  width: 100%; min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg);
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  color: var(--text); font-size: var(--fs-md); /* >=16px: stops iOS zoom */
+  caret-color: var(--accent);
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.textarea { min-height: 96px; resize: vertical; }
+.input::placeholder, .textarea::placeholder { color: var(--text-faint); }
+.input:focus, .select:focus, .textarea:focus {
+  border-color: var(--accent); box-shadow: var(--glow-box); outline: none;
+}
+.input[aria-invalid="true"] { border-color: var(--red); }
+.select {
+  padding-right: var(--sp-6);
+  background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+                    linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+.hint  { font-size: var(--fs-xs); color: var(--text-dim); }
+.error { font-size: var(--fs-xs); color: var(--red); }
+.error::before { content: "ERR: "; font-weight: 700; }
+
+/* Prefix/suffix input: <div class="input-group"><span>$</span><input class="input"></div> */
+.input-group { display: flex; align-items: stretch; }
+.input-group > span {
+  display: flex; align-items: center; padding: 0 var(--sp-3);
+  border: 1px solid var(--line-strong); border-right: 0;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  color: var(--text-dim); background: var(--surface-1);
+}
+.input-group > .input { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+
+/* Checkbox / radio */
+.check { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); cursor: pointer; }
+.check input {
+  appearance: none; -webkit-appearance: none; margin: 0;
+  width: 22px; height: 22px; flex: none;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+  display: grid; place-content: center;
+}
+.check input[type="radio"] { border-radius: 50%; }
+.check input::before {
+  content: ""; width: 12px; height: 12px; background: var(--accent);
+  transform: scale(0); transition: transform var(--dur-fast) var(--ease-steps);
+  box-shadow: var(--glow);
+}
+.check input[type="radio"]::before { border-radius: 50%; }
+.check input:checked { border-color: var(--accent); }
+.check input:checked::before { transform: scale(1); }
+
+/* Toggle switch: <label class="switch"><input type="checkbox" role="switch"><span>Label</span></label> */
+.switch { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--tap); cursor: pointer; }
+.switch input {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 52px; height: 28px; position: relative;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+  order: 2;
+}
+.switch input::before {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; background: var(--text-faint);
+  transition: transform var(--dur) var(--ease-steps), background var(--dur) var(--ease);
+}
+.switch input:checked { border-color: var(--accent); }
+.switch input:checked::before { transform: translateX(24px); background: var(--accent); box-shadow: var(--glow); }
+
+/* Segmented control: <div class="segmented" role="radiogroup"><button aria-pressed="true">A</button>...</div> */
+.segmented {
+  display: flex; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); overflow: hidden;
+}
+.segmented > button {
+  flex: 1; min-height: var(--tap); border: 0; background: transparent;
+  color: var(--text-dim); font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em; cursor: pointer;
+}
+.segmented > button + button { border-left: 1px solid var(--line-strong); }
+.segmented > button[aria-pressed="true"], .segmented > button[aria-checked="true"] {
+  background: var(--accent); color: var(--on-accent);
+}
+
+/* ---------- 11. Lists ---------- */
+.list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.list > li {
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 52px; padding: var(--sp-2) var(--sp-1);
+  border-bottom: 1px solid var(--line);
+}
+.list > li::before { content: ">"; color: var(--text-faint); flex: none; }
+.list.plain > li::before { content: none; }
+.list .meta { margin-left: auto; color: var(--text-dim); font-size: var(--fs-sm); white-space: nowrap; }
+
+/* Key/value readout rows */
+.kv { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); padding: var(--sp-1) 0; }
+.kv > :first-child { color: var(--text-dim); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; }
+.kv > :last-child { font-weight: 700; }
+
+/* ---------- 12. Badges / tags ---------- */
+.badge {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  padding: 2px var(--sp-2); border: 1px solid currentColor; border-radius: var(--radius-sm);
+  font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--accent); white-space: nowrap;
+}
+.badge.amber { color: var(--amber); }
+.badge.red   { color: var(--red); }
+.badge.cyan  { color: var(--cyan); }
+.badge.dim   { color: var(--text-dim); }
+
+/* ---------- 13. Progress / meters ---------- */
+.meter {
+  height: 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  padding: 2px; background: var(--bg);
+}
+.meter > span {
+  display: block; height: 100%; width: var(--value, 0%);
+  background: repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 8px);
+  filter: drop-shadow(0 0 3px rgba(57, 255, 106, .6));
+  transition: width var(--dur-slow) var(--ease-steps);
+}
+.meter.amber > span { background: repeating-linear-gradient(90deg, var(--amber) 0 6px, transparent 6px 8px); filter: none; }
+.meter.red   > span { background: repeating-linear-gradient(90deg, var(--red) 0 6px, transparent 6px 8px); filter: none; }
+
+/* ---------- 15. Toast ---------- */
+.toast-host {
+  position: fixed; left: 0; right: 0; z-index: 100;
+  bottom: calc(var(--sp-5) + var(--safe-bottom) + 50px - var(--app-gap, 0px));   /* above the controls row */
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
+  pointer-events: none; padding: 0 var(--sp-4);
+}
+.toast {
+  max-width: var(--maxw); width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-2); border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  color: var(--text); font-size: var(--fs-sm); box-shadow: var(--glow-box);
+  animation: toast-in var(--dur) var(--ease-steps) both;
+}
+.toast::before { content: "SYS> "; color: var(--accent); font-weight: 700; }
+.toast.warn  { border-color: var(--amber); box-shadow: none; }
+.toast.warn::before  { content: "WARN> "; color: var(--amber); }
+.toast.error { border-color: var(--red); box-shadow: none; }
+.toast.error::before { content: "ERR> "; color: var(--red); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* ---------- 16. Dialog (native <dialog>) ---------- */
+dialog.dialog {
+  width: min(92vw, 420px); padding: var(--sp-5);
+  background: var(--surface-1); color: var(--text);
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  box-shadow: var(--glow-box);
+}
+dialog.dialog::backdrop { background: rgba(0, 0, 0, .75); }
+dialog.dialog h2 { margin-bottom: var(--sp-3); color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
+dialog.dialog .actions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-5); }
+
+/* ---------- 17. Empty state ---------- */
+.empty {
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-7) var(--sp-4); text-align: center; color: var(--text-dim);
+  border: 1px dashed var(--line); border-radius: var(--radius);
+}
+.empty pre { margin: 0; color: var(--text-faint); font-size: var(--fs-sm); line-height: 1.2; }
+
+/* ---------- 18. Matrix rain canvas (optional, decorative; inside .screen) ---------- */
+.rain {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  width: 100%; height: 100%; border-radius: inherit;
+  opacity: .14;
+}
+
+/* ---------- 19. Boot/type-on text ---------- */
+.boot { overflow: hidden; white-space: nowrap; border-right: 0; width: 0; animation: type 600ms steps(var(--chars, 16), end) forwards; }
+@keyframes type { to { width: calc(var(--chars, 16) * 1ch); } }
+
+/* Utility: screen-reader only */
+.sr-only {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- 21. Navigation: header keys, views, path ---------- */
+/* Header: <header class="app-header"><h1 class="app-title" data-view-title>Tool</h1><span class="app-meta">v1.0</span></header>
+   Controls (last child of .app): <nav class="app-controls">
+     <button class="key key-sm" data-back hidden aria-label="Back">‹</button><span class="grow"></span>
+     <div class="page-keys" data-show-on="/x" hidden>…</div>
+     <button class="key key-sm" data-open-sheet="menu" aria-label="Menu">☰</button>
+   </nav> */
+.app-header .app-title { flex: 1 1 auto; min-width: 0; }
+.app-title > span, .app-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.key-sm { min-height: 36px; min-width: 44px; padding: 0 var(--sp-2); font-size: var(--fs-lg); line-height: 1; border-radius: 5px; }
+[hidden] { display: none !important; }
+
+/* Views: <section class="view" id="settings" data-title="Settings" data-parent="home"> */
+.view { display: flex; flex-direction: column; gap: var(--sp-4); }
+.view:not(.is-active) { display: none; }
+.view.enter-fwd  { animation: view-fwd  var(--dur) var(--ease-steps) both; }
+.view.enter-back { animation: view-back var(--dur) var(--ease-steps) both; }
+@keyframes view-fwd  { from { opacity: 0; transform: translateX(16px); } }
+@keyframes view-back { from { opacity: 0; transform: translateX(-16px); } }
+
+/* Status line at the top of the screen (does not scroll): ~/settings/display */
+.path {
+  position: relative; z-index: 1; flex: none;
+  display: flex; align-items: center; gap: 0 2px; overflow-x: auto; white-space: nowrap;
+  min-height: 32px; padding: 0 var(--sp-4);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-xs); color: var(--text-dim); letter-spacing: .04em;
+  scrollbar-width: none;
+}
+.path::-webkit-scrollbar { display: none; }
+.path::before { content: "~"; color: var(--accent); }
+.path:empty::after { content: "/"; color: var(--text-faint); }
+.path a, .path span { color: inherit; text-decoration: none; padding: 8px 0; }
+.path a::before, .path span::before { content: "/"; color: var(--text-faint); margin-right: 2px; }
+.path a { color: var(--cyan); }
+.path span:last-child { color: var(--accent); }
+
+/* ---------- 22. Menu lists (settings rows) ---------- */
+/* <div class="menu">
+     <a class="menu-item" href="#/settings/display"><span class="mi-label">Display</span><span class="mi-value">CRT on</span></a>
+     <label class="menu-item"><span class="mi-label">Sound</span><input type="checkbox" role="switch" class="mi-switch"></label>
+   </div> */
+.menu {
+  display: flex; flex-direction: column;
+  background: var(--surface-1);
+  border: 1px solid var(--line); border-radius: var(--radius);
+}
+.menu-item {
+  position: relative;
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 52px; padding: var(--sp-2) var(--sp-4);
+  color: var(--text); text-decoration: none; text-align: left;
+  background: transparent; border: 0; width: 100%;
+  font-size: var(--fs-md); cursor: pointer;
+  -webkit-user-select: none; user-select: none;
+}
+.menu-item + .menu-item { border-top: 1px solid var(--line); }
+.menu-item:active { background: var(--surface-3); }
+.mi-glyph { width: 1.4em; flex: none; text-align: center; color: var(--accent); }
+.mi-label { flex: 1 1 auto; min-width: 0; }
+.mi-label small { display: block; font-size: var(--fs-xs); color: var(--text-dim); line-height: 1.4; }
+.mi-value { color: var(--text-dim); font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
+/* rows that open a sub-page get a chevron */
+a.menu-item::after, .menu-item[data-nav]::after, .menu-item[data-open-sheet]::after {
+  content: "›"; color: var(--text-dim); font-size: var(--fs-lg); line-height: 1; flex: none;
+}
+.menu-item.danger, .menu-item.danger .mi-glyph { color: var(--red); }
+.menu-item.danger::after { content: none; }
+/* inline controls in a row reuse the switch look */
+.mi-switch {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 52px; height: 28px; position: relative; cursor: pointer;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+}
+.mi-switch::before {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+  background: var(--text-faint);
+  transition: transform var(--dur) var(--ease-steps), background var(--dur) var(--ease);
+}
+.mi-switch:checked { border-color: var(--accent); }
+.mi-switch:checked::before { transform: translateX(24px); background: var(--accent); box-shadow: var(--glow); }
+.menu-item select.mi-select {
+  appearance: none; -webkit-appearance: none; border: 0; background: transparent;
+  color: var(--text-dim); font-size: var(--fs-md); text-align: right; text-align-last: right;
+  max-width: 50%; padding: var(--sp-2) 0;
+}
+.menu-note { padding: var(--sp-2) var(--sp-1) 0; font-size: var(--fs-xs); color: var(--text-dim); }
+.menu-group { display: flex; flex-direction: column; gap: var(--sp-2); }
+.menu-group > .label { padding-left: var(--sp-1); }
+
+/* Radio-choice page (pick one): rows with a check on the selected one */
+.menu-item[aria-checked]::after { content: ""; }
+.menu-item[aria-checked="true"]::after { content: "✓"; color: var(--accent); text-shadow: var(--glow); font-weight: 700; }
+
+/* ---------- 23. Bottom sheet (menus, pickers, quick actions) ---------- */
+/* <dialog class="sheet" id="menu"><div class="sheet-title">Menu</div><div class="menu">…</div>
+     <button class="btn btn-ghost btn-block" data-close>Cancel</button></dialog> */
+dialog.sheet {
+  position: fixed; inset: auto 0 calc(0px - var(--app-gap, 0px)) 0; margin: 0 auto;
+  width: 100%; max-width: var(--maxw); max-height: 80dvh; overflow: auto;
+  padding: var(--sp-3) var(--sp-4) calc(var(--sp-4) + var(--safe-bottom));
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--accent); border-bottom: 0;
+  border-radius: var(--screen-radius) var(--screen-radius) 0 0;
+  box-shadow: 0 0 0 6px var(--plastic-shade), 0 0 24px rgba(57, 255, 106, .2);
+}
+dialog.sheet[open] { display: flex; flex-direction: column; gap: var(--sp-3); animation: sheet-up var(--dur) var(--ease-steps) both; }
+dialog.sheet::backdrop { background: rgba(20, 17, 12, .6); }
+dialog.sheet::before {  /* grab handle */
+  content: ""; align-self: center; width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong);
+}
+.sheet-title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--text-dim); text-align: center; }
+@keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } }
+
+/* The app menu, opened by the ☰ key in the bottom controls; it pops up above it:
+   <dialog class="sheet dropdown" id="menu">…</dialog> */
+dialog.sheet.dropdown {
+  inset: auto calc(var(--sp-2) + var(--safe-right)) calc(var(--safe-bottom) + 60px - var(--app-gap, 0px)) auto;
+  width: min(calc(100vw - 16px), 340px); max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 80px);
+  padding: var(--sp-3);
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  box-shadow: 0 0 0 3px var(--plastic-shade), 0 0 0 4px var(--plastic-dark), 0 12px 28px rgba(0, 0, 0, .45), 0 0 18px rgba(57, 255, 106, .18);
+}
+dialog.sheet.dropdown::before { content: none; }
+dialog.sheet.dropdown[open] { animation: drop-down var(--dur) var(--ease-steps) both; }
+dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
+@keyframes drop-down { from { transform: translateY(10px); opacity: 0; } }
+.dropdown .menu-item { min-height: 48px; }
+.dropdown .menu + .sheet-title { margin-top: var(--sp-1); }
+.dropdown .sheet-title { text-align: left; padding-left: var(--sp-1); }
+
+/* Section links in the menu: current one is marked */
+.menu-item[aria-current="page"] { color: var(--accent); text-shadow: var(--glow); }
+.menu-item[aria-current="page"]::after { content: "●"; font-size: 10px; color: var(--accent); }
+
+/* Count pill in a menu row: <span class="mi-count">4</span> */
+.mi-count {
+  min-width: 22px; height: 20px; padding: 0 6px; border-radius: 10px;
+  background: var(--accent); color: var(--on-accent);
+  font-size: 11px; font-weight: 700; line-height: 20px; text-align: center;
+}
+
+/* Search field above long lists */
+.search { position: relative; }
+.search::before { content: "/"; position: absolute; left: var(--sp-3); top: 50%; transform: translateY(-50%); color: var(--accent); font-weight: 700; }
+.search .input { padding-left: var(--sp-6); }
+
+/* ---------- 19b. Full-screen views (games, canvases, maps, timers) ---------- */
+/* <section class="view fill" data-route="/x"> fills the whole screen and never scrolls.
+   Live numbers go in a .hud on the status line; page actions go in small header
+   keys (.page-keys, in .app-controls) shown only on that page. No keypad under the screen. */
+.screen-body:has(> .view.fill.is-active) { padding: var(--sp-2) var(--sp-3) var(--sp-3); overflow: hidden; }  /* 12px keeps content clear of the round corners */
+.view.fill { flex: 1 1 auto; min-height: 0; gap: var(--sp-2); position: relative; }
+.hud {
+  position: absolute; top: 0; right: 0; z-index: 2; height: 32px; max-width: 72%;
+  display: flex; align-items: center; gap: var(--sp-3); padding: 0 var(--sp-4) 0 var(--sp-5);
+  font-size: var(--fs-xs); color: var(--text-dim); white-space: nowrap; pointer-events: none;
+  background: linear-gradient(90deg, rgba(3, 7, 3, 0), var(--bg) var(--sp-4));
+}
+.hud i { font-style: normal; text-transform: uppercase; letter-spacing: var(--tracking-label); }
+.hud b { color: var(--text); font-size: var(--fs-sm); font-weight: 700; }
+.hud b.glow { color: var(--accent); text-shadow: var(--glow); }
+.page-keys, .hdr-keys { display: flex; gap: var(--sp-2); flex: none; }
+.page-keys .key-sm, .hdr-keys .key-sm { font-size: var(--fs-md); }
+.page-keys .key-sm.word, .hdr-keys .key-sm.word { font-size: var(--fs-xs); }
+
+/* ---------- 20. Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+  .cursor { animation: none; }
+  .view.enter-fwd, .view.enter-back, dialog.sheet[open], dialog.sheet.dropdown[open] { animation: none; }
+  .key { transition: none; }
+  .boot { width: auto; animation: none; }
+  .rain { display: none; }
+}
+
+    /* === tool-specific styles below === */
+
+    /* No title on the case: the screen starts right under the iOS clock (Floyd, from Phosphor OS) */
+    .app-header { display: none; }
+    .app { padding-top: max(var(--sp-2), calc(var(--safe-top) - 4px)); }
+    /* Pages swap instantly; nothing slides (Floyd) */
+    .view.enter-fwd, .view.enter-back { animation: none; }
+    /* Keys and controls carry drawn icons, not font glyphs */
+    .app-controls .key svg { width: 20px; height: 20px; }
+    .glyph-svg { width: 56px; height: 56px; color: var(--accent); filter: drop-shadow(0 0 8px var(--accent)); margin: 0 auto var(--sp-3); display: block; }
+    .mi-glyph svg { width: 20px; height: 20px; display: block; }
+    .steps { display: flex; flex-direction: column; gap: var(--sp-2); padding-left: 1.4em; color: var(--text); margin: 0; }
+    .steps li::marker { color: var(--text-dim); }
+    .steps code { color: var(--accent); word-break: break-all; }
+
+    /* Status line for the TV */
+    .tv-stat { display: flex; align-items: center; gap: var(--sp-3); }
+    .tv-led { width: 10px; height: 10px; border-radius: 50%; flex: none; border: 1px solid var(--line-strong); }
+    .tv-led.on { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .tv-led.wait { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 8px var(--amber); }
+    .tv-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tv-sub { color: var(--text-dim); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tv-note { margin: 0; color: var(--amber); font-size: var(--fs-sm); }
+    .tv-note.err { color: var(--red); }
+
+    #tv-main { display: flex; flex-direction: column; gap: var(--sp-5); }
+    /* Remote: one big pad. Swipe to move, tap the middle for OK (or tap an edge arrow) */
+    .remote { display: flex; flex-direction: column; gap: var(--sp-3); }
+    .pad { position: relative; width: min(100%, 260px); aspect-ratio: 1; margin: 0 auto; border: 1px solid var(--line-strong); border-radius: var(--radius);
+      background: radial-gradient(circle at center, var(--surface-2) 0 22%, transparent 22.5%), repeating-linear-gradient(0deg, transparent 0 23px, rgba(57,255,106,.04) 23px 24px),
+        repeating-linear-gradient(90deg, transparent 0 23px, rgba(57,255,106,.04) 23px 24px), var(--surface-1);
+      touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; cursor: pointer; }
+    .pad::after { content: ''; position: absolute; left: 28%; top: 28%; width: 44%; height: 44%; border-radius: 50%; border: 1px solid var(--line-strong); pointer-events: none; }
+    .pad .ok { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; letter-spacing: var(--tracking-label); color: var(--text-dim); pointer-events: none; }
+    .pad svg { position: absolute; width: 28px; height: 28px; color: var(--text-dim); pointer-events: none; }
+    .pad .a-up { top: 10px; left: calc(50% - 14px); } .pad .a-down { bottom: 10px; left: calc(50% - 14px); }
+    .pad .a-left { left: 10px; top: calc(50% - 14px); } .pad .a-right { right: 10px; top: calc(50% - 14px); }
+    .pad .hit { color: var(--accent); filter: drop-shadow(0 0 6px var(--accent)); }
+    .pad.hit-ok .ok { color: var(--accent); text-shadow: var(--glow); }
+    .pad.hit-ok::after { border-color: var(--accent); box-shadow: var(--glow-box); }
+    .rm-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+    .rm-b { min-height: 48px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text);
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: inherit; font-size: var(--fs-xs); font-weight: 700;
+      text-transform: uppercase; letter-spacing: var(--tracking-label); cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; padding: 0 var(--sp-2); }
+    .rm-b svg { width: 20px; height: 20px; flex: none; }
+    .rm-b:active, .rm-b.held { background: var(--surface-3); }
+    .rm-b[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+    .rm-b:disabled { opacity: .45; }
+    .vol { display: grid; grid-template-columns: 56px 1fr 56px 56px; gap: var(--sp-2); align-items: center; }
+    .vol .meter { height: 12px; }
+    .shortcuts { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--sp-2); }
+    .shortcuts .rm-b { flex-direction: column; min-height: 58px; gap: 4px; font-size: 10px; letter-spacing: .06em; }
+    .shortcuts .rm-b.cur { border-color: var(--accent); color: var(--accent); }
+
+    /* Something else playing on the TV */
+    .np { display: flex; flex-direction: column; gap: var(--sp-3); }
+    .np-title { font-weight: 700; font-size: var(--fs-lg); line-height: var(--lh-tight); overflow-wrap: anywhere; }
+
+    /* Messages */
+    .quick { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+    .quick .rm-b { min-height: 40px; text-transform: none; letter-spacing: 0; font-weight: 400; font-size: var(--fs-sm); }
+    .msg-list time { color: var(--text-dim); font-size: var(--fs-xs); flex: none; margin-left: auto; padding-left: var(--sp-3); }
+    .msg-list li { display: flex; align-items: center; }
+  </style>
+<style>/* Phosphor OS */
+html.os-embed { --app-gap: 0px !important; --app-h: 100% !important; }
+html.os-embed, html.os-embed body { background: var(--bg) !important; height: 100% !important; }
+html.os-embed .app { padding: 0 !important; max-width: none; gap: 0; height: 100% !important; min-height: 0 !important; }
+html.os-embed .app-header, html.os-embed .app-controls { display: none !important; }
+html.os-embed .screen { margin: 0; border-radius: 0; box-shadow: none; }
+html.os-embed .screen::before, html.os-embed .screen::after { display: none; }
+html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none; }
+html.os-embed .screen > .path { padding-right: 84px; cursor: pointer; }
+html.os-embed .os-path-cmd { position: absolute; top: 0; right: var(--sp-3); z-index: 2; height: 32px; display: flex; align-items: center; gap: 4px; appearance: none; -webkit-appearance: none; background: none; border: 0; padding: 0 var(--sp-2); color: var(--accent); font-size: var(--fs-xs); letter-spacing: var(--tracking-label); text-transform: uppercase; cursor: pointer; }
+html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
+</style>
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1 class="app-title" data-view-title>Phosphor TV</h1>
+      <span class="app-meta">v1.0</span>
+    </header>
+    <div class="screen">
+      <canvas class="rain" aria-hidden="true" hidden></canvas>
+      <nav class="path" data-path aria-label="Location"></nav>
+      <div class="screen-body">
+
+      <section class="view" data-route="/" data-title="TV">
+        <div class="empty" id="tv-setup" hidden>
+          <svg class="glyph-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M2 5h20v13H2zM8 21h8M7 2l5 3 5-3"/></svg>
+          <h2 id="tv-setup-title">TV isn't set up</h2>
+          <p id="tv-setup-text">Phosphor TV runs through the same relay as your lights.</p>
+          <button class="btn btn-primary" id="tv-setup-go">Set up TV</button>
+        </div>
+
+        <div id="tv-main" hidden>
+          <section class="panel" data-title="TV">
+            <div class="tv-stat">
+              <span class="tv-led" id="tv-led" aria-hidden="true"></span>
+              <div style="min-width:0;flex:1"><div class="tv-name" id="tv-name">—</div><div class="tv-sub" id="tv-sub">Checking…</div></div>
+            </div>
+            <p class="tv-note" id="tv-note" hidden style="margin-top:var(--sp-3)"></p>
+            <button class="btn btn-primary btn-block" id="tv-on" hidden style="margin-top:var(--sp-4)">Turn on Phosphor TV</button>
+          </section>
+
+          <section class="panel np" data-title="Now on TV" id="np" hidden>
+            <div><div class="np-title" id="np-title"></div><div class="tv-sub" id="np-sub"></div></div>
+            <div class="rm-row">
+              <button class="rm-b" data-media="pause" id="np-pp" aria-label="Pause"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg><span>Pause</span></button>
+              <button class="rm-b" data-media="stop" aria-label="Stop"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 5h14v14H5z"/></svg><span>Stop</span></button>
+              <button class="rm-b" id="np-switch"><span>Phosphor</span></button>
+            </div>
+          </section>
+
+          <div class="remote" id="remote" hidden>
+            <div class="pad" id="pad" role="group" aria-label="Remote: swipe to move, tap the middle for OK">
+              <svg class="a-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M5 15l7-7 7 7"/></svg>
+              <svg class="a-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>
+              <svg class="a-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+              <svg class="a-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+              <span class="ok">OK</span>
+            </div>
+            <div class="rm-row">
+              <button class="rm-b" data-tvkey="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 5L4 10l5 5M4 10h10a5 5 0 0 1 0 10h-4"/></svg>Back</button>
+              <button class="rm-b" data-tvkey="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 11l9-7 9 7M5 9.5V20h14V9.5"/></svg>Home</button>
+              <button class="rm-b" data-route="/say"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v13H8l-5 4z"/></svg>Say</button>
+            </div>
+            <div class="shortcuts" id="shortcuts">
+              <button class="rm-b" data-screen="clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Clock</button>
+              <button class="rm-b" data-screen="lights"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>Lights</button>
+              <button class="rm-b" data-screen="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v13H8l-5 4z"/><path d="M7 9h10M7 13h6"/></svg>Board</button>
+              <button class="rm-b" data-screen="snake"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 20h6v-6h6V8h4M4 20v-2M20 8V4M18 4h4"/></svg>Snake</button>
+              <button class="rm-b" data-screen="rain"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M5 3v6M5 13v2M10 6v9M10 19v2M15 3v4M15 11v6M20 7v8M20 19v2"/></svg>Rain</button>
+            </div>
+          </div>
+
+          <section class="panel" data-title="Volume" id="vol-panel" hidden>
+            <div class="vol">
+              <button class="rm-b" data-vol="-5" aria-label="Volume down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+              <div class="meter" role="progressbar" aria-label="TV volume" aria-valuemin="0" aria-valuemax="100" id="vol-meter"><span id="vol-bar" style="--value:0%"></span></div>
+              <button class="rm-b" data-vol="5" aria-label="Volume up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+              <button class="rm-b" id="vol-mute" aria-pressed="false" aria-label="Mute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM16 9l5 6M21 9l-5 6"/></svg></button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" data-route="/say" data-title="Say">
+        <section class="panel" data-title="Put a message on the TV">
+          <div class="field">
+            <label class="label" for="say-text">Message</label>
+            <input class="input" id="say-text" maxlength="140" enterkeyhint="send" placeholder="Dinner's ready" autocomplete="off">
+          </div>
+          <button class="btn btn-primary btn-block" id="say-send" style="margin-top:var(--sp-4)">Send to TV</button>
+        </section>
+        <div class="menu-group">
+          <span class="label">Quick</span>
+          <div class="quick" id="quick"></div>
+        </div>
+        <div class="menu-group" id="sent-group" hidden>
+          <span class="label">On the board</span>
+          <ul class="list msg-list" id="sent"></ul>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings" data-title="Settings">
+        <div class="menu-group">
+          <span class="label">General</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/cast"><span class="mi-label">Chromecast</span><span class="mi-value" id="set-cast">—</span></a>
+            <a class="menu-item" href="#/settings/relay"><span class="mi-label">Relay</span><span class="mi-value" id="set-relay"></span></a>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Appearance</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/display"><span class="mi-label">Display</span><span class="mi-value">CRT <span data-setting-value="crt"></span></span></a>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Data</span>
+          <div class="menu">
+            <button class="menu-item danger" id="clear-board"><span class="mi-label">Clear the message board</span></button>
+          </div>
+          <p class="menu-note">Messages are kept on the PC relay. The relay link stays on this phone.</p>
+        </div>
+        <div class="menu-group">
+          <span class="label">About</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.0</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/cast" data-title="Chromecast">
+        <div class="menu" role="radiogroup" aria-label="Chromecast" id="cast-list"></div>
+        <p class="menu-note" id="cast-note">Chromecasts on the same Wi-Fi as the PC show up here.</p>
+        <button class="btn btn-block" id="cast-refresh" style="margin-top:var(--sp-4)">Look again</button>
+      </section>
+
+      <section class="view" data-route="/settings/relay" data-title="Relay">
+        <section class="panel" data-title="Connect">
+          <div class="field">
+            <label class="label" for="tv-link">Relay link</label>
+            <input class="input" id="tv-link" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" placeholder="https://your-pc.ts.net#key">
+            <span class="hint">The same link as Lights. The relay prints it when it starts.</span>
+          </div>
+          <button class="btn btn-primary btn-block" id="tv-save" style="margin-top:var(--sp-4)">Connect</button>
+        </section>
+        <section class="panel" data-title="Turn on TV control" style="margin-top:var(--sp-5)">
+          <ol class="steps">
+            <li>On the PC, save <code>tv_control.py</code> and the new <code>kasa_bridge.py</code> into the relay folder (Desktop\PhosphorLights), replacing the old kasa_bridge.py.</li>
+            <li>In Command Prompt in that folder, run <code>py -m pip install pychromecast</code> once.</li>
+            <li>Close the relay window and start it with <code>py kasa_bridge.py --cast</code>. It should print <code>TV: on</code>.</li>
+            <li>If Windows asks whether Python can use the network, tick <b>Private networks</b> only and Allow.</li>
+          </ol>
+          <p class="hint" style="margin-top:var(--sp-3)">Files: <a href="https://github.com/bgriffie/phosphor-os/tree/main/bridge" target="_blank" rel="noopener">phosphor-os/bridge</a>. The PC must be on the same Wi-Fi as the Chromecast.</p>
+        </section>
+      </section>
+
+      <section class="view" data-route="/settings/display" data-title="Display">
+        <div class="menu">
+          <label class="menu-item"><span class="mi-label">CRT scanlines</span><input type="checkbox" role="switch" class="mi-switch" data-setting="crt"></label>
+          <label class="menu-item"><span class="mi-label">Matrix rain</span><input type="checkbox" role="switch" class="mi-switch" data-setting="rain"></label>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/about" data-title="About">
+        <section class="panel" data-title="Phosphor TV">
+          <div class="kv"><span>Version</span><span>1.0</span></div>
+          <div class="kv"><span>Chromecast</span><span id="ab-cast">—</span></div>
+          <div class="kv"><span>Needs</span><span>Relay with --cast</span></div>
+        </section>
+        <section class="panel" data-title="Remote" style="margin-top:var(--sp-5)">
+          <div class="kv"><span>Move</span><span>Swipe or tap an arrow</span></div>
+          <div class="kv"><span>OK</span><span>Tap the middle</span></div>
+          <div class="kv"><span>Keyboard</span><span>Arrows, Enter, Esc</span></div>
+        </section>
+      </section>
+      </div><!-- /.screen-body -->
+    </div><!-- /.screen -->
+    <nav class="app-controls" aria-label="Controls">
+      <button class="key key-sm" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
+      <button class="key key-sm" data-open-sheet="menu" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="page-keys" data-show-on="/" data-hide-on="/say /settings" hidden><button class="key key-sm" id="k-power" aria-label="TV on or off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg></button></div>
+      <div class="page-keys" data-show-on="/say" hidden><button class="key key-sm" id="k-send" aria-label="Send to TV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8z"/></svg></button></div>
+      <button class="key key-sm" data-route="/" data-hide-on="/ /say" aria-label="Remote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M2 5h20v13H2zM8 21h8"/></svg></button>
+    </nav>
+  </main>
+
+  <dialog class="sheet dropdown" id="menu" aria-label="Menu">
+    <div class="sheet-title">Go to</div>
+    <div class="menu" data-sections>
+      <button class="menu-item" data-route="/"><span class="mi-glyph" aria-hidden="true">■</span><span class="mi-label">Remote</span></button>
+      <button class="menu-item" data-route="/say"><span class="mi-label">Say</span></button>
+      <button class="menu-item" data-route="/settings"><span class="mi-glyph" aria-hidden="true">⚙</span><span class="mi-label">Settings</span></button>
+    </div>
+    <div class="sheet-title">Actions</div>
+    <div class="menu">
+      <button class="menu-item" id="m-power"><span class="mi-label" id="m-power-label">Turn TV on</span></button>
+      <button class="menu-item" data-route="/settings/cast"><span class="mi-label">Pick Chromecast</span></button>
+      <button class="menu-item" data-route="/settings/relay"><span class="mi-label">Relay setup</span></button>
+    </div>
+  </dialog>
+
+  <div class="toast-host" aria-live="polite"></div>
+  <script>
+/* ==========================================================================
+   PHOSPHOR v1.9 runtime: navigation, settings, sheets, toasts, confirm.
+   Spec: brand-guidelines.md section 7. Paste this whole file into a <script>
+   at the end of <body>, after the markup. No dependencies, no network.
+   Set a unique key per tool: <html data-app="tip-calc">
+   ========================================================================== */
+const PH = (() => {
+  const APP = document.documentElement.dataset.app || 'app';
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const subs = {};
+  const on = (key, fn) => ((subs[key] ||= []).push(fn), fn);
+  const emit = (key, v) => (subs[key] || []).concat(subs['*'] || []).forEach(fn => fn(v, key));
+
+  /* ---------- Settings store (localStorage, namespaced per tool) ---------- */
+  const defaults = { crt: true, rain: false };
+  const store = {
+    defaults,
+    get(k) {
+      try { const v = localStorage.getItem(APP + ':' + k); return v === null ? defaults[k] : JSON.parse(v); }
+      catch { return defaults[k]; }
+    },
+    set(k, v) {
+      try { localStorage.setItem(APP + ':' + k, JSON.stringify(v)); } catch {}
+      emit(k, v); syncSettings();
+    },
+    reset() {
+      Object.keys(defaults).forEach(k => { try { localStorage.removeItem(APP + ':' + k); } catch {} emit(k, defaults[k]); });
+      syncSettings();
+    },
+  };
+
+  /* Declarative binding:
+     <input type="checkbox" data-setting="crt">          toggle
+     <select data-setting="units">…</select>             select
+     <button class="menu-item" data-setting="units" data-value="kg">  pick-one row
+     <span data-setting-value="units"></span>           shows the current value's label */
+  function labelFor(key, val) {
+    const row = $(`[data-setting="${key}"][data-value="${CSS.escape(String(val))}"]`);
+    if (row) { const lab = row.querySelector('.mi-label') || row; return (lab.firstChild?.textContent || lab.textContent).trim(); }
+    const sel = $(`select[data-setting="${key}"]`);
+    if (sel) { const o = [...sel.options].find(o => o.value === String(val)); if (o) return o.textContent; }
+    if (typeof val === 'boolean') return val ? 'On' : 'Off';
+    return val ?? '—';
+  }
+  function syncSettings() {
+    $$('[data-setting]').forEach(el => {
+      const v = store.get(el.dataset.setting);
+      if (el.type === 'checkbox') el.checked = !!v;
+      else if ('value' in el.dataset) el.setAttribute('aria-checked', String(el.dataset.value === String(v)));
+      else if ('value' in el) el.value = v ?? '';
+    });
+    $$('[data-setting-value]').forEach(el => { el.textContent = labelFor(el.dataset.settingValue, store.get(el.dataset.settingValue)); });
+  }
+  document.addEventListener('change', e => {
+    const el = e.target.closest('[data-setting]');
+    if (!el || 'value' in el.dataset) return;
+    store.set(el.dataset.setting, el.type === 'checkbox' ? el.checked : el.value);
+  });
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-setting][data-value]');
+    if (!el) return;
+    store.set(el.dataset.setting, el.dataset.value);
+    if (el.hasAttribute('data-back-on-pick')) back();
+  });
+
+  /* Built-in display settings */
+  const applyDisplay = () => {
+    document.documentElement.classList.toggle('no-crt', !store.get('crt'));
+    $$('.rain').forEach(c => { c.hidden = !store.get('rain'); });
+  };
+  on('crt', applyDisplay); on('rain', applyDisplay);
+
+  /* ---------- Router: hash routes -> .view[data-route] ---------- */
+  /* <section class="view" data-route="/settings/display" data-title="Display"> */
+  const views = () => $$('.view');
+  const routeOf = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
+  const parentOf = r => r === '/' ? null : (r.split('/').slice(0, -1).join('/') || '/');
+  const depth = r => r === '/' ? 0 : r.split('/').length - 1;
+  const viewFor = r => views().find(v => v.dataset.route === r);
+  let current = null, pushedByUs = 0;
+
+  function render() {
+    let r = routeOf();
+    while (r && !viewFor(r)) r = parentOf(r);          // unknown route -> nearest ancestor
+    const view = viewFor(r || '/') || views()[0];
+    if (!view) return;
+    r = view.dataset.route;
+    const dir = current === null ? '' : depth(r) >= depth(current) ? 'enter-fwd' : 'enter-back';
+    views().forEach(v => v.classList.remove('is-active', 'enter-fwd', 'enter-back'));
+    view.classList.add('is-active');
+    if (dir && r !== current) view.classList.add(dir);
+    current = r;
+
+    $$('[data-view-title]').forEach(el => { el.textContent = view.dataset.title || el.dataset.viewTitle || ''; });
+    $$('[data-back]').forEach(el => { if (el.closest('.app-controls')) el.disabled = r === '/'; else el.hidden = r === '/'; });
+    $$('.app-controls [data-route]').forEach(el => { el.disabled = el.dataset.route === r; });
+    // per-page chrome: data-show-on="/game /other" shows only there (and below); data-hide-on hides
+    const onAny = (list, rr) => list.split(/\s+/).some(p => p === rr || (p !== '/' && rr.startsWith(p + '/')));
+    $$('[data-show-on]').forEach(el => { el.hidden = !onAny(el.dataset.showOn, r); });
+    $$('[data-hide-on]').forEach(el => { el.hidden = onAny(el.dataset.hideOn, r); });
+    // section links in the menu (<div class="menu" data-sections>) mark the current section
+    $$('[data-sections] [data-route]').forEach(t => {
+      const tr = t.dataset.route, sel = tr === '/' ? r === '/' : (r === tr || r.startsWith(tr + '/'));
+      if (sel) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+    });
+    // breadcrumb path: ~/settings/display
+    $$('[data-path]').forEach(el => {
+      el.textContent = '';
+      const parts = r === '/' ? [] : r.split('/').slice(1);
+      parts.forEach((_, i) => {
+        const pr = '/' + parts.slice(0, i + 1).join('/'), last = i === parts.length - 1;
+        const node = document.createElement(last ? 'span' : 'a');
+        node.textContent = ((viewFor(pr) && viewFor(pr).dataset.title) || parts[i]).toLowerCase();
+        if (!last) node.href = '#' + pr;
+        el.appendChild(node);
+      });
+    });
+    $$('.screen-body').forEach(b => { b.scrollTop = 0; });
+    emit('route', r);
+  }
+  function go(r) { if (r === current) return; pushedByUs++; location.hash = r; }
+  function back() {
+    const parent = parentOf(current || '/');
+    if (pushedByUs > 0 && history.length > 1) { pushedByUs--; history.back(); }
+    else if (parent !== null) location.replace('#' + parent);
+  }
+  addEventListener('hashchange', render);
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-back]'); if (b) { e.preventDefault(); back(); return; }
+    const n = e.target.closest('[data-route]:not(.view)');
+    if (n) { e.preventDefault(); go(n.dataset.route); return; }
+    if (e.target.closest('a[href^="#/"]')) pushedByUs++;
+  });
+
+  /* Home-screen apps fill the whole physical screen. iOS under-reports the viewport by the
+     status bar height there, so size the case from the screen itself. */
+  function fitApp() {
+    const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+    const st = document.documentElement.style;
+    if (!standalone) { st.removeProperty('--app-h'); st.removeProperty('--app-gap'); return; }
+    const land = matchMedia('(orientation: landscape)').matches;
+    const h = land ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
+    const full = Math.max(h, innerHeight);
+    st.setProperty('--app-h', full + 'px');
+    st.setProperty('--app-gap', (full - innerHeight) + 'px');   // how far the real bottom is below the reported one
+  }
+  fitApp(); addEventListener('resize', fitApp); addEventListener('orientationchange', () => setTimeout(fitApp, 300));
+
+  /* Keycap press animation: every tap visibly sinks the key, even a quick one */
+  document.addEventListener('pointerdown', e => {
+    const k = e.target.closest('.key'); if (!k || k.disabled) return;
+    k.classList.add('is-pressed'); const t = performance.now();
+    const up = () => { setTimeout(() => k.classList.remove('is-pressed'), Math.max(0, 130 - (performance.now() - t)));
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(n => k.removeEventListener(n, up)); };
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(n => k.addEventListener(n, up));
+  });
+
+  /* Edge-swipe back (installed web apps have no browser back gesture) */
+  let sx = null, sy = 0;
+  addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX < 24 ? t.clientX : null; sy = t.clientY; }, { passive: true });
+  addEventListener('touchend', e => {
+    if (sx === null || (current || '/') === '/') return; const t = e.changedTouches[0];
+    if (t.clientX - sx > 70 && Math.abs(t.clientY - sy) < 60 && !$('dialog[open]')) back();
+    sx = null;
+  }, { passive: true });
+
+  /* ---------- Sheets & dialogs ---------- */
+  /* <button data-open-sheet="menu">  opens <dialog class="sheet" id="menu">
+     [data-close] inside closes it; tapping the backdrop closes it; picking a link closes it. */
+  document.addEventListener('click', e => {
+    const o = e.target.closest('[data-open-sheet]');
+    if (o) { const d = document.getElementById(o.dataset.openSheet); if (d && !d.open) d.showModal(); return; }
+    const c = e.target.closest('[data-close]');
+    if (c) { c.closest('dialog')?.close(); return; }
+    if (e.target.tagName === 'DIALOG' && e.target.open) {          // backdrop tap
+      const r = e.target.getBoundingClientRect(), x = e.clientX, y = e.clientY;
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) e.target.close();
+    }
+    const inSheet = e.target.closest('dialog.sheet [data-route], dialog.sheet a, dialog.sheet [data-action]');
+    if (inSheet) inSheet.closest('dialog').close();
+  });
+
+  /* ---------- Toast ---------- */
+  function toast(msg, kind = '') {
+    let host = $('.toast-host');
+    if (!host) { host = document.createElement('div'); host.className = 'toast-host'; host.setAttribute('aria-live', 'polite'); document.body.appendChild(host); }
+    const t = document.createElement('div');
+    t.className = 'toast ' + kind; t.textContent = msg; host.appendChild(t);
+    const kill = () => t.remove();
+    t.addEventListener('click', kill);
+    if (kind !== 'error') setTimeout(kill, 2500);
+  }
+
+  /* ---------- Confirm: await PH.confirm('Delete all?', {ok: 'Delete', danger: true}) ---------- */
+  function confirm(message, { title = 'Confirm', ok = 'OK', cancel = 'Cancel', danger = false } = {}) {
+    return new Promise(res => {
+      const d = document.createElement('dialog'); d.className = 'dialog';
+      d.innerHTML = `<h2></h2><p></p><div class="actions"><button class="btn btn-ghost" value="0"></button><button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" value="1"></button></div>`;
+      d.querySelector('h2').textContent = title; d.querySelector('p').textContent = message;
+      const [c, k] = d.querySelectorAll('button'); c.textContent = cancel; k.textContent = ok;
+      d.addEventListener('click', e => { const b = e.target.closest('button'); if (b) d.close(b.value); });
+      d.addEventListener('close', () => { res(d.returnValue === '1'); d.remove(); });
+      document.body.appendChild(d); d.showModal(); c.focus();
+    });
+  }
+
+  /* ---------- Export: share sheet on iOS, download elsewhere ---------- */
+  async function exportFile(name, text, type = 'application/json') {
+    const file = new File([text], name, { type });
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; } } catch (e) { if (e.name === 'AbortError') return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  /* ---------- Boot ---------- */
+  function init(extraDefaults = {}) {
+    Object.assign(defaults, extraDefaults);
+    syncSettings(); applyDisplay(); render();
+  }
+  return { init, store, on, go, back, toast, confirm, exportFile, sync: syncSettings };
+})();
+
+  </script>
+  <script>
+/* Phosphor TV remote. Turns the Phosphor screen on the Chromecast on and off, moves around it,
+   sends messages to it and sets the TV volume. Talks only to the relay on the PC (kasa_bridge.py +
+   tv_control.py in bgriffie/phosphor-os/bridge) over HTTPS through Tailscale, with the Lights link;
+   the relay passes things on to the TV over the home network. */
+PH.init({});
+(() => {
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const KEY = 'phosphor-tv:data:';   // every tool shares bgriffie.github.io, so keys are prefixed
+  const load = (k, d) => { try { const v = localStorage.getItem(KEY + k); return v === null ? d : JSON.parse(v); } catch { return d; } };
+  const save = (k, v) => { try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch {} };
+  const peek = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+
+  // The relay is the lights relay, so reuse a link already pasted into Lights, PC or Phosphor OS
+  const sharedLink = () => peek('kasa-lights:data:link') || peek('pc-remote:data:link') || peek('phosphor-os:data:lights-link');
+  let link = load('link', null) || sharedLink();   // { url, key }
+  let info = load('info', null);                   // last /tv answer
+  let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
+  let lastErr = '', pollT = 0, busyPower = false;
+  const ready = () => !!(link && link.url && link.key);
+  const route = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+  function parseLink(s) {
+    const m = /^\s*(https?:\/\/[^\s#]+?)\/?#([\w-]{8,})\s*$/.exec(s || '');
+    return m ? { url: m[1], key: m[2] } : null;
+  }
+
+  async function call(path, body, timeout = 15000) {
+    if (!ready()) throw new Error('The TV isn\'t set up yet.');
+    let r;
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), timeout);
+    try {
+      r = await fetch(link.url + path, { method: body ? 'POST' : 'GET', signal: ctl.signal, cache: 'no-store',
+        headers: { Authorization: 'Bearer ' + link.key, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+        body: body ? JSON.stringify(body) : undefined });
+    } catch {
+      throw new Error(navigator.onLine === false ? 'No internet connection.' : 'Can\'t reach the PC. Is it on with the relay running, and Tailscale on here?');
+    } finally { clearTimeout(t); }
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 401) throw new Error('The relay rejected the key. Paste the relay link again.');
+    if ((r.status === 404 || r.status === 405) && path.startsWith('/tv') && !d.error?.includes('Chromecast')) { const e = new Error('The relay needs the TV update. See Settings › Relay.'); e.old = true; throw e; }
+    if (!r.ok) throw new Error(d.error || 'Relay error ' + r.status);
+    return d;
+  }
+
+  async function check() {
+    if (!ready()) { state = 'idle'; render(); return; }
+    try { info = await call('/tv'); save('info', info); state = 'ok'; lastErr = ''; }
+    catch (e) { state = e.old ? 'old' : 'down'; lastErr = e.message; }
+    render();
+  }
+  const tv = () => (info && info.tv) || {};
+  const cast = () => info && info.cast;
+  const isOn = () => !!tv().on;
+  const castName = () => { const d = info && (info.devices || []).find(x => x.id === info.id); return d ? d.name : ''; };
+
+  /* ---------- Remote keys: sent one after another so fast swipes arrive in order ---------- */
+  let chain = Promise.resolve();
+  function key(k) {
+    chain = chain.then(() => call('/tv/key', { key: k }, 6000)).catch(e => { PH.toast(e.message, 'warn'); check(); });
+  }
+  const pad = $('#pad');
+  let t0 = null;
+  const flash = cls => { const s = cls === 'ok' ? null : pad.querySelector('.a-' + cls); if (s) { s.classList.add('hit'); setTimeout(() => s.classList.remove('hit'), 160); } else { pad.classList.add('hit-ok'); setTimeout(() => pad.classList.remove('hit-ok'), 160); } };
+  pad.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); const t = e.changedTouches[0]; t0 = { x: t.clientX, y: t.clientY }; }, { passive: false });
+  pad.addEventListener('touchmove', e => { e.preventDefault(); e.stopPropagation(); }, { passive: false });
+  pad.addEventListener('touchend', e => { e.preventDefault(); const t = e.changedTouches[0]; if (t0) padEnd(t.clientX, t.clientY); t0 = null; }, { passive: false });
+  pad.addEventListener('mousedown', e => { t0 = { x: e.clientX, y: e.clientY }; });
+  pad.addEventListener('mouseup', e => { if (t0) padEnd(e.clientX, e.clientY); t0 = null; });
+  function padEnd(x, y) {
+    const dx = x - t0.x, dy = y - t0.y;
+    let k;
+    if (Math.hypot(dx, dy) > 24) k = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+    else {
+      // A tap: the middle ring is OK, near an edge is that arrow
+      const r = pad.getBoundingClientRect(), cx = x - r.left - r.width / 2, cy = y - r.top - r.height / 2;
+      if (Math.hypot(cx, cy) < r.width * 0.25) k = 'ok';
+      else k = Math.abs(cx) > Math.abs(cy) ? (cx > 0 ? 'right' : 'left') : (cy > 0 ? 'down' : 'up');
+    }
+    flash(k); key(k);
+  }
+  $$('[data-tvkey]').forEach(b => b.addEventListener('click', () => key(b.dataset.tvkey)));
+  $$('[data-screen]').forEach(b => b.addEventListener('click', async () => {
+    try { await call('/tv/open', { screen: b.dataset.screen }); if (info && info.tv) info.tv.screen = b.dataset.screen; render(); }
+    catch (e) { PH.toast(e.message, 'warn'); }
+  }));
+  // A keyboard paired with the phone works as the remote too
+  addEventListener('keydown', e => {
+    if (route() !== '/' || !isOn() || e.target.closest('input, textarea')) return;
+    const k = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Enter: 'ok', ' ': 'ok', Escape: 'back', Backspace: 'back' }[e.key];
+    if (k) { e.preventDefault(); flash(k); key(k); }
+  });
+
+  /* ---------- Power, volume, media ---------- */
+  async function power(on) {
+    if (busyPower) return;
+    if (!ready()) { PH.go('/settings/relay'); return; }
+    if (on && info && !info.id) { PH.toast('Pick your Chromecast first.', 'warn'); PH.go('/settings/cast'); return; }
+    busyPower = true; render();
+    try {
+      await call(on ? '/tv/start' : '/tv/stop', { id: info && info.id }, 25000);
+      PH.toast(on ? 'Starting Phosphor TV…' : 'Phosphor TV is off');
+      if (info && info.tv) info.tv.on = on;
+      await check();
+      if (on) { [2000, 4000, 7000, 12000].forEach(ms => setTimeout(check, ms)); }
+    } catch (e) { PH.toast(e.message, 'error'); }
+    finally { busyPower = false; render(); }
+  }
+  $('#tv-on').addEventListener('click', () => power(true));
+  $('#np-switch').addEventListener('click', () => power(true));
+  $('#k-power').addEventListener('click', () => power(!isOn()));
+  $('#m-power').addEventListener('click', () => { $('#menu').close(); power(!isOn()); });
+
+  $$('[data-vol]').forEach(b => b.addEventListener('click', async () => {
+    const c = cast(); if (c) { c.volume = Math.max(0, Math.min(100, c.volume + +b.dataset.vol)); renderVol(); }
+    try { await call('/tv/volume', { id: info.id, delta: +b.dataset.vol }); } catch (e) { PH.toast(e.message, 'warn'); }
+  }));
+  $('#vol-mute').addEventListener('click', async () => {
+    const c = cast(); if (!c) return;
+    c.muted = !c.muted; renderVol();
+    try { await call('/tv/volume', { id: info.id, mute: c.muted }); } catch (e) { PH.toast(e.message, 'warn'); }
+  });
+  $$('[data-media]').forEach(b => b.addEventListener('click', async () => {
+    const cmd = b.dataset.media === 'pause' && cast()?.media?.state === 'PAUSED' ? 'play' : b.dataset.media;
+    try { await call('/tv/media', { id: info.id, cmd }); setTimeout(check, 600); } catch (e) { PH.toast(e.message, 'warn'); }
+  }));
+
+  /* ---------- Messages ---------- */
+  const QUICK = ['Dinner\'s ready', 'Movie time', 'Bedtime', 'Back in 5 minutes', 'Good morning'];
+  QUICK.forEach(q => { const b = el('button', 'rm-b', q); b.addEventListener('click', () => { $('#say-text').value = q; sendSay(); }); $('#quick').appendChild(b); });
+  async function sendSay() {
+    const text = $('#say-text').value.trim();
+    if (!text) { $('#say-text').focus(); return; }
+    try {
+      const d = await call('/tv/say', { text });
+      if (info) info.board = d.board;
+      $('#say-text').value = ''; $('#say-text').blur();
+      PH.toast(d.shown ? 'On the TV now' : 'Saved to the board. It shows when Phosphor TV is on.');
+      renderSent();
+    } catch (e) { PH.toast(e.message, 'error'); }
+  }
+  $('#say-send').addEventListener('click', sendSay);
+  $('#k-send').addEventListener('click', sendSay);
+  $('#say-text').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendSay(); } });
+  $('#clear-board').addEventListener('click', async () => {
+    if (!await PH.confirm('Clear every message from the TV board?', { title: 'Clear board', ok: 'Clear', danger: true })) return;
+    try { await call('/tv/board/clear', {}); if (info) info.board = []; renderSent(); PH.toast('Board cleared'); } catch (e) { PH.toast(e.message, 'error'); }
+  });
+  function ago(t) {
+    const m = Math.round((Date.now() - t) / 60000);
+    return m < 1 ? 'now' : m < 60 ? m + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd';
+  }
+  function renderSent() {
+    const list = $('#sent'), b = (info && info.board) || [];
+    list.textContent = '';
+    $('#sent-group').hidden = !b.length;
+    for (const m of b.slice().reverse()) { const li = el('li'); li.appendChild(el('span', '', m.text)); li.appendChild(el('time', '', ago(m.t))); list.appendChild(li); }
+  }
+
+  /* ---------- Settings ---------- */
+  $('#tv-setup-go').addEventListener('click', () => PH.go('/settings/relay'));
+  $('#tv-save').addEventListener('click', async () => {
+    const l = parseLink($('#tv-link').value);
+    if (!l) { PH.toast('That doesn\'t look like a relay link (https://…#key).', 'error'); return; }
+    link = l; save('link', l);
+    await check();
+    if (state === 'ok') { PH.toast('Connected'); PH.go('/'); } else PH.toast(lastErr, 'error');
+  });
+  async function chooseCast(id) {
+    try { await call('/tv/choose', { id }); if (info) info.id = id; await check(); PH.back(); }
+    catch (e) { PH.toast(e.message, 'error'); }
+  }
+  $('#cast-refresh').addEventListener('click', check);
+  function renderCasts() {
+    const box = $('#cast-list'); box.textContent = '';
+    const devs = (info && info.devices) || [];
+    $('#cast-note').textContent = state !== 'ok' ? (lastErr || 'Connect the relay first.') : devs.length ? 'Chromecasts on the same Wi-Fi as the PC.' : 'No Chromecasts found yet. Is it on the same Wi-Fi as the PC? Tap Look again.';
+    for (const d of devs) {
+      const b = el('button', 'menu-item'); b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String(info.id === d.id));
+      const lab = el('span', 'mi-label', d.name); lab.appendChild(el('small', '', d.video ? d.model || 'Chromecast' : (d.model || 'Speaker') + ' · sound only'));
+      b.appendChild(lab);
+      if (!d.video) b.disabled = true;
+      b.addEventListener('click', () => chooseCast(d.id));
+      box.appendChild(b);
+    }
+  }
+
+  /* ---------- Render ---------- */
+  function renderVol() {
+    const c = cast(); if (!c) return;
+    $('#vol-bar').style.setProperty('--value', (c.muted ? 0 : c.volume) + '%');
+    $('#vol-meter').setAttribute('aria-valuenow', c.muted ? 0 : c.volume);
+    $('#vol-mute').setAttribute('aria-pressed', String(!!c.muted));
+  }
+  function render() {
+    const setup = $('#tv-setup'), main = $('#tv-main');
+    setup.hidden = state === 'ok'; main.hidden = !setup.hidden;
+    if (!ready()) { $('#tv-setup-title').textContent = 'TV isn\'t set up'; $('#tv-setup-text').textContent = 'Phosphor TV runs through the same relay as your lights.'; $('#tv-setup-go').textContent = 'Set up TV'; }
+    else if (state === 'old') { $('#tv-setup-title').textContent = 'Relay needs the TV update'; $('#tv-setup-text').textContent = 'Add tv_control.py to the relay on your PC.'; $('#tv-setup-go').textContent = 'Show me how'; }
+    else if (state === 'down') { $('#tv-setup-title').textContent = 'Can\'t reach the relay'; $('#tv-setup-text').textContent = lastErr; $('#tv-setup-go').textContent = 'Relay settings'; }
+
+    const c = cast(), t = tv(), on = !!t.on;
+    const media = c && c.media && !on ? c.media : null;
+    $('#tv-name').textContent = castName() || (info && info.id ? 'Chromecast' : 'No Chromecast picked');
+    let sub, led = '', note = '', noteErr = false;
+    if (info && info.error) { sub = 'Not answering'; note = info.error; noteErr = true; }
+    else if (!info || !info.id) { sub = 'Pick your Chromecast in Settings'; }
+    else if (on && t.linked) { sub = 'Phosphor TV' + (t.screen ? ' · ' + t.screen[0].toUpperCase() + t.screen.slice(1) : ''); led = 'on'; }
+    else if (on && t.waiting) { sub = 'Starting Phosphor TV…'; led = 'wait'; }
+    else if (on || t.stuck) { sub = 'The TV can\'t reach the PC'; led = 'wait'; note = 'On the PC, let Python through Windows Firewall on Private networks, and check the PC and the Chromecast are on the same Wi-Fi. Then turn the TV off and on again.'; }
+    else if (c && !c.idle) { sub = (c.app || 'Another app') + ' is on'; }
+    else sub = 'Off';
+    if (busyPower) { sub = 'One moment…'; led = 'wait'; }
+    $('#tv-sub').textContent = sub;
+    $('#tv-led').className = 'tv-led' + (led ? ' ' + led : '');
+    $('#tv-note').textContent = note; $('#tv-note').hidden = !note; $('#tv-note').classList.toggle('err', noteErr);
+    $('#tv-on').hidden = on || !!media || !(info && info.id) || !!(info && info.error);
+    $('#tv-on').disabled = busyPower;
+    $('#remote').hidden = !on;
+    $('#np').hidden = !media;
+    if (media) {
+      $('#np-title').textContent = media.title || c.app || 'Playing';
+      $('#np-sub').textContent = [c.app, media.sub].filter(Boolean).join(' · ');
+      const paused = media.state === 'PAUSED';
+      $('#np-pp').lastElementChild.textContent = paused ? 'Play' : 'Pause';
+      $('#np-pp').firstElementChild.innerHTML = paused ? '<path d="M7 4l13 8-13 8z"/>' : '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>';
+    }
+    $('#vol-panel').hidden = !c;
+    renderVol();
+    $$('#shortcuts [data-screen]').forEach(b => b.classList.toggle('cur', b.dataset.screen === t.screen));
+    $('#m-power-label').textContent = on ? 'Turn TV off' : 'Turn TV on';
+
+    $('#set-cast').textContent = castName() || '—';
+    $('#ab-cast').textContent = castName() || '—';
+    $('#set-relay').textContent = !ready() ? 'Not set' : state === 'ok' ? 'Connected' : state === 'old' ? 'Needs update' : state === 'down' ? 'Offline' : '…';
+    if (route() === '/settings/relay' && ready() && !$('#tv-link').value) $('#tv-link').value = link.url + '#' + link.key;
+    renderCasts(); renderSent();
+  }
+
+  // Keep the status fresh while the remote is on screen
+  function poll(on) { clearTimeout(pollT); if (on) pollT = setTimeout(async () => { await check(); poll(route() === '/' && !document.hidden); }, isOn() ? 5000 : 8000); }
+  function sync() {
+    if (document.hidden) { poll(false); return; }
+    check(); render();
+    poll(route() === '/');
+  }
+  PH.on('route', sync);
+  document.addEventListener('visibilitychange', sync);
+  addEventListener('online', sync);
+  addEventListener('pageshow', e => { if (e.persisted) sync(); });
+  render(); setTimeout(sync, 0);
+})();
+/* service worker: provided by Phosphor OS */
+
+  </script>
+<script>
+/* Phosphor OS embed shim: injected at the end of each bundled app's <body>.
+   The app runs inside the OS's screen in an iframe, keeps its own data (same origin,
+   same localStorage keys as the standalone version), and is driven by the OS's three keys. */
+(() => {
+  const os = window.parent !== window && window.parent.PhosphorOS;
+  if (!os || typeof PH === 'undefined') return;
+  const route = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
+  const atHome = () => route() === '/';
+  const exit = () => os.closeApp();
+  const openDialog = () => document.querySelector('dialog[open]');
+  // The app's own page key (Pause, Undo, Add…), shown on the OS's right key when Settings allows
+  const keyEl = () => [...document.querySelectorAll('.app-controls .page-keys:not([hidden]) button')].find(b => !b.disabled);
+
+  window.OSChild = {
+    atHome: () => atHome() && !openDialog(),
+    back: () => { const d = openDialog(); if (d) d.close(); else PH.back(); },
+    route,
+    home: () => { document.querySelectorAll('dialog[open]').forEach(d => d.close()); location.replace(location.href.split('#')[0] + '#/'); },
+    openMenu: () => { const m = document.getElementById('menu'); if (!m) return; if (m.open) m.close(); else m.showModal(); },
+    pageKey: () => { const b = keyEl(); if (!b) return null;
+      return { text: b.textContent.trim(), svg: b.querySelector('svg')?.outerHTML || '', label: b.getAttribute('aria-label') || b.textContent.trim(), pressed: b.getAttribute('aria-pressed') }; },
+    pressKey: () => { const b = keyEl(); if (b) b.click(); },
+    // An app can define window.osBeforeClose() (returning a promise) to tidy up before the OS closes it
+    prepareClose: () => typeof window.osBeforeClose === 'function' ? window.osBeforeClose() : null,
+  };
+
+  PH.on('route', () => { os.saveRoute(route()); os.keysChanged(); });
+  // Pause ↔ play and similar key changes happen without a route change
+  const ctl = document.querySelector('.app-controls');
+  if (ctl) new MutationObserver(() => os.keysChanged()).observe(ctl, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden', 'aria-pressed', 'disabled'] });
+
+  // The app's ~/path line opens the OS's terminal menu, as it does on the OS's own pages
+  const path = document.querySelector('.screen > .path');
+  if (path && os.openTerm) {
+    const cmd = document.createElement('button');
+    cmd.className = 'os-path-cmd'; cmd.setAttribute('aria-label', 'Open the menu');
+    cmd.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M4 7l8 8 8-8"/></svg>menu';
+    cmd.addEventListener('click', () => os.openTerm());
+    path.after(cmd);
+    path.addEventListener('click', e => { if (!e.target.closest('a')) os.openTerm(); });
+  }
+
+  // Edge swipe right on the app's home page returns to the OS
+  let sx = null, sy = 0;
+  addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX < 24 ? t.clientX : null; sy = t.clientY; }, { passive: true });
+  addEventListener('touchend', e => {
+    if (sx === null || !atHome() || openDialog()) return;
+    const t = e.changedTouches[0];
+    if (t.clientX - sx > 70 && Math.abs(t.clientY - sy) < 60) exit();
+    sx = null;
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>
