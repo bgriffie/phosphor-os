@@ -188,6 +188,8 @@
 
     /* Art draws straight to the glass: no scanlines or vignette over it (they cost frames on the stick) */
     .screen.plain::before, .screen.plain::after { display: none; }
+    /* While a film plays: no rounded clipping or layering on the screen, which turns the Chromecast's video layer black */
+    .screen.film { border-radius: 0; overflow: visible; isolation: auto; box-shadow: none; }
     .ov-card { background: var(--surface-2); border: 2px solid var(--accent); border-radius: var(--radius); padding: calc(3 * var(--u)) calc(5 * var(--u)); text-align: center; box-shadow: var(--glow-box); min-width: 40%; }
     .ov-card h2 { margin: 0 0 calc(1 * var(--u)); font-size: calc(4.4 * var(--u)); color: var(--accent); text-shadow: var(--glow-lg); text-transform: uppercase; letter-spacing: var(--tracking-label); }
     .ov-card p { margin: calc(.6 * var(--u)) 0 0; color: var(--text-dim); }
@@ -314,7 +316,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.4</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.5</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -452,18 +454,36 @@ const Art = (() => {
         this.makeStars();
         if (!job && cache.length < BODIES.length) job = builder();
       },
-      resized() { this.makeStars(); },     // the quality step-down: keep the tour where it is
+      resized() { this.makeStars(); this.ovbg = null; },     // the quality step-down: keep the tour where it is
       makeStars() {
         const sc = canvas(W, H), sx = sc.getContext('2d');
         sx.fillStyle = BG; sx.fillRect(0, 0, W, H);
         for (let k = 0; k < W * H / 700; k++) { const br = Math.random() ** 3; sx.fillStyle = `rgba(${pick(['255,255,255', '200,220,255', '255,230,200'])},${.2 + br * .7})`; sx.fillRect(Math.random() * W, Math.random() * H, br > .92 ? 2 : 1, br > .92 ? 2 : 1); }
         this.stars = sc;
       },
+      // Planet dots, the Sun's glow and the labels are drawn once into small images; each frame only places them
+      sprites() {
+        if (this.spr && this.spr.H === H) return this.spr;
+        const u = H / 360, spr = { H, dot: [], label: [] };
+        ORBIT.forEach(([, c, sz], i) => {
+          const r = Math.max(2, Math.ceil(sz * u * 2.5)), d = r * 2 + 2, cvs = canvas(d * (i === 6 ? 3 : 1), d), g = cvs.getContext('2d'), cx = cvs.width / 2, cy = d / 2;
+          if (i === 0) { const gr = g.createRadialGradient(cx, cy, 0, cx, cy, r); gr.addColorStop(0, 'rgba(255,240,200,1)'); gr.addColorStop(.3, 'rgba(255,190,80,.9)'); gr.addColorStop(.32, 'rgba(255,160,60,.35)'); gr.addColorStop(1, 'rgba(255,120,30,0)'); g.fillStyle = gr; g.fillRect(0, 0, cvs.width, d); }
+          else { const rr = r * .4, gr = g.createRadialGradient(cx + rr * .5, cy, rr * .1, cx, cy, rr * 1.05);   // lit from the right; turned towards the Sun when drawn
+            gr.addColorStop(0, `rgb(${c[0]},${c[1]},${c[2]})`); gr.addColorStop(.7, `rgb(${c[0] * .45 | 0},${c[1] * .45 | 0},${c[2] * .45 | 0})`); gr.addColorStop(1, 'rgba(0,0,0,.2)');
+            g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, rr, 0, TAU); g.fill(); }
+          spr.dot[i] = { cvs, k: i === 0 ? 3.2 / r : 1 / (r * .4) };
+          const name = BODIES[i].name.replace('The ', ''), fs = Math.round(H / 34), lc = canvas(Math.ceil(fs * .7 * name.length) + 4, fs + 6), lg = lc.getContext('2d');
+          lg.font = `${fs}px ui-monospace, Menlo, monospace`; lg.textBaseline = 'middle'; lg.fillStyle = '#86C295'; lg.fillText(name, 2, lc.height / 2);
+          spr.label[i] = lc;
+        });
+        return this.spr = spr;
+      },
       // Overview geometry, recomputed from the screen size every frame
       geo() { const cx = W * .5, cy = H * .52, rx = W * .47, sq = .36, u = H / 360;
         const pos = ORBIT.map(([au], i) => { const r = rx * Math.sqrt(au / 30); return [cx + Math.cos(this.ang[i]) * r, cy + Math.sin(this.ang[i]) * r * sq, r]; });
         return { cx, cy, sq, u, pos }; },
       paint(p) {   // the visible half of the globe, turned by p.rot and lit from the Sun's side
+        p.painted = p.rot;
         const g = p.img.getContext('2d'), im = g.createImageData(p.D, p.D), out = new Uint32Array(im.data.buffer), { tex, u0, v0, nx, ny, nz, al, L, b } = p;
         for (let q = 0; q < out.length; q++) { const a = al[q]; if (!a) continue;
           let u = (u0[q] + p.rot) % TW | 0; if (u < 0) u += TW;
@@ -482,7 +502,20 @@ const Art = (() => {
           x.arc(0, 0, (r1 + r2) / 2 * p.R * k, front ? 0 : Math.PI, front ? Math.PI : TAU); x.stroke(); }
         x.restore();
       },
+      // The globe with its glow, rings and haze, put together once per repaint and then just placed each frame
       globe(p, cx, cy, r, alpha) {   // r: radius on screen
+        const b = p.b, E = b.sun ? 2.5 : b.rings ? 2.4 : 1.15;
+        if (!p.comp || p.compAt !== p.painted) {
+          const R = p.R, sz = Math.ceil(2 * E * R);
+          if (!p.comp) p.comp = canvas(sz, sz);
+          const save = x; x = p.comp.getContext('2d'); x.clearRect(0, 0, sz, sz);
+          this.compose(p, sz / 2, sz / 2, R, 1);
+          x = save; p.compAt = p.painted;
+        }
+        const k = r / p.R, w = p.comp.width * k;
+        x.globalAlpha = alpha; x.drawImage(p.comp, cx - w / 2, cy - w / 2, w, w); x.globalAlpha = 1;
+      },
+      compose(p, cx, cy, r, alpha) {   // r: radius on screen
         const b = p.b, k = r / p.R;
         x.globalAlpha = alpha;
         if (b.sun) { const g = x.createRadialGradient(cx, cy, r * .9, cx, cy, r * 2.4); g.addColorStop(0, 'rgba(255,190,90,.55)'); g.addColorStop(.4, 'rgba(255,140,40,.16)'); g.addColorStop(1, 'rgba(255,120,30,0)'); x.fillStyle = g; x.fillRect(cx - r * 2.5, cy - r * 2.5, r * 5, r * 5); }
@@ -497,48 +530,52 @@ const Art = (() => {
         x.globalAlpha = 1;
       },
       // Draws the overview through a camera: world point q lands at S + (q - P0) * z
-      scene(G, P0, S, z, fade, hide) {
+      scene(G, P0, S, z, fade, hide, noOrbits) {
         const T = q => [S[0] + (q[0] - P0[0]) * z, S[1] + (q[1] - P0[1]) * z];
-        const [scx, scy] = T([G.cx, G.cy]), u = G.u;
-        if (fade > 0) {   // orbits
+        const [scx, scy] = T([G.cx, G.cy]), u = G.u, spr = this.sprites();
+        if (fade > 0 && !noOrbits) {   // orbits
           x.strokeStyle = `rgba(120,160,200,${.28 * fade})`; x.lineWidth = 1; x.beginPath();
           for (let i = 1; i < ORBIT.length; i++) { const r = G.pos[i][2] * z; if (r > W * 40) continue; x.moveTo(scx + r, scy); x.ellipse(scx, scy, r, r * G.sq, 0, 0, TAU); }
           x.stroke(); }
         const order = ORBIT.map((_, i) => i).sort((a, b) => G.pos[a][1] - G.pos[b][1]);
+        x.globalAlpha = 1 - (1 - fade) * .5;
         for (const i of order) {
           if (i === hide) continue;
           // the others are tiny next to the distances between them: they grow a little, never into blobs
-          const [px, py] = T(G.pos[i]), r = ORBIT[i][2] * u * Math.min(z, 2.5), c = ORBIT[i][1];
-          if (px < -r * 3 || px > W + r * 3 || py < -r * 3 || py > H + r * 3) continue;
-          x.globalAlpha = 1 - (1 - fade) * .5;
-          if (i === 0) { const g = x.createRadialGradient(px, py, 0, px, py, r * 3.2); g.addColorStop(0, 'rgba(255,240,200,1)'); g.addColorStop(.3, 'rgba(255,190,80,.9)'); g.addColorStop(.32, 'rgba(255,160,60,.35)'); g.addColorStop(1, 'rgba(255,120,30,0)');
-            x.fillStyle = g; x.fillRect(px - r * 3.2, py - r * 3.2, r * 6.4, r * 6.4); x.globalAlpha = 1; continue; }
-          let lx = scx - px, ly = scy - py; const ln = Math.hypot(lx, ly) || 1; lx /= ln; ly /= ln;
-          const g = x.createRadialGradient(px + lx * r * .5, py + ly * r * .5, r * .1, px, py, r * 1.05);
-          g.addColorStop(0, `rgb(${c[0]},${c[1]},${c[2]})`); g.addColorStop(.7, `rgb(${c[0] * .45 | 0},${c[1] * .45 | 0},${c[2] * .45 | 0})`); g.addColorStop(1, 'rgba(0,0,0,.2)');
-          x.fillStyle = g; x.beginPath(); x.arc(px, py, r, 0, TAU); x.fill();
-          if (i === 6) { x.strokeStyle = `rgba(226,206,152,.8)`; x.lineWidth = Math.max(1, r * .35); x.beginPath(); x.ellipse(px, py, r * 2.1, r * .6, -.38, 0, TAU); x.stroke(); }
-          x.globalAlpha = 1;
-          if (fade > .3) { x.globalAlpha = fade; x.fillStyle = '#86C295'; x.font = `${Math.round(H / 34)}px ui-monospace, Menlo, monospace`; x.textBaseline = 'middle';
-            x.fillText(BODIES[i].name.replace('The ', ''), px + r + 5 * u, py); x.globalAlpha = 1; }
+          const [px, py] = T(G.pos[i]), r = ORBIT[i][2] * u * Math.min(z, 2.5), d = spr.dot[i], ext = r * 3.2;
+          if (px < -ext || px > W + ext || py < -ext || py > H + ext) continue;
+          const sc = r * d.k, w = d.cvs.width * sc, h = d.cvs.height * sc;
+          if (i === 0) { x.drawImage(d.cvs, px - w / 2, py - h / 2, w, h); continue; }
+          x.save(); x.translate(px, py); x.rotate(Math.atan2(scy - py, scx - px)); x.drawImage(d.cvs, -w / 2, -h / 2, w, h); x.restore();
+          if (i === 6) { x.strokeStyle = 'rgba(226,206,152,.8)'; x.lineWidth = Math.max(1, r * .35); x.beginPath(); x.ellipse(px, py, r * 2.1, r * .6, -.38, 0, TAU); x.stroke(); }
+          if (fade > .3) { const lc = spr.label[i], ga = x.globalAlpha; x.globalAlpha = fade; x.drawImage(lc, px + r + 3 * u + lc.width > W ? px - r - 3 * u - lc.width : px + r + 3 * u, py - lc.height / 2); x.globalAlpha = ga; }
         }
-      },
-      card(p, a) {
-        if (a <= 0) return; const b = p.b, fs = Math.round(H / 15), sm = Math.round(H / 34), x0 = Math.round(W * .06); let y = Math.round(H * .62);
-        x.globalAlpha = a; x.textBaseline = 'top';
-        x.fillStyle = '#C9F5D3'; x.font = `700 ${fs}px ui-monospace, Menlo, monospace`; x.fillText(b.name.toUpperCase(), x0, y); y += fs * 1.25;
-        x.fillStyle = '#86C295'; x.font = `${sm}px ui-monospace, Menlo, monospace`; x.fillText(b.sub, x0, y); y += sm * 1.8;
-        x.fillStyle = '#C9F5D3'; for (const f of b.facts) { x.fillText('> ' + f, x0, y); y += sm * 1.45; }
         x.globalAlpha = 1;
+      },
+      card(p, a) {   // drawn once per world, then placed
+        if (a <= 0) return;
+        if (!p.card || p.cardH !== H) {
+          const b = p.b, fs = Math.round(H / 15), sm = Math.round(H / 34), c = p.card = canvas(Math.round(W * .6), Math.round(fs * 1.25 + sm * 1.8 + sm * 1.45 * 3 + 4)), g = c.getContext('2d'); let y = 0;
+          p.cardH = H; g.textBaseline = 'top';
+          g.fillStyle = '#C9F5D3'; g.font = `700 ${fs}px ui-monospace, Menlo, monospace`; g.fillText(b.name.toUpperCase(), 0, y); y += fs * 1.25;
+          g.fillStyle = '#86C295'; g.font = `${sm}px ui-monospace, Menlo, monospace`; g.fillText(b.sub, 0, y); y += sm * 1.8;
+          g.fillStyle = '#C9F5D3'; for (const f of b.facts) { g.fillText('> ' + f, 0, y); y += sm * 1.45; }
+        }
+        x.globalAlpha = a; x.drawImage(p.card, Math.round(W * .06), Math.round(H * .62)); x.globalAlpha = 1;
       },
       frame(dt) {
         // build the worlds in small steps, a bit more while just looking at the overview
-        if (job) { const t0 = performance.now(), budget = this.phase === 'over' ? 14 : 8; while (job && performance.now() - t0 < budget) { if (job.next().done) job = null; } }
-        x.drawImage(this.stars, 0, 0, W, H);
+        if (job) { const t0 = performance.now(), budget = this.phase === 'over' ? 8 : 4; while (job && performance.now() - t0 < budget) { if (job.next().done) job = null; } }
         const G = this.geo(), i = this.tgt, p = cache[i];
         if (this.phase === 'over') {
+          if (!this.ovbg || this.ovbg.width !== W || this.ovbg.height !== H) {   // stars and orbits don't move: one picture
+            const c = this.ovbg = canvas(W, H), save = x; x = c.getContext('2d'); x.drawImage(this.stars, 0, 0, W, H);
+            x.strokeStyle = 'rgba(120,160,200,.28)'; x.lineWidth = 1; x.beginPath();
+            for (let k = 1; k < ORBIT.length; k++) { const rr = G.pos[k][2]; x.moveTo(G.cx + rr, G.cy); x.ellipse(G.cx, G.cy, rr, rr * G.sq, 0, 0, TAU); }
+            x.stroke(); x = save; }
+          x.drawImage(this.ovbg, 0, 0);
           for (let k = 1; k < ORBIT.length; k++) this.ang[k] += dt / 1000 * .5 * Math.pow(ORBIT[k][0], -1.5) * .35;   // planets keep orbiting
-          this.scene(G, G.pos[0], [G.cx, G.cy], 1, 1, -1);
+          this.scene(G, G.pos[0], [G.cx, G.cy], 1, 1, -1, true);
           this.pt += dt;
           if (this.pt > (this.first ? OVER1 : OVER) && p) {   // wait here until the next world is built
             this.first = false; this.phase = 'in'; this.pt = 0; this.P0 = G.pos[i].slice(0, 2);
@@ -550,6 +587,7 @@ const Art = (() => {
           return;
         }
         // zooming in, looking, zooming out
+        x.drawImage(this.stars, 0, 0, W, H);
         const T = [W * .62, H * .48], rView = p.R * H / H0, rDot = ORBIT[i][2] * G.u, Z = rView / rDot;
         let e;
         if (this.phase === 'in') { this.pt += dt; e = ease(clamp(this.pt / ZOOM, 0, 1)); if (this.pt >= ZOOM) { this.phase = 'view'; this.pt = 0; } }
@@ -557,7 +595,7 @@ const Art = (() => {
         else { this.pt += dt; e = ease(1 - clamp(this.pt / ZOOM, 0, 1)); if (this.pt >= ZOOM) { this.phase = 'over'; this.pt = 0; this.tgt = (i + 1) % BODIES.length; } }
         const z = Math.exp(Math.log(Z) * e), S = [lerp(this.P0[0], T[0], e), lerp(this.P0[1], T[1], e)];
         this.scene(G, this.P0, S, z, 1 - e, e > .55 ? i : -1);
-        if (this.phase === 'view') { p.rot += dt * p.b.spin * TW / 1000 / 6; this.pf += dt; if (this.pf > 80) { this.pf = 0; this.paint(p); } }
+        if (this.phase === 'view') { p.rot += dt * p.b.spin * TW / 1000 / 6; if (Math.abs(p.rot - p.painted) >= .5) this.paint(p); }   // repaint only once it has turned a texel
         const ga = clamp((e - .45) / .3, 0, 1);
         if (ga > 0) this.globe(p, S[0], S[1], rDot * z, ga);
         if (this.phase === 'view') this.card(p, clamp((this.pt - 400) / 900, 0, 1) * clamp((VIEW - this.pt) / 700, 0, 1));
@@ -568,7 +606,7 @@ const Art = (() => {
   // A real-colour log fire: soft flame puffs rise off the logs and add their light together,
   // cooling from white-yellow to orange to red as they climb. The brick, logs and their glowing
   // cracks are drawn once; each frame only moves the flames, the glow and a few sparks.
-  function fireplace() {
+  function fireplace(film) {
     const STAGES = 24;
     let sprites = null;
     const makeSprites = () => {
@@ -580,9 +618,9 @@ const Art = (() => {
         gr.addColorStop(0, `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${c[3]})`); gr.addColorStop(.5, `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${c[3] * .35})`); gr.addColorStop(1, `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},0)`);
         g.fillStyle = gr; g.fillRect(0, 0, 48, 48); return sp; });
     };
-    return { name: 'Fireplace', dur: 600000,
-      // Filmed fire first (free Mixkit clips, 720p); the drawn fire below only shows if none of them will play
-      video: ['https://assets.mixkit.co/videos/17158/17158-720.mp4', 'https://assets.mixkit.co/videos/30252/30252-720.mp4', 'https://assets.mixkit.co/videos/1242/1242-720.mp4'],
+    return { name: film ? 'Fireplace' : 'Fireplace (drawn)', dur: 600000,
+      // Filmed fire (free Mixkit clips, 720p); the drawn fire below shows if none of them will play
+      video: film && ['https://assets.mixkit.co/videos/17158/17158-720.mp4', 'https://assets.mixkit.co/videos/30252/30252-720.mp4', 'https://assets.mixkit.co/videos/1242/1242-720.mp4'],
       init() {
         sprites = sprites || makeSprites();
         this.ps = []; this.sparks = []; this.t = 0; this.flick = 1; this.wind = 0; this.windTo = 0; this.spawnAcc = 0;
@@ -678,7 +716,7 @@ const Art = (() => {
 
   const pieces = [
     solar(),
-    fireplace(),
+    fireplace(true),
     { name: 'Harmonograph', init() { this.new(); clear(); },
       new() { const f = () => pick([2, 3, 4]) + rnd(-.012, .012);
         this.p = { f1: f(), f2: f(), f3: f(), f4: f(), p1: rnd(0, TAU), p2: rnd(0, TAU), p3: rnd(0, TAU), p4: rnd(0, TAU), d: rnd(.0008, .002), col: pick([G, CY, A]) };
@@ -692,7 +730,7 @@ const Art = (() => {
         if (Math.exp(-p.d * this.t) < .12) this.new(); } },
 
     { name: 'Flow field', init() { clear(); this.z = rnd(0, 100); this.f = [rnd(.003, .008), rnd(.003, .008), rnd(.002, .005)];
-        this.ps = Array.from({ length: 700 }, () => this.spawn()); this.col = pick([[G, CY], [G, A], [CY, G]]); },
+        this.ps = Array.from({ length: 480 }, () => this.spawn()); this.col = pick([[G, CY], [G, A], [CY, G]]); },
       spawn() { return { x: rnd(0, W), y: rnd(0, H), life: rnd(40, 200), c: Math.random() < .8 ? 0 : 1 }; },
       frame(dt) { fade(.05); this.z += dt * .00012; const [f1, f2, f3] = this.f, z = this.z, sp = dt / STEP * 1.3;
         for (let c = 0; c < 2; c++) { x.strokeStyle = this.col[c]; x.globalAlpha = .6; x.lineWidth = 1; x.beginPath();
@@ -721,7 +759,7 @@ const Art = (() => {
           for (const q of paths[k]) x.rect((q % c) * s + 1, (q / c | 0) * s + 1, s - 2, s - 2); x.fill(); });
         x.globalAlpha = 1; } },
 
-    { name: 'Warp', init() { clear(); this.st = Array.from({ length: 300 }, () => this.star(true)); },
+    { name: 'Warp', init() { clear(); this.st = Array.from({ length: 220 }, () => this.star(true)); },
       star(any) { return { x: rnd(-1, 1), y: rnd(-1, 1), z: any ? rnd(.05, 1) : 1, c: Math.random() < .12 ? 1 + (Math.random() * 2 | 0) : 0 }; },
       frame(dt) { fade(.35); const cx = W / 2, cy = H / 2, s = W * .5;
         [G, A, CY].forEach((col, ci) => { x.strokeStyle = col; x.lineWidth = 1.5; x.beginPath();
@@ -789,6 +827,7 @@ const Art = (() => {
             x.rect(W / 2 + Math.cos(a) * r - d / 2, H / 2 + Math.sin(a) * r - d / 2, d, d); }
           x.fill(); }
         if (this.t > 60000) this.init(); } },
+    fireplace(false),
   ];
 
   function size() {
@@ -796,38 +835,34 @@ const Art = (() => {
     W = cv.width = Math.round(cv.clientWidth * sc); H = cv.height = Math.round(cv.clientHeight * sc);
   }
   /* ---------- Filmed pieces ----------
-     Two <video>s over the canvas take turns: just before one clip ends the other starts from the top and fades
-     in over it, so the loop has no jump. If a clip won't load, the next address is tried; if none play, the
-     piece's drawn version carries on underneath. */
-  const vid = { els: null, urls: null, at: 0, cur: 0, live: false, t: 0 };
-  function vidEls() {
-    if (vid.els) return vid.els;
-    vid.els = [0, 1].map(() => { const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'auto';
-      v.setAttribute('muted', ''); v.className = 'art-vid'; v.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1s linear;z-index:1;pointer-events:none;background:#000';
-      v.addEventListener('error', () => { if (vid.urls && v === vid.els[vid.cur]) { vid.at++; vidLoad(); } });
-      v.addEventListener('playing', () => { if (vid.urls && v === vid.els[vid.cur]) { vid.live = true; v.style.opacity = 1;
-        const o = vid.els[1 - vid.cur]; if (o.src !== v.src) { o.src = v.src; o.load(); } } });   // the other one gets ready for the loop
-      cv.parentNode.insertBefore(v, cv.nextSibling); return v; });
-    return vid.els;
+     One looping <video> over the canvas. The Chromecast shows video on its own layer, which goes black under
+     fades, see-through effects and rounded clipping, so the video is simply shown or hidden, and the screen's
+     rounded frame is switched off while a film plays. If a clip won't load, or loads but doesn't move within
+     a few seconds, the next address is tried; if none play, the piece's drawn version carries on. */
+  const vid = { el: null, urls: null, at: 0, live: false, t: 0, seen: 0 };
+  const frame = () => cv.closest('.screen') || cv.parentNode;
+  function vidEl() {
+    if (vid.el) return vid.el;
+    const v = vid.el = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto'; v.setAttribute('muted', '');
+    v.className = 'art-vid'; v.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;z-index:1;display:none';
+    v.addEventListener('error', () => { if (vid.urls) { vid.at++; vidLoad(); } });
+    cv.parentNode.insertBefore(v, cv.nextSibling); return v;
   }
   function vidLoad() {
-    const v = vidEls()[vid.cur];
-    if (vid.at >= vid.urls.length) { vid.live = false; vid.els.forEach(e => { e.style.opacity = 0; e.pause(); }); return; }   // none play: drawn fire
+    const v = vidEl(); clearInterval(vid.t);
+    vid.live = false; v.style.display = 'none'; frame().classList.remove('film');
+    if (vid.at >= vid.urls.length) { v.pause(); v.removeAttribute('src'); v.load(); return; }   // none play: the drawn version
     v.src = vid.urls[vid.at]; v.load(); v.play().catch(() => {});
+    const t0 = performance.now();
+    vid.t = setInterval(() => {   // show it only once it is really moving; give up on this one after 12 s
+      if (v.currentTime > .3 && !v.paused) { if (!vid.live) { vid.live = true; v.style.display = 'block'; frame().classList.add('film'); } return; }
+      if (!vid.live && performance.now() - t0 > 12000) { vid.at++; vidLoad(); }
+    }, 500);
   }
-  function vidStart(urls) { vidEls(); vid.urls = urls; vid.at = 0; vid.cur = 0; vid.live = false; vidLoad(); clearInterval(vid.t); vid.t = setInterval(vidTick, 200); }
+  function vidStart(urls) { vid.urls = urls; vid.at = 0; vidLoad(); }
   function vidStop() {
     clearInterval(vid.t); vid.urls = null; vid.live = false;
-    if (vid.els) vid.els.forEach(e => { e.style.opacity = 0; e.pause(); e.removeAttribute('src'); e.load(); });
-  }
-  function vidTick() {
-    const a = vid.els[vid.cur], b = vid.els[1 - vid.cur];
-    if (!vid.live || !a.duration || a.currentTime < a.duration - 1.3) return;
-    if (b.src !== a.src) b.src = a.src;
-    b.currentTime = 0; b.play().catch(() => {});
-    b.style.zIndex = 2; a.style.zIndex = 1; b.style.opacity = 1;
-    vid.cur = 1 - vid.cur;
-    setTimeout(() => { if (vid.urls) { a.pause(); a.style.opacity = 0; } }, 1300);
+    if (vid.el) { vid.el.style.display = 'none'; vid.el.pause(); vid.el.removeAttribute('src'); vid.el.load(); frame().classList.remove('film'); }
   }
 
   function show(i) {
