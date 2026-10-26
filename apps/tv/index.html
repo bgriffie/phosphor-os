@@ -757,24 +757,76 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .tv-led.wait { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 8px var(--amber); }
     .tv-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .tv-sub { color: var(--text-dim); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .tv-note { margin: 0; color: var(--amber); font-size: var(--fs-sm); }
+    .tv-note { margin: 0; color: var(--amber); font-size: var(--fs-xs); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; flex: none; }
+    .tv-note.open { -webkit-line-clamp: unset; }
     .tv-note.err { color: var(--red); }
 
-    #tv-main { display: flex; flex-direction: column; gap: var(--sp-5); }
-    /* Remote: one big pad. Swipe to move, tap the middle for OK (or tap an edge arrow) */
-    .remote { display: flex; flex-direction: column; gap: var(--sp-5); }
-    .pad { position: relative; width: min(100%, 260px); aspect-ratio: 1; margin: 0 auto; border: 1px solid var(--line-strong); border-radius: var(--radius);
-      background: radial-gradient(circle at center, var(--surface-2) 0 22%, transparent 22.5%), repeating-linear-gradient(0deg, transparent 0 23px, rgba(57,255,106,.04) 23px 24px),
-        repeating-linear-gradient(90deg, transparent 0 23px, rgba(57,255,106,.04) 23px 24px), var(--surface-1);
+    /* Remote page: one screen, no scrolling. Status line, channels, what's playing, then the remote. */
+    .rc { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+    .rc[hidden], .rc-on[hidden], .rc-off[hidden] { display: none; }
+    .rc-top { display: flex; align-items: center; gap: var(--sp-3); min-height: 48px; padding: 0 var(--sp-1); }
+    .rc-who { min-width: 0; flex: 1; }
+    .rm-b.rc-pow { width: 48px; min-height: 44px; padding: 0; flex: none; border-radius: 50%; }
+    .rm-b.rc-pow[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); box-shadow: var(--glow-box); }
+    .rc-off { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-4); justify-content: center; }
+    .rc-big { align-self: center; width: min(70%, 220px); aspect-ratio: 1; border-radius: 50%; border: 1px solid var(--accent); background: var(--surface-1);
+      color: var(--accent); box-shadow: var(--glow-box); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-3);
+      font: inherit; font-weight: 700; font-size: var(--fs-sm); letter-spacing: var(--tracking-label); text-transform: uppercase; text-align: center; padding: var(--sp-4); cursor: pointer; }
+    .rc-big svg { width: 44px; height: 44px; filter: drop-shadow(0 0 6px var(--accent)); }
+    .rc-big:active { background: var(--surface-3); }
+    .rc-big:disabled { opacity: .5; }
+    .rc-on { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+    .rc-side { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+    /* Channels: what's on the TV, the current one lit */
+    .chans { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--sp-2); }
+    .ch { min-height: 58px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text-dim);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font: inherit; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em; cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; padding: 0; }
+    .ch svg { width: 22px; height: 22px; }
+    .ch:active { background: var(--surface-3); }
+    .ch.cur { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+
+    /* One-line strips (art controls, sound) */
+    .line { display: flex; align-items: center; gap: var(--sp-2); min-height: 48px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); padding: 0 var(--sp-1); }
+    .line[hidden] { display: none; }
+    .line-ic { flex: none; display: flex; padding-left: var(--sp-2); color: var(--text-dim); }
+    .line-ic svg { width: 20px; height: 20px; }
+    .snd-now.is-on .line-ic { color: var(--accent); }
+    .line-main { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; justify-content: center; text-align: left; background: none; border: 0;
+      color: var(--text); font: inherit; padding: 0 var(--sp-1); cursor: pointer; }
+    .line-t { font-weight: 700; font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .line-s { color: var(--text-dim); font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .an-ch { color: var(--accent); }
+    .rm-b.ic { width: 40px; min-height: 40px; padding: 0; flex: none; border-color: var(--line); }
+
+    /* The remote: Back/Home/Say | round pad | volume */
+    .ctl { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 60px 1fr 60px; gap: var(--sp-2); align-items: stretch; }
+    .ctl .col { display: grid; grid-template-rows: repeat(3, 1fr); gap: var(--sp-2); align-self: center; height: min(100%, 300px); min-height: 0; }
+    .rm-b.cb { flex-direction: column; gap: 4px; min-height: 0; padding: 0; font-size: 10px; letter-spacing: .06em; }
+    .pad-box { container-type: size; min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
+    .pad { position: relative; width: min(100cqw, 100cqh, 300px); aspect-ratio: 1; border: 1px solid var(--line-strong); border-radius: 50%;
+      background: radial-gradient(circle at center, var(--surface-2) 0 30%, var(--surface-1) 30.5%);
       touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; cursor: pointer; }
-    .pad::after { content: ''; position: absolute; left: 28%; top: 28%; width: 44%; height: 44%; border-radius: 50%; border: 1px solid var(--line-strong); pointer-events: none; }
+    .pad::after { content: ''; position: absolute; left: 30%; top: 30%; width: 40%; height: 40%; border-radius: 50%; border: 1px solid var(--line-strong); pointer-events: none; }
     .pad .ok { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; letter-spacing: var(--tracking-label); color: var(--text-dim); pointer-events: none; }
-    .pad svg { position: absolute; width: 28px; height: 28px; color: var(--text-dim); pointer-events: none; }
-    .pad .a-up { top: 10px; left: calc(50% - 14px); } .pad .a-down { bottom: 10px; left: calc(50% - 14px); }
-    .pad .a-left { left: 10px; top: calc(50% - 14px); } .pad .a-right { right: 10px; top: calc(50% - 14px); }
+    .pad svg { position: absolute; width: 26px; height: 26px; color: var(--text-dim); pointer-events: none; }
+    .pad .a-up { top: 7%; left: calc(50% - 13px); } .pad .a-down { bottom: 7%; left: calc(50% - 13px); }
+    .pad .a-left { left: 7%; top: calc(50% - 13px); } .pad .a-right { right: 7%; top: calc(50% - 13px); }
     .pad .hit { color: var(--accent); filter: drop-shadow(0 0 6px var(--accent)); }
     .pad.hit-ok .ok { color: var(--accent); text-shadow: var(--glow); }
     .pad.hit-ok::after { border-color: var(--accent); box-shadow: var(--glow-box); }
+    .vol-num { font-variant-numeric: tabular-nums; }
+
+    /* Wider than tall (the phone turned in Phosphor OS): channels and strips on the left, remote on the right */
+    @media (min-aspect-ratio: 5/4) {
+      .rc-on { flex-direction: row; gap: var(--sp-3); }
+      .rc-side { flex: 1 1 46%; min-width: 0; justify-content: center; }
+      .ctl { flex: 1 1 54%; min-height: 0; grid-template-columns: 52px 1fr 52px; }
+      .rc-top { min-height: 40px; }
+      .rc { gap: var(--sp-2); }
+    }
+
     .rm-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
     .rm-b { min-height: 48px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text);
       display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: inherit; font-size: var(--fs-xs); font-weight: 700;
@@ -783,20 +835,9 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .rm-b:active, .rm-b.held { background: var(--surface-3); }
     .rm-b[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
     .rm-b:disabled { opacity: .45; }
-    .vol { display: grid; grid-template-columns: 56px 1fr 56px 56px; gap: var(--sp-2); align-items: center; }
-    .vol .meter { height: 12px; }
-    .shortcuts { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
-    .shortcuts .rm-b { min-height: 48px; font-size: 11px; letter-spacing: .06em; }
-    .shortcuts .rm-b.cur { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
-    .remote-in { display: flex; flex-direction: column; gap: var(--sp-3); }
-    .art-now, .snd-now { display: flex; flex-direction: column; gap: var(--sp-3); }
-    .an-name { display: flex; align-items: baseline; gap: var(--sp-2); min-width: 0; }
-    .an-name b { font-size: var(--fs-lg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .an-ch { color: var(--accent); font-weight: 700; flex: none; }
-    .an-auto { margin-left: auto; color: var(--text-dim); font-size: var(--fs-sm); flex: none; }
-    .sn-row { display: flex; align-items: center; gap: var(--sp-3); }
-    .sn-ic svg { width: 22px; height: 22px; color: var(--accent); display: block; }
-    .rm-row-2 { grid-template-columns: repeat(2, 1fr); }
+    .vol-row { display: grid; grid-template-columns: 52px 1fr 52px 52px; gap: var(--sp-2); align-items: center; }
+    .vol-row[hidden] { display: none; }
+    .vol-row .meter { height: 12px; }
     .segmented.lvl { margin-top: var(--sp-2); }
     .menu-item small.warn { color: var(--amber); }
 
@@ -827,14 +868,14 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.9</span>
+      <span class="app-meta">v1.10</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
       <nav class="path" data-path aria-label="Location"></nav>
       <div class="screen-body">
 
-      <section class="view" data-route="/" data-title="TV">
+      <section class="view fill" data-route="/" data-title="TV">
         <div class="empty" id="tv-setup" hidden>
           <svg class="glyph-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M2 5h20v13H2zM8 21h8M7 2l5 3 5-3"/></svg>
           <h2 id="tv-setup-title">TV isn't set up</h2>
@@ -842,60 +883,72 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <button class="btn btn-primary" id="tv-setup-go">Set up TV</button>
         </div>
 
-        <div id="tv-main" hidden>
-          <section class="panel" data-title="TV">
-            <div class="tv-stat">
-              <span class="tv-led" id="tv-led" aria-hidden="true"></span>
-              <div style="min-width:0;flex:1"><div class="tv-name" id="tv-name">—</div><div class="tv-sub" id="tv-sub">Checking…</div></div>
-            </div>
-            <p class="tv-note" id="tv-note" hidden style="margin-top:var(--sp-3)"></p>
-            <button class="btn btn-primary btn-block" id="tv-on" hidden style="margin-top:var(--sp-4)">Turn on Phosphor TV</button>
-          </section>
+        <div class="rc" id="tv-main" hidden>
+          <!-- One line: which TV, what's on it, and the power button -->
+          <div class="rc-top">
+            <span class="tv-led" id="tv-led" aria-hidden="true"></span>
+            <div class="rc-who"><div class="tv-name" id="tv-name">—</div><div class="tv-sub" id="tv-sub">Checking…</div></div>
+            <button class="rm-b rc-pow" id="tv-power" aria-label="Turn TV on" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg></button>
+          </div>
+          <p class="tv-note" id="tv-note" hidden></p>
 
-          <section class="panel np" data-title="Now on TV" id="np" hidden>
-            <div><div class="np-title" id="np-title"></div><div class="tv-sub" id="np-sub"></div></div>
-            <div class="rm-row">
-              <button class="rm-b" data-media="pause" id="np-pp" aria-label="Pause"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg><span>Pause</span></button>
-              <button class="rm-b" data-media="stop" aria-label="Stop"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 5h14v14H5z"/></svg><span>Stop</span></button>
-              <button class="rm-b" id="np-switch"><span>Phosphor</span></button>
-            </div>
-          </section>
-
-          <div class="remote" id="remote" hidden>
-            <section class="panel" data-title="On the TV">
-              <div class="shortcuts" id="shortcuts">
-                <button class="rm-b" data-screen="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="14" r="4"/><path d="M12 4v3M4.9 8.9l2.1 2.1M19.1 8.9 17 11M2 20h20"/></svg>Today</button>
-                <button class="rm-b" data-screen="art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v16H3z"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg>Art</button>
-                <button class="rm-b" data-screen="clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Clock</button>
-                <button class="rm-b" data-screen="lights"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>Lights</button>
-                <button class="rm-b" data-screen="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v13H8l-5 4z"/><path d="M7 9h10M7 13h6"/></svg>Board</button>
-                <button class="rm-b" data-route="/sound"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>Sound</button>
-              </div>
-            </section>
-
-            <section class="panel art-now" data-title="Art" id="art-now" hidden>
-              <div class="an-name"><span class="an-ch" id="an-ch">CH 01</span><b id="an-name">—</b><span class="an-auto" id="an-auto"></span></div>
+          <!-- TV off (or another app on it) -->
+          <div class="rc-off" id="rc-off" hidden>
+            <button class="rc-big" id="tv-on" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>
+              <span>Turn on Phosphor TV</span>
+            </button>
+            <section class="panel np" data-title="Now on TV" id="np" hidden>
+              <div><div class="np-title" id="np-title"></div><div class="tv-sub" id="np-sub"></div></div>
               <div class="rm-row">
-                <button class="rm-b" data-art="-1" aria-label="Previous art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Prev</button>
-                <button class="rm-b" id="an-hold" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M7 4v16M17 4v16"/></svg>Stay</button>
-                <button class="rm-b" data-art="1" aria-label="Next art">Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
-              </div>
-              <div class="rm-row rm-row-2">
-                <button class="rm-b" data-route="/art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>All art</button>
-                <button class="rm-b" id="an-full" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>Full screen</button>
+                <button class="rm-b" data-media="pause" id="np-pp" aria-label="Pause"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg><span>Pause</span></button>
+                <button class="rm-b" data-media="stop" aria-label="Stop"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 5h14v14H5z"/></svg><span>Stop</span></button>
+                <button class="rm-b" id="np-switch"><span>Phosphor</span></button>
               </div>
             </section>
+            <div class="vol-row" id="vol-off" hidden>
+              <button class="rm-b" data-vol="-5" aria-label="Volume down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+              <div class="meter" role="progressbar" aria-label="TV volume" aria-valuemin="0" aria-valuemax="100"><span class="vol-bar" style="--value:0%"></span></div>
+              <button class="rm-b" data-vol="5" aria-label="Volume up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+              <button class="rm-b" data-mute aria-pressed="false" aria-label="Mute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM16 9l5 6M21 9l-5 6"/></svg></button>
+            </div>
+          </div>
 
-            <section class="panel snd-now" data-title="Sound" id="snd-now" hidden>
-              <div class="sn-row"><span class="sn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></span><div style="min-width:0;flex:1"><div class="tv-name" id="sn-name">—</div><div class="tv-sub" id="sn-sub"></div></div></div>
-              <div class="rm-row rm-row-2">
-                <button class="rm-b" id="sn-stop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M5 5h14v14H5z"/></svg>Stop</button>
-                <button class="rm-b" data-route="/sound"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"/></svg>Change</button>
+          <!-- TV on: channels, what's playing, then the remote -->
+          <div class="rc-on" id="remote" hidden>
+            <div class="rc-side">
+              <div class="chans" id="shortcuts" role="group" aria-label="Put on the TV">
+                <button class="ch" data-screen="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="14" r="4"/><path d="M12 4v3M4.9 8.9l2.1 2.1M19.1 8.9 17 11M2 20h20"/></svg><span>Today</span></button>
+                <button class="ch" data-screen="art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v16H3z"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg><span>Art</span></button>
+                <button class="ch" data-screen="clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Clock</span></button>
+                <button class="ch" data-screen="lights"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg><span>Lights</span></button>
+                <button class="ch" data-screen="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v13H8l-5 4z"/><path d="M7 9h10M7 13h6"/></svg><span>Board</span></button>
               </div>
-            </section>
 
-            <section class="panel" data-title="Remote">
-              <div class="remote-in">
+              <!-- Only while Art is on: change it, keep it, full screen -->
+              <div class="line art-now" id="art-now" hidden>
+                <button class="rm-b ic" data-art="-1" aria-label="Previous art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+                <button class="line-main" data-route="/art" aria-label="All art"><span class="line-t" id="an-name">—</span><span class="line-s"><span class="an-ch" id="an-ch">CH 01</span> · <span id="an-auto"></span></span></button>
+                <button class="rm-b ic" data-art="1" aria-label="Next art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+                <button class="rm-b ic" id="an-hold" aria-pressed="false" aria-label="Stay on this one"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M7 4v16M17 4v16"/></svg></button>
+                <button class="rm-b ic" id="an-full" aria-pressed="false" aria-label="Full screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
+              </div>
+
+              <!-- Music and background sound: tap to change -->
+              <div class="line snd-now" id="snd-now">
+                <span class="line-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></span>
+                <button class="line-main" data-route="/sound"><span class="line-t" id="sn-name">Add music or rain</span><span class="line-s" id="sn-sub"></span></button>
+                <button class="rm-b ic" id="sn-stop" aria-label="Stop the sound" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M5 5h14v14H5z"/></svg></button>
+              </div>
+            </div>
+
+            <div class="ctl">
+              <div class="col">
+                <button class="rm-b cb" data-tvkey="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 5L4 10l5 5M4 10h10a5 5 0 0 1 0 10h-4"/></svg><span>Back</span></button>
+                <button class="rm-b cb" data-tvkey="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 11l9-7 9 7M5 9.5V20h14V9.5"/></svg><span>Home</span></button>
+                <button class="rm-b cb" data-route="/say"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v13H8l-5 4z"/></svg><span>Say</span></button>
+              </div>
+              <div class="pad-box">
                 <div class="pad" id="pad" role="group" aria-label="Remote: swipe to move, tap the middle for OK">
                   <svg class="a-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M5 15l7-7 7 7"/></svg>
                   <svg class="a-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>
@@ -903,23 +956,14 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
                   <svg class="a-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
                   <span class="ok">OK</span>
                 </div>
-                <div class="rm-row">
-                  <button class="rm-b" data-tvkey="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 5L4 10l5 5M4 10h10a5 5 0 0 1 0 10h-4"/></svg>Back</button>
-                  <button class="rm-b" data-tvkey="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 11l9-7 9 7M5 9.5V20h14V9.5"/></svg>Home</button>
-                  <button class="rm-b" data-route="/say"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v13H8l-5 4z"/></svg>Say</button>
-                </div>
               </div>
-            </section>
-          </div>
-
-          <section class="panel" data-title="Volume" id="vol-panel" hidden>
-            <div class="vol">
-              <button class="rm-b" data-vol="-5" aria-label="Volume down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/></svg></button>
-              <div class="meter" role="progressbar" aria-label="TV volume" aria-valuemin="0" aria-valuemax="100" id="vol-meter"><span id="vol-bar" style="--value:0%"></span></div>
-              <button class="rm-b" data-vol="5" aria-label="Volume up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-              <button class="rm-b" id="vol-mute" aria-pressed="false" aria-label="Mute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM16 9l5 6M21 9l-5 6"/></svg></button>
+              <div class="col">
+                <button class="rm-b cb" data-vol="5" aria-label="Volume up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Vol</span></button>
+                <button class="rm-b cb" data-mute aria-pressed="false" aria-label="Mute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM16 9l5 6M21 9l-5 6"/></svg><span class="vol-num">—</span></button>
+                <button class="rm-b cb" data-vol="-5" aria-label="Volume down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/></svg><span>Vol</span></button>
+              </div>
             </div>
-          </section>
+          </div>
         </div>
       </section>
 
@@ -993,7 +1037,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.9</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.10</span></a>
           </div>
         </div>
       </section>
@@ -1051,7 +1095,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor TV">
-          <div class="kv"><span>Version</span><span>1.9</span></div>
+          <div class="kv"><span>Version</span><span>1.10</span></div>
           <div class="kv"><span>Chromecast</span><span id="ab-cast">—</span></div>
           <div class="kv"><span>Needs</span><span>Relay with --cast</span></div>
           <div class="kv"><span>Fireplace film</span><span>Pixabay, Videezy</span></div>
@@ -1075,19 +1119,15 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   </main>
 
   <dialog class="sheet dropdown" id="menu" aria-label="Menu">
-    <div class="sheet-title">Go to</div>
     <div class="menu" data-sections>
-      <button class="menu-item" data-route="/"><span class="mi-glyph" aria-hidden="true">■</span><span class="mi-label">Remote</span></button>
+      <button class="menu-item" data-route="/"><span class="mi-label">Remote</span></button>
       <button class="menu-item" data-route="/art"><span class="mi-label">Art</span></button>
       <button class="menu-item" data-route="/sound"><span class="mi-label">Sound</span></button>
-      <button class="menu-item" data-route="/say"><span class="mi-label">Say</span></button>
-      <button class="menu-item" data-route="/settings"><span class="mi-glyph" aria-hidden="true">⚙</span><span class="mi-label">Settings</span></button>
+      <button class="menu-item" data-route="/say"><span class="mi-label">Message board</span></button>
+      <button class="menu-item" data-route="/settings"><span class="mi-label">Settings</span></button>
     </div>
-    <div class="sheet-title">Actions</div>
     <div class="menu">
       <button class="menu-item" id="m-power"><span class="mi-label" id="m-power-label">Turn TV on</span></button>
-      <button class="menu-item" data-route="/settings/cast"><span class="mi-label">Pick Chromecast</span></button>
-      <button class="menu-item" data-route="/settings/relay"><span class="mi-label">Relay setup</span></button>
     </div>
   </dialog>
 
@@ -1502,8 +1542,8 @@ PH.init({});
     $('#music-lvl').hidden = !s.music; $('#amb-lvl').hidden = !s.amb;
     const st = name && isOn() && h ? h.state : '';
     const what = st === 'loading' ? 'Tuning in…' : st === 'error' ? 'The TV can\'t reach this station right now. Trying again in a minute; or pick another.' : st === 'blocked' ? 'The TV is holding the sound back. Press OK on the remote to start it.' : st === 'playing' ? 'Playing on the TV' : name && !isOn() ? 'Plays when Phosphor TV is on' : '';
-    $('#snd-now').hidden = !name || !isOn();
-    $('#sn-name').textContent = name || '—'; $('#sn-sub').textContent = what;
+    $('#sn-name').textContent = name || 'Add music or rain'; $('#sn-sub').textContent = name ? what : 'Tap to pick';
+    $('#sn-stop').hidden = !name; $('#snd-now').classList.toggle('is-on', !!name);
     const warn = st === 'error' || st === 'blocked';
     $('#snd-note').textContent = name ? what : ''; $('#snd-note').hidden = !name || !what; $('#snd-note').style.color = warn ? 'var(--amber)' : '';
   }
@@ -1526,17 +1566,19 @@ PH.init({});
   $('#tv-on').addEventListener('click', () => power(true));
   $('#np-switch').addEventListener('click', () => power(true));
   $('#k-power').addEventListener('click', () => power(!isOn()));
+  $('#tv-power').addEventListener('click', () => power(!isOn()));
+  $('#tv-note').addEventListener('click', e => e.currentTarget.classList.toggle('open'));
   $('#m-power').addEventListener('click', () => { $('#menu').close(); power(!isOn()); });
 
   $$('[data-vol]').forEach(b => b.addEventListener('click', async () => {
     const c = cast(); if (c) { c.volume = Math.max(0, Math.min(100, c.volume + +b.dataset.vol)); renderVol(); }
     try { await call('/tv/volume', { id: info.id, delta: +b.dataset.vol }); } catch (e) { PH.toast(e.message, 'warn'); }
   }));
-  $('#vol-mute').addEventListener('click', async () => {
+  $$('[data-mute]').forEach(b => b.addEventListener('click', async () => {
     const c = cast(); if (!c) return;
     c.muted = !c.muted; renderVol();
     try { await call('/tv/volume', { id: info.id, mute: c.muted }); } catch (e) { PH.toast(e.message, 'warn'); }
-  });
+  }));
   $$('[data-media]').forEach(b => b.addEventListener('click', async () => {
     const cmd = b.dataset.media === 'pause' && cast()?.media?.state === 'PAUSED' ? 'play' : b.dataset.media;
     try { await call('/tv/media', { id: info.id, cmd }); setTimeout(check, 600); } catch (e) { PH.toast(e.message, 'warn'); }
@@ -1618,9 +1660,11 @@ PH.init({});
   /* ---------- Render ---------- */
   function renderVol() {
     const c = cast(); if (!c) return;
-    $('#vol-bar').style.setProperty('--value', (c.muted ? 0 : c.volume) + '%');
-    $('#vol-meter').setAttribute('aria-valuenow', c.muted ? 0 : c.volume);
-    $('#vol-mute').setAttribute('aria-pressed', String(!!c.muted));
+    const v = c.muted ? 0 : Math.round(c.volume);
+    $$('.vol-bar').forEach(b => b.style.setProperty('--value', v + '%'));
+    $$('.vol-row .meter').forEach(m => m.setAttribute('aria-valuenow', v));
+    $$('[data-mute]').forEach(b => b.setAttribute('aria-pressed', String(!!c.muted)));
+    $$('.vol-num').forEach(n => n.textContent = c.muted ? 'Muted' : v);
   }
   function render() {
     const setup = $('#tv-setup'), main = $('#tv-main');
@@ -1656,12 +1700,13 @@ PH.init({});
       $('#np-pp').lastElementChild.textContent = paused ? 'Play' : 'Pause';
       $('#np-pp').firstElementChild.innerHTML = paused ? '<path d="M7 4l13 8-13 8z"/>' : '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>';
     }
-    $('#vol-panel').hidden = !c;
+    $('#rc-off').hidden = on; $('#vol-off').hidden = !c;
     renderVol();
     $$('#shortcuts [data-screen]').forEach(b => b.classList.toggle('cur', b.dataset.screen === t.screen));
-    $('#shortcuts [data-route="/sound"]').classList.toggle('cur', !!soundName(snd()));
     renderArt(); renderSound();
     $('#m-power-label').textContent = on ? 'Turn TV off' : 'Turn TV on';
+    const pw = $('#tv-power'); pw.hidden = !on; pw.disabled = busyPower;
+    pw.setAttribute('aria-pressed', String(on)); pw.setAttribute('aria-label', on ? 'Turn TV off' : 'Turn TV on');
 
     $('#set-cast').textContent = castName() || '—';
     $('#set-weather').textContent = (info && info.place) || 'Not set';
