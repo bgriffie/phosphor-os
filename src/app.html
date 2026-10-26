@@ -218,17 +218,59 @@
     .term-empty { color: var(--text-faint); font-size: var(--fs-sm); padding: var(--sp-2); }
 
     /* Spotify remote */
-    .mu-now { display: flex; flex-direction: column; }
-    .mu-mini { display: flex; align-items: center; gap: var(--sp-3); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); padding: var(--sp-3); }
-    .mu-mini-link { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--sp-3); color: var(--text); text-decoration: none; }
-    .mu-mini-link .mi-label { min-width: 0; display: flex; flex-direction: column; font-weight: 700; }
-    .mu-mini-link .mi-label > span, .mu-mini-link small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .mu-mini-link small { font-weight: 400; color: var(--text-dim); font-size: var(--fs-sm); }
-    .mu-mini .mi-thumb { flex: none; width: 52px; height: 52px; object-fit: cover; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); }
-    .mu-mini .mi-thumb.none { visibility: hidden; }
-    .mu-mini-play { flex: none; width: 52px; height: 52px; }
-    .mu-mini-play svg { width: 24px; height: 24px; }
-    #mu-on > .mu-note { text-align: center; }
+    /* Spotify: one screen like the TV remote */
+    .view.mu-home.is-active:has(> #mu-on:not([hidden])) { flex: 1 1 auto; min-height: 0; }
+    .screen-body:has(> .view.mu-home.is-active > #mu-on:not([hidden])) { overflow: hidden; padding: var(--sp-2) var(--sp-3) var(--sp-3); }
+    .mu-player { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+    .mu-player[hidden] { display: none; }
+    .mu-where { display: flex; align-items: center; gap: var(--sp-2); min-height: 40px; padding: 0 var(--sp-3); border: 1px solid var(--line); border-radius: var(--radius-sm);
+      background: var(--surface-1); color: var(--text-dim); text-decoration: none; font-size: var(--fs-sm); }
+    .mu-where span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mu-where b { color: var(--accent); font-weight: 700; }
+    .mu-where svg { width: 18px; height: 18px; flex: none; }
+    .mu-now { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+    .mu-art-box { flex: 1 1 auto; min-height: 60px; container-type: size; display: flex; align-items: center; justify-content: center; }
+    .mu-art, .mu-art-none { width: min(100cqw, 100cqh, 320px); aspect-ratio: 1; object-fit: cover; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-2); }
+    .mu-art[hidden], .mu-art-none[hidden] { display: none; }
+    .mu-art-none { display: flex; align-items: center; justify-content: center; color: var(--text-faint); }
+    .mu-art-none svg { width: 34%; height: 34%; }
+    .mu-info { flex: none; display: flex; flex-direction: column; }
+    .mu-track { font-size: var(--fs-lg); font-weight: 700; line-height: var(--lh-tight); color: var(--text); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mu-artist { margin-top: var(--sp-1); color: var(--text-dim); font-size: var(--fs-sm); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mu-seek { padding: var(--sp-3) 0 var(--sp-1); cursor: pointer; touch-action: none; }
+    .mu-seek .meter { height: 10px; pointer-events: none; }
+    .mu-times { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--text-dim); font-variant-numeric: tabular-nums; }
+    .mu-ctrl { display: flex; justify-content: center; align-items: center; gap: var(--sp-6); margin-top: var(--sp-2); }
+    .rm-b.mu-side { width: 60px; height: 60px; padding: 0; border-radius: 50%; }
+    .rm-b.mu-side svg { width: 30px; height: 30px; }
+    .mu-play { width: 76px; height: 76px; border-radius: 50%; border: 1px solid var(--accent); background: var(--surface-1); color: var(--accent); box-shadow: var(--glow-box);
+      display: flex; align-items: center; justify-content: center; cursor: pointer; touch-action: manipulation; }
+    .mu-play svg { width: 30px; height: 30px; filter: drop-shadow(0 0 4px var(--accent)); }
+    .mu-play:active { background: var(--surface-3); }
+    .mu-chans { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); flex: none; }
+    .mu-chans .ch { text-decoration: none; min-height: 64px; }
+    .mu-chans .ch small { font-size: 10px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-faint); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 4px; }
+    .mu-player .mu-note { text-align: center; margin: 0; }
+    /* Phone turned: cover on the left, everything else on the right */
+    html.os-wide .mu-player { display: grid; grid-template-columns: minmax(0, 40%) 1fr; grid-template-rows: auto 1fr auto; gap: var(--sp-2) var(--sp-4); }
+    html.os-wide .mu-player[hidden] { display: none; }
+    html.os-wide .mu-now { display: contents; }
+    html.os-wide .mu-art-box { grid-column: 1; grid-row: 1 / 4; min-height: 0; }
+    html.os-wide .mu-where, html.os-wide .mu-player .mu-note { grid-column: 2; }
+    html.os-wide .mu-info { grid-column: 2; grid-row: 2; justify-content: center; }
+    html.os-wide .mu-chans { grid-column: 2; grid-row: 3; }
+    html.os-wide .mu-chans .ch { min-height: 48px; flex-direction: row; gap: 6px; }
+    html.os-wide .mu-chans .ch small { display: none; }
+    html.os-wide .rm-b.mu-side { width: 48px; height: 48px; }
+    html.os-wide .mu-play { width: 60px; height: 60px; }
+    .ch { min-height: 58px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text-dim);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font: inherit; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em; cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; padding: 0; }
+    .ch svg { width: 22px; height: 22px; flex: none; }
+    .ch:active { background: var(--surface-3); }
+    .rm-b { border: 1px solid var(--line-strong); background: var(--surface-1); color: var(--text); display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+    .rm-b:active { background: var(--surface-3); }
     #ep-diag { font-size: var(--fs-xs); color: var(--text-faint); }
     /* Episodes: sort row, month headings, and the hold-to-jump strip on the right edge */
     .ep-sort button { font-size: var(--fs-xs); padding-left: 2px; padding-right: 2px; }
@@ -245,11 +287,7 @@
       padding: var(--sp-2) var(--sp-4); background: var(--surface-2); border: 1px solid var(--accent); border-radius: var(--radius-sm);
       color: var(--accent); font-size: var(--fs-lg); letter-spacing: .06em; text-transform: uppercase; box-shadow: var(--glow-box);
     }
-    .mu-now .mu-track, .mu-now .mu-artist, .mu-now .mu-note { text-align: center; }
-    .mu-links { margin-top: var(--sp-6); }
     .segmented { margin-bottom: var(--sp-2); }
-    .mu-art { display: block; width: min(100%, 240px, 30vh); aspect-ratio: 1; margin: 0 auto var(--sp-4); object-fit: cover; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-2); }
-    .mu-art[hidden] { display: none; }
     .mu-row { gap: var(--sp-3); }
     .mu-row .mi-thumb { flex: none; width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); }
     .mu-row .mi-thumb.none { visibility: hidden; }
@@ -264,19 +302,7 @@
     .mu-head p { margin-top: var(--sp-1); color: var(--text-dim); font-size: var(--fs-sm); }
     .mu-btns { display: flex; gap: var(--sp-3); margin: var(--sp-4) 0 var(--sp-5); }
     .mu-btns .btn { flex: 1; }
-    .mu-track { font-size: var(--fs-xl); font-weight: 700; line-height: var(--lh-tight); color: var(--text); overflow-wrap: anywhere; }
-    .mu-artist { margin-top: var(--sp-2); color: var(--text-dim); font-size: var(--fs-sm); overflow-wrap: anywhere; }
     .mu-note { margin-top: var(--sp-2); color: var(--amber); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); }
-    .mu-now .meter { margin-top: var(--sp-5); }
-    .mu-times { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--text-dim); font-variant-numeric: tabular-nums; }
-    .mu-times .badge { max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .mu-ctrl { display: flex; justify-content: center; gap: var(--sp-6); align-items: center; margin-top: var(--sp-5); }
-    .mu-ctrl .btn-icon { width: 56px; height: 56px; }
-    .mu-ctrl .btn svg { width: 32px; height: 32px; }
-    .mu-ctrl .mu-play { width: 64px; height: 64px; }
-    .mu-ctrl .mu-play svg { width: 26px; height: 26px; }
-    .mu-ctrl [aria-pressed="true"] { color: var(--accent); border-color: var(--accent); text-shadow: var(--glow); }
-    .mu-ctrl .btn i { font-style: normal; font-size: 10px; margin-left: -2px; align-self: flex-end; }
     .mu-redirect { display: flex; gap: var(--sp-2); align-items: center; }
     .mu-redirect code { flex: 1; min-width: 0; overflow-wrap: anywhere; padding: var(--sp-2); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--accent); font-size: var(--fs-sm); }
     .steps { display: flex; flex-direction: column; gap: var(--sp-2); padding-left: 1.4em; color: var(--text); }
@@ -293,7 +319,7 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.37</span>
+      <span class="app-meta">v1.38</span>
     </header>
     <div class="screen-slot">
     <div class="screen">
@@ -327,7 +353,7 @@
       <section class="view" data-route="/app" data-title="Phosphor OS"></section>
 
       <!-- ===== Spotify remote ===== -->
-      <section class="view" data-route="/music" data-title="Spotify">
+      <section class="view mu-home" data-route="/music" data-title="Spotify">
         <div class="empty" id="mu-off" hidden>
           <pre aria-hidden="true">  ┌──────────┐
   │ ▸  ♪ ♪ ♪ │
@@ -335,43 +361,42 @@
           <p>Control Spotify from here, even under Guided Access. It needs Spotify Premium and a one-time setup.</p>
           <button class="btn btn-primary" data-route="/music/setup">Set up Spotify</button>
         </div>
-        <div id="mu-on" hidden>
-          <div class="mu-mini">
-            <a class="mu-mini-link" href="#/music/now" aria-label="Now playing">
-              <img class="mi-thumb none" id="mu-mini-art" alt="" referrerpolicy="no-referrer">
-              <span class="mi-label"><span id="mu-mini-title">Nothing playing</span><small id="mu-mini-sub">Now playing</small></span>
-            </a>
-            <button class="btn btn-icon btn-primary mu-mini-play" data-mu="toggle" aria-label="Play"></button>
-          </div>
+        <!-- One screen: where it plays, what's playing, the controls, then the three places to pick something -->
+        <div class="mu-player" id="mu-on" hidden>
+          <a class="mu-where" href="#/music/devices" aria-label="Choose where it plays">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M7 2h10v20H7zM11 18h2"/></svg>
+            <span>Playing on <b id="mu-devname">—</b></span>
+            <svg class="mu-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+          </a>
           <div class="mu-note" id="mu-note" hidden></div>
-          <div class="menu mu-links">
-            <a class="menu-item" href="#/music/episodes"><span class="mi-label">Stuff You Should Know<small id="mu-sysk-sub">Episodes</small></span></a>
-            <a class="menu-item" href="#/music/devices"><span class="mi-label">Play on</span><span class="mi-value" id="mu-devname"></span></a>
-          </div>
-          <div class="menu-group" style="margin-top:var(--sp-5)">
-            <span class="label">Recently played</span>
-            <div class="panel" id="rp-scope" hidden>
-              <p>Spotify needs your OK once more to share what you've played. Tap Reconnect, approve, and you'll come straight back.</p>
-              <button class="btn btn-primary btn-block" data-mu-act="reconnect" style="margin-top:var(--sp-3)">Reconnect Spotify</button>
+          <div class="mu-now">
+            <div class="mu-art-box"><img class="mu-art" id="mu-art" alt="" hidden referrerpolicy="no-referrer"><div class="mu-art-none" id="mu-art-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></div></div>
+            <div class="mu-info">
+              <div class="mu-track" id="mu-track">Nothing playing</div>
+              <div class="mu-artist" id="mu-artist"></div>
+              <div class="mu-seek" id="mu-seek" role="slider" aria-label="Position" aria-valuemin="0" aria-valuemax="100" tabindex="0"><div class="meter"><span id="mu-bar" style="--value:0%"></span></div></div>
+              <div class="mu-times"><span id="mu-pos">0:00</span><span id="mu-dur">0:00</span></div>
+              <div class="mu-ctrl">
+                <button class="rm-b mu-side" id="mu-left" data-mu="left" aria-label="Back 15 seconds"></button>
+                <button class="mu-play" data-mu="toggle" aria-label="Play"></button>
+                <button class="rm-b mu-side" id="mu-right" data-mu="right" aria-label="Forward 30 seconds"></button>
+              </div>
             </div>
-            <div class="menu" id="rp-items"></div>
+          </div>
+          <div class="mu-chans">
+            <a class="ch" href="#/music/episodes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M12 3a4 4 0 0 0-4 4v4a4 4 0 0 0 8 0V7a4 4 0 0 0-4-4zM5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>SYSK</span><small id="mu-sysk-sub"></small></a>
+            <a class="ch" href="#/music/recent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Recent</span><small>Songs</small></a>
+            <a class="ch" href="#/music/devices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 5h18v11H3zM8 20h8"/></svg><span>Play on</span><small id="mu-devcount">Devices</small></a>
           </div>
         </div>
       </section>
 
-      <section class="view" data-route="/music/now" data-title="Now playing">
-        <div class="mu-now">
-          <img class="mu-art" id="mu-art" alt="" hidden referrerpolicy="no-referrer">
-          <div class="mu-track" id="mu-track">Nothing playing</div>
-          <div class="mu-artist" id="mu-artist"></div>
-          <div class="meter" role="progressbar" aria-label="Position" aria-valuemin="0" aria-valuemax="100"><span id="mu-bar" style="--value:0%"></span></div>
-          <div class="mu-times"><span id="mu-pos">0:00</span><span id="mu-dur">0:00</span></div>
-          <div class="mu-ctrl">
-            <button class="btn btn-icon btn-ghost" id="mu-left" data-mu="left" aria-label="Back 15 seconds"></button>
-            <button class="btn btn-primary mu-play" data-mu="toggle" aria-label="Play"></button>
-            <button class="btn btn-icon btn-ghost" id="mu-right" data-mu="right" aria-label="Forward 30 seconds"></button>
-          </div>
+      <section class="view" data-route="/music/recent" data-title="Recent">
+        <div class="panel" id="rp-scope" hidden>
+          <p>Spotify needs your OK once more to share what you've played. Tap Reconnect, approve, and you'll come straight back.</p>
+          <button class="btn btn-primary btn-block" data-mu-act="reconnect" style="margin-top:var(--sp-3)">Reconnect Spotify</button>
         </div>
+        <div class="menu" id="rp-items"></div>
       </section>
 
       <section class="view" data-route="/music/episodes" data-title="Episodes">
@@ -577,7 +602,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.37</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.38</span></a>
           </div>
         </div>
       </section>
@@ -621,7 +646,7 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.37</span></div>
+          <div class="kv"><span>Version</span><span>1.38</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>

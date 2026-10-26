@@ -119,7 +119,7 @@
   };
 
   /* ---------- Player state ---------- */
-  let state = null, stamp = 0, devices = [], misses = 0;
+  let state = null, stamp = 0, devices = [], misses = 0, seeking = null;   // seeking: 0..1 while a finger is on the bar
   // Stuff You Should Know episodes: { items: [], next, loaded, loading }
   let eps = null, epFilter = load('mu-ep-filter', 'new'), epSort = load('mu-ep-sort', 'new');
   const fmt = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -190,7 +190,7 @@
         const dev = await pickDevice(); if (!dev) throw e;
         await api('/me/player/play', { method: 'PUT', body, query: { device_id: dev.id } });
       }
-      later(); PH.go('/music/now');
+      later(); PH.go('/music');
     } catch (e) { say(e); }
   }
 
@@ -299,16 +299,11 @@
   function renderNow() {
     const it = state && state.item, ep = isEpisode();
     $('#mu-track').textContent = it ? it.name : 'Nothing playing';
-    $('#mu-artist').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : it.show ? it.show.name : '') : 'Pick a song or an episode, or start something in Spotify.';
+    $('#mu-artist').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : it.show ? it.show.name : '') : 'Pick something below, or start it in Spotify';
     const src = it ? art((it.album && it.album.images) || it.images || (it.show && it.show.images), 300) : '';
     const cover = $('#mu-art');
-    if (cover.dataset.src !== src) { cover.dataset.src = src; cover.hidden = !src; if (src) cover.src = src; else cover.removeAttribute('src'); }
-    $('#mu-devname').textContent = state && state.device ? state.device.name : 'None';
-    // the Now playing card on the Spotify home page
-    $('#mu-mini-title').textContent = it ? it.name : 'Nothing playing';
-    $('#mu-mini-sub').textContent = it ? (it.artists ? it.artists.map(a => a.name).join(', ') : it.show ? it.show.name : '') : 'Pick something below';
-    const mini = $('#mu-mini-art'), msrc = it ? art((it.album && it.album.images) || it.images || (it.show && it.show.images), 64) : '';
-    if (mini.dataset.src !== msrc) { mini.dataset.src = msrc; mini.classList.toggle('none', !msrc); if (msrc) mini.src = msrc; else mini.removeAttribute('src'); }
+    if (cover.dataset.src !== src) { cover.dataset.src = src; cover.hidden = !src; $('#mu-art-none').hidden = !!src; if (src) cover.src = src; else cover.removeAttribute('src'); }
+    $('#mu-devname').textContent = state && state.device ? state.device.name : 'nothing yet';
     document.querySelectorAll('#rp-items [data-uri]').forEach(b => b.classList.toggle('is-current', !!it && b.dataset.uri === it.uri));
     const set = (b, html, label) => { if (b.dataset.icon !== html) { b.innerHTML = html; b.dataset.icon = html; } b.setAttribute('aria-label', label); };
     set($('#mu-left'), ep ? ICON.back15 : ICON.prev, ep ? 'Back 15 seconds' : 'Previous');
@@ -318,11 +313,12 @@
     tickBar(); changed();
   }
   function tickBar() {
+    if (seeking !== null) return;
     const it = state && state.item;
     if (!it) { $('#mu-bar').style.setProperty('--value', '0%'); $('#mu-pos').textContent = $('#mu-dur').textContent = '0:00'; return; }
     const p = pos();
     $('#mu-bar').style.setProperty('--value', (100 * p / it.duration_ms).toFixed(1) + '%');
-    $('#mu-bar').parentElement.setAttribute('aria-valuenow', Math.round(100 * p / it.duration_ms));
+    $('#mu-seek').setAttribute('aria-valuenow', Math.round(100 * p / it.duration_ms));
     $('#mu-pos').textContent = fmt(p); $('#mu-dur').textContent = fmt(it.duration_ms);
     if (state.is_playing && p >= it.duration_ms && Date.now() - stamp > 1500) { stamp = Date.now(); later(); }
   }
@@ -424,6 +420,8 @@
   addEventListener('hashchange', () => { syncScrub(); bubble.hidden = true; });
 
   function renderDevices() {
+    const n = devices.filter(d => !d.is_restricted).length;
+    $('#mu-devcount').textContent = n ? n + (n === 1 ? ' device' : ' devices') : 'Devices';
     const box = $('#mu-devices'); box.textContent = '';
     if (!devices.length) { box.innerHTML = '<p class="menu-note">No devices. Open Spotify on your phone and play something, then tap Refresh.</p>'; return; }
     devices.forEach(d => {
@@ -475,6 +473,19 @@
     catch { if (src.select) { src.select(); document.execCommand('copy'); PH.toast('Copied.'); } }
   }));
   $('#mu-dev-refresh').addEventListener('click', loadDevices);
+  // Tap or drag along the bar to jump there (the screen may be turned sideways in the OS)
+  const seekEl = $('#mu-seek');
+  const seekFrac = e => { const r = seekEl.getBoundingClientRect(), p = e.touches ? (e.touches[0] || e.changedTouches[0]) : e;
+    const f = document.documentElement.classList.contains('os-land') ? (p.clientY - r.top) / r.height : (p.clientX - r.left) / r.width;
+    return Math.min(1, Math.max(0, f)); };
+  const seekShow = f => { const it = state && state.item; if (!it) return; $('#mu-bar').style.setProperty('--value', (100 * f).toFixed(1) + '%'); $('#mu-pos').textContent = fmt(f * it.duration_ms); };
+  const seekStart = e => { if (!(state && state.item)) return; e.preventDefault(); seeking = seekFrac(e); seekShow(seeking); };
+  const seekMove = e => { if (seeking === null) return; e.preventDefault(); seeking = seekFrac(e); seekShow(seeking); };
+  const seekEnd = () => { if (seeking === null) return; const f = seeking; seeking = null; const it = state && state.item; if (!it) return;
+    const to = Math.round(f * (it.duration_ms - 1000));
+    cmd(async () => { await api('/me/player/seek', { method: 'PUT', query: { position_ms: to } }); state.progress_ms = to; stamp = Date.now(); tickBar(); }); };
+  seekEl.addEventListener('touchstart', seekStart, { passive: false }); seekEl.addEventListener('touchmove', seekMove, { passive: false }); seekEl.addEventListener('touchend', seekEnd);
+  seekEl.addEventListener('mousedown', seekStart); addEventListener('mousemove', seekMove); addEventListener('mouseup', seekEnd);
 
   // For the OS right key: play/pause from anywhere
   window.PhosphorMusic = {
@@ -485,7 +496,9 @@
   // Poll only while a music page is on screen and the app is visible
   let pollT = null, barT = null;
   const onMusic = () => /^#\/music(\/|$)/.test(location.hash);
-  if (/^#\/music\/recent/.test(location.hash)) location.replace('#/music');   // v1.11: recent plays moved to the Spotify home page
+  // v1.38: Now playing is the Spotify home page itself
+  const nowRedirect = () => { if (/^#\/music\/now/.test(location.hash)) location.replace('#/music'); };
+  nowRedirect(); addEventListener('hashchange', nowRedirect);
   function sync() {
     clearInterval(pollT); clearInterval(barT); pollT = barT = null;
     if (!onMusic() || document.hidden) return;
@@ -494,7 +507,8 @@
     poll(); pollT = setInterval(poll, 4000); barT = setInterval(tickBar, 1000);
     const h = location.hash;
     if (h.startsWith('#/music/devices')) loadDevices();
-    else if (/^#\/music\/?$/.test(h)) { if (hasRecent()) loadRecent(); else renderRecent(); if (!eps || eps.error) loadEpisodes(); }
+    else if (h.startsWith('#/music/recent')) { if (hasRecent()) loadRecent(); else renderRecent(); }
+    else if (/^#\/music\/?$/.test(h)) { if (!eps || eps.error) loadEpisodes(); loadDevices(); }
     else if (h.startsWith('#/music/episodes') && (!eps || eps.error || !eps.loading)) loadEpisodes();
   }
   addEventListener('hashchange', sync);
