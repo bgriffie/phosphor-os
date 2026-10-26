@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.38';
+  const VERSION = '1.39';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -389,25 +389,20 @@
   }
   function renderFavs() {
     const list = $('#fav-list'); list.textContent = '';
-    favs.forEach((f, i) => {
-      const row = document.createElement('div'); row.className = 'tile-row';
-      row.innerHTML = `<button class="menu-item" data-fav="${i}"><span class="mi-glyph">${svg('star', 'gl')}</span><span class="mi-label"></span><span class="mi-value"></span></button>
-        <button class="btn btn-icon btn-ghost" data-unfav="${i}" aria-label="Remove favorite">✕</button>`;
-      row.querySelector('.mi-label').textContent = f.name;
-      row.querySelector('.mi-value').textContent = fmt(f.num);
-      list.appendChild(row);
-    });
-    if (dial && !favs.some(f => f.num === dial)) {
-      const b = document.createElement('button'); b.className = 'menu-item'; b.dataset.act = 'fav-add';
-      b.innerHTML = '<span class="mi-glyph">+</span><span class="mi-label">Save this number</span>';
-      list.appendChild(b);
-    } else if (!favs.length) {
-      const p = document.createElement('p'); p.className = 'menu-note'; p.textContent = 'Type a number, then save it here.';
-      list.appendChild(p);
-    }
+    const chip = (cls, initial, label) => { const b = document.createElement('button'); b.className = 'fav' + (cls ? ' ' + cls : '');
+      const i = document.createElement('b'); i.textContent = initial; const t = document.createElement('span'); t.textContent = label; b.append(i, t); return b; };
+    favs.forEach((f, i) => { const b = chip(f.num === dial ? 'on' : '', (f.name[0] || '#').toUpperCase(), f.name); b.dataset.fav = i; b.setAttribute('aria-label', f.name + ', ' + fmt(f.num)); list.appendChild(b); });
+    if (dial && !favs.some(f => f.num === dial)) { const b = chip('add', '+', 'Save'); b.dataset.act = 'fav-add'; list.appendChild(b); }
+    else if (!favs.length) { const b = chip('hint', '★', 'Favorites show here'); b.disabled = true; list.appendChild(b); }
   }
+  // hold a favorite to remove it
+  let favHold = null;
+  $('#fav-list').addEventListener('pointerdown', e => { const f = e.target.closest('[data-fav]'); if (!f) return;
+    favHold = setTimeout(async () => { favHold = 'done'; const i = +f.dataset.fav, x = favs[i];
+      if (await PH.confirm(`Remove ${x.name} from favorites?`, { title: 'Remove favorite', ok: 'Remove', danger: true })) { favs.splice(i, 1); save('favs', favs); renderDial(); } }, 600); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(n => $('#fav-list').addEventListener(n, () => { if (favHold !== 'done') clearTimeout(favHold); }));
   $('#fav-list').addEventListener('click', async e => {
-    const f = e.target.closest('[data-fav]'); if (f) { dial = favs[+f.dataset.fav].num; renderDial(); return; }
+    const f = e.target.closest('[data-fav]'); if (f) { if (favHold === 'done') { favHold = null; return; } dial = favs[+f.dataset.fav].num; renderDial(); return; }
     const u = e.target.closest('[data-unfav]');
     if (u) { const x = favs[+u.dataset.unfav];
       if (await PH.confirm(`Remove ${x.name} from favorites?`, { title: 'Remove favorite', ok: 'Remove', danger: true })) { favs.splice(+u.dataset.unfav, 1); save('favs', favs); renderDial(); } }
@@ -479,6 +474,7 @@
     });
     $('#note-empty').hidden = notes.length > 0;
     $('#note-search-wrap').hidden = notes.length < 8;
+    $('#note-new').hidden = !notes.length;   // the empty screen has its own button
     const c = $('#note-count'); c.hidden = !notes.length; c.textContent = notes.length;
   }
   $('#note-search').addEventListener('input', renderNotes);

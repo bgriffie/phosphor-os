@@ -876,6 +876,34 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .pad button:active { background: var(--surface-3); box-shadow: var(--glow-box); }
     .pad .op { color: var(--accent); font-size: var(--fs-md); }
     .pad .go { background: var(--accent); border-color: var(--accent); color: var(--on-accent); box-shadow: var(--glow-box); }
+    /* Round keys like a real phone, as big as the space allows (same feel as the TV remote) */
+    .pad-fit { flex: 1 1 auto; min-height: 0; container-type: size; display: flex; align-items: flex-end; justify-content: center; }
+    .pad.round { --cols: 3; --rows: 5; gap: var(--sp-3) var(--sp-4); grid-auto-rows: auto;
+      width: min(100cqw, calc((100cqh - (var(--rows) - 1) * var(--sp-3)) / var(--rows) * var(--cols) + (var(--cols) - 1) * var(--sp-4)), 340px); }
+    .pad.round.k4 { --cols: 4; }
+    .pad.round button { aspect-ratio: 1; min-height: 0; border-radius: 50%; background: var(--surface-1); display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-size: clamp(16px, 9cqmin, 30px); line-height: 1; }
+    .pad.round button i { font-style: normal; font-size: 9px; font-weight: 400; letter-spacing: .12em; color: var(--text-dim); margin-top: 3px; }
+    .pad.round button svg { width: 42%; height: 42%; }
+    .pad.round .op { font-size: clamp(14px, 7cqmin, 24px); }
+    .pad.round .go { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+    .pad.round .go svg { width: 40%; height: 40%; }
+    html.os-wide .dial-lcd .readout { font-size: var(--fs-xl); white-space: nowrap; }
+    .dial-lcd { align-items: center; min-height: 0; padding: var(--sp-3) var(--sp-3) var(--sp-1); flex: none; }
+    .dial-lcd .readout { text-align: center; min-height: 1.1em; }
+    .dial-lcd .sub { text-align: center; }
+    .favs { flex: none; display: flex; gap: var(--sp-2); overflow-x: auto; scrollbar-width: none; padding: 2px; }
+    .favs::-webkit-scrollbar { display: none; }
+    .fav { flex: 0 0 auto; display: flex; align-items: center; gap: var(--sp-2); min-height: 40px; max-width: 70%; padding: 0 var(--sp-3) 0 var(--sp-1); border: 1px solid var(--line-strong);
+      border-radius: 20px; background: var(--surface-1); color: var(--text); font: inherit; font-size: var(--fs-sm); cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    .fav b { flex: none; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--surface-3); color: var(--accent); font-size: var(--fs-sm); }
+    .fav span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fav.on { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+    .fav.add { color: var(--accent); border-style: dashed; }
+    .fav.hint { color: var(--text-faint); border-style: dashed; cursor: default; }
+    html.os-wide .view[data-route="/phone"].is-active, html.os-wide .view[data-route="/calc"].is-active { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: var(--sp-2) var(--sp-4); }
+    html.os-wide .view[data-route="/phone"] .pad-fit, html.os-wide .view[data-route="/calc"] .pad-fit { grid-column: 2; grid-row: 1 / 3; align-items: center; }
+    html.os-wide .view[data-route="/phone"] .favs { grid-column: 1; flex-wrap: wrap; align-content: flex-start; overflow: visible; }
 
     /* Bundled apps run inside the screen: the case, clock and keys never move */
     .app-frame {
@@ -1042,7 +1070,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.38</span>
+      <span class="app-meta">v1.39</span>
     </header>
     <div class="screen-slot">
     <div class="screen">
@@ -1235,38 +1263,36 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 
       <!-- ===== Phone (dialer) ===== -->
       <section class="view fill" data-route="/phone" data-title="Phone">
-        <div class="lcd">
-          <div class="sub" id="dial-name"></div>
+        <div class="lcd dial-lcd">
           <div class="readout" id="dial-num" aria-live="polite"></div>
+          <div class="sub" id="dial-name"></div>
         </div>
-        <div class="scroll">
-          <div class="menu-group">
-            <span class="label">Favorites</span>
-            <div class="menu" id="fav-list"></div>
+        <!-- Favorites: one row of chips; tap to dial, hold to remove -->
+        <div class="favs" id="fav-list" role="group" aria-label="Favorites"></div>
+        <div class="pad-fit k3">
+          <div class="pad round" id="dial-pad" aria-label="Dial pad">
+            <button data-dial="1">1<i>&nbsp;</i></button><button data-dial="2">2<i>ABC</i></button><button data-dial="3">3<i>DEF</i></button>
+            <button data-dial="4">4<i>GHI</i></button><button data-dial="5">5<i>JKL</i></button><button data-dial="6">6<i>MNO</i></button>
+            <button data-dial="7">7<i>PQRS</i></button><button data-dial="8">8<i>TUV</i></button><button data-dial="9">9<i>WXYZ</i></button>
+            <button data-dial="*">*</button><button data-dial="0">0<i>+</i></button><button data-dial="#">#</button>
+            <button class="op" data-act="dial-sms" aria-label="Text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v13H8l-5 4z"/></svg></button><button class="go" data-act="dial-call" aria-label="Call"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg></button><button class="op" data-act="dial-del" aria-label="Delete (hold to clear)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M9 5h12v14H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/></svg></button>
           </div>
-        </div>
-        <div class="pad" id="dial-pad" aria-label="Dial pad">
-          <button data-dial="1">1</button><button data-dial="2">2</button><button data-dial="3">3</button>
-          <button data-dial="4">4</button><button data-dial="5">5</button><button data-dial="6">6</button>
-          <button data-dial="7">7</button><button data-dial="8">8</button><button data-dial="9">9</button>
-          <button data-dial="*">*</button><button data-dial="0">0</button><button data-dial="#">#</button>
-          <button class="op" data-act="dial-sms">Text</button><button class="go" data-act="dial-call">Call</button><button class="op" data-act="dial-del" aria-label="Delete">DEL</button>
         </div>
       </section>
 
       <!-- ===== Calculator ===== -->
       <section class="view fill" data-route="/calc" data-title="Calculator">
-        <div class="lcd" style="flex:1 1 auto">
+        <div class="lcd" style="flex:0 1 auto">
           <div class="sub" id="calc-expr"></div>
           <div class="readout" id="calc-out" aria-live="polite">0</div>
         </div>
-        <div class="pad k4" id="calc-pad" aria-label="Calculator keys">
+        <div class="pad-fit k4"><div class="pad round k4" id="calc-pad" aria-label="Calculator keys">
           <button class="op" data-calc="C">C</button><button class="op" data-calc="±">±</button><button class="op" data-calc="%">%</button><button class="op" data-calc="÷">÷</button>
           <button data-calc="7">7</button><button data-calc="8">8</button><button data-calc="9">9</button><button class="op" data-calc="×">×</button>
           <button data-calc="4">4</button><button data-calc="5">5</button><button data-calc="6">6</button><button class="op" data-calc="−">−</button>
           <button data-calc="1">1</button><button data-calc="2">2</button><button data-calc="3">3</button><button class="op" data-calc="+">+</button>
-          <button data-calc="0">0</button><button data-calc=".">.</button><button class="op" data-calc="⌫" aria-label="Delete">DEL</button><button class="go" data-calc="=">=</button>
-        </div>
+          <button data-calc="0">0</button><button data-calc=".">.</button><button class="op" data-calc="⌫" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M9 5h12v14H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/></svg></button><button class="go" data-calc="=">=</button>
+        </div></div>
       </section>
 
       <!-- ===== Notes ===== -->
@@ -1325,7 +1351,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.38</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.39</span></a>
           </div>
         </div>
       </section>
@@ -1369,7 +1395,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.38</span></div>
+          <div class="kv"><span>Version</span><span>1.39</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
@@ -2184,7 +2210,7 @@ const PH = (() => {
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.38';
+  const VERSION = '1.39';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -2570,25 +2596,20 @@ const PH = (() => {
   }
   function renderFavs() {
     const list = $('#fav-list'); list.textContent = '';
-    favs.forEach((f, i) => {
-      const row = document.createElement('div'); row.className = 'tile-row';
-      row.innerHTML = `<button class="menu-item" data-fav="${i}"><span class="mi-glyph">${svg('star', 'gl')}</span><span class="mi-label"></span><span class="mi-value"></span></button>
-        <button class="btn btn-icon btn-ghost" data-unfav="${i}" aria-label="Remove favorite">✕</button>`;
-      row.querySelector('.mi-label').textContent = f.name;
-      row.querySelector('.mi-value').textContent = fmt(f.num);
-      list.appendChild(row);
-    });
-    if (dial && !favs.some(f => f.num === dial)) {
-      const b = document.createElement('button'); b.className = 'menu-item'; b.dataset.act = 'fav-add';
-      b.innerHTML = '<span class="mi-glyph">+</span><span class="mi-label">Save this number</span>';
-      list.appendChild(b);
-    } else if (!favs.length) {
-      const p = document.createElement('p'); p.className = 'menu-note'; p.textContent = 'Type a number, then save it here.';
-      list.appendChild(p);
-    }
+    const chip = (cls, initial, label) => { const b = document.createElement('button'); b.className = 'fav' + (cls ? ' ' + cls : '');
+      const i = document.createElement('b'); i.textContent = initial; const t = document.createElement('span'); t.textContent = label; b.append(i, t); return b; };
+    favs.forEach((f, i) => { const b = chip(f.num === dial ? 'on' : '', (f.name[0] || '#').toUpperCase(), f.name); b.dataset.fav = i; b.setAttribute('aria-label', f.name + ', ' + fmt(f.num)); list.appendChild(b); });
+    if (dial && !favs.some(f => f.num === dial)) { const b = chip('add', '+', 'Save'); b.dataset.act = 'fav-add'; list.appendChild(b); }
+    else if (!favs.length) { const b = chip('hint', '★', 'Favorites show here'); b.disabled = true; list.appendChild(b); }
   }
+  // hold a favorite to remove it
+  let favHold = null;
+  $('#fav-list').addEventListener('pointerdown', e => { const f = e.target.closest('[data-fav]'); if (!f) return;
+    favHold = setTimeout(async () => { favHold = 'done'; const i = +f.dataset.fav, x = favs[i];
+      if (await PH.confirm(`Remove ${x.name} from favorites?`, { title: 'Remove favorite', ok: 'Remove', danger: true })) { favs.splice(i, 1); save('favs', favs); renderDial(); } }, 600); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(n => $('#fav-list').addEventListener(n, () => { if (favHold !== 'done') clearTimeout(favHold); }));
   $('#fav-list').addEventListener('click', async e => {
-    const f = e.target.closest('[data-fav]'); if (f) { dial = favs[+f.dataset.fav].num; renderDial(); return; }
+    const f = e.target.closest('[data-fav]'); if (f) { if (favHold === 'done') { favHold = null; return; } dial = favs[+f.dataset.fav].num; renderDial(); return; }
     const u = e.target.closest('[data-unfav]');
     if (u) { const x = favs[+u.dataset.unfav];
       if (await PH.confirm(`Remove ${x.name} from favorites?`, { title: 'Remove favorite', ok: 'Remove', danger: true })) { favs.splice(+u.dataset.unfav, 1); save('favs', favs); renderDial(); } }
@@ -2660,6 +2681,7 @@ const PH = (() => {
     });
     $('#note-empty').hidden = notes.length > 0;
     $('#note-search-wrap').hidden = notes.length < 8;
+    $('#note-new').hidden = !notes.length;   // the empty screen has its own button
     const c = $('#note-count'); c.hidden = !notes.length; c.textContent = notes.length;
   }
   $('#note-search').addEventListener('input', renderNotes);
