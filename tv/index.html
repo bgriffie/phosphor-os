@@ -188,6 +188,7 @@
 
     /* Art draws straight to the glass: no scanlines or vignette over it (they cost frames on the stick) */
     .screen.plain::before, .screen.plain::after { display: none; }
+    .screen.plain .path { display: none; }   /* art fills the whole screen (Floyd) */
     /* While a film plays it fills the TV behind the page (see art.js): the screen turns see-through, and a wide
        beige shadow round it repaints the case on top, rounded corners and all. A fine grid gives it pixels. */
     .case { z-index: 1; }
@@ -196,7 +197,7 @@
     .screen.film .art-cv { visibility: hidden; }
     .screen.film #v-art::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
       background-image: linear-gradient(rgba(0,0,0,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.3) 1px, transparent 1px);
-      background-size: calc(.45 * var(--u)) calc(.45 * var(--u)); }
+      background-size: calc(.6 * var(--u)) calc(.6 * var(--u)); }
     .ov-card { background: var(--surface-2); border: 2px solid var(--accent); border-radius: var(--radius); padding: calc(3 * var(--u)) calc(5 * var(--u)); text-align: center; box-shadow: var(--glow-box); min-width: 40%; }
     .ov-card h2 { margin: 0 0 calc(1 * var(--u)); font-size: calc(4.4 * var(--u)); color: var(--accent); text-shadow: var(--glow-lg); text-transform: uppercase; letter-spacing: var(--tracking-label); }
     .ov-card p { margin: calc(.6 * var(--u)) 0 0; color: var(--text-dim); }
@@ -323,7 +324,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.6</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.7</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -626,8 +627,10 @@ const Art = (() => {
         g.fillStyle = gr; g.fillRect(0, 0, 48, 48); return sp; });
     };
     return { name: film ? 'Fireplace' : 'Fireplace (drawn)', dur: 600000,
-      // Filmed fire (free Mixkit clips, 720p); the drawn fire below shows if none of them will play
-      video: film && ['https://assets.mixkit.co/videos/17158/17158-720.mp4', 'https://assets.mixkit.co/videos/30252/30252-720.mp4', 'https://assets.mixkit.co/videos/1242/1242-720.mp4'],
+      // Filmed fire: a wide shot of the whole fireplace with its logs (Videezy, free), then free Mixkit clips;
+      // the drawn fire below shows if none of them will play
+      video: film && ['https://static.videezy.com/system/resources/previews/000/005/865/original/MVI_5664.mp4',
+        'https://assets.mixkit.co/videos/30252/30252-720.mp4', 'https://assets.mixkit.co/videos/25027/25027-720.mp4', 'https://assets.mixkit.co/videos/17158/17158-720.mp4'],
       init() {
         sprites = sprites || makeSprites();
         this.ps = []; this.sparks = []; this.t = 0; this.flick = 1; this.wind = 0; this.windTo = 0; this.spawnAcc = 0;
@@ -842,17 +845,17 @@ const Art = (() => {
     W = cv.width = Math.round(cv.clientWidth * sc); H = cv.height = Math.round(cv.clientHeight * sc);
   }
   /* ---------- Filmed pieces ----------
-     The Chromecast plays video on its own layer underneath the page, and it gets the size and the corners
-     wrong when the video sits inside the screen. So the video fills the whole TV behind everything, the screen
-     turns see-through while it plays, and the beige case (drawn on top) frames it with the usual rounded
-     corners. A fine pixel grid over it keeps the Phosphor look. If a clip won't load, or loads but doesn't
+     The Chromecast plays video on its own layer underneath the page, and it goes black or square-cornered
+     when the video sits inside the screen's rounded frame. So the video sits behind the whole page, placed
+     exactly where the screen is and stretched to fill it, the screen turns see-through while it plays, and
+     the beige case (drawn on top) frames it with the usual rounded corners. A fine pixel grid over it keeps the Phosphor look. If a clip won't load, or loads but doesn't
      move within a few seconds, the next address is tried; if none play, the piece's drawn version carries on. */
   const vid = { el: null, urls: null, at: 0, live: false, t: 0 };
   const frame = () => cv.closest('.screen') || cv.parentNode;
   function vidEl() {
     if (vid.el) return vid.el;
     const v = vid.el = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto'; v.setAttribute('muted', '');
-    v.className = 'art-vid'; v.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100vh;object-fit:cover;z-index:0;display:none';
+    v.className = 'art-vid'; v.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100vh;object-fit:fill;z-index:0;display:none';
     v.addEventListener('error', () => { if (vid.urls) { vid.at++; vidLoad(); } });
     document.body.insertBefore(v, document.body.firstChild); return v;
   }
@@ -863,10 +866,15 @@ const Art = (() => {
     v.src = vid.urls[vid.at]; v.load(); v.play().catch(() => {});
     const t0 = performance.now();
     vid.t = setInterval(() => {   // show it only once it is really moving; give up on this one after 12 s
-      if (v.currentTime > .3 && !v.paused) { if (!vid.live) { vid.live = true; v.style.display = 'block'; frame().classList.add('film'); } return; }
+      if (v.currentTime > .3 && !v.paused) { if (!vid.live) { vid.live = true; vidPlace(); v.style.display = 'block'; frame().classList.add('film'); } return; }
       if (!vid.live && performance.now() - t0 > 12000) { vid.at++; vidLoad(); }
     }, 500);
   }
+  function vidPlace() {   // exactly over the screen
+    if (!vid.el) return; const b = frame().getBoundingClientRect(), st = vid.el.style;
+    st.left = b.left + 'px'; st.top = b.top + 'px'; st.width = b.width + 'px'; st.height = b.height + 'px';
+  }
+  addEventListener('resize', vidPlace);
   function vidStart(urls) { vid.urls = urls; vid.at = 0; vidLoad(); }
   function vidStop() {
     clearInterval(vid.t); vid.urls = null; vid.live = false;
