@@ -739,47 +739,89 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 
     .ico { width: 18px; height: 18px; flex: none; color: var(--text-dim); }
 
-    /* Plate */
-    .plate-total { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap; }
-    .plate-total .of { color: var(--text-dim); font-size: var(--fs-sm); }
-    .target-meter { position: relative; margin-top: var(--sp-3); }
-    .target-meter .band {
-      position: absolute; top: -4px; bottom: -4px; pointer-events: none;
-      border-left: 1px dashed var(--text-dim); border-right: 1px dashed var(--text-dim);
+    /* TV-remote style (Floyd, 2026-10-26): no title on the case, pages swap instantly, keys carry drawn icons */
+    .app-header { display: none; }
+    .app { padding-top: max(var(--sp-2), calc(var(--safe-top) - 4px)); }
+    .view.enter-fwd, .view.enter-back { animation: none; }
+    .app-controls .key svg { width: 20px; height: 20px; }
+    .mi-glyph svg { width: 20px; height: 20px; display: block; }
+
+    /* Home: one screen, no scrolling. Status line, channels, the gauge, then one-line strips */
+    .home { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+    .rc-top { display: flex; align-items: center; gap: var(--sp-3); min-height: 48px; padding: 0 var(--sp-1); }
+    .led { width: 10px; height: 10px; border-radius: 50%; flex: none; border: 1px solid var(--line-strong); }
+    .led.on { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .led.wait { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 8px var(--amber); }
+    .rc-who { min-width: 0; flex: 1; }
+    .rc-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rc-sub { color: var(--text-dim); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rnd { width: 48px; height: 48px; flex: none; border-radius: 50%; border: 1px solid var(--accent); background: var(--surface-1); color: var(--accent);
+      box-shadow: var(--glow-box); display: grid; place-items: center; padding: 0; cursor: pointer; }
+    .rnd svg { width: 22px; height: 22px; }
+    .rnd:active { background: var(--surface-3); }
+
+    .chans { display: grid; grid-template-columns: repeat(var(--n, 5), 1fr); gap: var(--sp-2); }
+    .ch { position: relative; min-height: 58px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text-dim);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font: inherit; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em; cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; padding: 0; min-width: 0; }
+    .ch svg { width: 22px; height: 22px; }
+    .ch:active { background: var(--surface-3); }
+    .ch.cur, .ch[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+    .ch .mi-count { position: absolute; top: 3px; right: 3px; min-width: 18px; height: 16px; line-height: 16px; font-size: 10px; padding: 0 4px; }
+
+    .gauge-box { flex: 1 1 0; min-height: 150px; container-type: size; display: flex; align-items: center; justify-content: center; }
+    .gauge { position: relative; width: min(100cqw, 100cqh, 280px); aspect-ratio: 1; border: 0; background: none; padding: 0; color: var(--text); font: inherit; cursor: pointer; border-radius: 50%; }
+    .gauge svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+    .gauge .g-in { position: absolute; inset: 18%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; }
+    .gauge .g-num { white-space: nowrap; font-size: clamp(28px, 16cqmin, 56px); font-weight: 700; line-height: 1; color: var(--accent); text-shadow: var(--glow-lg); }
+    .gauge .g-num small { font-size: .4em; color: var(--text-dim); text-shadow: none; }
+    .gauge .g-of { font-size: var(--fs-xs); color: var(--text-dim); text-transform: uppercase; letter-spacing: .08em; }
+    .gauge .g-st { font-size: var(--fs-xs); font-weight: 700; margin-top: 4px; }
+    .g-st.warn { color: var(--amber); } .g-st.good { color: var(--accent); }
+    .gauge:active .g-in { opacity: .75; }
+    @container (max-height: 190px) { .gauge .g-of { display: none; } .gauge .g-num { white-space: nowrap; font-size: 26px; } }
+    @container (max-height: 130px) { .gauge .g-st { display: none; } }
+
+    .strips { display: flex; flex-direction: column; gap: var(--sp-2); min-height: 0; }
+    .plate-strips { display: flex; flex-direction: column; gap: var(--sp-2); overflow-y: auto; min-height: 48px; flex: 0 1 auto; overscroll-behavior: contain; }
+    .line { display: flex; align-items: center; gap: var(--sp-2); min-height: 48px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); padding: 0 var(--sp-1); flex: none; }
+    .line[hidden] { display: none; }
+    .line-ic { flex: none; display: flex; padding-left: var(--sp-2); color: var(--text-dim); }
+    .line-ic svg { width: 20px; height: 20px; }
+    .line-main { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; justify-content: center; text-align: left; background: none; border: 0;
+      color: var(--text); font: inherit; padding: 0 var(--sp-1); cursor: pointer; }
+    .line-t { font-weight: 700; font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .line-s { color: var(--text-dim); font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .line .qn { min-width: 34px; text-align: center; font-size: var(--fs-sm); font-weight: 700; }
+    .line .pg { min-width: 44px; text-align: right; font-size: var(--fs-sm); font-weight: 700; color: var(--accent); padding-right: var(--sp-2); }
+    .rm-b { min-height: 48px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text);
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: inherit; font-size: var(--fs-xs); font-weight: 700;
+      text-transform: uppercase; letter-spacing: var(--tracking-label); cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; padding: 0 var(--sp-2); }
+    .rm-b svg { width: 20px; height: 20px; flex: none; }
+    .rm-b:active { background: var(--surface-3); }
+    .rm-b.ic { width: 40px; min-height: 40px; padding: 0; flex: none; border-color: var(--line); }
+    .line.go .line-ic, .line.go .line-t { color: var(--accent); }
+    .line.empty-strip { border-style: dashed; }
+
+    .home-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+    .home-body .strips { flex: 0 1 auto; min-height: 0; }
+    /* Wider than tall (phone turned, or inside Phosphor OS landscape): gauge left, strips right */
+    @media (min-aspect-ratio: 5/4) {
+      .home-body { flex-direction: row; }
+      .home-body .gauge-box { flex: 0 0 38%; min-height: 0; }
+      .home-body .strips { flex: 1 1 58%; justify-content: center; }
+      .home-body .strips { flex: 1 1 0; min-width: 0; }
+      .rc-top { min-height: 40px; }
+      .home { gap: var(--sp-2); }
+      .home .ch { min-height: 44px; flex-direction: row; gap: 6px; }
+      .home .ch svg { width: 18px; height: 18px; }
     }
-    .target-scale { display: flex; justify-content: space-between; margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--text-dim); }
-    .status { font-size: var(--fs-sm); margin-top: var(--sp-3); }
-    .status.warn { color: var(--amber); }
-    .status.warn::before { content: "WARN> "; font-weight: 700; }
-    .status.good { color: var(--accent); }
-    .status.good::before { content: "✓ "; font-weight: 700; }
-    .plate-items > li { gap: var(--sp-2); }
-    .plate-items .name { flex: 1 1 auto; min-width: 0; font-size: var(--fs-sm); line-height: 1.3; }
+
     .name-link { background: none; border: 0; padding: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer; text-decoration: underline dotted var(--line-strong); text-underline-offset: 3px; }
-    .plate-items .p { width: 52px; text-align: right; font-size: var(--fs-sm); font-weight: 700; flex: none; }
-    .qty { display: flex; align-items: center; flex: none; }
-    .qty .btn { width: 36px; min-height: 36px; padding: 0; font-size: var(--fs-md); }
-    .qty .num { width: 40px; text-align: center; font-size: var(--fs-sm); }
-    .macros { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); margin-top: var(--sp-3); text-align: center; }
-    .macros div { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: var(--sp-2) var(--sp-1); }
-    .macros span { display: block; font-size: var(--fs-xs); color: var(--text-dim); text-transform: uppercase; letter-spacing: .08em; }
-    .macros b { font-size: var(--fs-md); }
     .note { font-size: var(--fs-xs); color: var(--text-dim); margin-top: var(--sp-3); }
-    .panel-actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); }
-    .panel-actions .btn { flex: 1; }
 
     /* Menu (recipe list) */
-    .chips { display: flex; gap: var(--sp-2); overflow-x: auto; margin: 0 calc(-1 * var(--sp-3)); padding: 2px var(--sp-3); scrollbar-width: none; }
-    .chips::-webkit-scrollbar { display: none; }
-    .chips button {
-      flex: none; display: inline-flex; align-items: center; gap: 6px;
-      min-height: 36px; padding: 0 var(--sp-3);
-      border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: transparent;
-      color: var(--text-dim); font: inherit; font-size: var(--fs-xs); font-weight: 700;
-      text-transform: uppercase; letter-spacing: .08em; cursor: pointer;
-    }
-    .chips button .ico { width: 16px; height: 16px; color: inherit; }
-    .chips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+    .ch .ico { color: inherit; }
     .list-meta { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); font-size: var(--fs-xs); color: var(--text-dim); text-transform: uppercase; letter-spacing: .08em; }
     .list-meta button { background: none; border: 0; padding: var(--sp-2) 0; color: var(--cyan); font: inherit; cursor: pointer; text-transform: inherit; letter-spacing: inherit; }
     .cards { display: flex; flex-direction: column; gap: var(--sp-3); }
@@ -885,49 +927,57 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Kitchen Log</h1>
-      <span class="app-meta">v2.1</span>
+      <span class="app-meta">v2.2</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
       <nav class="path" data-path aria-label="Location"></nav>
       <div class="screen-body">
 
-      <!-- ============ TODAY'S PLATE ============ -->
-      <section class="view" data-route="/" data-title="Kitchen Log">
-        <section class="panel" data-title="Today's plate">
-          <div class="plate-total">
-            <span class="readout" id="p-total">0<small> g</small></span>
-            <span class="of">of <span id="p-target">128–176</span> g protein</span>
+      <!-- ============ TODAY'S PLATE (home: one screen, no scrolling) ============ -->
+      <section class="view fill" data-route="/" data-title="Kitchen Log">
+        <div class="home">
+          <!-- One line: where you are today, and the main action -->
+          <div class="rc-top">
+            <span class="led" id="p-led" aria-hidden="true"></span>
+            <div class="rc-who"><div class="rc-name">Today's plate</div><div class="rc-sub" id="p-sub">—</div></div>
+            <button class="rnd" data-route="/menu" aria-label="Add a dish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
           </div>
-          <div class="target-meter">
-            <div class="meter" role="progressbar" aria-label="Protein toward today's target" aria-valuemin="0" id="p-meter"><span id="p-fill"></span></div>
-            <div class="band" id="p-band" aria-hidden="true"></div>
-          </div>
-          <div class="status" id="p-status" role="status"></div>
-          <ul class="list plain plate-items" id="plate-items" style="margin-top: var(--sp-3)"></ul>
-          <div class="macros">
-            <div><span>Calories</span><b id="m-kcal">0</b></div>
-            <div><span>Carbs</span><b id="m-c">0 g</b></div>
-            <div><span>Fat</span><b id="m-f">0 g</b></div>
-          </div>
-          <p class="note" id="example-note">This is an example day. Add or remove dishes to make it yours.</p>
-          <div class="panel-actions">
-            <button type="button" class="btn btn-primary" data-route="/menu">+ Add a dish</button>
-          </div>
-        </section>
 
-        <div class="menu-group">
-          <span class="label">Your numbers</span>
-          <div class="menu">
-            <a class="menu-item" href="#/target"><span class="mi-glyph" aria-hidden="true">○</span><span class="mi-label">Protein target<small id="home-weight">Body weight 176 lb</small></span><span class="mi-value" id="home-target">128–176 g/day</span></a>
-            <a class="menu-item" href="#/shop"><span class="mi-glyph" aria-hidden="true">□</span><span class="mi-label">Shopping list<small>Everything for the dishes on your plate</small></span><span class="mi-value" id="home-shop">—</span></a>
+          <div class="chans" role="group" aria-label="Go to">
+            <button class="ch cur" data-route="/" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg><span>Plate</span></button>
+            <button class="ch" data-route="/menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 3h16v18H4zM8 8h8M8 12h8M8 16h5"/></svg><span>Menu</span></button>
+            <button class="ch" data-route="/shop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M5 8h14l-1.5 12h-11zM9 8V6a3 3 0 0 1 6 0v2"/></svg><span>Shop</span><span class="mi-count" id="ch-shop" hidden>0</span></button>
+            <button class="ch" data-route="/target"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM12 1v4M12 19v4M1 12h4M19 12h4"/></svg><span>Target</span></button>
+            <button class="ch" data-route="/guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 3h16v18H4zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.5V14M12 17v1"/></svg><span>Guide</span></button>
           </div>
-        </div>
 
-        <div class="menu-group">
-          <span class="label">Quick protein add-ons</span>
-          <div class="menu" id="addons"></div>
-          <p class="menu-note">Tap one to put it on today's plate.</p>
+          <div class="home-body">
+            <div class="gauge-box">
+              <button class="gauge" data-route="/target" id="gauge" aria-label="Protein today">
+                <svg viewBox="0 0 200 200" aria-hidden="true">
+                  <circle cx="100" cy="100" r="84" fill="none" stroke="var(--line)" stroke-width="14"/>
+                  <circle cx="100" cy="100" r="97" fill="none" stroke="var(--text-dim)" stroke-width="3" pathLength="100" id="g-target" stroke-dasharray="0 100"/>
+                  <circle cx="100" cy="100" r="84" fill="none" stroke="var(--accent)" stroke-width="14" pathLength="100" id="g-arc" stroke-dasharray="0 100" style="filter: drop-shadow(0 0 4px rgba(57,255,106,.6))"/>
+                  <circle cx="100" cy="100" r="84" fill="none" stroke="var(--bg)" stroke-width="15" pathLength="100" stroke-dasharray=".5 1.5"/>
+                </svg>
+                <span class="g-in"><span class="g-num" id="p-total">0<small> g</small></span><span class="g-of">of <span id="p-target">128–176</span> g protein</span><span class="g-st" id="p-status" role="status"></span></span>
+              </button>
+            </div>
+
+            <div class="strips">
+              <div class="plate-strips" id="plate-items" aria-label="On your plate"></div>
+              <div class="line" id="addon-line">
+                <span class="line-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span>
+                <button class="line-main" data-open-sheet="addon-sheet"><span class="line-t">Quick protein add-on</span><span class="line-s">Yogurt, eggs, tuna, a scoop…</span></button>
+              </div>
+              <div class="line go" id="shop-line" hidden>
+                <span class="line-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M5 8h14l-1.5 12h-11zM9 8V6a3 3 0 0 1 6 0v2"/></svg></span>
+                <button class="line-main" data-route="/shop"><span class="line-t">Shopping list</span><span class="line-s" id="home-shop">—</span></button>
+              </div>
+            </div>
+          </div>
+          <p class="note" id="example-note" style="margin:0;flex:none">This is an example day. Add or remove dishes to make it yours.</p>
         </div>
       </section>
 
@@ -961,13 +1011,13 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
       <!-- ============ MENU ============ -->
       <section class="view" data-route="/menu" data-title="Menu">
         <div class="search"><input class="input" id="search" type="search" placeholder="Search dishes or ingredients" aria-label="Search recipes" autocomplete="off" enterkeyhint="search"></div>
-        <div class="chips" role="group" aria-label="Filter dishes" id="filters">
-          <button type="button" data-filter="all" aria-pressed="true">All</button>
-          <button type="button" data-filter="crockpot" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-crockpot"/></svg>Crockpot</button>
-          <button type="button" data-filter="airfryer" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-airfryer"/></svg>Air fryer</button>
-          <button type="button" data-filter="grill" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-grill"/></svg>Grill</button>
-          <button type="button" data-filter="side" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-bowl"/></svg>Sides</button>
-          <button type="button" data-filter="sweet" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-sweet"/></svg>Breakfast &amp; sweets</button>
+        <div class="chans" style="--n:6" role="group" aria-label="Filter dishes" id="filters">
+          <button type="button" class="ch" data-filter="all" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 3h16v18H4zM8 8h8M8 12h8M8 16h5"/></svg><span>All</span></button>
+          <button type="button" class="ch" data-filter="crockpot" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-crockpot"/></svg><span>Crock</span></button>
+          <button type="button" class="ch" data-filter="airfryer" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-airfryer"/></svg><span>Air fry</span></button>
+          <button type="button" class="ch" data-filter="grill" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-grill"/></svg><span>Grill</span></button>
+          <button type="button" class="ch" data-filter="side" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-bowl"/></svg><span>Sides</span></button>
+          <button type="button" class="ch" data-filter="sweet" aria-pressed="false" aria-label="Breakfast and sweets"><svg class="ico" aria-hidden="true"><use href="#i-sweet"/></svg><span>Sweet</span></button>
         </div>
         <div class="list-meta"><span id="menu-count">—</span><button type="button" data-open-sheet="sort-sheet">Sort: <span id="sort-label">Most protein</span></button></div>
         <div class="cards" id="grid"></div>
@@ -1038,7 +1088,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-glyph" aria-hidden="true">i</span><span class="mi-label">About</span><span class="mi-value">v2.1</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-glyph" aria-hidden="true">i</span><span class="mi-label">About</span><span class="mi-value">v2.2</span></a>
           </div>
         </div>
       </section>
@@ -1064,7 +1114,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Kitchen Log">
-          <div class="kv"><span>Version</span><span>2.1</span></div>
+          <div class="kv"><span>Version</span><span>2.2</span></div>
           <div class="kv"><span>Main dishes</span><span id="ab-mains">—</span></div>
           <div class="kv"><span>Sides</span><span id="ab-sides">—</span></div>
           <div class="kv"><span>Breakfast &amp; sweets</span><span id="ab-sweets">—</span></div>
@@ -1078,32 +1128,31 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
     </div><!-- /.screen -->
 
     <nav class="app-controls" aria-label="Controls">
-      <button class="key key-sm" data-back aria-label="Back">‹</button>
-      <button class="key key-sm" data-open-sheet="menu" aria-label="Menu">☰</button>
-      <div class="page-keys" data-show-on="/" hidden><button class="key key-sm" data-route="/menu" aria-label="Add a dish">+</button></div>
-      <div class="page-keys" data-show-on="/menu" id="sort-key" hidden><button class="key key-sm word" data-open-sheet="sort-sheet">Sort</button></div>
-      <div class="page-keys" data-show-on="/menu/recipe" hidden><button class="key key-sm word" data-act="add-recipe">Add</button></div>
-      <div class="page-keys" data-show-on="/shop" hidden><button class="key key-sm" data-act="uncheck" aria-label="Uncheck all">⟳</button></div>
-      <button class="key key-sm" data-route="/settings" data-show-on="/target /guide" hidden aria-label="Settings">⚙</button>
-      <button class="key key-sm" data-route="/" data-show-on="/settings" hidden aria-label="Today's plate">■</button>
+      <button class="key key-sm" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
+      <button class="key key-sm" data-open-sheet="menu" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="page-keys" data-show-on="/" hidden><button class="key key-sm" data-route="/menu" aria-label="Add a dish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+      <div class="page-keys" data-show-on="/menu" id="sort-key" hidden><button class="key key-sm" data-open-sheet="sort-sheet" aria-label="Sort dishes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg></button></div>
+      <div class="page-keys" data-show-on="/menu/recipe" hidden><button class="key key-sm" data-act="add-recipe" aria-label="Add to plate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+      <div class="page-keys" data-show-on="/shop" hidden><button class="key key-sm" data-act="uncheck" aria-label="Uncheck all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg></button></div>
+      <div class="page-keys" data-show-on="/target /guide /settings" hidden><button class="key key-sm" data-route="/" aria-label="Today's plate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg></button></div>
     </nav>
   </main>
 
   <dialog class="sheet dropdown" id="menu" aria-label="Menu">
-    <div class="sheet-title">Go to</div>
     <div class="menu" data-sections>
-      <button class="menu-item" data-route="/"><span class="mi-glyph" aria-hidden="true">■</span><span class="mi-label">Today's plate</span></button>
-      <button class="menu-item" data-route="/menu"><span class="mi-glyph" aria-hidden="true">▸</span><span class="mi-label">Menu</span></button>
-      <button class="menu-item" data-route="/shop"><span class="mi-glyph" aria-hidden="true">□</span><span class="mi-label">Shopping list</span><span class="mi-count" id="shop-count" hidden>0</span></button>
-      <button class="menu-item" data-route="/guide"><span class="mi-glyph" aria-hidden="true">?</span><span class="mi-label">Guide</span></button>
-      <button class="menu-item" data-route="/settings"><span class="mi-glyph" aria-hidden="true">⚙</span><span class="mi-label">Settings</span></button>
+      <button class="menu-item" data-route="/"><span class="mi-label">Today's plate</span></button>
+      <button class="menu-item" data-route="/menu"><span class="mi-label">Menu</span></button>
+      <button class="menu-item" data-route="/shop"><span class="mi-label">Shopping list</span><span class="mi-count" id="shop-count" hidden>0</span></button>
+      <button class="menu-item" data-route="/settings"><span class="mi-label">Settings</span></button>
     </div>
-    <div class="sheet-title">Actions</div>
     <div class="menu">
-      <button class="menu-item" data-action="target"><span class="mi-glyph" aria-hidden="true">○</span><span class="mi-label">Set body weight</span></button>
-      <button class="menu-item" data-action="uncheck"><span class="mi-glyph" aria-hidden="true">⟳</span><span class="mi-label">Uncheck shopping list</span></button>
-      <button class="menu-item danger" data-action="clear"><span class="mi-glyph" aria-hidden="true">✕</span><span class="mi-label">Clear today's plate</span></button>
+      <button class="menu-item danger" data-action="clear"><span class="mi-label">Clear today's plate</span></button>
     </div>
+  </dialog>
+
+  <dialog class="sheet" id="addon-sheet" aria-label="Quick protein add-ons">
+    <div class="sheet-title">Quick protein add-ons</div>
+    <div class="menu" id="addons"></div>
   </dialog>
 
   <dialog class="sheet" id="sort-sheet" aria-label="Sort dishes">
@@ -1679,8 +1728,6 @@ function renderTarget() {
   const t = targets(), w = `${Number(state.weight) || 0} ${state.unit}`;
   $("t-daily").textContent = `${t.lo}–${t.hi} g`;
   $("t-meal").textContent = `${t.mlo}–${t.mhi} g`;
-  $("home-target").textContent = `${t.lo}–${t.hi} g/day`;
-  $("home-weight").textContent = `Body weight ${w}`;
   $("set-weight").textContent = w;
   $("unit-lb").setAttribute("aria-pressed", state.unit === "lb");
   $("unit-kg").setAttribute("aria-pressed", state.unit === "kg");
@@ -1705,40 +1752,40 @@ function add(id) {
   PH.toast(`${ALL[id].name.replace(/,.*$/, "")}: ${x[1]}× on plate.`);
 }
 
+const SV = (d, w = "2") => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="square" aria-hidden="true"><path d="${d}"/></svg>`;
 function renderPlate() {
   const t = targets();
   let P=0,K=0,C=0,F=0;
   state.plate.forEach(([id, n]) => { const x = ALL[id]; P+=x.p*n; K+=x.kcal*n; C+=x.c*n; F+=x.f*n; });
+  const n = state.plate.length;
   $("p-total").innerHTML = `${Math.round(P)}<small> g</small>`;
   $("p-target").textContent = `${t.lo}–${t.hi}`;
-  $("m-kcal").textContent = Math.round(K);
-  $("m-c").textContent = Math.round(C) + " g";
-  $("m-f").textContent = Math.round(F) + " g";
-  const scale = Math.max(t.hi * 1.15, P, 1);
-  $("p-fill").style.setProperty("--value", Math.min(100, P / scale * 100) + "%");
-  $("p-band").style.left = (t.lo / scale * 100) + "%";
-  $("p-band").style.width = ((t.hi - t.lo) / scale * 100) + "%";
-  const m = $("p-meter"); m.setAttribute("aria-valuemax", t.hi); m.setAttribute("aria-valuenow", Math.round(P));
-  const s = $("p-status");
-  if (!state.plate.length) { s.textContent = "Your plate is empty. Add a dish from the menu."; s.className = "status"; }
-  else if (P < t.lo) { s.textContent = `${Math.round(t.lo - P)} g to go to reach your minimum.`; s.className = "status warn"; }
-  else if (P <= t.hi) { s.textContent = "Right in your target range."; s.className = "status good"; }
-  else { s.textContent = "Above the range. That's safe, but the extra adds little muscle."; s.className = "status good"; }
+  $("p-sub").textContent = n ? `${n} item${n === 1 ? "" : "s"} · ${Math.round(K)} kcal · C ${Math.round(C)} g · F ${Math.round(F)} g` : "Nothing on it yet";
+  // gauge: full circle = 115% of the top of the range; the outer tick arc marks the target range
+  const scale = Math.max(t.hi * 1.15, P, 1), pct = v => Math.min(100, v / scale * 100);
+  $("g-arc").setAttribute("stroke-dasharray", `${pct(P)} 100`);
+  $("g-target").setAttribute("stroke-dasharray", `0 ${pct(t.lo)} ${pct(t.hi) - pct(t.lo)} 100`);
+  $("gauge").setAttribute("aria-label", `${Math.round(P)} of ${t.lo} to ${t.hi} grams protein today. Open protein target.`);
+  const s = $("p-status"), led = $("p-led");
+  if (!n) { s.textContent = "Plate empty"; s.className = "g-st"; led.className = "led"; }
+  else if (P < t.lo) { s.textContent = `WARN> ${Math.round(t.lo - P)} g to go`; s.className = "g-st warn"; led.className = "led wait"; }
+  else if (P <= t.hi) { s.textContent = "✓ In range"; s.className = "g-st good"; led.className = "led on"; }
+  else { s.textContent = "✓ Above range"; s.className = "g-st good"; led.className = "led on"; }
   $("example-note").hidden = !isExample;
-  $("plate-items").innerHTML = state.plate.map(([id, q], i) => {
+  $("plate-items").innerHTML = n ? state.plate.map(([id, q], i) => {
     const x = ALL[id];
-    const name = x.ing ? `<button type="button" class="name-link" data-open="${id}">${esc(x.name)}</button>` : esc(x.name);
-    return `<li><span class="name">${name}</span>
-      <span class="qty"><button type="button" class="btn" data-dec="${i}" aria-label="Less ${esc(x.name)}">−</button><span class="num">${q}×</span><button type="button" class="btn" data-inc="${i}" aria-label="More ${esc(x.name)}">+</button></span>
-      <span class="p">${Math.round(x.p*q)} g</span></li>`;
-  }).join("");
-  $("plate-items").hidden = !state.plate.length;
+    const main = x.ing ? `<button type="button" class="line-main" data-open="${id}"><span class="line-t">${esc(x.name)}</span><span class="line-s">${x.p} g a serving · tap for recipe</span></button>`
+                       : `<span class="line-main" style="cursor:default"><span class="line-t">${esc(x.name)}</span><span class="line-s">${x.p} g each</span></span>`;
+    return `<div class="line">${main}
+      <button type="button" class="rm-b ic" data-dec="${i}" aria-label="Less ${esc(x.name)}">${SV("M5 12h14", "2.4")}</button><span class="qn">${q}×</span><button type="button" class="rm-b ic" data-inc="${i}" aria-label="More ${esc(x.name)}">${SV("M12 5v14M5 12h14", "2.4")}</button>
+      <span class="pg">${Math.round(x.p*q)}g</span></div>`;
+  }).join("") : `<div class="line empty-strip"><span class="line-ic">${SV("M12 5v14M5 12h14")}</span><button type="button" class="line-main" data-route="/menu"><span class="line-t">Add a dish</span><span class="line-s">Pick from the menu</span></button></div>`;
   renderShop();
 }
 
 function renderAddons() {
   $("addons").innerHTML = ADDONS.map(a =>
-    `<button type="button" class="menu-item" data-add="${a.id}" aria-label="Add ${esc(a.name)} to plate"><span class="mi-glyph" aria-hidden="true">+</span><span class="mi-label">${esc(a.name)}<small>${a.kcal} kcal</small></span><span class="mi-value t-accent">${a.p} g</span></button>`).join("");
+    `<button type="button" class="menu-item" data-add="${a.id}" data-close aria-label="Add ${esc(a.name)} to plate"><span class="mi-glyph" aria-hidden="true">+</span><span class="mi-label">${esc(a.name)}<small>${a.kcal} kcal</small></span><span class="mi-value t-accent">${a.p} g</span></button>`).join("");
 }
 
 /* ---------- Menu ---------- */
@@ -1820,8 +1867,9 @@ function renderShop() {
   let total = 0, got = 0;
   recs.forEach(r => r.ing.forEach((g, i) => { total++; if (state.got[r.id + ":" + i]) got++; }));
   const left = total - got;
-  $("home-shop").textContent = total ? (left ? `${left} to get` : "All set") : "—";
-  $("shop-count").textContent = left; $("shop-count").hidden = !left;
+  $("home-shop").textContent = left ? `${left} item${left === 1 ? "" : "s"} to get` : "All ticked off";
+  $("shop-line").hidden = !total;
+  for (const id of ["shop-count", "ch-shop"]) { $(id).textContent = left; $(id).hidden = !left; }
   if (!recs.length) {
     $("shop-progress").innerHTML = "";
     $("shop").innerHTML = `<div class="empty"><pre aria-hidden="true">  ______

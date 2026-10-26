@@ -737,6 +737,82 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 
     /* === tool-specific styles below === */
 
+    /* v1.10 style (same as Phosphor TV): no title band, drawn icons on keys, pages swap instantly */
+    .app-header { display: none; }
+    .app { padding-top: max(var(--sp-2), calc(var(--safe-top) - 4px)); }
+    .view.enter-fwd, .view.enter-back { animation: none; }
+    .app-controls .key svg { width: 20px; height: 20px; }
+
+    /* Train: one screen, no scrolling. Status line, days, exercise strip, then the current exercise. */
+    .tr { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+    .tr-side { display: flex; flex-direction: column; gap: var(--sp-2); }
+    .rc-top { display: flex; align-items: center; gap: var(--sp-3); min-height: 48px; padding: 0 var(--sp-1); }
+    .rc-who { flex: 1; min-width: 0; appearance: none; -webkit-appearance: none; background: none; border: 0; padding: 0; text-align: left; color: var(--text); cursor: pointer; }
+    .tv-led { width: 10px; height: 10px; border-radius: 50%; flex: none; border: 1px solid var(--line-strong); }
+    .tv-led.on { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .tv-led.wait { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 8px var(--amber); }
+    .tv-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tv-name::after { content: " ›"; color: var(--text-dim); font-weight: 400; }
+    .tv-sub { color: var(--text-dim); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rm-b { min-height: 48px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text);
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: inherit; font-size: var(--fs-xs); font-weight: 700;
+      text-transform: uppercase; letter-spacing: var(--tracking-label); cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; padding: 0 var(--sp-2); }
+    .rm-b svg { width: 20px; height: 20px; flex: none; }
+    .rm-b:active { background: var(--surface-3); }
+    .rm-b[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+    .rm-b:disabled { opacity: .45; }
+    .rm-b.rc-pow { width: 48px; min-height: 44px; padding: 0; flex: none; border-radius: 50%; }
+    .rm-b.ic { width: 44px; min-height: 44px; padding: 0; flex: none; border-color: var(--line); }
+
+    /* Days: the four workouts, today's one lit */
+    .chans { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-2); }
+    .ch { position: relative; min-height: 58px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text-dim);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font: inherit; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em; cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; padding: 0; }
+    .ch .code { font-size: var(--fs-lg); line-height: 1; color: var(--text); }
+    .ch .mark { position: absolute; top: 3px; right: 5px; font-size: 11px; }
+    .ch .mark.ok { color: var(--accent); }
+    .ch .mark.nx { color: var(--amber); }
+    .ch:active { background: var(--surface-3); }
+    .ch[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+    .ch[aria-pressed="true"] .code { color: var(--accent); text-shadow: var(--glow); }
+
+    /* One-line strips */
+    .line { display: flex; align-items: center; gap: var(--sp-2); min-height: 48px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); padding: 0 var(--sp-1); }
+    .line[hidden] { display: none; }
+    .line.away { border-color: var(--amber); }
+    .line.away .line-t { color: var(--amber); }
+    .line-main { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; justify-content: center; text-align: left; background: none; border: 0;
+      color: var(--text); font: inherit; padding: 0 var(--sp-1); cursor: pointer; }
+    .line-t { font-weight: 700; font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .line-t .n { color: var(--accent); }
+    .line-s { color: var(--text-dim); font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* The current exercise: pictures shrink to fit, sets, then one big button */
+    .tr-main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+    .figs-box { flex: 1 1 0; min-height: 0; container-type: size; }
+    .tr-main .figs { height: 100%; }
+    .tr-main .fig svg { width: auto; max-width: 100%; height: calc(100cqh - 26px); }
+    @container (max-height: 50px) { .tr-main .figs { display: none; } }
+    .tr-main .tip { flex: none; cursor: pointer; }
+    .tr-main .tip > span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+    .tr-main .tip.open > span { -webkit-line-clamp: unset; }
+    .tr-main .sets { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+    .go-row { flex: none; display: grid; grid-template-columns: 44px 1fr 44px; gap: var(--sp-2); align-items: center; }
+    .go { min-height: 64px; border: 1px solid var(--accent); border-radius: 32px; background: var(--surface-1); color: var(--accent); box-shadow: var(--glow-box);
+      font: inherit; font-weight: 700; font-size: var(--fs-sm); letter-spacing: var(--tracking-label); text-transform: uppercase; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: var(--sp-2); padding: 0 var(--sp-3); touch-action: manipulation; }
+    .go:active { background: var(--surface-3); }
+    .go svg { width: 22px; height: 22px; flex: none; filter: drop-shadow(0 0 6px var(--accent)); }
+    .go span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Wider than tall (the phone turned in Phosphor OS): status, days and strips left, exercise right */
+    @media (min-aspect-ratio: 5/4) {
+      .tr { flex-direction: row; }
+      .tr-side { flex: 1 1 44%; min-width: 0; justify-content: center; }
+      .tr-main { flex: 1 1 56%; min-width: 0; }
+    }
+
     .btn-sm { min-height: 40px; padding: 0 var(--sp-3); font-size: var(--fs-xs); }
 
     /* Day tags: upper days green, lower days cyan (a neutral second series) */
@@ -766,7 +842,6 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .daypick .next.ok { color: var(--accent); }
 
     /* Exercise cards */
-    #exlist { display: flex; flex-direction: column; gap: var(--sp-5); }
     .ex { display: flex; flex-direction: column; gap: var(--sp-3); }
     .ex h3 { font-size: var(--fs-md); }
     .ex .alt { font-size: var(--fs-xs); color: var(--text-dim); margin-top: 2px; }
@@ -862,6 +937,13 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 
     .mi-seg { flex: none; width: 120px; }
     .mi-seg > button { min-height: 36px; }
+    /* Short screens: slimmer rest strip, one-line tip */
+    @media (max-height: 520px) {
+      .restbar { padding: var(--sp-1) var(--sp-5) var(--sp-2); }
+      .restbar .t { font-size: var(--fs-lg); }
+      .tr-main .tip > span { -webkit-line-clamp: 1; }
+      .go { min-height: 52px; }
+    }
   </style>
 <style>/* Phosphor OS */
 html.os-embed { --app-gap: 0px !important; --app-h: 100% !important; }
@@ -880,26 +962,42 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Train</h1>
-      <span class="app-meta">v2.0</span>
+      <span class="app-meta">v2.1</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
       <nav class="path" data-path aria-label="Location"></nav>
-      <div class="hud" data-show-on="/" hidden><i>Block</i> <b id="hudBlock">1</b> <i>Week</i> <b id="hudWeek">1/8</b></div>
       <div class="screen-body">
 
-      <!-- ============ TRAIN ============ -->
-      <section class="view" data-route="/" data-title="Train">
-        <section class="panel" data-title="Upper / Lower · 4 days">
-          <div class="weekbar">
-            <button class="btn btn-icon" id="wkPrev" aria-label="Previous week">‹</button>
-            <div class="wk"><span class="label">Block <span id="blockNo">1</span></span><b>Week <span id="wkNo">1</span>/8</b></div>
-            <button class="btn btn-icon" id="wkNext" aria-label="Next week">›</button>
+      <!-- ============ TRAIN (one screen) ============ -->
+      <section class="view fill" data-route="/" data-title="Train">
+        <div class="tr">
+          <div class="tr-side">
+            <!-- One line: which week, which day, and the rest timer -->
+            <div class="rc-top">
+              <span class="tv-led" id="tr-led" aria-hidden="true"></span>
+              <button class="rc-who" data-route="/weeks" aria-label="Change week"><div class="tv-name" id="tr-name">Week 1 of 8</div><div class="tv-sub" id="tr-sub">—</div></button>
+              <button class="rm-b rc-pow" id="tr-rest" aria-pressed="false" aria-label="Start rest timer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="14" r="7"/><path d="M12 10v4l2 2M10 3h4M12 3v4"/></svg></button>
+            </div>
+            <div class="chans" id="daypick" role="group" aria-label="Workout day"></div>
+            <!-- Only when looking at another week -->
+            <div class="line away" id="wk-away" hidden>
+              <button class="line-main" id="wk-back"><span class="line-t" id="wk-away-t">Past week</span><span class="line-s">Tap to go back to this week</span></button>
+            </div>
+            <!-- Which exercise: tap for the whole day -->
+            <div class="line" id="ex-line">
+              <button class="rm-b ic" id="ex-prev" aria-label="Previous exercise"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+              <button class="line-main" data-route="/today"><span class="line-t" id="ex-t">—</span><span class="line-s" id="ex-s">—</span></button>
+              <button class="rm-b ic" id="ex-next" aria-label="Next exercise"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+            </div>
           </div>
-          <div class="phase" id="phase"></div>
-        </section>
-        <div class="daypick" id="daypick"></div>
-        <div id="exlist"></div>
+          <div class="tr-main" id="exlist"></div>
+        </div>
+      </section>
+
+      <!-- ============ TODAY: every exercise, notes ============ -->
+      <section class="view" data-route="/today" data-title="Today">
+        <div class="menu" id="todayList"></div>
         <div class="field">
           <label class="label" for="notes">Session notes</label>
           <input class="input" id="notes" type="text" placeholder="Sleep, energy, anything off" enterkeyhint="done">
@@ -908,7 +1006,20 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <span id="saveState" role="status">Entries save automatically as you type.</span>
           <button class="btn btn-danger btn-sm" id="clearBtn">Clear this day</button>
         </div>
-        <p class="note">Ticking a set starts its rest timer. Each week keeps its own entries; use the arrows at the top to look back. Faint numbers in the weight boxes are last week's weights, and they fill in once you log reps for that set.</p>
+        <p class="note">Tap the big button after each set: it ticks the next set and starts its rest timer. Faint numbers in the weight boxes are last week's weights, and they fill in once you log reps for that set.</p>
+      </section>
+
+      <!-- ============ WEEK PICKER ============ -->
+      <section class="view" data-route="/weeks" data-title="Week">
+        <section class="panel" data-title="Upper / Lower · 4 days">
+          <div class="weekbar">
+            <button class="btn btn-icon" id="wkPrev" aria-label="Previous week">‹</button>
+            <div class="wk"><span class="label">Block <span id="blockNo">1</span></span><b>Week <span id="wkNo">1</span>/8</b></div>
+            <button class="btn btn-icon" id="wkNext" aria-label="Next week">›</button>
+          </div>
+          <div class="phase" id="phase"></div>
+        </section>
+        <p class="note">Each week keeps its own entries. Look back at earlier weeks here; the Train screen follows the week shown.</p>
       </section>
 
       <!-- ============ THIS WEEK ============ -->
@@ -980,7 +1091,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-glyph" aria-hidden="true">i</span><span class="mi-label">About</span><span class="mi-value">v2.0</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-glyph" aria-hidden="true">i</span><span class="mi-label">About</span><span class="mi-value">v2.1</span></a>
           </div>
         </div>
       </section>
@@ -998,7 +1109,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Workout Log">
-          <div class="kv"><span>Version</span><span>2.0</span></div>
+          <div class="kv"><span>Version</span><span>2.1</span></div>
           <div class="kv"><span>Program</span><span>Upper / Lower, 4 days</span></div>
           <div class="kv"><span>Block length</span><span>8 weeks</span></div>
           <div class="kv"><span>Entries</span><span id="aboutCount">—</span></div>
@@ -1016,10 +1127,10 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
     </div><!-- /.screen -->
 
     <nav class="app-controls" aria-label="Controls">
-      <button class="key key-sm" data-back aria-label="Back">‹</button>
-      <button class="key key-sm" data-open-sheet="menu" aria-label="Menu">☰</button>
-      <button class="key key-sm" data-route="/settings" data-show-on="/" hidden aria-label="Settings">⚙</button>
-      <button class="key key-sm" data-route="/" data-hide-on="/" aria-label="Train">■</button>
+      <button class="key key-sm" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
+      <button class="key key-sm" data-open-sheet="menu" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="page-keys" data-show-on="/" data-hide-on="/today /weeks /week /progress /plan /settings" hidden><button class="key key-sm" id="k-rest" aria-label="Rest timer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="14" r="7"/><path d="M12 10v4l2 2M10 3h4M12 3v4"/></svg></button></div>
+      <button class="key key-sm" data-route="/" data-hide-on="/" aria-label="Train"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg></button>
     </nav>
   </main>
 
@@ -1035,8 +1146,8 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
     <div class="sheet-title">Actions</div>
     <div class="menu">
       <button class="menu-item" data-action="cardio"><span class="mi-glyph" aria-hidden="true">+</span><span class="mi-label">Log cardio</span></button>
-      <button class="menu-item" data-action="today"><span class="mi-glyph" aria-hidden="true">●</span><span class="mi-label">Go to this week</span></button>
-      <button class="menu-item" data-action="export"><span class="mi-glyph" aria-hidden="true">↑</span><span class="mi-label">Export backup</span></button>
+      <button class="menu-item" data-route="/today"><span class="mi-glyph" aria-hidden="true">≡</span><span class="mi-label">Today's exercises</span></button>
+      <button class="menu-item" data-route="/weeks"><span class="mi-glyph" aria-hidden="true">●</span><span class="mi-label">Change week</span></button>
     </div>
   </dialog>
 
@@ -1368,7 +1479,7 @@ function status(msg,kind){PH.toast(msg,kind==="err"?"error":kind==="warn"?"warn"
 
 // ---------- Header / pages ----------
 function renderHeader(){const b=blockWeek();$("#wkNo").textContent=b.wk;$("#blockNo").textContent=b.block;
-  $("#hudBlock").textContent=b.block;$("#hudWeek").textContent=b.wk+"/8";$("#wkPrev").disabled=shownIdx()<=0;
+  $("#wkPrev").disabled=shownIdx()<=0;
   const c=idxBW(currentIdx());$("#curWeekVal").textContent=settings&&settings.blockStart?"B"+c.block+" · W"+c.wk:"Not started"}
 let route="/";
 PH.on("route",r=>{route=r;if(r==="/week")renderWeek();if(r==="/progress")renderProgress();if(r.startsWith("/settings"))renderBackupInfo()});
@@ -1485,6 +1596,12 @@ function renderPhase(){
   const sb=$("#startBlock"); if(sb)sb.addEventListener("click",()=>setCalendar(shownIdx()));
   const tc=$("#toCurrent"); if(tc)tc.addEventListener("click",()=>goWeek(null));
   const mc=$("#makeCurrent"); if(mc)mc.addEventListener("click",()=>setCalendar(shownIdx()));
+  // Train status line
+  $("#tr-name").textContent=`Week ${b.wk} of 8${p.deload?" · Deload":""}`;
+  $("#tr-sub").textContent=`${p.t} · block ${b.block}`;
+  const away=settings&&settings.blockStart&&vi!==ci;
+  $("#wk-away").hidden=!away; if(away)$("#wk-away-t").textContent=(vi<ci?"Past week":"Future week")+": week "+b.wk;
+  $("#tr-led").className="tv-led"+(away?" wait":cur&&hasEntries(findSession(cur.block,cur.wk,cur.day))?" on":"");
 }
 async function setCalendar(idx){
   if(!db){status("Storage is blocked in this browser. Turn off Private Browsing in Safari.","err");return}
@@ -1496,8 +1613,9 @@ function goWeek(idx){flushWrite();viewIdx=(idx==null||idx===currentIdx())?null:M
 function renderDayPick(){
   const b=blockWeek(),isCur=shownIdx()===currentIdx(),nd=isCur?nextDay():null;
   $("#daypick").innerHTML=ORDER.map(k=>{const d=DAYS[k],s=findSession(b.block,b.wk,k),done=hasEntries(s);
-    return `<button data-day="${k}" aria-pressed="${k===day}"><span class="dn">${DTAG(k)}${d.name}</span><span class="ds">${done?"Logged "+fmtDate(s.date):"Not logged yet"}</span><span class="next${done?" ok":""}">${k===nd?"▸ Up next":done?"✓ Week "+b.wk:""}</span></button>`}).join("");
-  document.querySelectorAll("#daypick button").forEach(btn=>btn.addEventListener("click",()=>{flushWrite();day=btn.dataset.day;LS.set("il.day",day);renderDayPick();openView()}));
+    const mark=done?'<span class="mark ok" aria-hidden="true">✓</span>':k===nd?'<span class="mark nx" aria-hidden="true">●</span>':"";
+    return `<button class="ch" data-day="${k}" aria-pressed="${k===day}" aria-label="${d.name}${done?", logged":k===nd?", up next":""}">${mark}<span class="code">${k}</span><span>${d.name}</span></button>`}).join("");
+  document.querySelectorAll("#daypick button").forEach(btn=>btn.addEventListener("click",()=>{flushWrite();day=btn.dataset.day;LS.set("il.day",day);openView();renderAll()}));
 }
 
 // The open week+day. Everything typed autosaves into this week's entry for the day.
@@ -1508,8 +1626,15 @@ function openView(){
   cur={block:b.block,wk:b.wk,day,id:s?s.id:`b${b.block}w${b.wk}-${day}`,exists:!!s,date:s&&s.date,ts:s&&s.ts,notes:s&&s.notes||"",sets:{}};
   for(const [id,arr] of Object.entries((s&&s.sets)||{}))cur.sets[id]=arr.map(x=>({w:str(x.w),r:str(x.r),rir:str(x.rir),done:!!x.done}));
   loadedJSON=s?JSON.stringify(s):"";
+  const saved=LS.get("il.exi",{})[cur.id];
+  exi=saved!=null?saved:Math.max(0,DAYS[day].ex.findIndex(ex=>{const c=exCount(ex);return c.done<c.n}));
   renderExercises();
 }
+// Which exercise the Train screen shows (remembered per session)
+let exi=0;
+function exCount(ex){const t=target(ex,cur.wk),arr=cur.sets[ex.id]||[];return {done:arr.filter(x=>x.done).length,n:Math.max(t.sets+t.bonus,arr.length)}}
+function setEx(i){const n=DAYS[day].ex.length;exi=Math.max(0,Math.min(n-1,i));const m=LS.get("il.exi",{});m[cur.id]=exi;
+  const keep=Object.keys(m).slice(-40);LS.set("il.exi",Object.fromEntries(keep.map(k=>[k,m[k]])));renderExercises()}
 function rowsFor(ex,count){
   let arr=cur.sets[ex.id];
   if(!arr)arr=cur.sets[ex.id]=[];
@@ -1527,25 +1652,36 @@ function hintFor(ex){
     return {cls:"up",txt:`You hit ${ex.hi}+ on every set in ${wkTxt} (${line}). Add ${inc} and aim for ${ex.lo}+ reps.`}}
   return {cls:"",txt:`In ${wkTxt}: ${line} ${u}. Beat it by a rep or two at the same weight.`};
 }
+const ICON=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="${d}"/></svg>`;
 function renderExercises(){
   const wk=cur.wk, d=DAYS[day];
-  $("#exlist").innerHTML=d.ex.map((ex,i)=>{
-    const t=target(ex,wk), n=t.sets+t.bonus, arr=rowsFor(ex,n), h=hintFor(ex);
-    const repLabel=ex.secs?"Secs":"Reps";
-    const rows=arr.map((s,j)=>{const sw=suggestW(ex,j);return `<div class="setrow${j>=t.sets?" bonus":""}" data-ex="${ex.id}" data-i="${j}">
+  exi=Math.max(0,Math.min(exi,d.ex.length-1));
+  const ex=d.ex[exi], t=target(ex,wk), n=t.sets+t.bonus, arr=rowsFor(ex,n), h=hintFor(ex);
+  const repLabel=ex.secs?"Secs":"Reps";
+  const rows=arr.map((s,j)=>{const sw=suggestW(ex,j);return `<div class="setrow${j>=t.sets?" bonus":""}" data-ex="${ex.id}" data-i="${j}">
       <span class="sn">${j+1}</span>
       <input inputmode="decimal" aria-label="${esc(ex.n)} set ${j+1} weight" placeholder="${esc(sw||(ex.bw?"BW":unit))}" value="${esc(s.w)}" data-f="w">
       <input inputmode="numeric" aria-label="${esc(ex.n)} set ${j+1} ${repLabel.toLowerCase()}" placeholder="${ex.lo}–${ex.hi}" value="${esc(s.r)}" data-f="r">
       <input inputmode="numeric" aria-label="${esc(ex.n)} set ${j+1} reps in reserve" placeholder="${esc(t.rir)}" value="${esc(s.rir)}" data-f="rir">
       <button class="done" aria-pressed="${s.done}" aria-label="Mark set ${j+1} done and start rest" data-done>✓</button></div>`}).join("");
-    return `<article class="panel ex" data-title="${i+1} / ${d.ex.length}">
-      <div><h3>${esc(ex.n)}</h3>${ex.alt?`<div class="alt">${esc(ex.alt)}</div>`:""}
-        <div class="ex-target"><span class="badge dim">${t.sets}${t.bonus?"+1":""} × ${ex.lo}–${ex.hi}${ex.secs?" s":""}</span><span class="badge dim">RIR ${esc(t.rir)}</span><span class="badge dim">Rest ${mmss(ex.rest)}</span></div></div>
-      ${figPair(ex)}
-      <div class="tip ${h.cls}">${esc(h.txt)}</div>
-      <div class="sets"><div class="setrow headrow"><span>#</span><span>Weight</span><span>${repLabel}</span><span>RIR</span><span>Done</span></div>${rows}</div>
-      <div class="ex-foot"><button class="btn btn-sm" data-add="${ex.id}">+ Add a set</button>${arr.length>n?`<button class="btn btn-ghost btn-sm" data-rm="${ex.id}">Remove last set</button>`:""}</div>
-    </article>`}).join("");
+  const nx=arr.findIndex(x=>!x.done), last=exi===d.ex.length-1;
+  const goTxt=nx>=0?`Set ${nx+1} done`:last?"Day done · review":`Next: ${d.ex[exi+1].n}`;
+  const goIc=nx>=0?ICON("M4 12l5 5L20 6"):ICON("M9 5l7 7-7 7");
+  $("#exlist").innerHTML=`
+    <div class="figs-box">${figPair(ex)}</div>
+    <div class="tip ${h.cls}" id="tip"><span>${esc(h.txt)}</span></div>
+    <div class="sets"><div class="setrow headrow"><span>#</span><span>Weight</span><span>${repLabel}</span><span>RIR</span><span>Done</span></div>${rows}</div>
+    <div class="go-row">
+      <button class="rm-b ic" data-rm="${ex.id}" aria-label="Remove last set"${arr.length>n?"":" disabled"}>${ICON("M5 12h14")}</button>
+      <button class="go" id="go">${goIc}<span>${esc(goTxt)}</span></button>
+      <button class="rm-b ic" data-add="${ex.id}" aria-label="Add a set">${ICON("M12 5v14M5 12h14")}</button>
+    </div>`;
+  const c=exCount(ex);
+  $("#ex-t").innerHTML=`<span class="n">${exi+1}/${d.ex.length}</span> ${esc(ex.n)}`;
+  $("#ex-s").textContent=`${t.sets}${t.bonus?"+1":""} × ${ex.lo}–${ex.hi}${ex.secs?" s":""} · RIR ${t.rir} · rest ${mmss(ex.rest)} · ${c.done}/${c.n} done`;
+  $("#ex-prev").disabled=exi===0; $("#ex-next").disabled=last;
+  $("#todayList").innerHTML=d.ex.map((e,i)=>{const k=exCount(e),all=k.done>=k.n&&k.n>0;
+    return `<button class="menu-item" data-jump="${i}"${i===exi?' aria-current="step"':""}><span class="mi-glyph" aria-hidden="true">${all?"✓":i+1}</span><span class="mi-label">${esc(e.n)}<small>${esc(e.alt||"")}</small></span><span class="mi-value">${k.done}/${k.n} sets</span></button>`}).join("");
   $("#notes").value=cur.notes||"";
   saveState(cur.exists?"saved":"idle");
 }
@@ -1560,11 +1696,27 @@ $("#exlist").addEventListener("input",e=>{
 $("#exlist").addEventListener("click",e=>{
   const doneBtn=e.target.closest("[data-done]");
   if(doneBtn){const row=doneBtn.closest(".setrow");const s=cur.sets[row.dataset.ex][+row.dataset.i];s.done=!s.done;doneBtn.setAttribute("aria-pressed",String(s.done));
-    if(s.done){fillWeight(row,s);const ex=exById(row.dataset.ex).ex;startTimer(ex.rest,ex.n)}scheduleWrite();return}
+    if(s.done){fillWeight(row,s);const ex=exById(row.dataset.ex).ex;startTimer(ex.rest,ex.n)}scheduleWrite();renderExercises();renderDayPick();return}
+  if(e.target.closest("#tip")){$("#tip").classList.toggle("open");return}
+  if(e.target.closest("#go")){goNext();return}
   const add=e.target.closest("[data-add]"); if(add){const a=cur.sets[add.dataset.add];a.push({w:a.length?a[a.length-1].w:"",r:"",rir:"",done:false});scheduleWrite();renderExercises();return}
   const rm=e.target.closest("[data-rm]"); if(rm){cur.sets[rm.dataset.rm].pop();scheduleWrite();renderExercises()}
 });
 $("#notes").addEventListener("input",e=>{cur.notes=e.target.value;scheduleWrite()});
+// The big button: tick the next set and start its rest, or move on
+function goNext(){
+  const d=DAYS[day],ex=d.ex[exi],t=target(ex,cur.wk),arr=rowsFor(ex,t.sets+t.bonus),j=arr.findIndex(x=>!x.done);
+  if(j<0){if(exi<d.ex.length-1)setEx(exi+1);else PH.go("/today");return}
+  const row=$(`#exlist .setrow[data-i="${j}"]`),s=arr[j];
+  if(s.r===""){const inp=row.querySelector('[data-f="r"]');inp.focus();status(`Enter the ${ex.secs?"seconds":"reps"} for set ${j+1}, then tap again.`,"warn");return}
+  s.done=true;fillWeight(row,s);startTimer(ex.rest,ex.n);scheduleWrite();renderExercises();renderDayPick();renderPhase();
+}
+$("#ex-prev").addEventListener("click",()=>setEx(exi-1));
+$("#ex-next").addEventListener("click",()=>setEx(exi+1));
+$("#todayList").addEventListener("click",e=>{const b=e.target.closest("[data-jump]");if(!b)return;setEx(+b.dataset.jump);PH.go("/")});
+$("#wk-back").addEventListener("click",()=>goWeek(null));
+const restToggle=()=>{if(!$("#timer").hidden){stopTimer();return}const ex=DAYS[day].ex[exi];startTimer(ex.rest,ex.n)};
+$("#tr-rest").addEventListener("click",restToggle);$("#k-rest").addEventListener("click",restToggle);
 $("#clearBtn").addEventListener("click",async()=>{
   if(!await PH.confirm(`Clear everything logged for ${DAYS[cur.day].name} in week ${cur.wk}? This can't be undone.`,{title:"Clear day",ok:"Clear",danger:true}))return;
   cur.sets={};cur.notes="";scheduleWrite();flushWrite();renderExercises();
@@ -1614,8 +1766,9 @@ let tEnd=0,tInt=null,beeped=false,actx=null;
 function beep(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.25)}catch(e){}}
 function tick(){const left=Math.round((tEnd-Date.now())/1000);const el=$("#timerT");el.textContent=mmss(left);el.classList.toggle("over",left<=0);if(left<=0&&!beeped){beeped=true;beep()}}
 function startTimer(sec,name){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)()}catch(e){}
-  tEnd=Date.now()+sec*1000;beeped=false;$("#timerLabel").textContent="Rest · "+name;$("#timer").hidden=false;clearInterval(tInt);tick();tInt=setInterval(tick,500)}
-function stopTimer(){clearInterval(tInt);$("#timer").hidden=true}
+  tEnd=Date.now()+sec*1000;beeped=false;$("#timerLabel").textContent="Rest · "+name;$("#timer").hidden=false;clearInterval(tInt);tick();tInt=setInterval(tick,500);restPressed(true)}
+function stopTimer(){clearInterval(tInt);$("#timer").hidden=true;restPressed(false)}
+function restPressed(on){for(const id of ["#tr-rest","#k-rest"]){const b=$(id);b.setAttribute("aria-pressed",String(on));b.setAttribute("aria-label",on?"Stop rest timer":"Start rest timer")}}
 $("#timerAdd").addEventListener("click",()=>{tEnd+=30000;beeped=false;tick()});
 $("#timerStop").addEventListener("click",stopTimer);
 
@@ -1817,10 +1970,10 @@ $("#erase").addEventListener("click",async()=>{
 document.addEventListener("click",e=>{const a=e.target.closest("#menu [data-action]");if(!a)return;
   const act=a.dataset.action;
   if(act==="cardio"){PH.go("/week");setTimeout(()=>{const m=$("#cMin");m.scrollIntoView({block:"center"});m.focus()},250)}
-  if(act==="today"){goWeek(null);PH.go("/")}
   if(act==="export")exportBackup();
 });
 PH.init({});
+/* service worker: provided by Phosphor OS */
 
 (async()=>{
   db=makeLocalDb();
