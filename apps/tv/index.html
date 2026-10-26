@@ -827,7 +827,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.8</span>
+      <span class="app-meta">v1.9</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -880,7 +880,10 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
                 <button class="rm-b" id="an-hold" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M7 4v16M17 4v16"/></svg>Stay</button>
                 <button class="rm-b" data-art="1" aria-label="Next art">Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
               </div>
-              <button class="btn btn-block" data-route="/art">All art</button>
+              <div class="rm-row rm-row-2">
+                <button class="rm-b" data-route="/art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>All art</button>
+                <button class="rm-b" id="an-full" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>Full screen</button>
+              </div>
             </section>
 
             <section class="panel snd-now" data-title="Sound" id="snd-now" hidden>
@@ -990,7 +993,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.8</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.9</span></a>
           </div>
         </div>
       </section>
@@ -1048,7 +1051,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor TV">
-          <div class="kv"><span>Version</span><span>1.8</span></div>
+          <div class="kv"><span>Version</span><span>1.9</span></div>
           <div class="kv"><span>Chromecast</span><span id="ab-cast">—</span></div>
           <div class="kv"><span>Needs</span><span>Relay with --cast</span></div>
           <div class="kv"><span>Fireplace film</span><span>Pixabay, Videezy</span></div>
@@ -1334,7 +1337,7 @@ PH.init({});
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
   let lastErr = '', pollT = 0, busyPower = false;
   const ready = () => !!(link && link.url && link.key);
-  const RELAY_WANTS = '1.4';   // tv_control.py version this app expects
+  const RELAY_WANTS = '1.5';   // tv_control.py version this app expects
   const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
   // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
   const toast = PH.toast;
@@ -1426,8 +1429,7 @@ PH.init({});
   const ARTS = [['Solar system', 'The whole system, then each world up close'], ['Fireplace', 'Filmed: a cottage fireplace'], ['Harmonograph', 'Pendulum drawings'],
     ['Flow field', 'Drifting currents'], ['Life', 'Conway\'s Game of Life'], ['Warp', 'Stars rushing past'], ['Outrun', 'Retro sunset road'], ['Plasma', 'Slow glowing waves'],
     ['Tunnel', 'Endless tunnel'], ['Matrix rain', 'Falling code'], ['10 PRINT', 'The classic maze'], ['Sunflower', 'Golden-angle spiral'],
-    ['Fireplace (drawn)', 'The drawn fire, if the filmed one won\'t play'], ['Fireplace: holiday', 'Filmed: mantel, garland and tree lights'],
-    ['Fireplace: dark room', 'Filmed: a quiet room lit by the fire']];
+    ['Fireplace (drawn)', 'The drawn fire, if the filmed one won\'t play'], ['Fireplace: holiday', 'Filmed: mantel, garland and tree lights']];
   const art = () => (info && info.art) || null;
   async function artSend(body, after) {
     try { await call('/tv/art', body, 8000); if (after) after(); setTimeout(check, 400); }
@@ -1437,6 +1439,8 @@ PH.init({});
     const a = art(); if (a) { a.i = (a.i + +b.dataset.art + ARTS.length) % ARTS.length; renderArt(); }
     artSend({ step: +b.dataset.art });
   }));
+  // Full screen: the art fills the whole TV, with no case, labels or effects
+  $('#an-full').addEventListener('click', () => { const a = art(), v = !(a && a.full); if (a) { a.full = v; renderArt(); } artSend({ full: v }); });
   $('#an-hold').addEventListener('click', () => { const a = art(), v = !(a && a.hold); if (a) { a.hold = v; renderArt(); } artSend({ hold: v }); });
   $('#art-auto').addEventListener('change', e => { const a = art(); if (a) a.hold = !e.target.checked; renderArt(); artSend({ hold: !e.target.checked }); });
   ARTS.forEach(([name, sub], i) => {
@@ -1457,6 +1461,7 @@ PH.init({});
       $('#an-name').textContent = (ARTS[a.i] || ['Art'])[0];
       $('#an-auto').textContent = a.hold ? 'Staying' : 'Changes by itself';
       $('#an-hold').setAttribute('aria-pressed', String(!!a.hold));
+      $('#an-full').setAttribute('aria-pressed', String(!!a.full));
     }
     $('#art-auto').checked = !(a && a.hold);
     $$('#art-list [data-i]').forEach(b => b.setAttribute('aria-checked', String(!!(onArt && a && a.i === +b.dataset.i))));

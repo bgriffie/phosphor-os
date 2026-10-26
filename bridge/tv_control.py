@@ -42,7 +42,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '1.4'           # the phone app compares this to know which features the relay has
+VERSION = '1.5'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 FAHRENHEIT = ('US', 'LR', 'MM', 'BS', 'BZ', 'KY', 'PW', 'FM', 'MH')
 
@@ -477,8 +477,9 @@ def setup(app, demo=False, lights=None, cast=False):
             msg['piece'] = body['piece']
         if body.get('step') in (-1, 1):
             msg['step'] = body['step']
-        if isinstance(body.get('hold'), bool):
-            msg['hold'] = body['hold']
+        for k in ('hold', 'full'):
+            if isinstance(body.get(k), bool):
+                msg[k] = body[k]
         if not msg:
             raise web.HTTPBadRequest(text='Nothing to change.')
         if not await send_tv({'art': msg}):
@@ -580,7 +581,7 @@ def setup(app, demo=False, lights=None, cast=False):
                     hub['focus'] = d['focus'][:80]
                 a = d.get('art')
                 if isinstance(a, dict) and isinstance(a.get('i'), int) and 0 <= a['i'] < ART_MAX:
-                    hub['art'] = {'i': a['i'], 'hold': bool(a.get('hold'))}
+                    hub['art'] = {'i': a['i'], 'hold': bool(a.get('hold')), 'full': bool(a.get('full'))}
                 h = d.get('heard')
                 if isinstance(h, dict) and h.get('state') in ('playing', 'loading', 'error', 'blocked', 'off'):
                     hub['heard'] = {'state': h['state'], 'what': h.get('what') if h.get('what') in MUSIC + AMBIENCE else ''}
