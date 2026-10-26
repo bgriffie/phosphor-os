@@ -188,8 +188,15 @@
 
     /* Art draws straight to the glass: no scanlines or vignette over it (they cost frames on the stick) */
     .screen.plain::before, .screen.plain::after { display: none; }
-    /* While a film plays: no rounded clipping or layering on the screen, which turns the Chromecast's video layer black */
-    .screen.film { border-radius: 0; overflow: visible; isolation: auto; box-shadow: none; }
+    /* While a film plays it fills the TV behind the page (see art.js): the screen turns see-through, and a wide
+       beige shadow round it repaints the case on top, rounded corners and all. A fine grid gives it pixels. */
+    .case { z-index: 1; }
+    .bar { position: relative; z-index: 1; }
+    .screen.film { background: transparent; box-shadow: 0 0 0 100vmax var(--plastic), inset 0 0 0 3px #000; }
+    .screen.film .art-cv { visibility: hidden; }
+    .screen.film #v-art::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+      background-image: linear-gradient(rgba(0,0,0,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.3) 1px, transparent 1px);
+      background-size: calc(.45 * var(--u)) calc(.45 * var(--u)); }
     .ov-card { background: var(--surface-2); border: 2px solid var(--accent); border-radius: var(--radius); padding: calc(3 * var(--u)) calc(5 * var(--u)); text-align: center; box-shadow: var(--glow-box); min-width: 40%; }
     .ov-card h2 { margin: 0 0 calc(1 * var(--u)); font-size: calc(4.4 * var(--u)); color: var(--accent); text-shadow: var(--glow-lg); text-transform: uppercase; letter-spacing: var(--tracking-label); }
     .ov-card p { margin: calc(.6 * var(--u)) 0 0; color: var(--text-dim); }
@@ -316,7 +323,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.5</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.6</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -835,18 +842,19 @@ const Art = (() => {
     W = cv.width = Math.round(cv.clientWidth * sc); H = cv.height = Math.round(cv.clientHeight * sc);
   }
   /* ---------- Filmed pieces ----------
-     One looping <video> over the canvas. The Chromecast shows video on its own layer, which goes black under
-     fades, see-through effects and rounded clipping, so the video is simply shown or hidden, and the screen's
-     rounded frame is switched off while a film plays. If a clip won't load, or loads but doesn't move within
-     a few seconds, the next address is tried; if none play, the piece's drawn version carries on. */
-  const vid = { el: null, urls: null, at: 0, live: false, t: 0, seen: 0 };
+     The Chromecast plays video on its own layer underneath the page, and it gets the size and the corners
+     wrong when the video sits inside the screen. So the video fills the whole TV behind everything, the screen
+     turns see-through while it plays, and the beige case (drawn on top) frames it with the usual rounded
+     corners. A fine pixel grid over it keeps the Phosphor look. If a clip won't load, or loads but doesn't
+     move within a few seconds, the next address is tried; if none play, the piece's drawn version carries on. */
+  const vid = { el: null, urls: null, at: 0, live: false, t: 0 };
   const frame = () => cv.closest('.screen') || cv.parentNode;
   function vidEl() {
     if (vid.el) return vid.el;
     const v = vid.el = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto'; v.setAttribute('muted', '');
-    v.className = 'art-vid'; v.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;z-index:1;display:none';
+    v.className = 'art-vid'; v.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100vh;object-fit:cover;z-index:0;display:none';
     v.addEventListener('error', () => { if (vid.urls) { vid.at++; vidLoad(); } });
-    cv.parentNode.insertBefore(v, cv.nextSibling); return v;
+    document.body.insertBefore(v, document.body.firstChild); return v;
   }
   function vidLoad() {
     const v = vidEl(); clearInterval(vid.t);
