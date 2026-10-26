@@ -195,6 +195,8 @@
     .bar { position: relative; z-index: 1; }
     .screen.film { background: transparent; box-shadow: 0 0 0 100vmax var(--plastic), inset 0 0 0 3px #000; }
     .screen.film .art-cv { visibility: hidden; }
+    .screen.film #v-art::before { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;   /* warm, cozy glow */
+      background: radial-gradient(ellipse 70% 65% at 50% 62%, rgba(255,130,40,.22), rgba(255,100,20,.12) 55%, rgba(30,8,0,.55) 100%); }
     .screen.film #v-art::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
       background-image: linear-gradient(rgba(0,0,0,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.3) 1px, transparent 1px);
       background-size: calc(.6 * var(--u)) calc(.6 * var(--u)); }
@@ -324,7 +326,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.7</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.8</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -611,10 +613,14 @@ const Art = (() => {
   }
 
   /* ---------- Fireplace ---------- */
+  const FILMS = ['https://cdn.pixabay.com/video/2017/01/06/7070-198606760_large.mp4',        // cottage fireplace (Pixabay)
+    'https://cdn.pixabay.com/video/2022/11/25/140483-775376142_large.mp4',                       // holiday mantel and tree (Pixabay, Joe_hackney)
+    'https://cdn.pixabay.com/video/2022/10/24/136334-764387851_large.mp4',                       // dark room by the fire (Pixabay, Joe_hackney)
+    'https://static.videezy.com/system/resources/previews/000/005/865/original/MVI_5664.mp4'];   // wide shot of the logs (Videezy)
   // A real-colour log fire: soft flame puffs rise off the logs and add their light together,
   // cooling from white-yellow to orange to red as they climb. The brick, logs and their glowing
   // cracks are drawn once; each frame only moves the flames, the glow and a few sparks.
-  function fireplace(film) {
+  function fireplace(film, name) {
     const STAGES = 24;
     let sprites = null;
     const makeSprites = () => {
@@ -626,11 +632,10 @@ const Art = (() => {
         gr.addColorStop(0, `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${c[3]})`); gr.addColorStop(.5, `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${c[3] * .35})`); gr.addColorStop(1, `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},0)`);
         g.fillStyle = gr; g.fillRect(0, 0, 48, 48); return sp; });
     };
-    return { name: film ? 'Fireplace' : 'Fireplace (drawn)', dur: 600000,
-      // Filmed fire: a wide shot of the whole fireplace with its logs (Videezy, free), then free Mixkit clips;
-      // the drawn fire below shows if none of them will play
-      video: film && ['https://static.videezy.com/system/resources/previews/000/005/865/original/MVI_5664.mp4',
-        'https://assets.mixkit.co/videos/30252/30252-720.mp4', 'https://assets.mixkit.co/videos/25027/25027-720.mp4', 'https://assets.mixkit.co/videos/17158/17158-720.mp4'],
+    return { name: name || 'Fireplace (drawn)', dur: 600000,
+      // Filmed fire (free Pixabay / Videezy clips, wide shots of the whole fireplace): the listed clip first, then
+      // the others as backups; the drawn fire below shows if none of them will play
+      video: film && [film].concat(FILMS.filter(f => f !== film)),
       init() {
         sprites = sprites || makeSprites();
         this.ps = []; this.sparks = []; this.t = 0; this.flick = 1; this.wind = 0; this.windTo = 0; this.spawnAcc = 0;
@@ -726,7 +731,7 @@ const Art = (() => {
 
   const pieces = [
     solar(),
-    fireplace(true),
+    fireplace(FILMS[0], 'Fireplace'),
     { name: 'Harmonograph', init() { this.new(); clear(); },
       new() { const f = () => pick([2, 3, 4]) + rnd(-.012, .012);
         this.p = { f1: f(), f2: f(), f3: f(), f4: f(), p1: rnd(0, TAU), p2: rnd(0, TAU), p3: rnd(0, TAU), p4: rnd(0, TAU), d: rnd(.0008, .002), col: pick([G, CY, A]) };
@@ -838,6 +843,8 @@ const Art = (() => {
           x.fill(); }
         if (this.t > 60000) this.init(); } },
     fireplace(false),
+    fireplace(FILMS[1], 'Fireplace: holiday'),
+    fireplace(FILMS[2], 'Fireplace: dark room'),
   ];
 
   function size() {
