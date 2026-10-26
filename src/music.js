@@ -121,7 +121,7 @@
   /* ---------- Player state ---------- */
   let state = null, stamp = 0, devices = [], misses = 0;
   // Stuff You Should Know episodes: { items: [], next, loaded, loading }
-  let eps = null, epFilter = load('mu-ep-filter', 'new');
+  let eps = null, epFilter = load('mu-ep-filter', 'new'), epSort = load('mu-ep-sort', 'new');
   const fmt = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
   const isEpisode = () => !!(state && state.item && state.item.type === 'episode');
   const playing = () => !!(state && state.is_playing);
@@ -215,7 +215,7 @@
   }
   // Episodes, newest first. Tries the episodes list, then the show itself (which carries its first
   // page of episodes), with and without a market, since Spotify answers these differently per account.
-  let diag = [];
+  let diag = [], pageForm = 0;
   async function episodePage(id, offset) {
     const tries = [
       () => api(`/shows/${id}/episodes`, { query: { limit: 50, offset, market: 'from_token' } }),
@@ -224,28 +224,40 @@
     ];
     let last;
     for (const [i, t] of tries.entries()) {
-      try { const d = await t(); const n = ((d && d.items) || []).filter(Boolean).length; diag.push(`try ${i + 1}: ${n} episodes`); if (n) return d; last = last || new Error('Spotify sent no episodes.'); }
+      try { const d = await t(); const n = ((d && d.items) || []).filter(Boolean).length; diag.push(`try ${i + 1}: ${n} episodes`); if (n) { pageForm = i; return d; } last = last || new Error('Spotify sent no episodes.'); }
       catch (e) { diag.push(`try ${i + 1}: ${e.status || ''} ${e.message}`); if (e.status === 401 || e.status === 429 || e.offline) throw e; last = e; }
     }
     throw last;
   }
   const day = d => { if (!d) return ''; const t = new Date(d + 'T12:00:00'); return t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(t.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
-  async function loadEpisodes(more) {
+  // The whole catalog is fetched (50 at a time) so it can be sorted and scrubbed by date; it's kept on the
+  // phone, so the next visit shows it at once while a fresh copy (with what's been played) comes in.
+  const epOf = ep => { const rp = ep.resume_point || {};
+    return { uri: ep.uri, name: ep.name, date: ep.release_date || '', dur: ep.duration_ms || 0, played: !!rp.fully_played, resume: rp.fully_played ? 0 : rp.resume_position_ms || 0 }; };
+  async function loadEpisodes() {
     if (eps && eps.loading) return;
-    if (!eps || !more) eps = { items: [], next: false, loaded: false };
-    eps.loading = true; if (!more) renderEpisodes();
+    const cached = load('mu-ep-cache', null);
+    if (!eps || eps.error) eps = { items: cached && cached.items ? cached.items : [], loaded: !!(cached && cached.items), total: 0, got: 0 };
+    eps.loading = true; eps.error = ''; renderEpisodes();
+    let lastDraw = 0;
     try {
       const id = await syskId(); diag = [searchNote + ' (' + id + ')'];
       let d;
-      try { d = await episodePage(id, eps.items.length); }
+      try { d = await episodePage(id, 0); }
       catch (e) { drop('mu-sysk'); throw e; }
-      const got = ((d && d.items) || []).filter(Boolean).map(ep => {
-        const rp = ep.resume_point || {}, at = rp.resume_position_ms || 0, left = ep.duration_ms - at;
-        const status = rp.fully_played ? 'Played' : at > 0 ? Math.max(1, Math.round(left / 60000)) + ' min left' : Math.round(ep.duration_ms / 60000) + ' min';
-        return { uri: ep.uri, name: ep.name, sub: day(ep.release_date) + ' · ' + status, played: !!rp.fully_played, resume: rp.fully_played ? 0 : at };
-      });
-      eps.items = eps.items.concat(got); eps.next = !!(d && d.next); eps.error = '';
-    } catch (e) { eps.error = e.message || 'Spotify didn\'t send the episodes.'; if (e.offline) say(e); }
+      const fresh = [], seen = new Set();
+      eps.total = (d && d.total) || 0;
+      for (;;) {
+        ((d && d.items) || []).filter(Boolean).forEach(ep => { if (!seen.has(ep.uri)) { seen.add(ep.uri); fresh.push(epOf(ep)); } });
+        eps.got = fresh.length;
+        // show what's in so far, with the older part of the saved copy underneath
+        eps.items = fresh.concat(eps.items.filter(x => !seen.has(x.uri))); eps.loaded = true;
+        if (Date.now() - lastDraw > 700) { lastDraw = Date.now(); renderEpisodes(); }
+        if (!d || !d.next || pageForm === 2) break;
+        d = await api(`/shows/${id}/episodes`, { query: pageForm === 0 ? { limit: 50, offset: fresh.length, market: 'from_token' } : { limit: 20, offset: fresh.length } });
+      }
+      eps.items = fresh; save('mu-ep-cache', { id, at: Date.now(), items: fresh });
+    } catch (e) { if (!eps.items.length) eps.error = e.message || 'Spotify didn\'t send the episodes.'; else eps.stale = true; if (e.offline) say(e); }
     finally { eps.loading = false; eps.loaded = true; renderEpisodes(); }
   }
   /* Recently played songs (Spotify only lists music here, not podcast episodes) */
@@ -334,28 +346,83 @@
       box.appendChild(b);
     });
   }
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthOf = x => { const m = /^(\d{4})(?:-(\d{2}))?/.exec(x.date); return m ? (m[2] ? MONTHS[+m[2] - 1] + ' ' : '') + m[1] : 'Undated'; };
+  const mins = x => Math.max(1, Math.round(x.dur / 60000));
+  // what the scrubber shows while you drag: the month for date sorts, the length for length sorts
+  const epLabel = x => epSort === 'short' || epSort === 'long' ? mins(x) + ' min' : monthOf(x).replace(/^(\w{3})\w*/, '$1');
+  const SORTS = { new: (a, b) => b.date.localeCompare(a.date), old: (a, b) => a.date.localeCompare(b.date), short: (a, b) => a.dur - b.dur, long: (a, b) => b.dur - a.dur };
+  let epRows = [];
   function renderEpisodes() {
     document.querySelectorAll('[data-ep-filter]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.epFilter === epFilter)));
+    document.querySelectorAll('[data-ep-sort]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.epSort === epSort)));
     $('#ep-scope').hidden = hasResume();
-    const box = $('#ep-items'); box.textContent = '';
+    const box = $('#ep-items'); box.textContent = ''; epRows = [];
     const msg = t => { const p = document.createElement('p'); p.className = 'menu-note'; p.textContent = t; box.appendChild(p); };
-    if (!eps || !eps.loaded) { msg('Loading episodes…'); $('#ep-more').hidden = true; return; }
+    const prog = $('#ep-prog');
+    prog.hidden = !(eps && eps.loading && eps.total && eps.got < eps.total);
+    if (!prog.hidden) prog.textContent = `Loading the whole catalog… ${eps.got} of ${eps.total}`;
+    if (!eps || !eps.loaded) { msg('Loading episodes…'); syncScrub(); return; }
     const cur = state && state.item && state.item.uri;
-    const rows = eps.items.map((x, i) => [x, i]).filter(([x]) => epFilter === 'all' || !x.played);
-    if (!rows.length) msg(eps.error ? 'Couldn\'t load episodes. Spotify said: ' + eps.error : eps.items.length ? 'You\'ve played everything loaded. Tap Load more or All.' : 'No episodes yet.');
-    rows.forEach(([x, i]) => {
-      const b = document.createElement('button'); b.className = 'menu-item mu-ep'; b.dataset.i = i; b.dataset.uri = x.uri;
+    const rows = eps.items.filter(x => epFilter === 'all' || !x.played).slice().sort(SORTS[epSort] || SORTS.new);
+    if (!rows.length) msg(eps.error ? 'Couldn\'t load episodes. Spotify said: ' + eps.error : eps.loading ? 'Loading episodes…' : eps.items.length ? 'You\'ve played every episode. Tap All to see them.' : 'No episodes yet.');
+    const byDate = epSort === 'new' || epSort === 'old';
+    let lastMonth = '';
+    const frag = document.createDocumentFragment();
+    rows.forEach(x => {
+      if (byDate) { const m = monthOf(x); if (m !== lastMonth) { lastMonth = m; const h = document.createElement('div'); h.className = 'ep-month'; h.textContent = m; frag.appendChild(h); } }
+      const b = document.createElement('button'); b.className = 'menu-item mu-ep'; b.dataset.uri = x.uri;
       const l = document.createElement('span'); l.className = 'mi-label'; l.textContent = x.name;
-      const sm = document.createElement('small'); sm.textContent = x.sub; l.appendChild(sm); b.appendChild(l);
+      const sm = document.createElement('small');
+      sm.textContent = day(x.date) + ' · ' + (x.played ? 'Played' : x.resume > 0 ? Math.max(1, Math.round((x.dur - x.resume) / 60000)) + ' min left' : mins(x) + ' min');
+      l.appendChild(sm); b.appendChild(l);
       b.classList.toggle('is-played', x.played); b.classList.toggle('is-current', x.uri === cur);
-      box.appendChild(b);
+      frag.appendChild(b); epRows.push([x, b]);
     });
-    $('#ep-more').hidden = !eps.next;
-    $('#ep-more').disabled = !!eps.loading;
+    box.appendChild(frag);
     $('#ep-diag').textContent = eps.error ? 'Details: ' + diag.join(' · ') : '';
     const fresh = eps.items.filter(x => !x.played).length;
-    $('#mu-sysk-sub').textContent = hasResume() && eps.items.length ? fresh + (eps.next ? '+' : '') + ' unplayed' : 'Episodes';
+    $('#mu-sysk-sub').textContent = hasResume() && eps.items.length ? fresh + ' unplayed' : 'Episodes';
+    syncScrub();
   }
+
+  /* Episode scrubber: hold the strip on the right edge and slide to jump through the catalog by month */
+  const scrub = $('#ep-scrub'), bubble = $('#ep-bubble'), body = () => document.querySelector('.screen-body');
+  const onEpisodes = () => /^#\/music\/episodes/.test(location.hash);
+  function syncScrub() {
+    scrub.hidden = !onEpisodes() || epRows.length < 30;
+    if (scrub.hidden) return;
+    const b = body(), max = b.scrollHeight - b.clientHeight;
+    scrub.style.setProperty('--at', max > 0 ? Math.min(1, b.scrollTop / max) : 0);
+  }
+  // where on the strip a finger is, 0 at the top to 1 at the bottom (the screen may be turned sideways)
+  function stripFrac(e) {
+    const r = scrub.getBoundingClientRect(), p = e.touches ? e.touches[0] : e;
+    const f = document.documentElement.classList.contains('os-land') ? (r.right - p.clientX) / r.width : (p.clientY - r.top) / r.height;
+    return Math.min(1, Math.max(0, f));
+  }
+  let scrubbing = false;
+  const pageTop = el => { let y = 0; for (; el; el = el.offsetParent) y += el.offsetTop; return y; };   // unaffected by the turned screen
+  function scrubTo(f) {
+    if (!epRows.length) return;
+    const [x] = epRows[Math.min(epRows.length - 1, Math.floor(f * epRows.length))];
+    // jump to the first episode of that month (or that length), with its month heading in view
+    const lab = epLabel(x), first = epRows.find(([y]) => epLabel(y) === lab)[1];
+    const head = first.previousElementSibling && first.previousElementSibling.classList.contains('ep-month') ? first.previousElementSibling : first;
+    body().scrollTop = pageTop(head) - pageTop(body());
+    bubble.textContent = lab; bubble.style.setProperty('--y', f);
+    scrub.style.setProperty('--at', f);
+  }
+  const scrubStart = e => { e.preventDefault(); scrubbing = true; scrub.classList.add('is-on'); bubble.hidden = false; scrubTo(stripFrac(e)); };
+  const scrubMove = e => { if (!scrubbing) return; e.preventDefault(); scrubTo(stripFrac(e)); };
+  const scrubEnd = () => { if (!scrubbing) return; scrubbing = false; scrub.classList.remove('is-on'); setTimeout(() => { if (!scrubbing) bubble.hidden = true; }, 600); };
+  scrub.addEventListener('touchstart', scrubStart, { passive: false });
+  scrub.addEventListener('touchmove', scrubMove, { passive: false });
+  scrub.addEventListener('touchend', scrubEnd); scrub.addEventListener('touchcancel', scrubEnd);
+  scrub.addEventListener('mousedown', e => { scrubStart(e); const mv = ev => scrubMove(ev), up = () => { scrubEnd(); removeEventListener('mousemove', mv); removeEventListener('mouseup', up); }; addEventListener('mousemove', mv); addEventListener('mouseup', up); });
+  document.querySelector('.screen-body').addEventListener('scroll', () => { if (!scrubbing && onEpisodes()) syncScrub(); }, { passive: true });
+  addEventListener('hashchange', () => { syncScrub(); bubble.hidden = true; });
+
   function renderDevices() {
     const box = $('#mu-devices'); box.textContent = '';
     if (!devices.length) { box.innerHTML = '<p class="menu-note">No devices. Open Spotify on your phone and play something, then tap Refresh.</p>'; return; }
@@ -386,16 +453,17 @@
   document.addEventListener('click', e => {
     const m = e.target.closest('[data-mu]'); if (m && actions[m.dataset.mu]) { e.preventDefault(); actions[m.dataset.mu](); return; }
     const row = e.target.closest('#ep-items .mu-ep');
-    if (row) { const ep = eps.items[+row.dataset.i]; play({ uris: [ep.uri], ...(ep.resume ? { position_ms: ep.resume } : {}) }); return; }
+    if (row) { const ep = eps.items.find(x => x.uri === row.dataset.uri); if (ep) play({ uris: [ep.uri], ...(ep.resume ? { position_ms: ep.resume } : {}) }); return; }
     const rp = e.target.closest('#rp-items .mu-rp');
     if (rp) { const x = recent.items[+rp.dataset.i]; play(x.context && !/^spotify:artist:/.test(x.context) ? { context_uri: x.context, offset: { uri: x.uri } } : { uris: [x.uri] }); return; }
     if (e.target.closest('[data-mu-act="reconnect"]')) { login(); return; }
     const f = e.target.closest('[data-ep-filter]');
     if (f) { epFilter = f.dataset.epFilter; save('mu-ep-filter', epFilter); renderEpisodes(); return; }
+    const so = e.target.closest('[data-ep-sort]');
+    if (so) { epSort = so.dataset.epSort; save('mu-ep-sort', epSort); renderEpisodes(); body().scrollTop = 0; return; }
     const d = e.target.closest('#mu-devices [data-device]');
     if (d) cmd(async () => { await api('/me/player', { method: 'PUT', body: { device_ids: [d.dataset.device], play: true } }); setTimeout(loadDevices, 600); });
   });
-  $('#ep-more').addEventListener('click', () => loadEpisodes(true));
   $('#mu-connect').addEventListener('click', login);
   $('#mu-disconnect').addEventListener('click', async () => {
     if (await PH.confirm('Disconnect Spotify from Phosphor OS?', { title: 'Disconnect', ok: 'Disconnect', danger: true })) disconnect();
@@ -427,7 +495,7 @@
     const h = location.hash;
     if (h.startsWith('#/music/devices')) loadDevices();
     else if (/^#\/music\/?$/.test(h)) { if (hasRecent()) loadRecent(); else renderRecent(); if (!eps || eps.error) loadEpisodes(); }
-    else if (h.startsWith('#/music/episodes') && (!eps || eps.error || (!eps.loaded && !eps.loading))) loadEpisodes();
+    else if (h.startsWith('#/music/episodes') && (!eps || eps.error || !eps.loading)) loadEpisodes();
   }
   addEventListener('hashchange', sync);
   document.addEventListener('visibilitychange', sync);

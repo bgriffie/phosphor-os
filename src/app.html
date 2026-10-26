@@ -230,6 +230,21 @@
     .mu-mini-play svg { width: 24px; height: 24px; }
     #mu-on > .mu-note { text-align: center; }
     #ep-diag { font-size: var(--fs-xs); color: var(--text-faint); }
+    /* Episodes: sort row, month headings, and the hold-to-jump strip on the right edge */
+    .ep-sort button { font-size: var(--fs-xs); padding-left: 2px; padding-right: 2px; }
+    .ep-month { padding: var(--sp-3) var(--sp-4) var(--sp-1); font-size: var(--fs-xs); color: var(--accent); letter-spacing: var(--tracking-label); text-transform: uppercase; border-top: 1px solid var(--line); }
+    .ep-month:first-child { border-top: 0; }
+    #ep-items .mu-ep { padding-right: var(--sp-6); }
+    .ep-scrub { position: absolute; z-index: 2; top: 44px; bottom: 14px; right: 2px; width: 28px; touch-action: none; cursor: pointer; }
+    .ep-scrub::before { content: ""; position: absolute; top: 0; bottom: 0; right: 6px; width: 2px; background: var(--line); border-radius: 1px; }
+    .ep-thumb { position: absolute; right: 2px; width: 10px; height: 34px; top: calc(var(--at, 0) * (100% - 34px)); border-radius: 5px; background: var(--line-strong); }
+    .ep-scrub.is-on .ep-thumb { background: var(--accent); box-shadow: var(--glow-box); }
+    .ep-scrub[hidden], .ep-bubble[hidden] { display: none; }
+    .ep-bubble {
+      position: absolute; z-index: 3; right: 40px; top: calc(44px + var(--y, 0) * (100% - 44px - 14px - 44px)); pointer-events: none;
+      padding: var(--sp-2) var(--sp-4); background: var(--surface-2); border: 1px solid var(--accent); border-radius: var(--radius-sm);
+      color: var(--accent); font-size: var(--fs-lg); letter-spacing: .06em; text-transform: uppercase; box-shadow: var(--glow-box);
+    }
     .mu-now .mu-track, .mu-now .mu-artist, .mu-now .mu-note { text-align: center; }
     .mu-links { margin-top: var(--sp-6); }
     .segmented { margin-bottom: var(--sp-2); }
@@ -278,13 +293,15 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.34</span>
+      <span class="app-meta">v1.35</span>
     </header>
     <div class="screen-slot">
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
       <div class="boot-screen" id="boot" hidden aria-hidden="true"></div>
       <nav class="path" data-path aria-label="Location"></nav>
+      <div class="ep-scrub" id="ep-scrub" hidden aria-hidden="true"><span class="ep-thumb"></span></div>
+      <div class="ep-bubble" id="ep-bubble" hidden aria-hidden="true"></div>
       <button class="path-cmd" id="path-cmd" aria-label="Open the menu" aria-haspopup="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M4 7l8 8 8-8"/></svg>menu</button>
       <div class="term" id="term" hidden role="dialog" aria-label="Menu">
         <div class="term-bar">
@@ -362,8 +379,14 @@
           <button role="radio" data-ep-filter="new" aria-checked="true">Unplayed</button>
           <button role="radio" data-ep-filter="all" aria-checked="false">All</button>
         </div>
+        <div class="segmented ep-sort" role="radiogroup" aria-label="Sort">
+          <button role="radio" data-ep-sort="new" aria-checked="true">Newest</button>
+          <button role="radio" data-ep-sort="old" aria-checked="false">Oldest</button>
+          <button role="radio" data-ep-sort="short" aria-checked="false">Shortest</button>
+          <button role="radio" data-ep-sort="long" aria-checked="false">Longest</button>
+        </div>
+        <p class="menu-note" id="ep-prog" hidden></p>
         <div class="menu" id="ep-items"></div>
-        <button class="btn btn-ghost btn-block" id="ep-more" hidden>Load more</button>
         <p class="menu-note" id="ep-scope" hidden>Reconnect Spotify in Settings › Spotify to see which episodes you've played.</p>
         <p class="menu-note" id="ep-diag"></p>
       </section>
@@ -554,7 +577,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.34</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.35</span></a>
           </div>
         </div>
       </section>
@@ -598,7 +621,7 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.34</span></div>
+          <div class="kv"><span>Version</span><span>1.35</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
