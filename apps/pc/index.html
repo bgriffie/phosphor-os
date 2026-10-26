@@ -747,7 +747,95 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .ic { width: 22px; height: 22px; flex: none; }
     .glyph-svg { width: 56px; height: 56px; color: var(--accent); filter: drop-shadow(0 0 8px var(--accent)); margin: 0 auto var(--sp-3); display: block; }
     .mi-glyph svg { width: 20px; height: 20px; display: block; }
-    .pc-note { margin: 0 0 var(--sp-3); color: var(--amber); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); }
+    /* Remote page, in the Phosphor TV remote style (Floyd, 2026-10-26): status line, channels, strips, round pad */
+    .tv-stat { display: flex; align-items: center; gap: var(--sp-3); }
+    .tv-led { width: 10px; height: 10px; border-radius: 50%; flex: none; border: 1px solid var(--line-strong); }
+    .tv-led.on { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .tv-led.wait { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 8px var(--amber); }
+    .tv-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tv-sub { color: var(--text-dim); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tv-note { margin: 0; color: var(--amber); font-size: var(--fs-xs); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; flex: none; }
+    .tv-note.open { -webkit-line-clamp: unset; }
+    .tv-note.err { color: var(--red); }
+
+    /* Remote page: one screen, no scrolling. Status line, channels, what's playing, then the remote. */
+    .rc { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+    .rc[hidden], .rc-on[hidden], .rc-off[hidden] { display: none; }
+    .rc-top { display: flex; align-items: center; gap: var(--sp-3); min-height: 48px; padding: 0 var(--sp-1); }
+    .rc-who { min-width: 0; flex: 1; }
+    .rm-b.rc-pow { width: 48px; min-height: 44px; padding: 0; flex: none; border-radius: 50%; }
+    .rm-b.rc-pow[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); box-shadow: var(--glow-box); }
+    .rc-off { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-4); justify-content: center; }
+    .rc-big { align-self: center; width: min(70%, 220px); aspect-ratio: 1; border-radius: 50%; border: 1px solid var(--accent); background: var(--surface-1);
+      color: var(--accent); box-shadow: var(--glow-box); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-3);
+      font: inherit; font-weight: 700; font-size: var(--fs-sm); letter-spacing: var(--tracking-label); text-transform: uppercase; text-align: center; padding: var(--sp-4); cursor: pointer; }
+    .rc-big svg { width: 44px; height: 44px; filter: drop-shadow(0 0 6px var(--accent)); }
+    .rc-big:active { background: var(--surface-3); }
+    .rc-big:disabled { opacity: .5; }
+    .rc-on { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+    .rc-side { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+    /* Channels: what's on the TV, the current one lit */
+    .chans { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-2); }
+    .ch { min-height: 58px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text-dim);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font: inherit; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em; cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; padding: 0; }
+    .ch svg { width: 22px; height: 22px; }
+    .ch:active { background: var(--surface-3); }
+    .ch.cur { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+
+    /* One-line strips (art controls, sound) */
+    .line { display: flex; align-items: center; gap: var(--sp-2); min-height: 48px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); padding: 0 var(--sp-1); }
+    .line[hidden] { display: none; }
+    .line-ic { flex: none; display: flex; padding-left: var(--sp-2); color: var(--text-dim); }
+    .line-ic svg { width: 20px; height: 20px; }
+    .line-main { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; justify-content: center; text-align: left; background: none; border: 0;
+      color: var(--text); font: inherit; padding: 0 var(--sp-1); cursor: pointer; }
+    .line-t { font-weight: 700; font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .line-s { color: var(--text-dim); font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rm-b.ic { width: 40px; min-height: 40px; padding: 0; flex: none; border-color: var(--line); }
+
+    /* The remote: Back/Home/Say | round pad | volume */
+    .ctl { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 60px 1fr 60px; gap: var(--sp-2); align-items: stretch; }
+    .ctl .col { display: grid; grid-template-rows: repeat(3, 1fr); gap: var(--sp-2); align-self: center; height: min(100%, 300px); min-height: 0; }
+    .rm-b.cb { flex-direction: column; gap: 4px; min-height: 0; padding: 0; font-size: 10px; letter-spacing: .06em; }
+    .pad-box { container-type: size; min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
+    .pad { position: relative; width: min(100cqw, 100cqh, 300px); aspect-ratio: 1; border: 1px solid var(--line-strong); border-radius: 50%;
+      background: radial-gradient(circle at center, var(--surface-2) 0 30%, var(--surface-1) 30.5%);
+      touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; cursor: pointer; }
+    .pad::after { content: ''; position: absolute; left: 30%; top: 30%; width: 40%; height: 40%; border-radius: 50%; border: 1px solid var(--line-strong); pointer-events: none; }
+    .pad .ok { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; letter-spacing: var(--tracking-label); color: var(--text-dim); pointer-events: none; }
+    .pad svg { position: absolute; width: 26px; height: 26px; color: var(--text-dim); pointer-events: none; }
+    .pad .a-up { top: 7%; left: calc(50% - 13px); } .pad .a-down { bottom: 7%; left: calc(50% - 13px); }
+    .pad .a-left { left: 7%; top: calc(50% - 13px); } .pad .a-right { right: 7%; top: calc(50% - 13px); }
+    .pad .hit { color: var(--accent); filter: drop-shadow(0 0 6px var(--accent)); }
+    .pad.hit-ok .ok { color: var(--accent); text-shadow: var(--glow); }
+    .pad.hit-ok::after { border-color: var(--accent); box-shadow: var(--glow-box); }
+    .vol-num { font-variant-numeric: tabular-nums; }
+
+    /* Wider than tall (the phone turned in Phosphor OS): channels and strips on the left, remote on the right */
+    @media (min-aspect-ratio: 5/4) {
+      .rc-on { flex-direction: row; gap: var(--sp-3); }
+      .rc-side { flex: 1 1 46%; min-width: 0; justify-content: center; }
+      .ctl { flex: 1 1 54%; min-height: 0; grid-template-columns: 52px 1fr 52px; }
+      .rc-top { min-height: 40px; }
+      .rc { gap: var(--sp-2); }
+    }
+
+    .rm-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+    .rm-b { min-height: 48px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text);
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: inherit; font-size: var(--fs-xs); font-weight: 700;
+      text-transform: uppercase; letter-spacing: var(--tracking-label); cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; padding: 0 var(--sp-2); }
+    .rm-b svg { width: 20px; height: 20px; flex: none; }
+    .rm-b:active, .rm-b.held { background: var(--surface-3); }
+    .rm-b[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+    .rm-b:disabled { opacity: .45; }
+    .vol-row { display: grid; grid-template-columns: 52px 1fr 52px 52px; gap: var(--sp-2); align-items: center; }
+    .vol-row[hidden] { display: none; }
+    .vol-row .meter { height: 12px; }
+    .pad .ok svg { position: static; width: 30px; height: 30px; }
+    .pad.hit-ok .ok svg { color: var(--accent); filter: drop-shadow(0 0 6px var(--accent)); }
+    .rc-top .tv-led.warn { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 8px var(--amber); }
     .steps { display: flex; flex-direction: column; gap: var(--sp-2); padding-left: 1.4em; color: var(--text); }
     .steps li::marker { color: var(--text-dim); }
     .steps code { color: var(--accent); word-break: break-all; }
@@ -912,27 +1000,65 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>PC Remote</h1>
-      <span class="app-meta">v1.9</span>
+      <span class="app-meta">v1.10</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
       <nav class="path" data-path aria-label="Location"></nav>
       <div class="screen-body">
 
-      <section class="view" data-route="/" data-title="PC">
+      <section class="view fill" data-route="/" data-title="PC">
         <div class="empty" id="pc-off" hidden>
           <svg class="glyph-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v12H3zM9 20h6M12 16v4"/></svg>
           <h2>PC isn't set up</h2>
           <p>Your PC is controlled through the same relay as your lights.</p>
           <button class="btn btn-primary" data-route="/settings/relay">Set up PC</button>
         </div>
-        <div id="pc-on" hidden>
-          <p class="pc-note" id="pc-note" hidden></p>
-          <div class="menu">
-            <a class="menu-item" href="#/pad"><span class="mi-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M3 4h18v16H3zM3 15h18M12 15v5"/></svg></span><span class="mi-label">Trackpad<small>Mouse and keyboard</small></span></a>
-            <a class="menu-item" href="#/shows"><span class="mi-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M3 5h18v12H3zM10 8.5v5l4-2.5z"/></svg></span><span class="mi-label">Shows<small>Play a show on a monitor</small></span></a>
-            <a class="menu-item" href="#/windows"><span class="mi-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M2 6h9v8H2zM13 6h9v8h-9zM5 18h3M16 18h3"/></svg></span><span class="mi-label">Windows<small>Move what's open between monitors</small></span></a>
-            <a class="menu-item" href="#/media"><span class="mi-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M4 9h4l5-4v14l-5-4H4zM16.5 8.5a5 5 0 0 1 0 7"/></svg></span><span class="mi-label">Media<small>Play, pause, volume</small></span></a>
+        <div class="rc" id="pc-on" hidden>
+          <!-- One line: the PC, how it's connected, and the monitor numbers button -->
+          <div class="rc-top">
+            <span class="tv-led" id="pc-led" aria-hidden="true"></span>
+            <div class="rc-who"><div class="tv-name">PC</div><div class="tv-sub" id="pc-sub">Connecting…</div></div>
+            <button class="rm-b rc-pow" data-action="identify" id="pc-ident" aria-label="Show monitor numbers on the monitors"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v12H3zM9 20h6M12 16v4M10 8l2-1.5V13"/></svg></button>
+          </div>
+          <p class="tv-note" id="pc-note" hidden></p>
+          <div class="rc-on">
+            <div class="rc-side">
+              <div class="chans" role="group" aria-label="Go to">
+                <button class="ch" data-route="/pad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v16H3zM3 15h18M12 15v5"/></svg><span>Trackpad</span></button>
+                <button class="ch" data-route="/windows/live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 4h20v13H2zM8 21h8M12 17v4M9 8.5v5l4.5-2.5z"/></svg><span>Live</span></button>
+                <button class="ch" data-route="/windows"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 6h9v8H2zM13 6h9v8h-9zM5 18h3M16 18h3"/></svg><span>Windows</span></button>
+                <button class="ch" data-route="/shows"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 5h18v12H3zM10 8.5v5l4-2.5zM7 21h10"/></svg><span>Shows</span></button>
+              </div>
+              <!-- Only with a saved show: put it up again in one tap -->
+              <div class="line" id="sh-now" hidden>
+                <span class="line-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 5h18v12H3zM10 8.5v5l4-2.5z"/></svg></span>
+                <button class="line-main" data-route="/shows" aria-label="All shows"><span class="line-t" id="sn-show">—</span><span class="line-s" id="sn-where"></span></button>
+                <button class="rm-b ic" id="sn-play" aria-label="Play it"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg></button>
+              </div>
+            </div>
+            <!-- The media remote: track and full screen | round pad (arrows, play) | volume -->
+            <div class="ctl">
+              <div class="col">
+                <button class="rm-b cb" data-key="prev" aria-label="Previous track"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 5h2.5v14H5zM19 5v14l-10-7z"/></svg><span>Prev</span></button>
+                <button class="rm-b cb" data-key="f11" aria-label="Full screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg><span>Full</span></button>
+                <button class="rm-b cb" data-key="next" aria-label="Next track"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.5 5H19v14h-2.5zM5 5v14l10-7z"/></svg><span>Next</span></button>
+              </div>
+              <div class="pad-box">
+                <div class="pad" id="mpad" role="group" aria-label="Arrow keys around the edge, play or pause in the middle">
+                  <svg class="a-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M5 15l7-7 7 7"/></svg>
+                  <svg class="a-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>
+                  <svg class="a-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+                  <svg class="a-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+                  <span class="ok"><svg class="a-pp" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5v14l9-7zM14 5h3v14h-3zM19 5h3v14h-3z"/></svg></span>
+                </div>
+              </div>
+              <div class="col">
+                <button class="rm-b cb" data-key="volup" data-repeat aria-label="Volume up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Vol</span></button>
+                <button class="rm-b cb" data-key="mute" aria-label="Mute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM16 9l5 6M21 9l-5 6"/></svg><span>Mute</span></button>
+                <button class="rm-b cb" data-key="voldown" data-repeat aria-label="Volume down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/></svg><span>Vol</span></button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1085,7 +1211,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.9</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.10</span></a>
           </div>
         </div>
       </section>
@@ -1138,7 +1264,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="PC Remote">
-          <div class="kv"><span>Version</span><span>1.9</span></div>
+          <div class="kv"><span>Version</span><span>1.10</span></div>
           <div class="kv"><span>Monitors</span><span id="ab-mons">—</span></div>
           <div class="kv"><span>Saved shows</span><span id="ab-shows">0</span></div>
           <div class="kv"><span>Needs</span><span>Relay + Tailscale</span></div>
@@ -1160,28 +1286,26 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
       <div class="page-keys" data-show-on="/pad" hidden><button class="key key-sm" data-kb-toggle aria-label="Keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 6h20v12H2zM6 10h1M10 10h1M14 10h1M18 10h1M7 14h10"/></svg></button></div>
       <div class="page-keys" data-show-on="/shows/edit" hidden><button class="key key-sm" id="k-save" aria-label="Save show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></button></div>
       <div class="page-keys" data-show-on="/shows" hidden><button class="key key-sm" id="k-add" data-hide-on="/shows/edit" aria-label="Add show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button></div>
-      <div class="page-keys" data-show-on="/windows" data-hide-on="/windows/live" hidden><button class="key key-sm" id="k-refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg></button></div>
+      <div class="page-keys" id="pk-windows" hidden><button class="key key-sm" id="k-refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg></button></div>
       <div class="page-keys" data-show-on="/windows/live" hidden><button class="key key-sm" data-kb-toggle aria-label="Keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 6h20v12H2zM6 10h1M10 10h1M14 10h1M18 10h1M7 14h10"/></svg></button></div>
       <div class="page-keys" data-show-on="/media" hidden><button class="key key-sm" data-key="playpause" aria-label="Play or pause"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5v14l9-7zM14 5h3v14h-3zM19 5h3v14h-3z"/></svg></button></div>
-      <button class="key key-sm" data-route="/pad" data-hide-on="/pad /shows /windows /media" aria-label="Trackpad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v16H3zM3 15h18M12 15v5"/></svg></button>
+      <div class="page-keys" data-show-on="/" hidden><button class="key key-sm" data-key="playpause" aria-label="Play or pause"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5v14l9-7zM14 5h3v14h-3zM19 5h3v14h-3z"/></svg></button></div>
+      <button class="key key-sm" data-route="/pad" data-hide-on="/ /pad /shows /windows /media" aria-label="Trackpad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v16H3zM3 15h18M12 15v5"/></svg></button>
     </nav>
   </main>
 
   <dialog class="sheet dropdown" id="menu" aria-label="Menu">
     <div class="sheet-title">Go to</div>
     <div class="menu" data-sections>
-      <button class="menu-item" data-route="/"><span class="mi-glyph" aria-hidden="true">■</span><span class="mi-label">PC</span></button>
+      <button class="menu-item" data-route="/"><span class="mi-label">Remote</span></button>
       <button class="menu-item" data-route="/pad"><span class="mi-label">Trackpad</span></button>
-      <button class="menu-item" data-route="/shows"><span class="mi-label">Shows</span></button>
+      <button class="menu-item" data-route="/windows/live"><span class="mi-label">Live view</span></button>
       <button class="menu-item" data-route="/windows"><span class="mi-label">Windows</span></button>
-      <button class="menu-item" data-route="/media"><span class="mi-label">Media</span></button>
-      <button class="menu-item" data-route="/settings"><span class="mi-glyph" aria-hidden="true">⚙</span><span class="mi-label">Settings</span></button>
+      <button class="menu-item" data-route="/shows"><span class="mi-label">Shows</span></button>
+      <button class="menu-item" data-route="/settings"><span class="mi-label">Settings</span></button>
     </div>
-    <div class="sheet-title">Actions</div>
     <div class="menu">
-      <button class="menu-item" data-action="identify" id="m-identify"><span class="mi-label">Identify monitors</span></button>
-      <button class="menu-item" data-action="add" id="m-add"><span class="mi-label">Add a show</span></button>
-      <button class="menu-item" data-route="/settings/relay"><span class="mi-label">Relay setup</span></button>
+      <button class="menu-item" data-action="identify" id="m-identify"><span class="mi-label">Show monitor numbers</span></button>
     </div>
   </dialog>
 
@@ -1781,6 +1905,7 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     await busy(btn, async () => {
       const d = await call('/pc/open', { url, monitor: mon, fullscreen: full, browser: PH.store.get('browser') }, 20000);
       PH.toast('Playing on monitor ' + d.monitor + '.');
+      save('last', url); renderHome();
     });
   }
   function renderShows() {
@@ -1803,7 +1928,34 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
       $('#sh-url').removeAttribute('aria-invalid'); play(u, n, true, b);
     } });
     $('#ab-shows').textContent = String(shows.length);
+    renderHome();
   }
+  // The remote page: the last show played (or the first saved) is one tap away
+  function renderHome() {
+    const last = load('last', ''), s = shows.find(x => x.url === last) || shows[0];
+    $('#sh-now').hidden = !s; if (!s) return;
+    $('#sn-show').textContent = s.name;
+    $('#sn-where').textContent = 'Monitor ' + (s.mon || 1) + ' · tap for all shows';
+    $('#sn-play').onclick = () => play(s.url, s.mon || 1, s.full !== false, $('#sn-play'));
+  }
+
+  // Round pad: arrow keys around the edge (seek and scroll in most players), play or pause in the middle.
+  // Arrows repeat while held.
+  const mpad = $('#mpad');
+  let mpRep = 0;
+  mpad.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    if (!ready()) { PH.go('/settings/relay'); return; }
+    const r = mpad.getBoundingClientRect(), dx = e.clientX - r.left - r.width / 2, dy = e.clientY - r.top - r.height / 2;
+    let k, cls;
+    if (Math.hypot(dx, dy) < r.width * 0.2) { k = 'playpause'; mpad.classList.add('hit-ok'); }
+    else { k = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down'); cls = mpad.querySelector('.a-' + k); cls.classList.add('hit'); }
+    push({ k: [k] });
+    clearInterval(mpRep); let n = 0;
+    if (k !== 'playpause') mpRep = setInterval(() => { if (++n > 3) push({ k: [k] }); }, 110);
+    const stop = () => { clearInterval(mpRep); mpad.classList.remove('hit-ok'); cls && cls.classList.remove('hit'); ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => mpad.removeEventListener(t, stop)); };
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => mpad.addEventListener(t, stop));
+  });
   let editMon = 1;
   function openEdit(id) {
     editId = id; const s = shows.find(x => x.id === id);
@@ -1832,7 +1984,6 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     const u = cleanUrl($('#sh-url').value); if (u) $('#se-url').value = u;   // a link just pasted above becomes the new show
   };
   $('#k-add').addEventListener('click', addShow);
-  $('#m-add').addEventListener('click', addShow);
   $('#sh-paste').addEventListener('click', async () => {
     try { const t = await navigator.clipboard.readText(); $('#sh-url').value = cleanUrl(t) || t; }
     catch { $('#sh-url').focus(); PH.toast('Tap the box and choose Paste.', 'warn'); }
@@ -2274,6 +2425,7 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
   const identify = () => { if (!ready()) { PH.go('/settings/relay'); return; } busy(null, async () => { await call('/pc/identify', {}); PH.toast('Look at your monitors.'); }); };
   $('#pc-identify').addEventListener('click', identify);
   $('#m-identify').addEventListener('click', identify);
+  $('#pc-ident').addEventListener('click', identify);
   $('#pc-export').addEventListener('click', () => PH.exportFile('pc-remote-shows.json', JSON.stringify({ shows }, null, 2)));
   $('#pc-erase').addEventListener('click', async () => {
     if (!await PH.confirm('Erase all saved shows? This can\'t be undone.', { title: 'Erase shows', ok: 'Erase', danger: true })) return;
@@ -2284,6 +2436,9 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     $('#pc-off').hidden = ready(); $('#pc-on').hidden = !ready();
     const note = state === 'old' || state === 'down' ? lastErr : '';
     $('#pc-note').textContent = note; $('#pc-note').hidden = !note;
+    const n = mons().length;
+    $('#pc-led').className = 'tv-led' + (state === 'ok' ? ' on' : state === 'old' || state === 'down' ? ' warn' : '');
+    $('#pc-sub').textContent = state === 'ok' ? 'Connected' + (n ? ' · ' + n + ' monitor' + (n === 1 ? '' : 's') : '') : state === 'old' ? 'Relay needs the update' : state === 'down' ? 'Can\'t reach the PC' : 'Connecting…';
     $('#pc-status').textContent = !ready() ? 'Not set up' : state === 'ok' ? 'Connected' : state === 'old' ? 'Needs update' : state === 'down' ? 'Can\'t reach' : 'Connecting…';
     $('#pc-status').className = 'mi-value' + (state === 'ok' ? ' t-accent' : state === 'old' ? ' t-amber' : '');
     $('#ab-mons').textContent = mons().length ? String(mons().length) : '—';
@@ -2299,7 +2454,8 @@ PH.init({ speed: 'normal', natural: true, browser: 'auto' });
     if (document.hidden) { closeWS(); pollWins(false); stopLive(); return; }
     check();
     const r = route();
-    if (r === '/pad' || r === '/windows/live') { wsTries = 0; openWS(); } else closeWS();
+    $('#pk-windows').hidden = r !== '/windows';   // only the map page, not the live view under it
+    if (r === '/' || r === '/pad' || r === '/windows/live') { wsTries = 0; openWS(); } else closeWS();
     if (r === '/windows' || r === '/windows/live') loadWins();
     if (r === '/windows/live') renderLive();
     if (r !== '/windows/live') stopStream();
