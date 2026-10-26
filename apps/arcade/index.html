@@ -737,6 +737,59 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 
     /* === tool-specific styles below === */
 
+    /* Same layout as Phosphor TV v1.10 (Floyd): no title on the case, pages swap instantly, keys carry drawn icons */
+    .app-header { display: none; }
+    .app { padding-top: max(var(--sp-2), calc(var(--safe-top) - 4px)); }
+    .view.enter-fwd, .view.enter-back { animation: none; }
+    .app-controls .key svg { width: 20px; height: 20px; }
+
+    /* Home: status line, channels, one strip, big Play */
+    .rc { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+    .rc-top { display: flex; align-items: center; gap: var(--sp-3); min-height: 48px; padding: 0 var(--sp-1); }
+    .rc-who { min-width: 0; flex: 1; }
+    .tv-led { width: 10px; height: 10px; border-radius: 50%; flex: none; border: 1px solid var(--line-strong); }
+    .tv-led.on { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .tv-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tv-sub { color: var(--text-dim); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rm-b { min-height: 48px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text);
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: inherit; font-size: var(--fs-xs); font-weight: 700;
+      text-transform: uppercase; letter-spacing: var(--tracking-label); cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; padding: 0 var(--sp-2); }
+    .rm-b svg { width: 20px; height: 20px; flex: none; }
+    .rm-b:active { background: var(--surface-3); }
+    .rm-b[hidden] { display: none; }
+    .rm-b.rc-pow { width: 48px; min-height: 44px; padding: 0; flex: none; border-radius: 50%; color: var(--accent); border-color: var(--accent); box-shadow: var(--glow-box); }
+    .rm-b.ic { width: 40px; min-height: 40px; padding: 0; flex: none; border-color: var(--line); margin-right: var(--sp-1); }
+    .rc-on { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+    .rc-side { display: flex; flex-direction: column; gap: var(--sp-2); }
+    .chans { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--sp-2); }
+    .ch { min-height: 58px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text-dim);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font: inherit; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em; cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; padding: 0; }
+    .ch svg { width: 22px; height: 22px; }
+    .ch:active { background: var(--surface-3); }
+    .ch.cur { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+    .line { display: flex; align-items: center; gap: var(--sp-2); min-height: 52px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); padding: 0 var(--sp-1); }
+    .line-ic { flex: none; display: flex; padding-left: var(--sp-2); color: var(--accent); }
+    .line-ic svg { width: 20px; height: 20px; }
+    .line-main { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: var(--sp-1); }
+    .line-t { font-weight: 700; font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .line-s { color: var(--text-dim); font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .play-box { flex: 1 1 auto; min-height: 0; container-type: size; display: flex; align-items: center; justify-content: center; }
+    .rc-big { width: min(100cqw, 100cqh, 240px); aspect-ratio: 1; border-radius: 50%; border: 1px solid var(--accent); background: var(--surface-1);
+      color: var(--accent); box-shadow: var(--glow-box); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-3);
+      font: inherit; font-weight: 700; font-size: var(--fs-sm); letter-spacing: var(--tracking-label); text-transform: uppercase; text-align: center; padding: var(--sp-4); cursor: pointer;
+      touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+    .rc-big .big-ic svg { width: 52px; height: 52px; filter: drop-shadow(0 0 6px var(--accent)); display: block; }
+    .rc-big:active { background: var(--surface-3); }
+    /* Wider than tall: channels and strip on the left, Play on the right */
+    @media (min-aspect-ratio: 5/4) {
+      .rc-on { flex-direction: row; }
+      .rc-side { flex: 1 1 55%; min-width: 0; justify-content: center; }
+      .play-box { flex: 1 1 45%; }
+      .rc-top { min-height: 40px; }
+      .rc { gap: var(--sp-2); }
+    }
+
     .hud canvas { width: 32px; height: 16px; }
 
     .board-wrap {
@@ -757,11 +810,6 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .overlay p.new-best { color: var(--amber); font-weight: 700; }
     .overlay .btn { min-width: 170px; }
 
-    /* Home */
-    .marquee { text-align: center; padding: var(--sp-5) var(--sp-4); }
-    .marquee .readout { font-size: 36px; letter-spacing: .14em; }
-    .view[data-route="/"] .mi-value { flex: none; max-width: none; }
-    .marquee p { margin-top: var(--sp-2); color: var(--text-dim); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: var(--tracking-label); }
 
     /* 2048 */
     .g2048 { --gap: 6px; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: var(--gap); padding: var(--gap); width: 100%; height: 100%; }
@@ -830,7 +878,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Arcade</h1>
-      <span class="app-meta">v1.8</span>
+      <span class="app-meta">v1.9</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -842,23 +890,33 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
       <div class="hud" data-show-on="/pins" hidden><i>Lv</i> <b class="glow" id="pins-level">1/5</b> <i>Gold</i> <b id="pins-gold">0/0</b></div>
       <div class="screen-body">
 
-      <!-- ============ HOME ============ -->
-      <section class="view" data-route="/" data-title="Arcade">
-        <section class="panel marquee">
-          <div class="readout">ARCADE</div>
-          <p>Insert coin<span class="cursor" aria-hidden="true"></span></p>
-        </section>
-        <div class="menu-group">
-          <span class="label">Games</span>
-          <div class="menu">
-            <a class="menu-item" href="#/snake"><span class="mi-glyph" aria-hidden="true">~</span><span class="mi-label">Snake<small>Eat, grow, don't bite yourself</small></span><span class="mi-value" id="home-snake">—</span></a>
-            <a class="menu-item" href="#/2048"><span class="mi-glyph" aria-hidden="true">#</span><span class="mi-label">2048<small>Slide and merge to 2048</small></span><span class="mi-value" id="home-2048">—</span></a>
-            <a class="menu-item" href="#/mines"><span class="mi-glyph" aria-hidden="true">*</span><span class="mi-label">Mines<small>Clear the field without a boom</small></span><span class="mi-value" id="home-mines">—</span></a>
-            <a class="menu-item" href="#/blocks"><span class="mi-glyph" aria-hidden="true">▓</span><span class="mi-label">Blocks<small>Stack pieces, clear lines</small></span><span class="mi-value" id="home-blocks">—</span></a>
-            <a class="menu-item" href="#/pins"><span class="mi-glyph" aria-hidden="true">¤</span><span class="mi-label">Pin Rescue<small>Pull pins, save the hero. No ads.</small></span><span class="mi-value" id="home-pins">—</span></a>
+      <!-- ============ HOME: one screen, no scrolling. Status line, game channels, the picked game, a big Play ============ -->
+      <section class="view fill" data-route="/" data-title="Arcade">
+        <div class="rc">
+          <div class="rc-top">
+            <span class="tv-led on" aria-hidden="true"></span>
+            <div class="rc-who"><div class="tv-name">Arcade</div><div class="tv-sub" id="ar-sub">Pick a game</div></div>
+            <button class="rm-b rc-pow" id="ar-cont" aria-label="Continue" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M7 4l12 8-12 8z" fill="currentColor"/></svg></button>
           </div>
-          <p class="menu-note">Best scores stay on this phone. Everything works offline.</p>
+          <div class="rc-on">
+            <div class="rc-side">
+              <div class="chans" role="group" aria-label="Games">
+                <button class="ch" data-game="snake"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 18h7v-6H6V6h13v5"/><path d="M19 15v1"/></svg><span>Snake</span></button>
+                <button class="ch" data-game="2048"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg><span>2048</span></button>
+                <button class="ch" data-game="mines"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><circle cx="10" cy="14" r="6"/><path d="M14.5 9.5 17 7M19 3v2M22 6h-2M21 3.5l-1 1"/></svg><span>Mines</span></button>
+                <button class="ch" data-game="blocks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 7h18v6h-6v6H9v-6H3z"/><path d="M9 7v6M15 7v6"/></svg><span>Blocks</span></button>
+                <button class="ch" data-game="pins"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 12h13"/><circle cx="18.5" cy="12" r="3"/><path d="M5 16v4h4v-4zM11 16v4"/></svg><span>Pins</span></button>
+              </div>
+              <div class="line" id="ar-line">
+                <span class="line-ic" id="ar-ic"></span>
+                <div class="line-main"><span class="line-t" id="ar-t">—</span><span class="line-s" id="ar-s"></span></div>
+                <button class="rm-b ic" id="ar-opt" aria-label="Game settings" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 7h11M18 7h3M3 17h5M12 17h9"/><path d="M14 4v6M8 14v6"/></svg></button>
+              </div>
+            </div>
+            <div class="play-box"><button class="rc-big" id="ar-play"><span class="big-ic" id="ar-play-ic"></span><span id="ar-play-t">Play</span></button></div>
+          </div>
         </div>
+        <template id="ar-icons"><i data-k="snake"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 18h7v-6H6V6h13v5"/><path d="M19 15v1"/></svg></i><i data-k="2048"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg></i><i data-k="mines"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><circle cx="10" cy="14" r="6"/><path d="M14.5 9.5 17 7M19 3v2M22 6h-2M21 3.5l-1 1"/></svg></i><i data-k="blocks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 7h18v6h-6v6H9v-6H3z"/><path d="M9 7v6M15 7v6"/></svg></i><i data-k="pins"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 12h13"/><circle cx="18.5" cy="12" r="3"/><path d="M5 16v4h4v-4zM11 16v4"/></svg></i></template>
       </section>
 
       <!-- ============ SNAKE ============ -->
@@ -939,7 +997,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-glyph" aria-hidden="true">i</span><span class="mi-label">About</span><span class="mi-value">v1.8</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-glyph" aria-hidden="true">i</span><span class="mi-label">About</span><span class="mi-value">v1.9</span></a>
           </div>
         </div>
       </section>
@@ -991,7 +1049,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor Arcade">
-          <div class="kv"><span>Version</span><span>1.8</span></div>
+          <div class="kv"><span>Version</span><span>1.9</span></div>
           <div class="kv"><span>Games</span><span>5</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
@@ -1000,9 +1058,9 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <ul class="list plain small">
             <li>Snake: swipe or arrow keys to steer.</li>
             <li>2048: swipe or arrow keys; Undo under the screen takes back one move.</li>
-            <li>Mines: tap to dig, hold a square (or turn on ▲ under the screen) to flag. Tap a number to clear around it.</li>
+            <li>Mines: tap to dig, hold a square (or turn on the flag key under the screen) to flag. Tap a number to clear around it.</li>
             <li>Blocks: drag to move, tap to rotate, flick down to drop.</li>
-            <li>Pin Rescue: tap a pin to pull it; ⟳ under the screen restarts the level.</li>
+            <li>Pin Rescue: tap a pin to pull it; the round-arrow key under the screen restarts the level.</li>
           </ul>
         </section>
       </section>
@@ -1011,32 +1069,26 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
     </div><!-- /.screen -->
 
     <nav class="app-controls" aria-label="Controls">
-      <button class="key key-sm" data-back aria-label="Back">‹</button>
-      <button class="key key-sm" data-open-sheet="menu" aria-label="Menu">☰</button>
-      <button class="key key-sm" data-route="/" data-hide-on="/ /snake /2048 /mines /blocks /pins" aria-label="Arcade home">■</button>
-      <button class="key key-sm" data-route="/settings" data-show-on="/" hidden aria-label="Settings">⚙</button>
-      <div class="page-keys" data-show-on="/snake /blocks" hidden><button class="key key-sm" data-act="pause" aria-label="Pause">II</button></div>
-      <div class="page-keys" data-show-on="/2048" hidden><button class="key key-sm word" data-act="undo">Undo</button></div>
-      <div class="page-keys" data-show-on="/mines" hidden><button class="key key-sm" data-act="flag" aria-pressed="false" aria-label="Flag mode">▲</button></div>
-      <div class="page-keys" data-show-on="/pins" hidden><button class="key key-sm" data-act="retry" aria-label="Restart level">⟳</button></div>
+      <button class="key key-sm" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
+      <button class="key key-sm" data-open-sheet="menu" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <button class="key key-sm" data-route="/" data-hide-on="/ /snake /2048 /mines /blocks /pins" aria-label="Arcade"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 8h18v11H3z"/><path d="M7 13.5h4M9 11.5v4M15 12.5h.01M17.5 15h.01"/></svg></button>
+      <button class="key key-sm" data-route="/settings" data-show-on="/" hidden aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 7h11M18 7h3M3 17h5M12 17h9"/><path d="M14 4v6M8 14v6"/></svg></button>
+      <div class="page-keys" data-show-on="/snake /blocks" hidden><button class="key key-sm" data-act="pause" aria-label="Pause"></button></div>
+      <div class="page-keys" data-show-on="/2048" hidden><button class="key key-sm" data-act="undo" aria-label="Undo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 4 4 9l5 5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button></div>
+      <div class="page-keys" data-show-on="/mines" hidden><button class="key key-sm" data-act="flag" aria-pressed="false" aria-label="Flag mode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M6 21V4h12l-3 4 3 4H6"/></svg></button></div>
+      <div class="page-keys" data-show-on="/pins" hidden><button class="key key-sm" data-act="retry" aria-label="Restart level"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 3v5h-5"/></svg></button></div>
     </nav>
   </main>
 
   <dialog class="sheet dropdown" id="menu" aria-label="Menu">
-    <div class="sheet-title">Go to</div>
     <div class="menu" data-sections>
-      <button class="menu-item" data-route="/"><span class="mi-glyph" aria-hidden="true">■</span><span class="mi-label">Arcade</span></button>
-      <button class="menu-item" data-route="/snake"><span class="mi-glyph" aria-hidden="true">~</span><span class="mi-label">Snake</span></button>
-      <button class="menu-item" data-route="/2048"><span class="mi-glyph" aria-hidden="true">#</span><span class="mi-label">2048</span></button>
-      <button class="menu-item" data-route="/mines"><span class="mi-glyph" aria-hidden="true">*</span><span class="mi-label">Mines</span></button>
-      <button class="menu-item" data-route="/blocks"><span class="mi-glyph" aria-hidden="true">▓</span><span class="mi-label">Blocks</span></button>
-      <button class="menu-item" data-route="/pins"><span class="mi-glyph" aria-hidden="true">¤</span><span class="mi-label">Pin Rescue</span></button>
-      <button class="menu-item" data-route="/settings"><span class="mi-glyph" aria-hidden="true">⚙</span><span class="mi-label">Settings</span></button>
+      <button class="menu-item" data-route="/"><span class="mi-label">Arcade</span></button>
+      <button class="menu-item" data-route="/settings"><span class="mi-label">Settings</span></button>
     </div>
-    <div class="sheet-title" id="actions-title" hidden>Actions</div>
+    <div class="sheet-title" id="actions-title" hidden>This game</div>
     <div class="menu" id="actions" hidden>
-      <button class="menu-item" data-action="new"><span class="mi-glyph" aria-hidden="true">⟳</span><span class="mi-label">New game</span></button>
-      <button class="menu-item" data-action="undo" data-show-on="/2048"><span class="mi-glyph" aria-hidden="true">←</span><span class="mi-label">Undo last move</span></button>
+      <button class="menu-item" data-action="new"><span class="mi-label">New game</span></button>
+      <button class="menu-item" data-action="undo" data-show-on="/2048"><span class="mi-label">Undo last move</span></button>
     </div>
   </dialog>
 
@@ -1274,16 +1326,26 @@ const PH = (() => {
   const DEFAULTS = { snakeSpeed: 'normal', snakeWrap: false, minefield: 'easy', ghost: true };
   Object.assign(PH.store.defaults, DEFAULTS);   // so games can read settings before PH.init
 
+  const GAMES = {
+    snake: { route: '/snake', name: 'Snake', desc: "Eat, grow, don't bite yourself", opt: '/settings/snake-speed' },
+    '2048': { route: '/2048', name: '2048', desc: 'Slide and merge to 2048' },
+    mines: { route: '/mines', name: 'Mines', desc: 'Clear the field without a boom', opt: '/settings/minefield' },
+    blocks: { route: '/blocks', name: 'Blocks', desc: 'Stack pieces, clear lines' },
+    pins: { route: '/pins', name: 'Pin Rescue', desc: 'Pull pins, save the hero' },
+  };
+  const gameKey = route => Object.keys(GAMES).find(k => GAMES[k].route === route);
+  const icon = k => { const i = $('#ar-icons').content.querySelector('[data-k="' + k + '"]'); return i ? i.innerHTML : ''; };
+
   /* ---------- Tool data: best scores + saved 2048 game ---------- */
   const DKEY = 'phosphor-arcade:data';
   const blankBest = () => ({ snake: 0, g2048: 0, blocks: 0, pins: 0, mines: { easy: null, normal: null, hard: null } });
-  const blank = () => ({ best: blankBest(), g2048: null, pins: 0 });
+  const blank = () => ({ best: blankBest(), g2048: null, pins: 0, sel: 'snake', last: null });
   let data = (() => {
     try {
       const d = JSON.parse(localStorage.getItem(DKEY));
       if (d && d.best) {
         const b = blankBest();
-        return { g2048: d.g2048 || null, pins: d.pins || 0, best: { ...b, ...d.best, mines: { ...b.mines, ...(d.best.mines || {}) } } };
+        return { g2048: d.g2048 || null, pins: d.pins || 0, sel: d.sel || 'snake', last: d.last || null, best: { ...b, ...d.best, mines: { ...b.mines, ...(d.best.mines || {}) } } };
       }
     } catch {}
     return blank();
@@ -1339,7 +1401,10 @@ const PH = (() => {
   let active = null;   // the game on screen, if any
   const syncKeys = () => {
     const b = $('.page-keys [data-act="pause"]');
-    if (b) { const p = !!(active && active.paused); b.textContent = p ? '▸' : 'II'; b.setAttribute('aria-label', p ? 'Resume' : 'Pause'); }
+    if (!b) return;
+    const p = !!(active && active.paused);
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="' + (p ? 'M7 4l12 8-12 8z' : 'M6 5h4v14H6zM14 5h4v14h-4z') + '"/></svg>';
+    b.setAttribute('aria-label', p ? 'Resume' : 'Pause');
   };
 
   /* ======================================================================
@@ -1594,7 +1659,7 @@ const PH = (() => {
     }
     function lose(i) {
       ended = true; hit = i; stopTimer(); board.classList.add('done');
-      PH.toast('Boom. Tap ⟳ for a new field.', 'warn'); refreshHome();
+      PH.toast('Boom. Pick New game from the menu for a new field.', 'warn'); refreshHome();
     }
     function win() {
       ended = true; stopTimer(); board.classList.add('done');
@@ -2076,28 +2141,44 @@ const PH = (() => {
      ====================================================================== */
   const games = { '/snake': snake, '/2048': g2048, '/mines': mines, '/blocks': blocks, '/pins': pins };
 
+  /* Home: pick a game on the channel row, the strip says how you're doing, the big button plays it */
+  function status(k) {
+    const b = data.best, m = b.mines, md = PH.store.get('minefield');
+    if (k === 'snake') return b.snake ? 'Best ' + fmt(b.snake) : 'Not played yet';
+    if (k === '2048') { const g = data.g2048; return g && g.score > 0 && !g.over ? 'Game in progress · ' + fmt(g.score) : b.g2048 ? 'Best ' + fmt(b.g2048) : 'Not played yet'; }
+    if (k === 'mines') return (md[0].toUpperCase() + md.slice(1)) + ' field · ' + (m[md] != null ? 'Best ' + fmtTime(m[md]) : 'No best time yet');
+    if (k === 'blocks') return b.blocks ? 'Best ' + fmt(b.blocks) : 'Not played yet';
+    return 'Level ' + ((data.pins || 0) + 1) + ' of 5' + (b.pins ? ' · ' + b.pins + ' cleared' : '');
+  }
   function refreshHome() {
-    const b = data.best, m = b.mines;
-    const bestMine = ['easy', 'normal', 'hard'].map(k => m[k]).find(v => v != null);
-    $('#home-snake').textContent = b.snake ? 'Best ' + fmt(b.snake) : 'New';
-    $('#home-2048').textContent = b.g2048 ? 'Best ' + fmt(b.g2048) : 'New';
-    $('#home-blocks').textContent = b.blocks ? 'Best ' + fmt(b.blocks) : 'New';
-    $('#home-pins').textContent = b.pins ? b.pins + ' of 5 cleared' : 'New';
-    const md = PH.store.get('minefield');
-    $('#home-mines').textContent = m[md] != null ? 'Best ' + fmtTime(m[md]) : bestMine != null ? 'Played' : 'New';
+    const b = data.best, m = b.mines, k = GAMES[data.sel] ? data.sel : 'snake', G = GAMES[k];
+    $$('.ch[data-game]').forEach(c => { const on = c.dataset.game === k; c.classList.toggle('cur', on); c.setAttribute('aria-pressed', String(on)); });
+    $('#ar-ic').innerHTML = icon(k); $('#ar-play-ic').innerHTML = icon(k);
+    $('#ar-t').textContent = G.name; $('#ar-s').textContent = status(k);
+    $('#ar-opt').hidden = !G.opt;
+    $('#ar-play-t').textContent = 'Play ' + G.name; $('#ar-play').setAttribute('aria-label', 'Play ' + G.name);
+    const last = GAMES[data.last];
+    $('#ar-sub').textContent = last ? 'Last played ' + last.name + ' · ' + status(data.last) : 'Pick a game, then press Play';
+    $('#ar-cont').hidden = !last || data.last === k;
+    if (last) $('#ar-cont').setAttribute('aria-label', 'Continue ' + last.name);
     $('#sc-snake').textContent = b.snake ? fmt(b.snake) : '—';
     $('#sc-2048').textContent = b.g2048 ? fmt(b.g2048) : '—';
     $('#sc-blocks').textContent = b.blocks ? fmt(b.blocks) : '—';
     $('#sc-pins').textContent = b.pins ? 'Level ' + b.pins : '—';
-    ['easy', 'normal', 'hard'].forEach(k => { $('#sc-mines-' + k).textContent = fmtTime(m[k]); });
+    ['easy', 'normal', 'hard'].forEach(d => { $('#sc-mines-' + d).textContent = fmtTime(m[d]); });
     $('#snake-best').textContent = fmt(b.snake); $('#g2048-best').textContent = fmt(b.g2048);
     $('#mines-best').textContent = fmtTime(m[PH.store.get('minefield')]);
   }
+  $$('.ch[data-game]').forEach(c => c.addEventListener('click', () => { data.sel = c.dataset.game; save(); refreshHome(); }));
+  $('#ar-play').addEventListener('click', () => PH.go(GAMES[data.sel] ? GAMES[data.sel].route : '/snake'));
+  $('#ar-cont').addEventListener('click', () => { if (GAMES[data.last]) PH.go(GAMES[data.last].route); });
+  $('#ar-opt').addEventListener('click', () => { const G = GAMES[data.sel]; if (G && G.opt) PH.go(G.opt); });
 
   PH.on('route', r => {
     const g = games[r] || null;
     if (active && active !== g) active.hide();
     active = g;
+    if (g) { data.sel = data.last = gameKey(r); save(); }
     $('#actions').hidden = $('#actions-title').hidden = !g;
     if (g) { g.show(); requestAnimationFrame(() => g.fit()); }
     syncKeys();
@@ -2123,12 +2204,12 @@ const PH = (() => {
   PH.on('rain', () => dispatchEvent(new Event('resize')));
 
   PH.init(DEFAULTS);
-  refreshHome();
+  refreshHome(); syncKeys();
 
   $('#reset-display').onclick = () => { PH.store.set('crt', true); PH.store.set('rain', false); PH.toast('Display reset.'); };
   $('#export').onclick = () => {
     const settings = {}; Object.keys({ ...DEFAULTS, crt: 1, rain: 1 }).forEach(k => { settings[k] = PH.store.get(k); });
-    PH.exportFile('phosphor-arcade-backup.json', JSON.stringify({ app: 'phosphor-arcade', version: '1.8', exported: new Date().toISOString(), best: data.best, game2048: data.g2048, settings }, null, 2));
+    PH.exportFile('phosphor-arcade-backup.json', JSON.stringify({ app: 'phosphor-arcade', version: '1.9', exported: new Date().toISOString(), best: data.best, game2048: data.g2048, settings }, null, 2));
   };
   $('#reset-scores').onclick = async () => {
     if (!(await PH.confirm('Reset all best scores and times? This can\'t be undone.', { title: 'Reset scores', ok: 'Reset', danger: true }))) return;
