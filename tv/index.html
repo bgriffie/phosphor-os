@@ -205,6 +205,14 @@
     .screen.pix .art-cv { image-rendering: pixelated; image-rendering: crisp-edges; }
     .screen.film #v-art::before, .screen.pix #v-art::before { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;   /* warm, cozy glow */
       background: radial-gradient(ellipse 70% 65% at 50% 62%, rgba(255,130,40,.22), rgba(255,100,20,.12) 55%, rgba(30,8,0,.55) 100%); }
+    /* Away: almost nothing lit, so the panel rests while the sound keeps playing. A small clock drifts about. */
+    body.dim, body.dim .case { background: #000; box-shadow: none; }
+    body.dim .case > *:not(.screen) { visibility: hidden; }
+    body.dim .screen { background: #000; box-shadow: none; border-color: #000; }
+    body.dim .screen::before, body.dim .screen::after, body.dim .path { display: none; }
+    #v-dim { display: none; }
+    #v-dim.on { display: grid; place-items: center; background: #000; }
+    .dim-time { color: var(--accent); opacity: .22; font-size: calc(4 * var(--u)); letter-spacing: .1em; text-shadow: none; transition: transform 2s steps(8); }
     .ov-card { background: var(--surface-2); border: 2px solid var(--accent); border-radius: var(--radius); padding: calc(3 * var(--u)) calc(5 * var(--u)); text-align: center; box-shadow: var(--glow-box); min-width: 40%; }
     .ov-card h2 { margin: 0 0 calc(1 * var(--u)); font-size: calc(4.4 * var(--u)); color: var(--accent); text-shadow: var(--glow-lg); text-transform: uppercase; letter-spacing: var(--tracking-label); }
     .ov-card p { margin: calc(.6 * var(--u)) 0 0; color: var(--text-dim); }
@@ -285,6 +293,8 @@
           <div class="hint" id="h-hint">Arrows to move · OK to open · use the TV app on your phone</div>
         </section>
 
+        <section class="view" id="v-dim"><div class="dim-time" id="d-time">--:--</div></section>
+
         <section class="view" id="v-clock">
           <div class="clock-wrap" id="clock-wrap">
             <div class="huge-time" id="c-time">--:--</div>
@@ -331,7 +341,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.11</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.12</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -1170,6 +1180,7 @@ const Sound = (() => {
     },
     // If the TV refused to start sound without a button press, any key from the phone gets another go
     nudge() { if (mState === 'blocked') { mTry = 0; load(); } if (ctx && ctx.state !== 'running') ctx.resume().then(() => aId && cur && setA('playing')).catch(() => {}); },
+    levels() { return { mv: want.mv, av: want.av }; },
     label() { return [MUSIC[mId] && MUSIC[mId].name, AMB[aId]].filter(Boolean).join(' + '); },
     state() {
       const what = mId || aId, st = mId ? mState : aState;
@@ -1185,7 +1196,7 @@ const Sound = (() => {
    Everything shown that came from outside goes in with textContent, never as HTML. */
 (() => {
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-  const SCREENS = ['home', 'today', 'art', 'clock', 'lights', 'board', 'rain'];
+  const SCREENS = ['home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim'];
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let screen = 'home', weather = null, tileAt = 0, lightAt = 0, lights = null, lightsErr = '', hasLights = true, board = [], linked = false, idleT = 0;
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -1203,7 +1214,9 @@ const Sound = (() => {
     if (typeof d.key === 'string') press(d.key);
     if (typeof d.open === 'string' && SCREENS.includes(d.open)) go(d.open);
     if (d.art && typeof d.art === 'object') artCmd(d.art);
-    if (d.sound && typeof d.sound === 'object') { Sound.set(d.sound); showSound(); }
+    if (d.sound && typeof d.sound === 'object') { stopFade(); Sound.set(d.sound); showSound(); }
+    if (typeof d.fade === 'number') fadeOut(d.fade);
+    if (typeof d.sleep === 'number') sleepFor(d.sleep);
   }
   function artCmd(a) {
     const n = Art.pieces().length, i = Number.isInteger(a.piece) && a.piece >= 0 && a.piece < n ? a.piece : null;
@@ -1253,6 +1266,7 @@ const Sound = (() => {
     $('#h-date').textContent = date;
     $('#c-time').textContent = `${hh}:${mm}`; $('#c-time').appendChild(el('small', '', ap));
     $('#c-date').textContent = date;
+    $('#d-time').textContent = `${hh}:${mm}`;
     $('#t-time').textContent = `${hh}:${mm}`; $('#t-time').appendChild(el('small', '', ap));
     $('#t-date').textContent = date;
     if (screen === 'today') dayLine(d);
@@ -1260,13 +1274,32 @@ const Sound = (() => {
     if (d.getMinutes() !== lastMin) {
       lastMin = d.getMinutes();
       // Drift the big clock a little each minute so nothing sits still on the panel for hours
+      $('#d-time').style.transform = `translate(${(Math.random() * 60 - 30).toFixed(1)}vw, ${(Math.random() * 50 - 25).toFixed(1)}vh)`;   // keeps moving so nothing burns in
       if (!reduced) $('#clock-wrap').style.transform = `translate(${(Math.random() * 8 - 4).toFixed(1)}vh, ${(Math.random() * 8 - 4).toFixed(1)}vh)`;
       if (screen === 'board') renderBoard();
       if (screen === 'today') renderToday();
+      sleepShow();
     }
   }
   // The HUD only ever holds our own markup (time, score); nothing received goes in here.
   const hud = html => { $('#hud').innerHTML = html; };
+
+  /* ---------- Sleep timer: a countdown in the bottom bar, then the sound fades out ---------- */
+  let sleepEnd = 0, fadeT = 0;
+  function sleepFor(sec) { sleepEnd = sec > 0 ? Date.now() + sec * 1000 : 0; if (!sec) stopFade(); sleepShow(); }
+  function sleepShow() {
+    const left = sleepEnd ? Math.max(0, Math.ceil((sleepEnd - Date.now()) / 60000)) : 0;
+    $('#sleep').hidden = !sleepEnd; $('#sleep-left').textContent = left >= 60 ? Math.floor(left / 60) + 'h ' + pad(left % 60) + 'm' : left + ' min';
+  }
+  function fadeOut(sec) {
+    stopFade(); const from = Sound.levels(), t0 = Date.now();
+    fadeT = setInterval(() => {
+      const k = Math.max(0, 1 - (Date.now() - t0) / (sec * 1000));
+      Sound.set({ mv: Math.round(from.mv * k), av: Math.round(from.av * k) });
+      if (!k) stopFade();
+    }, 1000);
+  }
+  function stopFade() { clearInterval(fadeT); fadeT = 0; }
 
   /* ---------- Screens ---------- */
   function go(name, art = null) {
@@ -1277,6 +1310,7 @@ const Sound = (() => {
     $$('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + name));
     $('#path').textContent = name;
     $('.screen').classList.toggle('plain', name === 'art');
+    document.body.classList.toggle('dim', name === 'dim');
     document.body.classList.toggle('full', full && name === 'art');
     $('#rain').classList.toggle('on', name === 'clock');
     rainRun(name === 'clock');
@@ -1307,6 +1341,7 @@ const Sound = (() => {
       else if (k === 'ok') go($$('.tile')[tileAt].dataset.go);
     } else if (screen === 'lights') lightsKey(k);
     else if (screen === 'art') { if (k === 'right' || k === 'down') Art.next(); else if (k === 'left' || k === 'up') Art.prev(); else if (k === 'ok') Art.toggleHold(); }
+    else if (screen === 'dim') go('home');
     else if (k === 'ok' && (screen === 'clock' || screen === 'today' || screen === 'board')) go('home');
   }
 

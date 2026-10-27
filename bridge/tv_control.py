@@ -34,7 +34,7 @@ HERE = Path(__file__).resolve().parent
 CONFIG = HERE / 'tv_control.json'
 PAGE_CACHE = HERE / 'tv_page.html'
 PAGE_MAX_AGE = 600         # seconds before the TV page is fetched again
-SCREENS = ('home', 'today', 'art', 'clock', 'lights', 'board', 'rain')
+SCREENS = ('home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim')
 # Background sound. The TV page holds the station addresses (fixed https links) and makes the
 # rain/fire/ocean sounds itself; the relay only passes along which one to play.
 MUSIC = ('swiss-classic', 'swiss-jazz', 'sonic-universe', 'bossa', 'secret-agent', 'lounge', 'romantic-jazz', 'fluid', 'groove-salad', 'drone-zone')
@@ -42,8 +42,19 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '1.5'           # the phone app compares this to know which features the relay has
+VERSION = '1.6'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
+# Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
+# morning = the Today summary; away = a dark screen with the sound still playing (for the plants);
+# home = the fireplace full screen with music; off = Phosphor TV off. Each scene's sound is Floyd's to pick.
+SCENES = ('morning', 'away', 'home', 'off')
+SCENE_SOUND = {'morning': {'music': 'swiss-classic', 'amb': ''}, 'away': {'music': 'swiss-classic', 'amb': ''},
+               'home': {'music': 'swiss-jazz', 'amb': 'fire'}}
+DEFAULT_SCHEDULE = [{'scene': 'morning', 'at': '07:00', 'days': [0, 1, 2, 3, 4, 5, 6]},
+                    {'scene': 'away', 'at': '08:30', 'days': [0, 1, 2, 3, 4]},
+                    {'scene': 'home', 'at': '17:30', 'days': [0, 1, 2, 3, 4]}]
+FIREPLACE = 1              # the filmed fireplace's place in the TV page's art list
+SLEEP_FADE = 60            # seconds the sound takes to fade before the sleep timer turns the TV off
 FAHRENHEIT = ('US', 'LR', 'MM', 'BS', 'BZ', 'KY', 'PW', 'FM', 'MH')
 
 
@@ -262,7 +273,7 @@ def setup(app, demo=False, lights=None, cast=False):
     token = secrets.token_urlsafe(18)           # new every start; never the relay key
     host = '127.0.0.1' if demo else lan_ip()
     hub = {'socks': set(), 'screen': '', 'focus': '', 'want': None, 'started': 0.0, 'board': cfg.get('board', [])[-12:], 'weather': None, 'weather_at': 0.0,
-           'art': None, 'heard': None, 'sound': {'music': '', 'amb': '', 'mv': 70, 'av': 60, **cfg.get('sound', {})}}
+           'art': None, 'heard': None, 'scene': '', 'sleep_at': 0.0, 'fading': False, 'ran': {}, 'sound': {'music': '', 'amb': '', 'mv': 70, 'av': 60, **cfg.get('sound', {})}}
     page = {'html': None, 'at': 0.0}
     casts, problem = None, ''
     if not enabled:
@@ -375,6 +386,8 @@ def setup(app, demo=False, lights=None, cast=False):
             'board': hub['board'], 'lights': lights is not None,
             'place': (cfg.get('place') or {}).get('name', ''), 'units': cfg.get('units') or '', 'unitsNow': units() if cfg.get('place') else '',
             'art': hub['art'] if linked else None, 'sound': hub['sound'], 'heard': hub['heard'] if linked else None,
+            'scene': hub['scene'] if linked else '', 'scenes': scenes(), 'schedule': schedule(), 'auto': cfg.get('auto', True),
+            'sleep': max(0, int(hub['sleep_at'] - time.time())) if hub['sleep_at'] else 0, 'clock': time.strftime('%H:%M'),
             'screenLink': tv_url() if c.fake else ''})
 
     async def choose(request):
@@ -418,7 +431,7 @@ def setup(app, demo=False, lights=None, cast=False):
     async def stop(request):
         body = await body_of(request)
         c, cid = need(), pick(body)
-        hub['want'] = None
+        hub['want'], hub['scene'], hub['sleep_at'], hub['fading'] = None, '', 0.0, False
         await asyncio.wait_for(asyncio.to_thread(c.stop, cid), 15)
         for s in list(hub['socks']):
             await s.close()
@@ -504,6 +517,135 @@ def setup(app, demo=False, lights=None, cast=False):
         shown = await send_tv({'sound': snd})
         return web.json_response({'ok': True, 'shown': shown, 'sound': snd})
 
+    # ---- scenes, the schedule and the sleep timer ----
+    def scenes():
+        saved = cfg.get('scenes') or {}
+        return {k: {**v, **{f: saved[k][f] for f in ('music', 'amb') if isinstance(saved.get(k), dict) and f in saved[k]}} for k, v in SCENE_SOUND.items()}
+
+    def schedule():
+        return cfg['schedule'] if isinstance(cfg.get('schedule'), list) else DEFAULT_SCHEDULE
+
+    def scene_view(name):
+        if name == 'morning':
+            return {'open': 'today'}
+        if name == 'away':
+            return {'open': 'dim'}
+        if name == 'home':
+            return {'art': {'piece': FIREPLACE, 'hold': True, 'full': True}}
+        return {}
+
+    async def wait_linked(cid, seconds=45):
+        """Open Phosphor TV if it isn't on, and wait for its screen to connect."""
+        if hub['socks']:
+            return True
+        hub['want'], hub['started'] = cid, time.time()
+        await asyncio.wait_for(asyncio.to_thread(casts.start, cid, tv_url()), 20)
+        for _ in range(seconds * 2):
+            if hub['socks']:
+                await asyncio.sleep(1.5)   # let it settle in before giving it the scene
+                return True
+            await asyncio.sleep(.5)
+        return False
+
+    async def run_scene(name, why):
+        cid = cfg.get('cast')
+        if not cid:
+            raise web.HTTPBadRequest(text='Pick your Chromecast first.')
+        print(f'TV: {name} ({why}).')
+        if name == 'off':
+            hub['want'], hub['scene'], hub['sleep_at'], hub['fading'] = None, '', 0.0, False
+            await asyncio.wait_for(asyncio.to_thread(casts.stop, cid), 15)
+            for s in list(hub['socks']):
+                await s.close()
+            return True
+        hub['scene'] = ''
+        if not await wait_linked(cid):
+            raise web.HTTPGatewayTimeout(text='Phosphor TV didn\'t come on. Try turning it on from the remote.')
+        snd = hub['sound']
+        snd.update(scenes()[name]); cfg['sound'] = snd; save_config(cfg)
+        hub['scene'], hub['scene_t'] = name, time.time()
+        return await send_tv({'sound': snd, **scene_view(name)})
+
+    async def scene(request):
+        body = await body_of(request)
+        name = body.get('scene')
+        if name not in SCENES:
+            raise web.HTTPBadRequest(text='Unknown scene.')
+        need()
+        shown = await run_scene(name, 'asked from the phone')
+        return web.json_response({'ok': True, 'shown': shown})
+
+    async def plan(request):
+        """Save the schedule {schedule: [{scene, at: 'HH:MM', days: [0-6, Monday = 0]}], auto: bool, scenes: {name: {music, amb}}}."""
+        body = await body_of(request)
+        if 'schedule' in body:
+            rows = body['schedule']
+            if not isinstance(rows, list) or len(rows) > 20:
+                raise web.HTTPBadRequest(text='Up to 20 times.')
+            clean = []
+            for r in rows:
+                at = r.get('at') if isinstance(r, dict) else None
+                ok = isinstance(at, str) and len(at) == 5 and at[2] == ':' and at[:2].isdigit() and at[3:].isdigit() and int(at[:2]) < 24 and int(at[3:]) < 60
+                days = sorted({d for d in r.get('days', []) if isinstance(d, int) and 0 <= d <= 6}) if ok else []
+                if not ok or r.get('scene') not in SCENES:
+                    raise web.HTTPBadRequest(text='Each time needs a scene and a time like 07:30.')
+                clean.append({'scene': r['scene'], 'at': at, 'days': days})
+            cfg['schedule'] = clean
+        if isinstance(body.get('auto'), bool):
+            cfg['auto'] = body['auto']
+        if isinstance(body.get('scenes'), dict):
+            saved = cfg.get('scenes') or {}
+            for k, v in body['scenes'].items():
+                if k in SCENE_SOUND and isinstance(v, dict):
+                    if v.get('music', None) in MUSIC + ('',):
+                        saved.setdefault(k, {})['music'] = v['music']
+                    if v.get('amb', None) in AMBIENCE + ('',):
+                        saved.setdefault(k, {})['amb'] = v['amb']
+            cfg['scenes'] = saved
+        save_config(cfg)
+        return web.json_response({'ok': True, 'schedule': schedule(), 'auto': cfg.get('auto', True), 'scenes': scenes()})
+
+    async def sleep(request):
+        """Sleep timer: {minutes: 1-240} turns Phosphor TV off then (the sound fades first); 0 cancels."""
+        body = await body_of(request)
+        m = body.get('minutes')
+        if not isinstance(m, int) or not 0 <= m <= 240:
+            raise web.HTTPBadRequest(text='Pick up to 4 hours.')
+        if m and not cfg.get('cast'):
+            raise web.HTTPBadRequest(text='Pick your Chromecast first.')
+        hub['sleep_at'] = time.time() + m * 60 if m else 0.0
+        if hub['fading'] and not m:
+            await send_tv({'sound': hub['sound']})   # cancelled mid-fade: bring the sound back
+        hub['fading'] = False
+        await send_tv({'sleep': m * 60})
+        return web.json_response({'ok': True, 'sleep': m * 60})
+
+    async def clockwork():
+        """Runs the schedule and the sleep timer, by this PC's clock."""
+        while True:
+            await asyncio.sleep(10)
+            try:
+                now = time.time()
+                if hub['sleep_at']:
+                    if not hub['fading'] and now >= hub['sleep_at'] - SLEEP_FADE:
+                        hub['fading'] = True
+                        await send_tv({'fade': SLEEP_FADE})
+                    if now >= hub['sleep_at']:
+                        await run_scene('off', 'sleep timer')
+                if not cfg.get('auto', True) or not cfg.get('cast'):
+                    continue
+                t = time.localtime(now)
+                hhmm, today = time.strftime('%H:%M', t), time.strftime('%Y-%m-%d', t)
+                for i, r in enumerate(schedule()):
+                    tag = f'{i}:{r["scene"]}:{r["at"]}'
+                    if r['at'] == hhmm and t.tm_wday in r['days'] and hub['ran'].get(tag) != today:
+                        hub['ran'][tag] = today
+                        await run_scene(r['scene'], 'scheduled for ' + r['at'])
+            except web.HTTPException as e:
+                print('  Schedule:', e.text)
+            except Exception as e:
+                print('  Schedule:', str(e) or type(e).__name__)
+
     async def clear(request):
         hub['board'] = []
         cfg['board'] = []; save_config(cfg)
@@ -513,7 +655,8 @@ def setup(app, demo=False, lights=None, cast=False):
     app.add_routes([web.get('/tv', info), web.post('/tv/choose', choose), web.post('/tv/start', start), web.post('/tv/stop', stop),
                     web.post('/tv/volume', volume), web.post('/tv/media', media), web.post('/tv/key', key),
                     web.post('/tv/open', open_), web.post('/tv/say', say), web.post('/tv/board/clear', clear), web.post('/tv/place', place),
-                    web.post('/tv/art', art), web.post('/tv/sound', sound)])
+                    web.post('/tv/art', art), web.post('/tv/sound', sound),
+                    web.post('/tv/scene', scene), web.post('/tv/schedule', plan), web.post('/tv/sleep', sleep)])
 
     if casts is None:
         print('TV: off.', problem)
@@ -561,7 +704,10 @@ def setup(app, demo=False, lights=None, cast=False):
         try:
             if cfg.get('place') and time.time() - hub['weather_at'] > WEATHER_EVERY:
                 await refresh_weather(push=False)
-            await sock.send_json({'board': hub['board'], 'weather': hub['weather'], 'sound': hub['sound'], **(await lights_list() if lights is not None else {'lights': False})})
+            await sock.send_json({'board': hub['board'], 'weather': hub['weather'], 'sound': hub['sound'], 'sleep': max(0, int(hub['sleep_at'] - time.time())) if hub['sleep_at'] else 0, **(await lights_list() if lights is not None else {'lights': False})})
+            if hub['scene']:   # the screen came back (it dropped off, or the PC restarted it): carry on with the scene
+                hub['scene_t'] = time.time()
+                await sock.send_json(scene_view(hub['scene']))
             async for msg in sock:
                 if msg.type != WSMsgType.TEXT:
                     continue
@@ -573,6 +719,9 @@ def setup(app, demo=False, lights=None, cast=False):
                 if not isinstance(d, dict):
                     continue
                 if d.get('screen') in SCREENS:
+                    # Moving off the scene's screen by hand ends the scene (the TV takes a moment to get there first)
+                    if hub['scene'] and d['screen'] != {'morning': 'today', 'away': 'dim', 'home': 'art'}.get(hub['scene']) and time.time() - hub.get('scene_t', 0) > 5:
+                        hub['scene'] = ''
                     entering = d['screen'] in ('lights', 'today') and hub['screen'] != d['screen']
                     hub['screen'] = d['screen']
                     if entering:
@@ -630,10 +779,12 @@ def setup(app, demo=False, lights=None, cast=False):
         except OSError as e:
             print(f'TV: could not listen on {bind}:{TV_PORT} ({e}). Is the relay already running in another window?')
         hub['task'] = asyncio.create_task(keep_alive())
+        hub['clock'] = asyncio.create_task(clockwork())
 
     async def on_stop(_app):
-        if hub.get('task'):
-            hub['task'].cancel()
+        for k in ('task', 'clock'):
+            if hub.get(k):
+                hub[k].cancel()
         for s in list(hub['socks']):
             await s.close()
         await runner.cleanup()

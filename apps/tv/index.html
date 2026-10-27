@@ -850,6 +850,18 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .quick .rm-b { min-height: 40px; text-transform: none; letter-spacing: 0; font-weight: 400; font-size: var(--fs-sm); }
     .msg-list time { color: var(--text-dim); font-size: var(--fs-xs); flex: none; margin-left: auto; padding-left: var(--sp-3); }
     .msg-list li { display: flex; align-items: center; }
+    /* Schedule: scenes, the sleep timer and set times */
+    .scene-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-2); }
+    .scene-row .rm-b { flex-direction: column; min-height: 64px; gap: 4px; }
+    .sleep-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--sp-2); }
+    .sched { display: flex; flex-direction: column; gap: var(--sp-2); }
+    .sched-item { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-1); padding: var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-2); }
+    .sched-top { display: grid; grid-template-columns: 1fr 112px 44px; gap: var(--sp-2); align-items: center; }
+    .sched-top .rm-b { min-height: 44px; padding: 0; }
+    .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .days .rm-b { min-height: 34px; padding: 0; }
+    .sched-now .line-ic svg { width: 20px; height: 20px; }
+    .sched-now.is-on .line-ic { color: var(--accent); }
   </style>
 <style>/* Phosphor OS */
 html.os-embed { --app-gap: 0px !important; --app-h: 100% !important; }
@@ -868,7 +880,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.10</span>
+      <span class="app-meta">v1.12</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -891,6 +903,12 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
             <button class="rm-b rc-pow" id="tv-power" aria-label="Turn TV on" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg></button>
           </div>
           <p class="tv-note" id="tv-note" hidden></p>
+
+          <!-- Schedule and sleep timer at a glance -->
+          <div class="line sched-now" id="sched-now" hidden>
+            <span class="line-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+            <button class="line-main" data-route="/schedule"><span class="line-t" id="sc-name">Schedule</span><span class="line-s" id="sc-sub"></span></button>
+          </div>
 
           <!-- TV off (or another app on it) -->
           <div class="rc-off" id="rc-off" hidden>
@@ -1012,6 +1030,39 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <p class="menu-note">Play one of each, like jazz with rain. Music is internet radio from Radio Swiss, SomaFM and HearMe.fm. Rain, fire and the rest are made on the TV, so they need no internet. With music on, the background plays softer underneath it. The TV's own volume is on the remote page.</p>
       </section>
 
+      <section class="view" data-route="/schedule" data-title="Schedule">
+        <div class="menu-group">
+          <span class="label">Start a scene now</span>
+          <div class="scene-row" id="scene-now">
+            <button class="rm-b" data-scene="morning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="14" r="4"/><path d="M12 4v3M4.9 8.9l2.1 2.1M19.1 8.9 17 11M2 20h20"/></svg><span>Morning</span></button>
+            <button class="rm-b" data-scene="away"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 21c-4-3-7-6-7-10a7 7 0 0 1 14 0c0 4-3 7-7 10zM12 21V9M12 13l-3-2M12 11l3-2"/></svg><span>Away</span></button>
+            <button class="rm-b" data-scene="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/></svg><span>Home</span></button>
+            <button class="rm-b" data-scene="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg><span>TV off</span></button>
+          </div>
+          <p class="menu-note">Morning shows the Today summary. Away darkens the screen and keeps the sound playing for the plants. Home puts the fireplace on full screen with music.</p>
+        </div>
+        <div class="menu-group">
+          <span class="label">Sleep timer</span>
+          <div class="sleep-row" id="sleep-row">
+            <button class="rm-b" data-sleep="15">15m</button><button class="rm-b" data-sleep="30">30m</button><button class="rm-b" data-sleep="60">1h</button><button class="rm-b" data-sleep="90">90m</button><button class="rm-b" data-sleep="0">Off</button>
+          </div>
+          <p class="menu-note" id="sleep-note">Turns Phosphor TV off after a while. The sound fades out over the last minute.</p>
+        </div>
+        <div class="menu-group">
+          <span class="label">Every day</span>
+          <div class="menu">
+            <label class="menu-item"><span class="mi-label">Run on schedule<small id="sc-clock">Uses the PC's clock</small></span><input type="checkbox" role="switch" class="mi-switch" id="sc-auto"></label>
+          </div>
+          <div class="sched" id="sched"></div>
+          <button class="btn btn-block" id="sc-add">Add a time</button>
+        </div>
+        <div class="menu-group">
+          <span class="label">Scene sound</span>
+          <div class="menu" id="scene-sound"></div>
+          <p class="menu-note">The PC and the relay need to be on for the schedule to run.</p>
+        </div>
+      </section>
+
       <section class="view" data-route="/settings" data-title="Settings">
         <div class="menu-group">
           <span class="label">General</span>
@@ -1037,7 +1088,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.10</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.12</span></a>
           </div>
         </div>
       </section>
@@ -1095,7 +1146,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor TV">
-          <div class="kv"><span>Version</span><span>1.10</span></div>
+          <div class="kv"><span>Version</span><span>1.12</span></div>
           <div class="kv"><span>Chromecast</span><span id="ab-cast">—</span></div>
           <div class="kv"><span>Needs</span><span>Relay with --cast</span></div>
           <div class="kv"><span>Fireplace film</span><span>Pixabay, Videezy</span></div>
@@ -1112,7 +1163,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
     <nav class="app-controls" aria-label="Controls">
       <button class="key key-sm" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
       <button class="key key-sm" data-open-sheet="menu" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-      <div class="page-keys" data-show-on="/" data-hide-on="/say /settings /art /sound" hidden><button class="key key-sm" id="k-power" aria-label="TV on or off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg></button></div>
+      <div class="page-keys" data-show-on="/" data-hide-on="/say /settings /art /sound /schedule" hidden><button class="key key-sm" id="k-power" aria-label="TV on or off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg></button></div>
       <div class="page-keys" data-show-on="/say" hidden><button class="key key-sm" id="k-send" aria-label="Send to TV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8z"/></svg></button></div>
       <button class="key key-sm" data-route="/" data-hide-on="/ /say" aria-label="Remote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M2 5h20v13H2zM8 21h8"/></svg></button>
     </nav>
@@ -1123,6 +1174,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
       <button class="menu-item" data-route="/"><span class="mi-label">Remote</span></button>
       <button class="menu-item" data-route="/art"><span class="mi-label">Art</span></button>
       <button class="menu-item" data-route="/sound"><span class="mi-label">Sound</span></button>
+      <button class="menu-item" data-route="/schedule"><span class="mi-label">Schedule &amp; sleep</span></button>
       <button class="menu-item" data-route="/say"><span class="mi-label">Message board</span></button>
       <button class="menu-item" data-route="/settings"><span class="mi-label">Settings</span></button>
     </div>
@@ -1375,9 +1427,9 @@ PH.init({});
   let link = load('link', null) || sharedLink();   // { url, key }
   let info = load('info', null);                   // last /tv answer
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
-  let lastErr = '', pollT = 0, busyPower = false;
+  let lastErr = '', pollT = 0, busyPower = false, sleepAt = 0;
   const ready = () => !!(link && link.url && link.key);
-  const RELAY_WANTS = '1.5';   // tv_control.py version this app expects
+  const RELAY_WANTS = '1.6';   // tv_control.py version this app expects
   const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
   // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
   const toast = PH.toast;
@@ -1418,7 +1470,7 @@ PH.init({});
 
   async function check() {
     if (!ready()) { state = 'idle'; render(); return; }
-    try { info = await call('/tv'); save('info', info); state = 'ok'; lastErr = ''; }
+    try { info = await call('/tv'); save('info', info); state = 'ok'; lastErr = ''; sleepAt = info.sleep ? Date.now() + info.sleep * 1000 : 0; }
     catch (e) { state = e.old ? 'old' : 'down'; lastErr = e.message; }
     render();
   }
@@ -1547,6 +1599,112 @@ PH.init({});
     const warn = st === 'error' || st === 'blocked';
     $('#snd-note').textContent = name ? what : ''; $('#snd-note').hidden = !name || !what; $('#snd-note').style.color = warn ? 'var(--amber)' : '';
   }
+
+  /* ---------- Schedule, scenes and the sleep timer (run by the relay, on the PC's clock) ---------- */
+  const SCENES = { morning: 'Morning', away: 'Away', home: 'Home', off: 'TV off' };
+  const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];   // Monday first, like the relay
+  const plan = () => (info && info.schedule) || [];
+  let planT = 0;
+  function planSave(body) {   // saved a moment after the last change, so typing a time doesn't send every digit
+    Object.assign(info || {}, body); renderPlan();
+    clearTimeout(planT);
+    planT = setTimeout(async () => {
+      try { const d = await call('/tv/schedule', body, 8000); Object.assign(info || {}, d); renderPlan(); }
+      catch (e) { PH.toast(e.message, 'warn'); check(); }
+    }, 600);
+  }
+  $$('[data-scene]').forEach(b => b.addEventListener('click', async () => {
+    if (b.dataset.scene !== 'off' && info && !info.id) { PH.toast('Pick your Chromecast first.', 'warn'); PH.go('/settings/cast'); return; }
+    $$('[data-scene]').forEach(x => x.disabled = true);
+    PH.toast(b.dataset.scene === 'off' ? 'Turning Phosphor TV off…' : isOn() ? SCENES[b.dataset.scene] + '…' : 'Turning on Phosphor TV for ' + SCENES[b.dataset.scene] + '…');
+    try { await call('/tv/scene', { scene: b.dataset.scene }, 70000); await check(); }
+    catch (e) { PH.toast(e.message, 'error'); }
+    finally { $$('[data-scene]').forEach(x => x.disabled = false); }
+  }));
+  $$('[data-sleep]').forEach(b => b.addEventListener('click', async () => {
+    const m = +b.dataset.sleep;
+    if (m && !isOn()) { PH.toast('Turn Phosphor TV on first.', 'warn'); return; }
+    try { const d = await call('/tv/sleep', { minutes: m }, 8000); if (info) info.sleep = d.sleep; sleepAt = d.sleep ? Date.now() + d.sleep * 1000 : 0; renderPlan(); PH.toast(m ? 'Sleep in ' + b.textContent : 'Sleep timer off'); }
+    catch (e) { PH.toast(e.message, 'warn'); }
+  }));
+  $('#sc-auto').addEventListener('change', e => planSave({ auto: e.target.checked }));
+  $('#sc-add').addEventListener('click', () => planSave({ schedule: plan().concat([{ scene: 'home', at: '18:00', days: [0, 1, 2, 3, 4, 5, 6] }]) }));
+  function sceneSelect(value, onPick) {
+    const sel = el('select', 'select'); sel.setAttribute('aria-label', 'Scene');
+    Object.entries(SCENES).forEach(([id, name]) => { const o = el('option', '', name); o.value = id; sel.appendChild(o); });
+    sel.value = value; sel.addEventListener('change', () => onPick(sel.value)); return sel;
+  }
+  function renderSched() {
+    const box = $('#sched'), rows = plan();
+    if (box.contains(document.activeElement)) return;   // don't redraw under a finger
+    box.textContent = '';
+    rows.forEach((r, i) => {
+      const edit = ch => planSave({ schedule: plan().map((x, j) => j === i ? { ...x, ...ch } : x) });
+      const item = el('div', 'sched-item'), top = el('div', 'sched-top');
+      top.appendChild(sceneSelect(r.scene, v => edit({ scene: v })));
+      const t = el('input', 'input'); t.type = 'time'; t.value = r.at; t.setAttribute('aria-label', 'Time');
+      t.addEventListener('change', () => { if (/^\d\d:\d\d$/.test(t.value)) edit({ at: t.value }); });
+      top.appendChild(t);
+      const del = el('button', 'rm-b'); del.setAttribute('aria-label', 'Remove this time');
+      del.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+      del.addEventListener('click', () => planSave({ schedule: plan().filter((_, j) => j !== i) }));
+      top.appendChild(del); item.appendChild(top);
+      const days = el('div', 'days');
+      DAYS.forEach((d, k) => {
+        const b = el('button', 'rm-b', d); b.setAttribute('aria-pressed', String(r.days.includes(k)));
+        b.setAttribute('aria-label', ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][k]);
+        b.addEventListener('click', () => edit({ days: r.days.includes(k) ? r.days.filter(x => x !== k) : r.days.concat(k).sort() }));
+        days.appendChild(b);
+      });
+      item.appendChild(days); box.appendChild(item);
+    });
+    if (!rows.length) box.appendChild(el('p', 'menu-note', 'No times yet.'));
+  }
+  // Each scene's own music and background, picked from the same lists as the Sound page
+  function renderSceneSound() {
+    const box = $('#scene-sound'), sc = (info && info.scenes) || {};
+    if (box.contains(document.activeElement)) return;
+    box.textContent = '';
+    ['morning', 'away', 'home'].forEach(id => [['music', MUSIC, 'music'], ['amb', AMB, 'background']].forEach(([f, list, word]) => {
+      const row = el('label', 'menu-item'), lab = el('span', 'mi-label', SCENES[id] + ' ' + word);
+      const sel = el('select', 'mi-select'); sel.setAttribute('aria-label', SCENES[id] + ' ' + word);
+      [['', 'None']].concat(list).forEach(([v, name]) => { const o = el('option', '', name); o.value = v; sel.appendChild(o); });
+      sel.value = (sc[id] && sc[id][f]) || '';
+      sel.addEventListener('change', () => { const scenes = { ...sc, [id]: { ...(sc[id] || {}), [f]: sel.value } }; planSave({ scenes }); sel.blur(); });
+      row.appendChild(lab); row.appendChild(sel); box.appendChild(row);
+    }));
+  }
+  const fmtLeft = sec => { const m = Math.ceil(sec / 60); return m >= 60 ? Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm' : m + ' min'; };
+  const hm = at => { const [h, m] = at.split(':').map(Number); return (h % 12 || 12) + ':' + String(m).padStart(2, '0') + (h < 12 ? ' am' : ' pm'); };
+  function nextUp() {   // the next set time, by the PC's clock
+    if (!info || !info.auto || !info.clock) return null;
+    const [ch, cm] = info.clock.split(':').map(Number), now = ch * 60 + cm, wd = (new Date().getDay() + 6) % 7;
+    let best = null;
+    for (const r of plan()) for (let d = 0; d < 8; d++) {
+      if (!r.days.includes((wd + d) % 7)) continue;
+      const [h, m] = r.at.split(':').map(Number), at = d * 1440 + h * 60 + m;
+      if (at <= now) continue;
+      if (!best || at - now < best.in) best = { r, in: at - now, day: d };
+      break;
+    }
+    return best;
+  }
+  function renderPlan() {
+    if (!info) return;
+    const left = sleepAt ? Math.max(0, (sleepAt - Date.now()) / 1000) : 0;
+    $$('[data-scene]').forEach(b => b.setAttribute('aria-pressed', String(isOn() ? info.scene === b.dataset.scene : b.dataset.scene === 'off')));
+    $$('[data-sleep]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    $('#sleep-note').textContent = left ? `Phosphor TV turns off in ${fmtLeft(left)}. The sound fades out over the last minute.` : 'Turns Phosphor TV off after a while. The sound fades out over the last minute.';
+    $('#sc-auto').checked = !!info.auto;
+    $('#sc-clock').textContent = info.clock ? 'By the PC\'s clock, now ' + hm(info.clock) : 'Uses the PC\'s clock';
+    renderSched(); renderSceneSound();
+    const nx = nextUp(), line = $('#sched-now');
+    line.hidden = !(state === 'ok' && info.schedule && !relayOld());
+    line.classList.toggle('is-on', !!left);
+    $('#sc-name').textContent = left ? 'Sleep in ' + fmtLeft(left) : info.scene && isOn() ? SCENES[info.scene] + ' scene' : 'Schedule & sleep';
+    $('#sc-sub').textContent = nx ? 'Next: ' + SCENES[nx.r.scene] + ' ' + (nx.day === 0 ? 'at ' : nx.day === 1 ? 'tomorrow ' : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][(((new Date().getDay() + 6) % 7) + nx.day) % 7] + ' ') + hm(nx.r.at) : info.auto ? 'No times set' : 'Schedule is off';
+  }
+  setInterval(() => { if (sleepAt && !document.hidden) renderPlan(); }, 30000);
 
   /* ---------- Power, volume, media ---------- */
   async function power(on) {
@@ -1687,7 +1845,7 @@ PH.init({});
     if (busyPower) { sub = 'One moment…'; led = 'wait'; }
     $('#tv-sub').textContent = sub;
     $('#tv-led').className = 'tv-led' + (led ? ' ' + led : '');
-    if (!note && relayOld()) note = 'The TV file on your PC is older than this app, so art picking and sound won\'t work yet. Download tv_control.py again (Settings › Relay).';
+    if (!note && relayOld()) note = 'The TV file on your PC is older than this app, so newer things like the schedule won\'t work yet. Download tv_control.py again (Settings › Relay).';
     $('#tv-note').textContent = note; $('#tv-note').hidden = !note; $('#tv-note').classList.toggle('err', noteErr);
     $('#tv-on').hidden = on || !!media || !(info && info.id) || !!(info && info.error);
     $('#tv-on').disabled = busyPower;
@@ -1703,7 +1861,7 @@ PH.init({});
     $('#rc-off').hidden = on; $('#vol-off').hidden = !c;
     renderVol();
     $$('#shortcuts [data-screen]').forEach(b => b.classList.toggle('cur', b.dataset.screen === t.screen));
-    renderArt(); renderSound();
+    renderArt(); renderSound(); renderPlan();
     $('#m-power-label').textContent = on ? 'Turn TV off' : 'Turn TV on';
     const pw = $('#tv-power'); pw.hidden = !on; pw.disabled = busyPower;
     pw.setAttribute('aria-pressed', String(on)); pw.setAttribute('aria-label', on ? 'Turn TV off' : 'Turn TV on');
@@ -1720,7 +1878,7 @@ PH.init({});
   }
 
   // Keep the status fresh while the remote, art or sound page is on screen
-  const live = () => ['/', '/art', '/sound'].includes(route());
+  const live = () => ['/', '/art', '/sound', '/schedule'].includes(route());
   function poll(on) { clearTimeout(pollT); if (on) pollT = setTimeout(async () => { await check(); poll(live() && !document.hidden); }, isOn() ? 5000 : 8000); }
   function sync() {
     if (document.hidden) { poll(false); return; }
