@@ -885,7 +885,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.21</span>
+      <span class="app-meta">v1.22</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1084,6 +1084,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <span class="label">General</span>
           <div class="menu">
             <a class="menu-item" href="#/settings/cast"><span class="mi-label">Chromecast</span><span class="mi-value" id="set-cast">—</span></a>
+            <a class="menu-item" href="#/settings/shape"><span class="mi-label">TV screen shape<small>Widescreen or an old 4:3 TV</small></span><span class="mi-value" id="set-shape">—</span></a>
             <a class="menu-item" href="#/settings/weather"><span class="mi-label">Weather<small>For the Today page</small></span><span class="mi-value" id="set-weather">—</span></a>
             <a class="menu-item" href="#/settings/relay"><span class="mi-label">Relay</span><span class="mi-value" id="set-relay"></span></a>
           </div>
@@ -1104,7 +1105,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.21</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.22</span></a>
           </div>
         </div>
       </section>
@@ -1113,6 +1114,17 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu" role="radiogroup" aria-label="Chromecast" id="cast-list"></div>
         <p class="menu-note" id="cast-note">Chromecasts on the same Wi-Fi as the PC show up here.</p>
         <button class="btn btn-block" id="cast-refresh" style="margin-top:var(--sp-4)">Look again</button>
+      </section>
+
+      <section class="view" data-route="/settings/shape" data-title="Screen shape">
+        <div class="menu-group">
+          <div class="menu" role="radiogroup" aria-label="Screen shape" id="shape-list">
+            <button class="menu-item" role="radio" data-shape="wide"><span class="mi-label">Widescreen<small>A normal flat TV</small></span></button>
+            <button class="menu-item" role="radio" data-shape="squeeze"><span class="mi-label">4:3, full picture<small>For a 4:3 TV where Widescreen fills the screen but looks squashed</small></span></button>
+            <button class="menu-item" role="radio" data-shape="box"><span class="mi-label">4:3, middle only<small>For a 4:3 TV where Widescreen gets its sides cut off or shows black bars</small></span></button>
+          </div>
+          <p class="menu-note">Tap one and look at the TV: a test circle shows for 20 seconds. Keep the one where the circle is round and the green frame shows on all four sides.</p>
+        </div>
       </section>
 
       <section class="view" data-route="/settings/weather" data-title="Weather">
@@ -1446,7 +1458,7 @@ PH.init({});
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
   let lastErr = '', pollT = 0, busyPower = false, sleepAt = 0;
   const ready = () => !!(link && link.url && link.key);
-  const RELAY_WANTS = '2.0';   // tv_control.py version this app expects
+  const RELAY_WANTS = '2.1';   // tv_control.py version this app expects
   const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
   // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
   const toast = PH.toast;
@@ -2017,6 +2029,18 @@ PH.init({});
     savePlace({ city }, d => { $('#wx-city').blur(); PH.toast(d.place ? 'Weather for ' + d.place : 'Weather turned off'); if (d.place) PH.back(); });
   });
   $('#wx-city').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#wx-save').click(); } });
+  // Screen shape: widescreen, or a 4:3 TV behind an HDMI-to-AV box (squashed full picture, or only the middle)
+  const SHAPES = { wide: 'Widescreen', squeeze: '4:3 full', box: '4:3 middle' };
+  $$('#shape-list [data-shape]').forEach(b => b.addEventListener('click', async () => {
+    const s = b.dataset.shape; if (info) info.shape = s; renderShape();
+    try { const d = await call('/tv/shape', { shape: s }, 8000); PH.toast(d.shown ? 'Look at the TV: the circle should be round.' : 'Saved. It applies when Phosphor TV is on.'); }
+    catch (e) { PH.toast(e.message, 'warn'); check(); }
+  }));
+  function renderShape() {
+    const s = (info && info.shape) || 'wide';
+    $$('#shape-list [data-shape]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.shape === s)));
+    $('#set-shape').textContent = info && info.ok && !relayOld() ? SHAPES[s] || '' : '—';
+  }
   $$('#wx-units [data-u]').forEach(b => b.addEventListener('click', () => savePlace({ units: b.dataset.u })));
   function renderCasts() {
     const box = $('#cast-list'); box.textContent = '';
@@ -2079,7 +2103,7 @@ PH.init({});
     renderVol();
     $$('#shortcuts [data-screen]').forEach(b => b.classList.toggle('cur', b.dataset.screen === t.screen));
     $('#ch-watch').classList.toggle('cur', t.screen === 'watch');
-    renderArt(); renderSound(); renderPlan(); renderWatchNow();
+    renderArt(); renderSound(); renderPlan(); renderWatchNow(); renderShape();
     $('#m-power-label').textContent = on ? 'Turn TV off' : 'Turn TV on';
     const pw = $('#tv-power'); pw.hidden = !on; pw.disabled = busyPower;
     pw.setAttribute('aria-pressed', String(on)); pw.setAttribute('aria-label', on ? 'Turn TV off' : 'Turn TV on');

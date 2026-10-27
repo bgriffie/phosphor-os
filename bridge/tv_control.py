@@ -54,7 +54,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '2.0'           # the phone app compares this to know which features the relay has
+VERSION = '2.1'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -69,6 +69,9 @@ SCENE_DEFAULTS = {
 }
 GLOW = {'red': {'on': True, 'hsv': [0, 100, 10]}, 'warm': {'on': True, 'temp': 2700, 'brightness': 30},
         'on': {'on': True}, 'off': {'on': False}}   # '' leaves the lights as they are
+# Screen shape: 'wide' = a normal 16:9 TV; for a 4:3 TV behind an HDMI-to-AV box, 'squeeze' = the box squashes the
+# whole picture into 4:3, 'box' = the box shows only the middle 4:3 (or adds bars). Floyd picks whichever looks right.
+SHAPES = ('wide', 'squeeze', 'box')
 LIGHT_ID = re.compile(r'^[A-Za-z0-9_.:-]{1,64}$')
 DEFAULT_SCHEDULE = [{'scene': 'morning', 'at': '07:00', 'days': [0, 1, 2, 3, 4, 5, 6]},
                     {'scene': 'away', 'at': '08:30', 'days': [0, 1, 2, 3, 4]},
@@ -409,7 +412,7 @@ def setup(app, demo=False, lights=None, cast=False):
             'board': hub['board'], 'lights': lights is not None,
             'place': (cfg.get('place') or {}).get('name', ''), 'units': cfg.get('units') or '', 'unitsNow': units() if cfg.get('place') else '',
             'art': hub['art'] if linked else None, 'sound': hub['sound'], 'heard': hub['heard'] if linked else None,
-            'fires': {'ready': len(fires()), 'of': len(FIRE_FILMS), 'busy': hub.get('fire_busy', 0), 'error': hub.get('fire_err', '')},
+            'shape': shape(), 'fires': {'ready': len(fires()), 'of': len(FIRE_FILMS), 'busy': hub.get('fire_busy', 0), 'error': hub.get('fire_err', '')},
             'scene': hub['scene'] if linked else '', 'focus': hub['focus'] if linked and hub['screen'] == 'watch' else '', 'scenes': scenes(), 'schedule': schedule(), 'auto': cfg.get('auto', True),
             'sleep': max(0, int(hub['sleep_at'] - time.time())) if hub['sleep_at'] else 0, 'clock': time.strftime('%H:%M'),
             'screenLink': tv_url() if c.fake else ''})
@@ -442,6 +445,18 @@ def setup(app, demo=False, lights=None, cast=False):
         await refresh_weather()
         return web.json_response({'ok': True, 'place': (cfg.get('place') or {}).get('name', ''), 'units': cfg.get('units') or '',
                                   'unitsNow': units() if cfg.get('place') else '', 'weather': hub['weather']})
+
+    def shape():
+        return cfg.get('shape') if cfg.get('shape') in SHAPES else 'wide'
+
+    async def screen_shape(request):
+        """{shape: 'wide'|'squeeze'|'box'}; the TV shows a test pattern for a little while after a change."""
+        body = await body_of(request)
+        if body.get('shape') not in SHAPES:
+            raise web.HTTPBadRequest(text='Pick a screen shape.')
+        cfg['shape'] = body['shape']; save_config(cfg)
+        shown = await send_tv({'shape': shape(), 'test': True})
+        return web.json_response({'ok': True, 'shape': shape(), 'shown': shown})
 
     async def start(request):
         body = await body_of(request)
@@ -738,7 +753,7 @@ def setup(app, demo=False, lights=None, cast=False):
 
     app.add_routes([web.get('/tv', info), web.post('/tv/choose', choose), web.post('/tv/start', start), web.post('/tv/stop', stop),
                     web.post('/tv/volume', volume), web.post('/tv/media', media), web.post('/tv/key', key),
-                    web.post('/tv/open', open_), web.post('/tv/say', say), web.post('/tv/board/clear', clear), web.post('/tv/place', place),
+                    web.post('/tv/open', open_), web.post('/tv/say', say), web.post('/tv/board/clear', clear), web.post('/tv/place', place), web.post('/tv/shape', screen_shape),
                     web.post('/tv/art', art), web.post('/tv/sound', sound),
                     web.post('/tv/scene', scene), web.post('/tv/schedule', plan), web.post('/tv/sleep', sleep),
                     web.post('/tv/watch', watch)])
@@ -789,7 +804,7 @@ def setup(app, demo=False, lights=None, cast=False):
         try:
             if cfg.get('place') and time.time() - hub['weather_at'] > WEATHER_EVERY:
                 await refresh_weather(push=False)
-            await sock.send_json({'fires': fires(), 'board': hub['board'], 'weather': hub['weather'], 'sound': hub['sound'], 'watch': hub['watch'], 'sleep': max(0, int(hub['sleep_at'] - time.time())) if hub['sleep_at'] else 0, **(await lights_list() if lights is not None else {'lights': False})})
+            await sock.send_json({'shape': shape(), 'fires': fires(), 'board': hub['board'], 'weather': hub['weather'], 'sound': hub['sound'], 'watch': hub['watch'], 'sleep': max(0, int(hub['sleep_at'] - time.time())) if hub['sleep_at'] else 0, **(await lights_list() if lights is not None else {'lights': False})})
             if hub['scene']:   # the screen came back (it dropped off, or the PC restarted it): carry on with the scene
                 hub['scene_t'] = time.time()
                 await sock.send_json(scene_view(hub['scene']))
