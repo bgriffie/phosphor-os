@@ -856,7 +856,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.2</span>
+      <span class="app-meta">v1.3</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -987,7 +987,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.2</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.3</span></a>
           </div>
         </div>
       </section>
@@ -1033,7 +1033,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Home Map">
-          <div class="kv"><span>Version</span><span>1.2</span></div>
+          <div class="kv"><span>Version</span><span>1.3</span></div>
           <div class="kv"><span>Scan</span><span id="ab-scan">—</span></div>
           <div class="kv"><span>Rooms</span><span id="ab-rooms">—</span></div>
           <div class="kv"><span>Walls</span><span id="ab-walls">—</span></div>
@@ -1393,7 +1393,7 @@ const HomeScan = (() => {
       }
       const R = rect(vs.map(v => [v[0], v[2]]));
       const box = { c: [r2(R.cx), r2(R.cz)], len: r2(R.len), wid: r2(Math.max(R.wid, 0.01)), a: Math.round(R.a * 1000) / 1000, y: [Y(g.y0), Y(g.y1)] };
-      if (k === 'wall') out.walls.push(box);
+      if (k === 'wall') out.walls.push(/^Joint/.test(o.name) ? { ...box, j: 1 } : box);
       else if (k === 'door' || k === 'window') out.open.push({ ...box, k });
       else if (k === 'tv') out.tv = box;
       else out.items.push({ ...box, n: o.name.replace(/_\d+$/, '') });
@@ -1413,7 +1413,7 @@ const HomeScan = (() => {
 })();
 if (typeof module !== 'undefined') module.exports = HomeScan;
 
-const BUILT_PLAN = {"walls":[{"c":[-2.14,-0.88],"len":0.17,"wid":0.06,"a":2.356,"y":[0,2.56]},{"c":[-4.52,-1.88],"len":2.14,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[2.8,2.91],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.29,1.17],"len":0.5,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.42,-0.08],"len":1.44,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.24,0.83],"len":0.1,"wid":0.08,"a":-1.036,"y":[0,2.56]},{"c":[-1.62,-0.23],"len":0.98,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-2.1,-0.6],"len":0.64,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.69,1.37],"len":0.89,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.63,1.34],"len":3.24,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,-0.18],"len":0.19,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.2,-1.88],"len":1.94,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-0.86],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.14,2.91],"len":2.08,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.58,-0.08],"len":0.54,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-3.39,-0.23],"len":2.58,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,0.36],"len":0.9,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.3,-1.49],"len":2.72,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.93,2.91],"len":3.51,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,1.13],"len":0.48,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,2.11],"len":1.49,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,0.39],"len":0.95,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,-1.47],"len":2.77,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.95,-2.9],"len":2.5,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.6,-2.9],"len":0.59,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[2.8,-2.9],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.7,0.86],"len":0.84,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[4.64,0],"len":5.91,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,1.86],"len":2,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-2.9],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.28,0.86],"len":1.14,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.52,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[-2.1,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[0.3,-0.08],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.1,-0.23],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-4.63,-0.23],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56]},{"c":[-2.18,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56]},{"c":[0.32,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56]},{"c":[4.64,-2.9],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[-2.2,-0.86],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,2.91],"len":0.1,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.9,2.91],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.88,-0.07],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56]},{"c":[0.91,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56]},{"c":[0.88,0.88],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56]},{"c":[-0.28,0.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56]},{"c":[-1.18,0.84],"len":0.14,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.16,-0.07],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56]},{"c":[-1.18,-0.23],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[-1.16,1.38],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56]},{"c":[-4.52,-2.9],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56]},{"c":[-4.63,2.91],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[4.64,2.91],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56]},{"c":[-0.29,1.37],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56]},{"c":[-4.57,-0.545],"len":0.73,"wid":0.1,"a":1.571,"y":[0,2.56]}],"open":[{"c":[-4.52,-1.39],"len":0.75,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[-0.7,-0.08],"len":0.62,"wid":0.01,"a":0,"y":[0,2.08],"k":"door"},{"c":[-3.64,-0.23],"len":0.7,"wid":0.01,"a":0,"y":[0,2.15],"k":"door"},{"c":[-1.18,0.74],"len":0.04,"wid":0.01,"a":1.571,"y":[0,2.09],"k":"door"},{"c":[-1.18,0.34],"len":0.73,"wid":0.01,"a":1.571,"y":[0,2.13],"k":"door"},{"c":[0.9,-1.11],"len":1.65,"wid":0.01,"a":1.571,"y":[0,2.17],"k":"closed"},{"c":[4.64,-2.34],"len":0.91,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[0.13,0.86],"len":0.71,"wid":0.01,"a":0,"y":[0,2.09],"k":"door"},{"c":[-4.52,-2.45],"len":0.72,"wid":0.01,"a":1.571,"y":[0.73,2.21],"k":"window"},{"c":[2.8,2.91],"len":2.31,"wid":0.01,"a":0,"y":[0.62,2.23],"k":"window"},{"c":[-4.63,0.99],"len":0.82,"wid":0.01,"a":1.571,"y":[0.74,2.14],"k":"window"},{"c":[0,2.91],"len":0.68,"wid":0.01,"a":0,"y":[1.21,2.12],"k":"window"},{"c":[-2.06,2.91],"len":0.84,"wid":0.01,"a":0,"y":[0.79,2.15],"k":"window"},{"c":[4.64,-0.52],"len":1.21,"wid":0.01,"a":1.571,"y":[0.76,2.11],"k":"window"},{"c":[-2.2,-1.88],"len":1.5,"wid":0.1,"a":1.571,"y":[0,2.25],"k":"arch"}],"floors":[{"name":"Living room","pts":[[4.64,-2.9],[4.64,2.91],[0.9,2.91],[0.9,-2.9]]},{"name":"","pts":[[-2.2,-0.86],[-4.52,-0.86],[-4.52,-2.9],[-2.2,-2.9]]},{"name":"Kitchen","pts":[[-2.2,-0.86],[-2.2,-2.9],[0.3,-2.9],[0.3,-0.08],[-1.18,-0.08],[-1.18,-0.23],[-2.1,-0.23],[-2.1,-0.86]]},{"name":"Closet","pts":[[0.9,-2.9],[0.3,-2.9],[0.3,-0.08],[0.9,-0.08]]},{"name":"Bedroom","pts":[[-4.63,-0.23],[-4.63,2.91],[-1.18,2.91],[-1.18,-0.23]]},{"name":"Hallway","pts":[[-1.18,-0.08],[0.9,-0.08],[0.9,0.86],[-1.18,0.86]]},{"name":"","pts":[[-1.18,0.86],[-1.18,1.37],[-0.29,1.37],[-0.29,0.86]]},{"name":"Bathroom","pts":[[-0.29,0.86],[0.9,0.86],[0.9,2.91],[-1.18,2.91],[-1.18,1.37],[-0.29,1.37]]}],"items":[{"c":[-1.65,-0.62],"len":0.89,"wid":0.8,"a":1.571,"y":[0.04,1.73],"n":"refrigerator"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.04,0.92],"n":"oven"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.92,1.02],"n":"stove"},{"c":[0.53,1.89],"len":0.64,"wid":0.49,"a":1.571,"y":[0.04,0.84],"n":"storage_cabinet_mid1"},{"c":[-0.1,-1.44],"len":0.49,"wid":0.43,"a":1.571,"y":[0.76,0.98],"n":"sink"},{"c":[0.53,1.91],"len":0.53,"wid":0.41,"a":1.571,"y":[0.53,0.84],"n":"sink"},{"c":[0.44,2.53],"len":0.67,"wid":0.42,"a":0,"y":[0.06,0.84],"n":"toilet"},{"c":[0.04,-0.64],"len":0.77,"wid":0.44,"a":1.571,"y":[1.53,2.37],"n":"storage_cabinet_mid2"},{"c":[-0.66,-2.6],"len":1.12,"wid":0.42,"a":0,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-1.6,-2.58],"len":0.77,"wid":0.42,"a":0,"y":[1.97,2.47],"n":"storage_cabinet_low2"},{"c":[0.06,-1.38],"len":0.7,"wid":0.39,"a":1.571,"y":[2.01,2.37],"n":"storage_cabinet_low2"},{"c":[-0.68,2.12],"len":1.44,"wid":0.73,"a":1.571,"y":[0.06,0.49],"n":"bathtub"},{"c":[0.69,2.59],"len":0.63,"wid":0.39,"a":1.571,"y":[1.3,1.98],"n":"storage_cabinet_low1"},{"c":[0.09,-2.3],"len":1.13,"wid":0.35,"a":1.571,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-0.08,-1.47],"len":2.51,"wid":0.67,"a":1.571,"y":[0.04,0.98],"n":"storage_cabinet_mid5"},{"c":[-3.37,1.76],"len":2.26,"wid":1.59,"a":1.571,"y":[0.04,0.74],"n":"bed"},{"c":[1.4,1.66],"len":1.03,"wid":0.59,"a":1.571,"y":[0.04,0.43],"n":"table_other_rect"},{"c":[-3.3,-2.39],"len":0.81,"wid":0.8,"a":0.305,"y":[0.04,1.1],"n":"table_dining_elliptic"},{"c":[3.55,-2.63],"len":0.49,"wid":0.41,"a":0,"y":[0.04,0.72],"n":"table_other_rect"},{"c":[3.19,2.61],"len":0.85,"wid":0.5,"a":0,"y":[0.04,1.65],"n":"storage_shelf"},{"c":[-2.33,2.58],"len":0.6,"wid":0.47,"a":0,"y":[0.04,0.62],"n":"table_other_rect"},{"c":[3.26,1.46],"len":1.19,"wid":0.74,"a":1.571,"y":[0.04,0.54],"n":"table_dining_rect"},{"c":[2.32,2.59],"len":0.98,"wid":0.63,"a":0,"y":[0.04,0.82],"n":"storage_shelf"},{"c":[-2.61,-2.27],"len":0.4,"wid":0.36,"a":0,"y":[0.04,0.72],"n":"chair_stool_four_no_no"},{"c":[1.95,-2.04],"len":0.6,"wid":0.53,"a":0,"y":[0.06,0.85],"n":"chair_dining_four_back_no"},{"c":[4.14,0.68],"len":0.55,"wid":0.5,"a":0,"y":[0.06,0.46],"n":"table_dining_rect"},{"c":[1.98,-2.61],"len":0.7,"wid":0.39,"a":0,"y":[0.06,0.82],"n":"table_other_rect"},{"c":[3.97,1.24],"len":3.33,"wid":1.3,"a":1.571,"y":[0.04,0.79],"n":"sofa_rect"},{"c":[-1.69,2.22],"len":0.75,"wid":0.56,"a":0.797,"y":[0.07,0.9],"n":"chair_other_four_back_no"},{"c":[2.97,-2.1],"len":0.41,"wid":0.38,"a":1.571,"y":[0.06,0.55],"n":"chair_other_four_back_no"},{"c":[2.11,-2.08],"len":2.1,"wid":1.52,"a":0,"y":[0.04,0.82],"n":"table_other_rect"},{"c":[3.63,0.01],"len":1.92,"wid":1.87,"a":1.571,"y":[0.04,0.79],"n":"sofa_single"},{"c":[2.11,-1.4],"len":0.65,"wid":0.59,"a":1.571,"y":[0.04,0.89],"n":"chair_dining_four_back_no"},{"c":[1.26,-2.33],"len":0.92,"wid":0.75,"a":1.571,"y":[0.06,0.82],"n":"table_other_rect"}],"tv":{"c":[1.06,1.69],"len":1.06,"wid":0.1,"a":1.57,"y":[0.85,1.46]},"v":1,"at":"2026-10-27","edited":true};
+const BUILT_PLAN = {"walls":[{"c":[-2.14,-0.88],"len":0.17,"wid":0.06,"a":2.356,"y":[0,2.56]},{"c":[-4.52,-1.88],"len":2.14,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[2.8,2.91],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.29,1.17],"len":0.5,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.42,-0.08],"len":1.44,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.24,0.83],"len":0.1,"wid":0.08,"a":-1.036,"y":[0,2.56]},{"c":[-1.62,-0.23],"len":0.98,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-2.1,-0.6],"len":0.64,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.69,1.37],"len":0.89,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.63,1.34],"len":3.24,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,-0.18],"len":0.19,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.2,-1.88],"len":1.94,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-0.86],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.14,2.91],"len":2.08,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.58,-0.08],"len":0.54,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-3.39,-0.23],"len":2.58,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,0.36],"len":0.9,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.3,-1.49],"len":2.72,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.93,2.91],"len":3.51,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,1.13],"len":0.48,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,2.11],"len":1.49,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,0.39],"len":0.95,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,-1.47],"len":2.77,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.95,-2.9],"len":2.5,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.6,-2.9],"len":0.59,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[2.8,-2.9],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.7,0.86],"len":0.84,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[4.64,0],"len":5.91,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,1.86],"len":2,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-2.9],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.28,0.86],"len":1.14,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.52,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-2.1,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[0.3,-0.08],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-2.1,-0.23],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-4.63,-0.23],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-2.18,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[0.32,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[4.64,-2.9],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-2.2,-0.86],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-1.18,2.91],"len":0.1,"wid":0.1,"a":0,"y":[0,2.56],"j":1},{"c":[0.9,2.91],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[0.88,-0.07],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56],"j":1},{"c":[0.91,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[0.88,0.88],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56],"j":1},{"c":[-0.28,0.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[-1.18,0.84],"len":0.14,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-1.16,-0.07],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56],"j":1},{"c":[-1.18,-0.23],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-1.16,1.38],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56],"j":1},{"c":[-4.52,-2.9],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-4.63,2.91],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[4.64,2.91],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-0.29,1.37],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-4.63,-0.545],"len":0.73,"wid":0.1,"a":1.571,"y":[0,2.56]}],"open":[{"c":[-4.52,-1.39],"len":0.75,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[-0.7,-0.08],"len":0.62,"wid":0.01,"a":0,"y":[0,2.08],"k":"door"},{"c":[-3.64,-0.23],"len":0.7,"wid":0.01,"a":0,"y":[0,2.15],"k":"door"},{"c":[-1.18,0.74],"len":0.04,"wid":0.01,"a":1.571,"y":[0,2.09],"k":"door"},{"c":[-1.18,0.34],"len":0.73,"wid":0.01,"a":1.571,"y":[0,2.13],"k":"door"},{"c":[0.9,-1.11],"len":1.65,"wid":0.01,"a":1.571,"y":[0,2.17],"k":"closed"},{"c":[4.64,-2.34],"len":0.91,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[0.13,0.86],"len":0.71,"wid":0.01,"a":0,"y":[0,2.09],"k":"door"},{"c":[-4.52,-2.45],"len":0.72,"wid":0.01,"a":1.571,"y":[0.73,2.21],"k":"window"},{"c":[2.8,2.91],"len":2.31,"wid":0.01,"a":0,"y":[0.62,2.23],"k":"window"},{"c":[-4.63,0.99],"len":0.82,"wid":0.01,"a":1.571,"y":[0.74,2.14],"k":"window"},{"c":[0,2.91],"len":0.68,"wid":0.01,"a":0,"y":[1.21,2.12],"k":"window"},{"c":[-2.06,2.91],"len":0.84,"wid":0.01,"a":0,"y":[0.79,2.15],"k":"window"},{"c":[4.64,-0.52],"len":1.21,"wid":0.01,"a":1.571,"y":[0.76,2.11],"k":"window"},{"c":[-2.2,-1.88],"len":1.5,"wid":0.1,"a":1.571,"y":[0,2.25],"k":"arch"}],"floors":[{"name":"Living room","pts":[[4.64,-2.9],[4.64,2.91],[0.9,2.91],[0.9,-2.9]]},{"name":"","pts":[[-2.2,-0.86],[-4.52,-0.86],[-4.52,-2.9],[-2.2,-2.9]]},{"name":"Kitchen","pts":[[-2.2,-0.86],[-2.2,-2.9],[0.3,-2.9],[0.3,-0.08],[-1.18,-0.08],[-1.18,-0.23],[-2.1,-0.23],[-2.1,-0.86]]},{"name":"Closet","pts":[[0.9,-2.9],[0.3,-2.9],[0.3,-0.08],[0.9,-0.08]]},{"name":"Bedroom","pts":[[-4.63,-0.23],[-4.63,2.91],[-1.18,2.91],[-1.18,-0.23]]},{"name":"Hallway","pts":[[-1.18,-0.08],[0.9,-0.08],[0.9,0.86],[-1.18,0.86]]},{"name":"","pts":[[-1.18,0.86],[-1.18,1.37],[-0.29,1.37],[-0.29,0.86]]},{"name":"Bathroom","pts":[[-0.29,0.86],[0.9,0.86],[0.9,2.91],[-1.18,2.91],[-1.18,1.37],[-0.29,1.37]]}],"items":[{"c":[-1.65,-0.62],"len":0.89,"wid":0.8,"a":1.571,"y":[0.04,1.73],"n":"refrigerator"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.04,0.92],"n":"oven"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.92,1.02],"n":"stove"},{"c":[0.53,1.89],"len":0.64,"wid":0.49,"a":1.571,"y":[0.04,0.84],"n":"storage_cabinet_mid1"},{"c":[-0.1,-1.44],"len":0.49,"wid":0.43,"a":1.571,"y":[0.76,0.98],"n":"sink"},{"c":[0.53,1.91],"len":0.53,"wid":0.41,"a":1.571,"y":[0.53,0.84],"n":"sink"},{"c":[0.44,2.53],"len":0.67,"wid":0.42,"a":0,"y":[0.06,0.84],"n":"toilet"},{"c":[0.04,-0.64],"len":0.77,"wid":0.44,"a":1.571,"y":[1.53,2.37],"n":"storage_cabinet_mid2"},{"c":[-0.66,-2.6],"len":1.12,"wid":0.42,"a":0,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-1.6,-2.58],"len":0.77,"wid":0.42,"a":0,"y":[1.97,2.47],"n":"storage_cabinet_low2"},{"c":[0.06,-1.38],"len":0.7,"wid":0.39,"a":1.571,"y":[2.01,2.37],"n":"storage_cabinet_low2"},{"c":[-0.68,2.12],"len":1.44,"wid":0.73,"a":1.571,"y":[0.06,0.49],"n":"bathtub"},{"c":[0.69,2.59],"len":0.63,"wid":0.39,"a":1.571,"y":[1.3,1.98],"n":"storage_cabinet_low1"},{"c":[0.09,-2.3],"len":1.13,"wid":0.35,"a":1.571,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-0.08,-1.47],"len":2.51,"wid":0.67,"a":1.571,"y":[0.04,0.98],"n":"storage_cabinet_mid5"},{"c":[-3.37,1.76],"len":2.26,"wid":1.59,"a":1.571,"y":[0.04,0.74],"n":"bed"},{"c":[1.4,1.66],"len":1.03,"wid":0.59,"a":1.571,"y":[0.04,0.43],"n":"table_other_rect"},{"c":[-3.3,-2.39],"len":0.81,"wid":0.8,"a":0.305,"y":[0.04,1.1],"n":"table_dining_elliptic"},{"c":[3.55,-2.63],"len":0.49,"wid":0.41,"a":0,"y":[0.04,0.72],"n":"table_other_rect"},{"c":[3.19,2.61],"len":0.85,"wid":0.5,"a":0,"y":[0.04,1.65],"n":"storage_shelf"},{"c":[-2.33,2.58],"len":0.6,"wid":0.47,"a":0,"y":[0.04,0.62],"n":"table_other_rect"},{"c":[3.26,1.46],"len":1.19,"wid":0.74,"a":1.571,"y":[0.04,0.54],"n":"table_dining_rect"},{"c":[2.32,2.59],"len":0.98,"wid":0.63,"a":0,"y":[0.04,0.82],"n":"storage_shelf"},{"c":[-2.61,-2.27],"len":0.4,"wid":0.36,"a":0,"y":[0.04,0.72],"n":"chair_stool_four_no_no"},{"c":[1.95,-2.04],"len":0.6,"wid":0.53,"a":0,"y":[0.06,0.85],"n":"chair_dining_four_back_no"},{"c":[4.14,0.68],"len":0.55,"wid":0.5,"a":0,"y":[0.06,0.46],"n":"table_dining_rect"},{"c":[1.98,-2.61],"len":0.7,"wid":0.39,"a":0,"y":[0.06,0.82],"n":"table_other_rect"},{"c":[3.97,1.24],"len":3.33,"wid":1.3,"a":1.571,"y":[0.04,0.79],"n":"sofa_rect"},{"c":[-1.69,2.22],"len":0.75,"wid":0.56,"a":0.797,"y":[0.07,0.9],"n":"chair_other_four_back_no"},{"c":[2.97,-2.1],"len":0.41,"wid":0.38,"a":1.571,"y":[0.06,0.55],"n":"chair_other_four_back_no"},{"c":[2.11,-2.08],"len":2.1,"wid":1.52,"a":0,"y":[0.04,0.82],"n":"table_other_rect"},{"c":[3.63,0.01],"len":1.92,"wid":1.87,"a":1.571,"y":[0.04,0.79],"n":"sofa_single"},{"c":[2.11,-1.4],"len":0.65,"wid":0.59,"a":1.571,"y":[0.04,0.89],"n":"chair_dining_four_back_no"},{"c":[1.26,-2.33],"len":0.92,"wid":0.75,"a":1.571,"y":[0.06,0.82],"n":"table_other_rect"}],"tv":{"c":[1.06,1.69],"len":1.06,"wid":0.1,"a":1.57,"y":[0.85,1.46]},"v":1,"at":"2026-10-27","edited":true};
 /* Home Map: a light 3D outline of Floyd's home, made from a Polycam room scan (src/scan.js),
    with the Kasa lights and the TV on it. Lights and TV go through the same home relay as
    Kasa Lights and Phosphor TV (kasa_bridge.py, Tailscale, the same link and key). */
@@ -1588,7 +1588,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
       const g = new Uint8Array(NX * NZ), ya = ys[k], yb = ys[k + 1];
       for (const b of pieces) {
         if (b.y0 > ya + 1e-4 || b.y1 < yb - 1e-4) continue;
-        const dx = Math.cos(b.a), dz = Math.sin(b.a), L = b.len / 2 + S * 0.6, Wd = Math.max(b.wid / 2, S * 0.6) + S * 0.2, r = Math.hypot(L, Wd);
+        const dx = Math.cos(b.a), dz = Math.sin(b.a), L = b.len / 2 + S * 0.3, Wd = Math.max(b.wid / 2, S * 0.6) + S * 0.1, r = Math.hypot(L, Wd);
         const i0 = Math.max(0, Math.floor((b.c[0] - r - x0) / S)), i1 = Math.min(NX - 1, Math.ceil((b.c[0] + r - x0) / S));
         const j0 = Math.max(0, Math.floor((b.c[1] - r - z0) / S)), j1 = Math.min(NZ - 1, Math.ceil((b.c[1] + r - z0) / S));
         for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
@@ -1645,6 +1645,61 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     }
     return out;
   }
+  // The scan puts a small 'joint' piece at every wall corner (some are slanted slivers) that pokes out past the walls.
+  // Drop them, and run each wall end that met a joint on to the far side of that corner instead, so walls meet square.
+  function solidWalls() {
+    // Joints, plus tiny off-axis filler pieces the scan puts in corners, are dropped; real walls extend through them.
+    const off = a => Math.min(...[0, 1, 2, 3, 4].map(k => Math.abs(((a - k * Math.PI / 2) % Math.PI + Math.PI * 1.5) % Math.PI - Math.PI / 2)));
+    const isJoint = w => w.j || (w.len < 0.25 && off(w.a) > 0.05);
+    const all = plan.walls.map(w => ({ ...w }));
+    // A short wall that continues a longer one but sits a few cm off its line is moved onto that line, so there is no step.
+    const line = (w, o) => {
+      const dx = Math.cos(w.a), dz = Math.sin(w.a), rx = o.c[0] - w.c[0], rz = o.c[1] - w.c[1];
+      return { v: -rx * dz + rz * dx, gap: Math.abs(rx * dx + rz * dz) - (w.len + o.len) / 2, par: Math.abs(Math.sin(w.a - o.a)) < 0.05 };
+    };
+    const solid = all.filter(w => !isJoint(w));
+    for (const w of solid) for (const o of solid) {
+      if (o.len >= w.len) continue;
+      const r = line(w, o);
+      if (!r.par || r.gap > 0.3 || Math.abs(r.v) < 0.005 || Math.abs(r.v) > 0.12) continue;
+      if (solid.some(q => q !== o && q !== w && (r2 => r2.par && r2.gap < 0.3 && Math.abs(r2.v) < 0.005)(line(q, o)))) continue;
+      o.c = [o.c[0] + Math.sin(w.a) * r.v, o.c[1] - Math.cos(w.a) * r.v];
+    }
+    const joints = all.filter(isJoint), out = [];
+    for (const w of all) {
+      if (isJoint(w)) continue;
+      const dx = Math.cos(w.a), dz = Math.sin(w.a);
+      let u0 = -w.len / 2, u1 = w.len / 2;
+      for (const j of joints) {
+        const ox = j.c[0] - w.c[0], oz = j.c[1] - w.c[1], u = ox * dx + oz * dz, v = -ox * dz + oz * dx;
+        if (Math.abs(v) > w.wid / 2 + 0.03) continue;
+        if (Math.abs(u - u1) < w.wid / 2 + 0.1) u1 = Math.max(u1, u + w.wid / 2);
+        else if (Math.abs(u - u0) < w.wid / 2 + 0.1) u0 = Math.min(u0, u - w.wid / 2);
+      }
+      const um = (u0 + u1) / 2;
+      out.push({ ...w, c: [w.c[0] + dx * um, w.c[1] + dz * um], len: u1 - u0 });
+    }
+    // Snap each wall end that stops inside, or pokes a little past, a crossing wall flush to that wall's far face.
+    return out.map(w => {
+      const dx = Math.cos(w.a), dz = Math.sin(w.a);
+      let u0 = -w.len / 2, u1 = w.len / 2;
+      for (const o of out) {
+        if (o === w) continue;
+        const ox = Math.cos(o.a), oz = Math.sin(o.a);
+        if (Math.abs(dx * ox + dz * oz) > 0.2) continue;
+        const k = -dx * oz + dz * ox;
+        for (const s of [-1, 1]) {
+          const ue = s < 0 ? u0 : u1, ex = w.c[0] + dx * ue - o.c[0], ez = w.c[1] + dz * ue - o.c[1];
+          const u = ex * ox + ez * oz, v = -ex * oz + ez * ox;
+          if (Math.abs(u) > o.len / 2 + w.wid / 2 || Math.abs(v) > o.wid / 2 + 0.15) continue;
+          const vt = s * Math.sign(k) * o.wid / 2, d = (vt - v) / k;
+          if (s > 0) u1 = ue + d; else u0 = ue + d;
+        }
+      }
+      const um = (u0 + u1) / 2;
+      return { ...w, c: [w.c[0] + dx * um, w.c[1] + dz * um], len: u1 - u0 };
+    });
+  }
   function centroid(p) {
     let a = 0, x = 0, z = 0;
     for (let i = 0; i < p.length; i++) { const [x0, z0] = p[i], [x1, z1] = p[(i + 1) % p.length], c = x0 * z1 - x1 * z0; a += c; x += (x0 + x1) * c; z += (z0 + z1) * c; }
@@ -1656,7 +1711,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     const boxes = [], frames = [], doors = [], faces = [], walls = [];
     const ops = (plan.open || []).filter(o => o.len > 0.15);
     const wallSegs = [];
-    for (const w of plan.walls) {
+    for (const w of solidWalls()) {
       const dx = Math.cos(w.a), dz = Math.sin(w.a), nx = -dz, nz = dx, L = w.len / 2;
       wallSegs.push([w.c[0] - dx * L, w.c[1] - dz * L, w.c[0] + dx * L, w.c[1] + dz * L]);
       const cuts = [];
