@@ -119,7 +119,8 @@
   };
 
   /* ---------- Player state ---------- */
-  let state = null, stamp = 0, devices = [], misses = 0, seeking = null;   // seeking: 0..1 while a finger is on the bar
+  let state = null, stamp = 0, devices = [], misses = 0, seeking = null;
+  let live = null, empties = 0, graceUntil = 0;   // live: Spotify's latest raw answer, which can be empty mid-switch   // seeking: 0..1 while a finger is on the bar
   // Stuff You Should Know episodes: { items: [], next, loaded, loading }
   let eps = null, epFilter = load('mu-ep-filter', 'new'), epSort = load('mu-ep-sort', 'new');
   const fmt = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -130,7 +131,10 @@
   async function poll() {
     if (!connected() || Date.now() < backoffUntil) return;
     try {
-      state = await api('/me/player', { query: { additional_types: 'episode' } }); stamp = Date.now(); misses = 0;
+      live = await api('/me/player', { query: { additional_types: 'episode' } });
+      // Spotify briefly reports "nothing" while it switches songs: keep the last song on screen through that (v1.52)
+      if (!live && state && state.item && (Date.now() < graceUntil || ++empties < 3)) { note('Waiting for Spotify…'); return; }
+      empties = 0; state = live; stamp = Date.now(); misses = 0;
       if (state && state.device && state.device.id) save('mu-last-device', state.device.id);
       renderNow(); note('');
     } catch (e) {
@@ -184,14 +188,32 @@
       if (restart) await api('/me/player/seek', { method: 'PUT', query: { position_ms: 0, ...devQuery() } });
       else await api('/me/player/' + (dir > 0 ? 'next' : 'previous'), { method: 'POST', query: devQuery() });
       if (restart) { state.progress_ms = 0; stamp = Date.now(); tickBar(); return; }
-      for (const ms of [600, 1200, 1800]) {   // Spotify can take a moment to switch
-        await wait(ms); await poll();
-        if (!state || !state.device || (state.item && state.item.uri !== before)) break;
-      }
-      if (!state || !state.device) PH.toast('Spotify stopped after the skip. Open Spotify on your phone, or tap play here to start it again.', 'warn');
-      else if (state.item && state.item.uri === before) PH.toast('Spotify didn\'t move to another song. It may not allow skipping in what\'s playing (like a radio or DJ mix).', 'warn');
+      const dev = state.device.id;
+      await settle(l => l && l.item && l.item.uri !== before);
+      if (!live) await recover(dev);
+      else if (live.item && live.item.uri === before) PH.toast('Spotify didn\'t move to another song. It may not allow skipping in what\'s playing (like a radio or DJ mix).', 'warn');
     } catch (e) { say(e); later(); }
     finally { skipping = false; document.querySelectorAll('#mu-left, #mu-right').forEach(b => b.disabled = false); }
+  }
+  // After a song change, check every moment for up to ~7 s until Spotify reports the new song (v1.52)
+  async function settle(done) {
+    graceUntil = Date.now() + 9000;
+    try { for (let i = 0; i < 9; i++) { await wait(i ? 800 : 500); await poll(); if (done(live)) return; } }
+    finally { graceUntil = 0; }
+  }
+  // Spotify went quiet after a change: wake the same device once and carry on; if it's gone, say so plainly
+  async function recover(id) {
+    try {
+      const d = await api('/me/player/devices'); devices = (d && d.devices) || [];
+      const dev = devices.find(x => x.id === id) || devices.find(x => x.id === load('mu-last-device', null));
+      if (dev) {
+        await api('/me/player', { method: 'PUT', body: { device_ids: [dev.id], play: true } });
+        await settle(l => l && l.item);
+        if (live) return;
+      }
+    } catch (e) { if (e.offline) { say(e); return; } }
+    state = null; renderNow();
+    PH.toast('Spotify stopped on your phone. Open the Spotify app once, then pick the song again here.', 'warn');
   }
   // body: { uris, position_ms }
   async function play(body) {
@@ -211,7 +233,10 @@
         const dev = await pickDevice(); if (!dev) throw e;
         await api('/me/player/play', { method: 'PUT', body, query: { device_id: dev.id } });
       }
-      later(); PH.go('/music');
+      PH.go('/music');
+      const want = (body.offset && body.offset.uri) || (body.uris && body.uris[0]), dev = device_id || (state && state.device && state.device.id);
+      await settle(l => l && l.item && (!want || l.item.uri === want));
+      if (!live) await recover(dev);
     } catch (e) { say(e); }
   }
 
