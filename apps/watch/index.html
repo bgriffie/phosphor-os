@@ -1,0 +1,1753 @@
+<!doctype html>
+<html lang="en" data-app="what-to-watch">
+<head>
+  <meta charset="utf-8">
+  <script>/* Phosphor OS: this app runs inside the OS screen, which already clears the notch */(()=>{if(window.parent===window||!window.parent.PhosphorOS)return;const d=document.documentElement;d.classList.add("os-embed");for(const k of["top","right","bottom","left"])d.style.setProperty("--safe-"+k,"0px");})();</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>What to Watch</title>
+  <meta name="theme-color" content="#D9CDB4">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Watch">
+  <style>
+/* ==========================================================================
+   PHOSPHOR v1.9 — base stylesheet for Floyd's home-screen tools
+   Spec: brand-guidelines.md (same folder). Paste this whole file into a
+   <style> block in index.html. No external fonts, images or network calls.
+   ========================================================================== */
+
+/* ---------- 1. Tokens ---------- */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces (darkest -> lightest) */
+  --bg:        #030703;
+  --surface-1: #08110A;
+  --surface-2: #0D1A10;
+  --surface-3: #132418;
+
+  /* Lines */
+  --line:        #1F3D26;  /* dividers, panel outlines (decorative) */
+  --line-strong: #3F7A4B;  /* input / control borders (>=3:1 on bg) */
+
+  /* Text */
+  --text:       #C9F5D3;   /* body, 16.9:1 on bg */
+  --text-dim:   #86C295;   /* secondary, labels, 9.8:1 */
+  --text-faint: #4F7F5B;   /* placeholders, disabled ONLY, 4.4:1 */
+
+  /* Signal colors */
+  --accent:     #39FF6A;   /* phosphor green: primary actions, focus, key numbers */
+  --accent-dim: #1E9E42;   /* pressed / secondary fills */
+  --on-accent:  #021A08;   /* text on accent/amber fills */
+  --amber:      #FFB13B;   /* warnings, pending, "attention" */
+  --red:        #FF5C5C;   /* errors, destructive */
+  --cyan:       #5CE1FF;   /* info, links, neutral highlight */
+
+  /* Case plastic (vintage beige computer housing) */
+  --plastic:       #D9CDB4;  /* main housing */
+  --plastic-light: #E8DFCB;  /* top-lit edges, keycap tops */
+  --plastic-shade: #BFB193;  /* recesses, bezel slope */
+  --plastic-dark:  #9C8E70;  /* keycap sides, seams */
+  --trim:          #2B261E;  /* dark brown trim band, status-bar strip */
+  --plastic-band:  #D9CDB4;  /* v1.8: no separate band, the case is one colour up to the top edge */
+  /* iOS status bar: style "black-translucent" so the app draws under the clock; the
+     case continues behind the clock in one colour. theme-color #D9CDB4. */
+  --ink:           #2B261E;  /* text on plastic, 9.5:1 */
+  --ink-dim:       #5E5442;  /* labels on plastic, 4.7:1 */
+  --ink-red:       #8A3A1A;  /* destructive label on plastic, 4.9:1 */
+  --plastic-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .3 0 0 0 0 .2 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  --key-shadow: 0 3px 0 var(--plastic-dark), 0 4px 6px rgba(43, 38, 30, .35), inset 0 1px 0 rgba(255, 255, 255, .7);
+  --key-shadow-pressed: 0 1px 0 var(--plastic-dark), 0 1px 2px rgba(43, 38, 30, .3), inset 0 1px 2px rgba(43, 38, 30, .2);
+  --screen-radius: 38px;   /* follows the iPhone's own rounded display corners (v1.5) */
+
+  /* Glow (accent only, never body text) */
+  --glow:    0 0 6px rgba(57, 255, 106, .55);
+  --glow-lg: 0 0 4px rgba(57, 255, 106, .6), 0 0 16px rgba(57, 255, 106, .3);
+  --glow-box: 0 0 0 1px var(--accent), 0 0 12px rgba(57, 255, 106, .35);
+
+  /* Type */
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco,
+               "Cascadia Mono", Consolas, "Liberation Mono", "Courier New", monospace;
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-md: 16px;   /* base; inputs must never go below this (iOS zoom) */
+  --fs-lg: 20px;
+  --fs-xl: 28px;
+  --fs-2xl: 40px;  /* hero readouts */
+  --lh-tight: 1.15;
+  --lh: 1.5;
+  --tracking-label: .12em;
+
+  /* Space (4px grid) */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+
+  /* Shape */
+  --radius-sm: 2px;
+  --radius: 4px;
+  --tap: 44px;          /* min touch target */
+  --maxw: 560px;
+
+  /* Motion */
+  --dur-fast: 90ms;
+  --dur: 160ms;
+  --dur-slow: 280ms;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --ease-steps: steps(4, end);   /* "digital" transitions */
+
+  /* Safe areas */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ---------- 2. Reset & base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* The case never moves: html/body are locked to the viewport and only
+   .screen-body scrolls. */
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }
+html { background: var(--plastic); }
+body {
+  background: var(--plastic-noise), var(--plastic);
+  height: var(--app-h, 100dvh);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  line-height: var(--lh);
+  font-variant-numeric: tabular-nums slashed-zero;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+img, svg, canvas { display: block; max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+::selection { background: var(--accent); color: var(--on-accent); }
+
+/* ---------- 3. Case + CRT screen ---------- */
+/* (v1.6) No separate status-bar strip: the header band itself runs up behind the clock. */
+
+/* The screen: a fixed CRT frame. Structure:
+   <div class="screen">
+     <canvas class="rain">            (optional, stays put)
+     <nav class="path" data-path>     (status line, stays put)
+     <div class="screen-body">        (the ONLY scrolling area)  */
+.screen {
+  position: relative; isolation: isolate;
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+  border-radius: var(--screen-radius);
+  /* slim bezel: shaded slope, seam, lit lip below, deep glass inset */
+  box-shadow:
+    0 0 0 3px var(--plastic-shade),
+    0 0 0 4px var(--plastic-dark),
+    0 3px 0 4px var(--plastic-light),
+    inset 0 0 0 2px #000,
+    inset 0 0 28px rgba(0, 0, 0, .9);
+  margin: 4px;
+}
+.screen-body {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-3) var(--sp-6);
+  scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent;
+}
+.screen-body::-webkit-scrollbar { width: 4px; }
+.screen-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 2px; }
+/* glass reflection */
+.screen::before {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(120% 60% at 30% 0%, rgba(201, 245, 211, .06), rgba(0,0,0,0) 60%);
+}
+/* scanlines + vignette */
+.screen::after {
+  content: "";
+  position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+  background:
+    repeating-linear-gradient(to bottom,
+      rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, .22) 3px, rgba(0, 0, 0, 0) 4px),
+    radial-gradient(ellipse at center, rgba(0,0,0,0) 60%, rgba(0,0,0,.45) 100%);
+}
+.no-crt .screen::after { display: none; }
+
+/* ---------- 4. Layout ---------- */
+/* Pinned to the real screen edges: on iOS home-screen apps 100%/100dvh can come
+   up short and leave a strip of empty plastic at the bottom (v1.4 fix). */
+.app {
+  position: fixed; top: 0; right: 0; left: 0;
+  /* --app-h is set by phosphor.js to the real screen height in home-screen apps: with a
+     black-translucent status bar iOS reports a viewport one status bar too short and
+     leaves an empty strip at the bottom (v1.7 fix). */
+  height: var(--app-h, 100%);
+  max-width: var(--maxw);
+  margin: 0 auto;
+  /* keys sit low: the space under them matches the space above them (v1.9) */
+  padding: 0 calc(2px + var(--safe-right)) max(var(--sp-3), calc(var(--safe-bottom) - 20px)) calc(2px + var(--safe-left));
+  display: flex; flex-direction: column; gap: 6px;
+}
+.app > :not(.screen) { flex: none; }
+.stack   { display: flex; flex-direction: column; gap: var(--sp-3); }
+.row     { display: flex; align-items: center; gap: var(--sp-3); }
+.row.between { justify-content: space-between; }
+.grid-2  { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.grow    { flex: 1 1 auto; min-width: 0; }
+.divider { border: 0; border-top: 1px dashed var(--line); margin: var(--sp-2) 0; }
+
+/* ---------- 5. Type ---------- */
+h1, h2, h3 { margin: 0; font-weight: 700; line-height: var(--lh-tight); }
+h1 { font-size: var(--fs-xl); }
+h2 { font-size: var(--fs-lg); }
+h3 { font-size: var(--fs-md); }
+p  { margin: 0; }
+.label {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-dim);
+}
+.dim   { color: var(--text-dim); }
+.faint { color: var(--text-faint); }
+.small { font-size: var(--fs-sm); }
+.glow  { color: var(--accent); text-shadow: var(--glow); }
+.readout {
+  font-size: var(--fs-2xl); font-weight: 700; line-height: 1;
+  color: var(--accent); text-shadow: var(--glow-lg);
+  letter-spacing: -.02em;
+}
+.t-accent { color: var(--accent); }
+.t-amber  { color: var(--amber); }
+.t-red    { color: var(--red); }
+.t-cyan   { color: var(--cyan); }
+a { color: var(--cyan); text-underline-offset: 3px; }
+
+/* Blinking block cursor: <span class="cursor" aria-hidden="true"></span> */
+.cursor {
+  display: inline-block; width: .6em; height: 1.05em;
+  background: var(--accent); vertical-align: -.15em; margin-left: 2px;
+  box-shadow: var(--glow);
+  animation: blink 1.06s steps(1, end) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ---------- 6. Header (title only) + bottom controls (on the plastic case) ---------- */
+.app-header {   /* the top band: runs edge to edge and up behind the iOS clock */
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2);
+  margin: 0 calc(-2px - var(--safe-right)) 0 calc(-2px - var(--safe-left));
+  /* title tucked right under the clock row (v1.9) */
+  padding: max(0px, calc(var(--safe-top) - 10px)) calc(var(--sp-4) + var(--safe-right)) 0 calc(var(--sp-4) + var(--safe-left));
+  min-height: calc(max(0px, calc(var(--safe-top) - 10px)) + 26px);
+  background: none;   /* v1.8: same plastic as the rest of the case, no band */
+}
+.app-header .app-title { color: var(--ink); text-shadow: 0 1px 0 rgba(255, 255, 255, .45); font-size: 18px; }
+.app-header .app-meta { color: var(--ink-dim); }
+/* Three keys, centered under the screen, in thumb reach (v1.6):
+   <nav class="app-controls"> ‹ back · ☰ menu · page action (or ■ home) </nav> */
+.app-controls { display: flex; align-items: center; justify-content: center; gap: var(--sp-5); min-height: 44px; padding-top: 4px; }
+.app-controls > .grow { display: none; }
+.app-controls .key { min-width: 76px; min-height: 40px; font-size: var(--fs-lg); }
+.app-controls .key.word { font-size: var(--fs-sm); }
+.app-controls .page-keys { display: contents; }
+.app-title {
+  display: flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--fs-lg); font-weight: 700; text-transform: uppercase;
+  letter-spacing: .14em; color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .55);   /* moulded / debossed */
+}
+.app-title::before {  /* power LED */
+  content: ""; width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent), inset 0 -1px 1px rgba(0,0,0,.3);
+}
+.app-meta { font-size: var(--fs-xs); color: var(--ink-dim); text-transform: uppercase; letter-spacing: var(--tracking-label); text-shadow: 0 1px 0 rgba(255,255,255,.45); }
+.app-title .cursor { display: none; }
+
+/* Vent slots: <div class="vents" aria-hidden="true"></div> */
+.vents {
+  height: 14px; margin: 0 var(--sp-2);
+  background: repeating-linear-gradient(90deg,
+    var(--plastic-dark) 0 2px, var(--trim) 2px 4px, var(--plastic-light) 4px 5px, transparent 5px 12px);
+  opacity: .55; border-radius: 2px;
+}
+
+/* Embossed label on plastic, e.g. under a keypad */
+.emboss { color: var(--ink-dim); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+
+/* Keycap button, for controls ON the plastic (tab bar, keypads, header) */
+.key {
+  appearance: none; -webkit-appearance: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: var(--tap); min-width: var(--tap); padding: 0 var(--sp-3);
+  border: 1px solid var(--plastic-dark); border-radius: 6px;
+  background: linear-gradient(180deg, var(--plastic-light), #DDD2BB 70%, var(--plastic-shade));
+  color: var(--ink); font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  box-shadow: var(--key-shadow);
+  cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation;
+  transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.key:active, .key.is-pressed, .key[aria-pressed="true"], .key[aria-selected="true"] {
+  transform: translateY(3px); box-shadow: var(--key-shadow-pressed);
+  background: linear-gradient(180deg, #DDD2BB, var(--plastic-shade));
+}
+.key:disabled { opacity: .45; cursor: default; transform: translateY(3px); box-shadow: var(--key-shadow-pressed); }
+.key-dark {   /* "Return"-style accent key */
+  background: linear-gradient(180deg, #4A4236, var(--trim));
+  border-color: #17140F; color: var(--plastic-light);
+  box-shadow: 0 3px 0 #17140F, 0 4px 6px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15);
+}
+.key-danger { color: var(--ink-red); }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); padding: var(--sp-2) var(--sp-1) var(--sp-3); }
+.keypad .key { min-height: 52px; font-size: var(--fs-lg); }
+
+/* ---------- 7. Panels ---------- */
+.panel {
+  position: relative;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+}
+.panel[data-title] { padding-top: calc(var(--sp-4) + 4px); }
+.panel[data-title]::before {
+  content: "[ " attr(data-title) " ]";
+  position: absolute; top: -.75em; left: var(--sp-3);
+  padding: 0 var(--sp-1);
+  background: var(--bg);
+  font-size: var(--fs-xs); letter-spacing: var(--tracking-label);
+  text-transform: uppercase; color: var(--text-dim);
+}
+.panel.raised { background: var(--surface-2); }
+.panel.active { border-color: var(--accent); box-shadow: var(--glow-box); }
+
+/* ---------- 8. Buttons ---------- */
+.btn {
+  appearance: none; -webkit-appearance: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: var(--tap); padding: 0 var(--sp-4);
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  background: transparent; color: var(--accent);
+  font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+}
+.btn:active { transform: translateY(1px); background: var(--surface-3); }
+.btn-primary {
+  background: var(--accent); color: var(--on-accent);
+  border-color: var(--accent); box-shadow: var(--glow);
+}
+.btn-primary:active { background: var(--accent-dim); border-color: var(--accent-dim); }
+.btn-ghost { border-color: transparent; color: var(--text-dim); }
+.btn-danger { color: var(--red); border-color: var(--red); }
+.btn-danger:active { background: rgba(255, 92, 92, .12); }
+.btn-block { width: 100%; }
+.btn-icon { width: var(--tap); padding: 0; }
+.btn:disabled, .btn[aria-disabled="true"] {
+  color: var(--text-faint); border-color: var(--line); background: transparent;
+  box-shadow: none; cursor: not-allowed; transform: none;
+}
+
+/* ---------- 9. Focus ---------- */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: var(--glow);
+}
+
+/* ---------- 10. Form fields ---------- */
+.field { display: flex; flex-direction: column; gap: var(--sp-1); }
+.field > .label { padding-left: 2px; }
+.input, .select, .textarea {
+  appearance: none; -webkit-appearance: none;
+  width: 100%; min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg);
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  color: var(--text); font-size: var(--fs-md); /* >=16px: stops iOS zoom */
+  caret-color: var(--accent);
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.textarea { min-height: 96px; resize: vertical; }
+.input::placeholder, .textarea::placeholder { color: var(--text-faint); }
+.input:focus, .select:focus, .textarea:focus {
+  border-color: var(--accent); box-shadow: var(--glow-box); outline: none;
+}
+.input[aria-invalid="true"] { border-color: var(--red); }
+.select {
+  padding-right: var(--sp-6);
+  background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+                    linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+.hint  { font-size: var(--fs-xs); color: var(--text-dim); }
+.error { font-size: var(--fs-xs); color: var(--red); }
+.error::before { content: "ERR: "; font-weight: 700; }
+
+/* Prefix/suffix input: <div class="input-group"><span>$</span><input class="input"></div> */
+.input-group { display: flex; align-items: stretch; }
+.input-group > span {
+  display: flex; align-items: center; padding: 0 var(--sp-3);
+  border: 1px solid var(--line-strong); border-right: 0;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  color: var(--text-dim); background: var(--surface-1);
+}
+.input-group > .input { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+
+/* Checkbox / radio */
+.check { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); cursor: pointer; }
+.check input {
+  appearance: none; -webkit-appearance: none; margin: 0;
+  width: 22px; height: 22px; flex: none;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+  display: grid; place-content: center;
+}
+.check input[type="radio"] { border-radius: 50%; }
+.check input::before {
+  content: ""; width: 12px; height: 12px; background: var(--accent);
+  transform: scale(0); transition: transform var(--dur-fast) var(--ease-steps);
+  box-shadow: var(--glow);
+}
+.check input[type="radio"]::before { border-radius: 50%; }
+.check input:checked { border-color: var(--accent); }
+.check input:checked::before { transform: scale(1); }
+
+/* Toggle switch: <label class="switch"><input type="checkbox" role="switch"><span>Label</span></label> */
+.switch { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--tap); cursor: pointer; }
+.switch input {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 52px; height: 28px; position: relative;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+  order: 2;
+}
+.switch input::before {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; background: var(--text-faint);
+  transition: transform var(--dur) var(--ease-steps), background var(--dur) var(--ease);
+}
+.switch input:checked { border-color: var(--accent); }
+.switch input:checked::before { transform: translateX(24px); background: var(--accent); box-shadow: var(--glow); }
+
+/* Segmented control: <div class="segmented" role="radiogroup"><button aria-pressed="true">A</button>...</div> */
+.segmented {
+  display: flex; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); overflow: hidden;
+}
+.segmented > button {
+  flex: 1; min-height: var(--tap); border: 0; background: transparent;
+  color: var(--text-dim); font-size: var(--fs-sm); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em; cursor: pointer;
+}
+.segmented > button + button { border-left: 1px solid var(--line-strong); }
+.segmented > button[aria-pressed="true"], .segmented > button[aria-checked="true"] {
+  background: var(--accent); color: var(--on-accent);
+}
+
+/* ---------- 11. Lists ---------- */
+.list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.list > li {
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 52px; padding: var(--sp-2) var(--sp-1);
+  border-bottom: 1px solid var(--line);
+}
+.list > li::before { content: ">"; color: var(--text-faint); flex: none; }
+.list.plain > li::before { content: none; }
+.list .meta { margin-left: auto; color: var(--text-dim); font-size: var(--fs-sm); white-space: nowrap; }
+
+/* Key/value readout rows */
+.kv { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); padding: var(--sp-1) 0; }
+.kv > :first-child { color: var(--text-dim); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; }
+.kv > :last-child { font-weight: 700; }
+
+/* ---------- 12. Badges / tags ---------- */
+.badge {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  padding: 2px var(--sp-2); border: 1px solid currentColor; border-radius: var(--radius-sm);
+  font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--accent); white-space: nowrap;
+}
+.badge.amber { color: var(--amber); }
+.badge.red   { color: var(--red); }
+.badge.cyan  { color: var(--cyan); }
+.badge.dim   { color: var(--text-dim); }
+
+/* ---------- 13. Progress / meters ---------- */
+.meter {
+  height: 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  padding: 2px; background: var(--bg);
+}
+.meter > span {
+  display: block; height: 100%; width: var(--value, 0%);
+  background: repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 8px);
+  filter: drop-shadow(0 0 3px rgba(57, 255, 106, .6));
+  transition: width var(--dur-slow) var(--ease-steps);
+}
+.meter.amber > span { background: repeating-linear-gradient(90deg, var(--amber) 0 6px, transparent 6px 8px); filter: none; }
+.meter.red   > span { background: repeating-linear-gradient(90deg, var(--red) 0 6px, transparent 6px 8px); filter: none; }
+
+/* ---------- 15. Toast ---------- */
+.toast-host {
+  position: fixed; left: 0; right: 0; z-index: 100;
+  bottom: calc(var(--sp-5) + var(--safe-bottom) + 50px - var(--app-gap, 0px));   /* above the controls row */
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
+  pointer-events: none; padding: 0 var(--sp-4);
+}
+.toast {
+  max-width: var(--maxw); width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-2); border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  color: var(--text); font-size: var(--fs-sm); box-shadow: var(--glow-box);
+  animation: toast-in var(--dur) var(--ease-steps) both;
+}
+.toast::before { content: "SYS> "; color: var(--accent); font-weight: 700; }
+.toast.warn  { border-color: var(--amber); box-shadow: none; }
+.toast.warn::before  { content: "WARN> "; color: var(--amber); }
+.toast.error { border-color: var(--red); box-shadow: none; }
+.toast.error::before { content: "ERR> "; color: var(--red); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* ---------- 16. Dialog (native <dialog>) ---------- */
+dialog.dialog {
+  width: min(92vw, 420px); padding: var(--sp-5);
+  background: var(--surface-1); color: var(--text);
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  box-shadow: var(--glow-box);
+}
+dialog.dialog::backdrop { background: rgba(0, 0, 0, .75); }
+dialog.dialog h2 { margin-bottom: var(--sp-3); color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
+dialog.dialog .actions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-5); }
+
+/* ---------- 17. Empty state ---------- */
+.empty {
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-7) var(--sp-4); text-align: center; color: var(--text-dim);
+  border: 1px dashed var(--line); border-radius: var(--radius);
+}
+.empty pre { margin: 0; color: var(--text-faint); font-size: var(--fs-sm); line-height: 1.2; }
+
+/* ---------- 18. Matrix rain canvas (optional, decorative; inside .screen) ---------- */
+.rain {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  width: 100%; height: 100%; border-radius: inherit;
+  opacity: .14;
+}
+
+/* ---------- 19. Boot/type-on text ---------- */
+.boot { overflow: hidden; white-space: nowrap; border-right: 0; width: 0; animation: type 600ms steps(var(--chars, 16), end) forwards; }
+@keyframes type { to { width: calc(var(--chars, 16) * 1ch); } }
+
+/* Utility: screen-reader only */
+.sr-only {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- 21. Navigation: header keys, views, path ---------- */
+/* Header: <header class="app-header"><h1 class="app-title" data-view-title>Tool</h1><span class="app-meta">v1.0</span></header>
+   Controls (last child of .app): <nav class="app-controls">
+     <button class="key key-sm" data-back hidden aria-label="Back">‹</button><span class="grow"></span>
+     <div class="page-keys" data-show-on="/x" hidden>…</div>
+     <button class="key key-sm" data-open-sheet="menu" aria-label="Menu">☰</button>
+   </nav> */
+.app-header .app-title { flex: 1 1 auto; min-width: 0; }
+.app-title > span, .app-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.key-sm { min-height: 36px; min-width: 44px; padding: 0 var(--sp-2); font-size: var(--fs-lg); line-height: 1; border-radius: 5px; }
+[hidden] { display: none !important; }
+
+/* Views: <section class="view" id="settings" data-title="Settings" data-parent="home"> */
+.view { display: flex; flex-direction: column; gap: var(--sp-4); }
+.view:not(.is-active) { display: none; }
+.view.enter-fwd  { animation: view-fwd  var(--dur) var(--ease-steps) both; }
+.view.enter-back { animation: view-back var(--dur) var(--ease-steps) both; }
+@keyframes view-fwd  { from { opacity: 0; transform: translateX(16px); } }
+@keyframes view-back { from { opacity: 0; transform: translateX(-16px); } }
+
+/* Status line at the top of the screen (does not scroll): ~/settings/display */
+.path {
+  position: relative; z-index: 1; flex: none;
+  display: flex; align-items: center; gap: 0 2px; overflow-x: auto; white-space: nowrap;
+  min-height: 32px; padding: 0 var(--sp-4);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-xs); color: var(--text-dim); letter-spacing: .04em;
+  scrollbar-width: none;
+}
+.path::-webkit-scrollbar { display: none; }
+.path::before { content: "~"; color: var(--accent); }
+.path:empty::after { content: "/"; color: var(--text-faint); }
+.path a, .path span { color: inherit; text-decoration: none; padding: 8px 0; }
+.path a::before, .path span::before { content: "/"; color: var(--text-faint); margin-right: 2px; }
+.path a { color: var(--cyan); }
+.path span:last-child { color: var(--accent); }
+
+/* ---------- 22. Menu lists (settings rows) ---------- */
+/* <div class="menu">
+     <a class="menu-item" href="#/settings/display"><span class="mi-label">Display</span><span class="mi-value">CRT on</span></a>
+     <label class="menu-item"><span class="mi-label">Sound</span><input type="checkbox" role="switch" class="mi-switch"></label>
+   </div> */
+.menu {
+  display: flex; flex-direction: column;
+  background: var(--surface-1);
+  border: 1px solid var(--line); border-radius: var(--radius);
+}
+.menu-item {
+  position: relative;
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 52px; padding: var(--sp-2) var(--sp-4);
+  color: var(--text); text-decoration: none; text-align: left;
+  background: transparent; border: 0; width: 100%;
+  font-size: var(--fs-md); cursor: pointer;
+  -webkit-user-select: none; user-select: none;
+}
+.menu-item + .menu-item { border-top: 1px solid var(--line); }
+.menu-item:active { background: var(--surface-3); }
+.mi-glyph { width: 1.4em; flex: none; text-align: center; color: var(--accent); }
+.mi-label { flex: 1 1 auto; min-width: 0; }
+.mi-label small { display: block; font-size: var(--fs-xs); color: var(--text-dim); line-height: 1.4; }
+.mi-value { color: var(--text-dim); font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
+/* rows that open a sub-page get a chevron */
+a.menu-item::after, .menu-item[data-nav]::after, .menu-item[data-open-sheet]::after {
+  content: "›"; color: var(--text-dim); font-size: var(--fs-lg); line-height: 1; flex: none;
+}
+.menu-item.danger, .menu-item.danger .mi-glyph { color: var(--red); }
+.menu-item.danger::after { content: none; }
+/* inline controls in a row reuse the switch look */
+.mi-switch {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 52px; height: 28px; position: relative; cursor: pointer;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg);
+}
+.mi-switch::before {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+  background: var(--text-faint);
+  transition: transform var(--dur) var(--ease-steps), background var(--dur) var(--ease);
+}
+.mi-switch:checked { border-color: var(--accent); }
+.mi-switch:checked::before { transform: translateX(24px); background: var(--accent); box-shadow: var(--glow); }
+.menu-item select.mi-select {
+  appearance: none; -webkit-appearance: none; border: 0; background: transparent;
+  color: var(--text-dim); font-size: var(--fs-md); text-align: right; text-align-last: right;
+  max-width: 50%; padding: var(--sp-2) 0;
+}
+.menu-note { padding: var(--sp-2) var(--sp-1) 0; font-size: var(--fs-xs); color: var(--text-dim); }
+.menu-group { display: flex; flex-direction: column; gap: var(--sp-2); }
+.menu-group > .label { padding-left: var(--sp-1); }
+
+/* Radio-choice page (pick one): rows with a check on the selected one */
+.menu-item[aria-checked]::after { content: ""; }
+.menu-item[aria-checked="true"]::after { content: "✓"; color: var(--accent); text-shadow: var(--glow); font-weight: 700; }
+
+/* ---------- 23. Bottom sheet (menus, pickers, quick actions) ---------- */
+/* <dialog class="sheet" id="menu"><div class="sheet-title">Menu</div><div class="menu">…</div>
+     <button class="btn btn-ghost btn-block" data-close>Cancel</button></dialog> */
+dialog.sheet {
+  position: fixed; inset: auto 0 calc(0px - var(--app-gap, 0px)) 0; margin: 0 auto;
+  width: 100%; max-width: var(--maxw); max-height: 80dvh; overflow: auto;
+  padding: var(--sp-3) var(--sp-4) calc(var(--sp-4) + var(--safe-bottom));
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--accent); border-bottom: 0;
+  border-radius: var(--screen-radius) var(--screen-radius) 0 0;
+  box-shadow: 0 0 0 6px var(--plastic-shade), 0 0 24px rgba(57, 255, 106, .2);
+}
+dialog.sheet[open] { display: flex; flex-direction: column; gap: var(--sp-3); animation: sheet-up var(--dur) var(--ease-steps) both; }
+dialog.sheet::backdrop { background: rgba(20, 17, 12, .6); }
+dialog.sheet::before {  /* grab handle */
+  content: ""; align-self: center; width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong);
+}
+.sheet-title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--text-dim); text-align: center; }
+@keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } }
+
+/* The app menu, opened by the ☰ key in the bottom controls; it pops up above it:
+   <dialog class="sheet dropdown" id="menu">…</dialog> */
+dialog.sheet.dropdown {
+  inset: auto calc(var(--sp-2) + var(--safe-right)) calc(var(--safe-bottom) + 60px - var(--app-gap, 0px)) auto;
+  width: min(calc(100vw - 16px), 340px); max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 80px);
+  padding: var(--sp-3);
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  box-shadow: 0 0 0 3px var(--plastic-shade), 0 0 0 4px var(--plastic-dark), 0 12px 28px rgba(0, 0, 0, .45), 0 0 18px rgba(57, 255, 106, .18);
+}
+dialog.sheet.dropdown::before { content: none; }
+dialog.sheet.dropdown[open] { animation: drop-down var(--dur) var(--ease-steps) both; }
+dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
+@keyframes drop-down { from { transform: translateY(10px); opacity: 0; } }
+.dropdown .menu-item { min-height: 48px; }
+.dropdown .menu + .sheet-title { margin-top: var(--sp-1); }
+.dropdown .sheet-title { text-align: left; padding-left: var(--sp-1); }
+
+/* Section links in the menu: current one is marked */
+.menu-item[aria-current="page"] { color: var(--accent); text-shadow: var(--glow); }
+.menu-item[aria-current="page"]::after { content: "●"; font-size: 10px; color: var(--accent); }
+
+/* Count pill in a menu row: <span class="mi-count">4</span> */
+.mi-count {
+  min-width: 22px; height: 20px; padding: 0 6px; border-radius: 10px;
+  background: var(--accent); color: var(--on-accent);
+  font-size: 11px; font-weight: 700; line-height: 20px; text-align: center;
+}
+
+/* Search field above long lists */
+.search { position: relative; }
+.search::before { content: "/"; position: absolute; left: var(--sp-3); top: 50%; transform: translateY(-50%); color: var(--accent); font-weight: 700; }
+.search .input { padding-left: var(--sp-6); }
+
+/* ---------- 19b. Full-screen views (games, canvases, maps, timers) ---------- */
+/* <section class="view fill" data-route="/x"> fills the whole screen and never scrolls.
+   Live numbers go in a .hud on the status line; page actions go in small header
+   keys (.page-keys, in .app-controls) shown only on that page. No keypad under the screen. */
+.screen-body:has(> .view.fill.is-active) { padding: var(--sp-2) var(--sp-3) var(--sp-3); overflow: hidden; }  /* 12px keeps content clear of the round corners */
+.view.fill { flex: 1 1 auto; min-height: 0; gap: var(--sp-2); position: relative; }
+.hud {
+  position: absolute; top: 0; right: 0; z-index: 2; height: 32px; max-width: 72%;
+  display: flex; align-items: center; gap: var(--sp-3); padding: 0 var(--sp-4) 0 var(--sp-5);
+  font-size: var(--fs-xs); color: var(--text-dim); white-space: nowrap; pointer-events: none;
+  background: linear-gradient(90deg, rgba(3, 7, 3, 0), var(--bg) var(--sp-4));
+}
+.hud i { font-style: normal; text-transform: uppercase; letter-spacing: var(--tracking-label); }
+.hud b { color: var(--text); font-size: var(--fs-sm); font-weight: 700; }
+.hud b.glow { color: var(--accent); text-shadow: var(--glow); }
+.page-keys, .hdr-keys { display: flex; gap: var(--sp-2); flex: none; }
+.page-keys .key-sm, .hdr-keys .key-sm { font-size: var(--fs-md); }
+.page-keys .key-sm.word, .hdr-keys .key-sm.word { font-size: var(--fs-xs); }
+
+/* ---------- 20. Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+  .cursor { animation: none; }
+  .view.enter-fwd, .view.enter-back, dialog.sheet[open], dialog.sheet.dropdown[open] { animation: none; }
+  .key { transition: none; }
+  .boot { width: auto; animation: none; }
+  .rain { display: none; }
+}
+
+    /* === tool-specific styles below === */
+
+    /* No title on the case: the screen starts right under the iOS clock (Floyd, from Phosphor OS) */
+    .app-header { display: none; }
+    .app { padding-top: max(var(--sp-2), calc(var(--safe-top) - 4px)); }
+    /* Pages swap instantly; nothing slides (Floyd) */
+    .view.enter-fwd, .view.enter-back { animation: none; }
+    /* Keys carry drawn icons, not font glyphs */
+    .app-controls .key svg { width: 20px; height: 20px; }
+    .ico { width: 18px; height: 18px; flex: none; }
+
+    /* Service filter / tabs */
+    .segmented.svc { margin-bottom: var(--sp-4); width: 100%; display: flex; }
+    .segmented.svc > button { flex: 1; min-width: 0; padding: 0 4px; }
+
+    /* Poster rows (Home, More like this) */
+    .shelf { margin-bottom: var(--sp-5); }
+    .shelf-h { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); margin: 0 0 var(--sp-2); }
+    .shelf-h h2 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .1em; color: var(--text-dim); margin: 0; }
+    .shelf-h .hint { white-space: nowrap; }
+    .strip { display: flex; gap: var(--sp-3); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity;
+             margin: 0 calc(-1 * var(--sp-3)); padding: 0 var(--sp-3) var(--sp-2); scrollbar-width: none; }
+    .strip::-webkit-scrollbar { display: none; }
+    .strip .card { width: 108px; flex: none; scroll-snap-align: start; }
+    .strip-empty { color: var(--text-dim); font-size: var(--fs-sm); margin: 0; padding: var(--sp-3) 0; }
+
+    /* Poster grid (Browse, Search, My list) */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: var(--sp-4) var(--sp-3); }
+
+    .card { display: block; padding: 0; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+    .poster { position: relative; aspect-ratio: 2 / 3; border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+              background: var(--surface-1); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(.85); }
+    .poster .ph { padding: var(--sp-2); font-size: var(--fs-xs); color: var(--text-dim); text-align: center; overflow-wrap: anywhere; }
+    .card:active .poster, .card:focus-visible .poster { border-color: var(--accent); box-shadow: var(--glow-box); }
+    .card .heart { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; color: var(--amber);
+                   filter: drop-shadow(0 0 3px #000); }
+    .card .t { margin-top: 6px; font-size: var(--fs-xs); line-height: 1.3; display: -webkit-box; -webkit-box-orient: vertical;
+               -webkit-line-clamp: 2; overflow: hidden; }
+    .card .tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+    .tag { font-size: 10px; font-weight: 700; letter-spacing: .06em; padding: 1px 4px; border: 1px solid currentColor;
+           border-radius: 2px; line-height: 1.3; text-transform: uppercase; }
+    .s-hulu { color: var(--accent); }
+    .s-prime { color: var(--cyan); }
+    .s-peacock { color: var(--amber); }
+    .s-none { color: var(--text-faint); }
+    .card.off { opacity: .55; }
+    .t-dim { color: var(--text-dim); }
+
+    /* Title page */
+    .ttl { display: grid; grid-template-columns: 112px 1fr; gap: var(--sp-4); align-items: start; margin-bottom: var(--sp-4); }
+    .ttl h1 { font-size: var(--fs-lg); line-height: 1.25; margin: 0 0 var(--sp-2); }
+    .ttl .facts { color: var(--text-dim); font-size: var(--fs-sm); line-height: 1.5; }
+    .overview { color: var(--text); font-size: var(--fs-sm); line-height: 1.55; margin: 0 0 var(--sp-4); }
+    .watch { display: grid; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+    .like-btn { gap: var(--sp-2); }
+    .like-btn[aria-pressed="true"] { color: var(--amber); border-color: var(--amber); }
+
+    .more-btn { margin-top: var(--sp-4); }
+    .status { color: var(--text-dim); font-size: var(--fs-sm); margin: var(--sp-3) 0; }
+    .status.err { color: var(--amber); }
+    .browse-f { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+    .browse-f .segmented { grid-column: 1 / -1; display: flex; }
+    .browse-f .segmented > button { flex: 1; }
+    .search { margin-bottom: var(--sp-4); }
+
+    /* First run */
+    .setup { max-width: 420px; margin: var(--sp-6) auto 0; text-align: center; }
+    .setup .glyph-svg { width: 64px; height: 64px; color: var(--accent); filter: drop-shadow(0 0 8px var(--accent)); margin: 0 auto var(--sp-4); display: block; }
+    .setup p { color: var(--text-dim); font-size: var(--fs-sm); line-height: 1.55; }
+    ol.steps { text-align: left; color: var(--text); font-size: var(--fs-sm); line-height: 1.6; padding-left: 1.4em; margin: 0 0 var(--sp-4); }
+    ol.steps a { color: var(--accent); }
+  </style>
+<style>/* Phosphor OS */
+html.os-embed { --app-gap: 0px !important; --app-h: 100% !important; }
+html.os-embed, html.os-embed body { background: var(--bg) !important; height: 100% !important; }
+html.os-embed .app { padding: 0 !important; max-width: none; gap: 0; height: 100% !important; min-height: 0 !important; }
+html.os-embed .app-header, html.os-embed .app-controls { display: none !important; }
+html.os-embed .screen { margin: 0; border-radius: 0; box-shadow: none; }
+html.os-embed .screen::before, html.os-embed .screen::after { display: none; }
+html.os-embed .view.enter-fwd, html.os-embed .view.enter-back { animation: none; }
+html.os-embed .screen > .path { padding-right: 84px; cursor: pointer; }
+html.os-embed .os-path-cmd { position: absolute; top: 0; right: var(--sp-3); z-index: 2; height: 32px; display: flex; align-items: center; gap: 4px; appearance: none; -webkit-appearance: none; background: none; border: 0; padding: 0 var(--sp-2); color: var(--accent); font-size: var(--fs-xs); letter-spacing: var(--tracking-label); text-transform: uppercase; cursor: pointer; }
+html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
+</style>
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1 class="app-title" data-view-title>What to Watch</h1>
+      <span class="app-meta">v1.0</span>
+    </header>
+    <div class="screen">
+      <canvas class="rain" aria-hidden="true" hidden></canvas>
+      <nav class="path" data-path aria-label="Location"></nav>
+      <div class="screen-body">
+
+      <section class="view" data-route="/" data-title="Watch">
+        <div id="home-setup" class="setup" hidden>
+          <svg class="glyph-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="5" width="18" height="12"/><path d="M10 8.5v5l4-2.5z" fill="currentColor"/><path d="M8 21h8"/></svg>
+          <h2>One key to go</h2>
+          <p>This app gets its film and show listings, and which service has them, from TMDB. It needs your own free TMDB API key, saved on this phone only.</p>
+          <button class="btn btn-primary btn-block" data-route="/settings/key">Add TMDB key</button>
+        </div>
+        <div id="home-main" hidden>
+          <div class="segmented svc" role="radiogroup" aria-label="Service" id="home-svc"></div>
+          <div id="home-rows"></div>
+        </div>
+      </section>
+
+      <section class="view" data-route="/browse" data-title="Browse">
+        <div class="browse-f">
+          <div class="segmented svc" role="radiogroup" aria-label="Service" id="br-svc" style="margin:0"></div>
+          <select class="select" id="br-type" aria-label="Films or shows">
+            <option value="movie">Films</option>
+            <option value="tv">Shows</option>
+          </select>
+          <select class="select" id="br-genre" aria-label="Genre"><option value="">All genres</option></select>
+          <select class="select" id="br-sort" aria-label="Sort" style="grid-column:1 / -1">
+            <option value="popular">Popular now</option>
+            <option value="top">Top rated</option>
+            <option value="new">Newest</option>
+          </select>
+        </div>
+        <div class="grid" id="br-grid"></div>
+        <p class="status" id="br-status" hidden></p>
+        <button class="btn btn-block more-btn" id="br-more" hidden>Load more</button>
+      </section>
+
+      <section class="view" data-route="/search" data-title="Search">
+        <form class="search" id="q-form" role="search">
+          <input class="input" type="search" id="q" placeholder="Film or show" aria-label="Search films and shows"
+                 autocomplete="off" autocorrect="off" enterkeyhint="search">
+        </form>
+        <div class="grid" id="q-grid"></div>
+        <p class="status" id="q-status" hidden></p>
+      </section>
+
+      <section class="view" data-route="/liked" data-title="My list">
+        <p class="hint" style="margin:0 0 var(--sp-4)">Titles you ♥ shape the "For you" row on Home.</p>
+        <div class="grid" id="liked-grid"></div>
+        <div class="empty" id="liked-empty" hidden>
+          <pre aria-hidden="true">  ___
+ | ♥ |
+ |___|</pre>
+          <p>Nothing here yet. Open any title and tap ♥.</p>
+        </div>
+      </section>
+
+      <section class="view" data-route="/title" data-title="Title">
+        <div id="tt"></div>
+      </section>
+
+      <section class="view" data-route="/settings" data-title="Settings">
+        <div class="menu-group">
+          <span class="label">General</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/key"><span class="mi-label">TMDB key</span><span class="mi-value" id="key-state">Not set</span></a>
+            <a class="menu-item" href="#/settings/services"><span class="mi-label">My services</span><span class="mi-value" id="svc-state"></span></a>
+            <label class="menu-item"><span class="mi-label">Posters<small>Turn off to save data</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="posters"></label>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Appearance</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/display"><span class="mi-label">Display</span><span class="mi-value">CRT <span data-setting-value="crt"></span></span></a>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Data</span>
+          <div class="menu">
+            <button class="menu-item" id="export"><span class="mi-label">Export my list</span></button>
+            <button class="menu-item" id="clear-cache"><span class="mi-label">Refresh listings</span></button>
+            <button class="menu-item danger" id="erase"><span class="mi-label">Erase all data</span></button>
+          </div>
+          <p class="menu-note">Your key and list stay on this phone.</p>
+        </div>
+        <div class="menu-group">
+          <span class="label">About</span>
+          <div class="menu">
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.0</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/key" data-title="TMDB key">
+        <ol class="steps">
+          <li>Make a free account at <a href="https://www.themoviedb.org/signup" target="_blank" rel="noopener">themoviedb.org</a>.</li>
+          <li>Open <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">Settings › API</a> and create a Developer key.</li>
+          <li>Copy the <b>API Key</b> (or the long Read Access Token) and paste it here.</li>
+        </ol>
+        <form class="field" id="key-form">
+          <label class="label" for="key-in">API key</label>
+          <input class="input" id="key-in" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Paste key">
+          <p class="hint" id="key-hint">Saved on this phone only.</p>
+        </form>
+        <button class="btn btn-primary btn-block" id="key-save">Save and test</button>
+      </section>
+
+      <section class="view" data-route="/settings/services" data-title="My services">
+        <div class="menu">
+          <label class="menu-item"><span class="mi-label"><span class="tag s-hulu">Hulu</span></span><input type="checkbox" role="switch" class="mi-switch" data-setting="svc_hulu"></label>
+          <label class="menu-item"><span class="mi-label"><span class="tag s-prime">Prime</span> Prime Video</span><input type="checkbox" role="switch" class="mi-switch" data-setting="svc_prime"></label>
+          <label class="menu-item"><span class="mi-label"><span class="tag s-peacock">Peacock</span></span><input type="checkbox" role="switch" class="mi-switch" data-setting="svc_peacock"></label>
+        </div>
+        <p class="menu-note">Region: United States. Peacock listings include Premium titles, which may need an upgrade on the free plan.</p>
+      </section>
+
+      <section class="view" data-route="/settings/display" data-title="Display">
+        <div class="menu">
+          <label class="menu-item"><span class="mi-label">CRT scanlines</span><input type="checkbox" role="switch" class="mi-switch" data-setting="crt"></label>
+          <label class="menu-item"><span class="mi-label">Matrix rain</span><input type="checkbox" role="switch" class="mi-switch" data-setting="rain"></label>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/about" data-title="About">
+        <section class="panel" data-title="What to Watch">
+          <div class="kv"><span>Version</span><span>1.0</span></div>
+          <div class="kv"><span>Works offline</span><span class="t-accent">Last listings</span></div>
+          <div class="kv"><span>Region</span><span>US</span></div>
+          <div class="kv"><span>Data</span><span>On this phone</span></div>
+        </section>
+        <p class="hint" style="margin-top:var(--sp-4);line-height:1.5">Listings and streaming availability come from TMDB, with availability data from JustWatch. This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+      </section>
+      </div><!-- /.screen-body -->
+    </div><!-- /.screen -->
+    <nav class="app-controls" aria-label="Controls">
+      <button class="key key-sm" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
+      <button class="key key-sm" data-open-sheet="menu" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="page-keys" data-show-on="/title" hidden><button class="key key-sm" id="k-like" aria-label="Add to my list" aria-pressed="false"></button></div>
+      <button class="key key-sm" data-route="/search" data-hide-on="/title /search" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></button>
+      <button class="key key-sm" data-route="/" data-show-on="/search" hidden aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 11 12 4l9 7M6 9.5V20h12V9.5"/></svg></button>
+    </nav>
+  </main>
+
+  <dialog class="sheet dropdown" id="menu" aria-label="Menu">
+    <div class="sheet-title">Go to</div>
+    <div class="menu" data-sections>
+      <button class="menu-item" data-route="/"><span class="mi-glyph" aria-hidden="true">■</span><span class="mi-label">Home</span></button>
+      <button class="menu-item" data-route="/browse"><span class="mi-glyph" aria-hidden="true">▤</span><span class="mi-label">Browse</span></button>
+      <button class="menu-item" data-route="/search"><span class="mi-glyph" aria-hidden="true">›</span><span class="mi-label">Search</span></button>
+      <button class="menu-item" data-route="/liked"><span class="mi-glyph" aria-hidden="true">♥</span><span class="mi-label">My list</span><span class="mi-count" id="liked-count" hidden></span></button>
+      <button class="menu-item" data-route="/settings"><span class="mi-glyph" aria-hidden="true">⚙</span><span class="mi-label">Settings</span></button>
+    </div>
+  </dialog>
+
+  <div class="toast-host" aria-live="polite"></div>
+  <script>
+/* ==========================================================================
+   PHOSPHOR v1.9 runtime: navigation, settings, sheets, toasts, confirm.
+   Spec: brand-guidelines.md section 7. Paste this whole file into a <script>
+   at the end of <body>, after the markup. No dependencies, no network.
+   Set a unique key per tool: <html data-app="tip-calc">
+   ========================================================================== */
+const PH = (() => {
+  const APP = document.documentElement.dataset.app || 'app';
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const subs = {};
+  const on = (key, fn) => ((subs[key] ||= []).push(fn), fn);
+  const emit = (key, v) => (subs[key] || []).concat(subs['*'] || []).forEach(fn => fn(v, key));
+
+  /* ---------- Settings store (localStorage, namespaced per tool) ---------- */
+  const defaults = { crt: true, rain: false };
+  const store = {
+    defaults,
+    get(k) {
+      try { const v = localStorage.getItem(APP + ':' + k); return v === null ? defaults[k] : JSON.parse(v); }
+      catch { return defaults[k]; }
+    },
+    set(k, v) {
+      try { localStorage.setItem(APP + ':' + k, JSON.stringify(v)); } catch {}
+      emit(k, v); syncSettings();
+    },
+    reset() {
+      Object.keys(defaults).forEach(k => { try { localStorage.removeItem(APP + ':' + k); } catch {} emit(k, defaults[k]); });
+      syncSettings();
+    },
+  };
+
+  /* Declarative binding:
+     <input type="checkbox" data-setting="crt">          toggle
+     <select data-setting="units">…</select>             select
+     <button class="menu-item" data-setting="units" data-value="kg">  pick-one row
+     <span data-setting-value="units"></span>           shows the current value's label */
+  function labelFor(key, val) {
+    const row = $(`[data-setting="${key}"][data-value="${CSS.escape(String(val))}"]`);
+    if (row) { const lab = row.querySelector('.mi-label') || row; return (lab.firstChild?.textContent || lab.textContent).trim(); }
+    const sel = $(`select[data-setting="${key}"]`);
+    if (sel) { const o = [...sel.options].find(o => o.value === String(val)); if (o) return o.textContent; }
+    if (typeof val === 'boolean') return val ? 'On' : 'Off';
+    return val ?? '—';
+  }
+  function syncSettings() {
+    $$('[data-setting]').forEach(el => {
+      const v = store.get(el.dataset.setting);
+      if (el.type === 'checkbox') el.checked = !!v;
+      else if ('value' in el.dataset) el.setAttribute('aria-checked', String(el.dataset.value === String(v)));
+      else if ('value' in el) el.value = v ?? '';
+    });
+    $$('[data-setting-value]').forEach(el => { el.textContent = labelFor(el.dataset.settingValue, store.get(el.dataset.settingValue)); });
+  }
+  document.addEventListener('change', e => {
+    const el = e.target.closest('[data-setting]');
+    if (!el || 'value' in el.dataset) return;
+    store.set(el.dataset.setting, el.type === 'checkbox' ? el.checked : el.value);
+  });
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-setting][data-value]');
+    if (!el) return;
+    store.set(el.dataset.setting, el.dataset.value);
+    if (el.hasAttribute('data-back-on-pick')) back();
+  });
+
+  /* Built-in display settings */
+  const applyDisplay = () => {
+    document.documentElement.classList.toggle('no-crt', !store.get('crt'));
+    $$('.rain').forEach(c => { c.hidden = !store.get('rain'); });
+  };
+  on('crt', applyDisplay); on('rain', applyDisplay);
+
+  /* ---------- Router: hash routes -> .view[data-route] ---------- */
+  /* <section class="view" data-route="/settings/display" data-title="Display"> */
+  const views = () => $$('.view');
+  const routeOf = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
+  const parentOf = r => r === '/' ? null : (r.split('/').slice(0, -1).join('/') || '/');
+  const depth = r => r === '/' ? 0 : r.split('/').length - 1;
+  const viewFor = r => views().find(v => v.dataset.route === r);
+  let current = null, pushedByUs = 0;
+
+  function render() {
+    let r = routeOf();
+    while (r && !viewFor(r)) r = parentOf(r);          // unknown route -> nearest ancestor
+    const view = viewFor(r || '/') || views()[0];
+    if (!view) return;
+    r = view.dataset.route;
+    const dir = current === null ? '' : depth(r) >= depth(current) ? 'enter-fwd' : 'enter-back';
+    views().forEach(v => v.classList.remove('is-active', 'enter-fwd', 'enter-back'));
+    view.classList.add('is-active');
+    if (dir && r !== current) view.classList.add(dir);
+    current = r;
+
+    $$('[data-view-title]').forEach(el => { el.textContent = view.dataset.title || el.dataset.viewTitle || ''; });
+    $$('[data-back]').forEach(el => { if (el.closest('.app-controls')) el.disabled = r === '/'; else el.hidden = r === '/'; });
+    $$('.app-controls [data-route]').forEach(el => { el.disabled = el.dataset.route === r; });
+    // per-page chrome: data-show-on="/game /other" shows only there (and below); data-hide-on hides
+    const onAny = (list, rr) => list.split(/\s+/).some(p => p === rr || (p !== '/' && rr.startsWith(p + '/')));
+    $$('[data-show-on]').forEach(el => { el.hidden = !onAny(el.dataset.showOn, r); });
+    $$('[data-hide-on]').forEach(el => { el.hidden = onAny(el.dataset.hideOn, r); });
+    // section links in the menu (<div class="menu" data-sections>) mark the current section
+    $$('[data-sections] [data-route]').forEach(t => {
+      const tr = t.dataset.route, sel = tr === '/' ? r === '/' : (r === tr || r.startsWith(tr + '/'));
+      if (sel) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+    });
+    // breadcrumb path: ~/settings/display
+    $$('[data-path]').forEach(el => {
+      el.textContent = '';
+      const parts = r === '/' ? [] : r.split('/').slice(1);
+      parts.forEach((_, i) => {
+        const pr = '/' + parts.slice(0, i + 1).join('/'), last = i === parts.length - 1;
+        const node = document.createElement(last ? 'span' : 'a');
+        node.textContent = ((viewFor(pr) && viewFor(pr).dataset.title) || parts[i]).toLowerCase();
+        if (!last) node.href = '#' + pr;
+        el.appendChild(node);
+      });
+    });
+    $$('.screen-body').forEach(b => { b.scrollTop = 0; });
+    emit('route', r);
+  }
+  function go(r) { if (r === current) return; pushedByUs++; location.hash = r; }
+  function back() {
+    const parent = parentOf(current || '/');
+    if (pushedByUs > 0 && history.length > 1) { pushedByUs--; history.back(); }
+    else if (parent !== null) location.replace('#' + parent);
+  }
+  addEventListener('hashchange', render);
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-back]'); if (b) { e.preventDefault(); back(); return; }
+    const n = e.target.closest('[data-route]:not(.view)');
+    if (n) { e.preventDefault(); go(n.dataset.route); return; }
+    if (e.target.closest('a[href^="#/"]')) pushedByUs++;
+  });
+
+  /* Home-screen apps fill the whole physical screen. iOS under-reports the viewport by the
+     status bar height there, so size the case from the screen itself. */
+  function fitApp() {
+    const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+    const st = document.documentElement.style;
+    if (!standalone) { st.removeProperty('--app-h'); st.removeProperty('--app-gap'); return; }
+    const land = matchMedia('(orientation: landscape)').matches;
+    const h = land ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
+    const full = Math.max(h, innerHeight);
+    st.setProperty('--app-h', full + 'px');
+    st.setProperty('--app-gap', (full - innerHeight) + 'px');   // how far the real bottom is below the reported one
+  }
+  fitApp(); addEventListener('resize', fitApp); addEventListener('orientationchange', () => setTimeout(fitApp, 300));
+
+  /* Keycap press animation: every tap visibly sinks the key, even a quick one */
+  document.addEventListener('pointerdown', e => {
+    const k = e.target.closest('.key'); if (!k || k.disabled) return;
+    k.classList.add('is-pressed'); const t = performance.now();
+    const up = () => { setTimeout(() => k.classList.remove('is-pressed'), Math.max(0, 130 - (performance.now() - t)));
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(n => k.removeEventListener(n, up)); };
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(n => k.addEventListener(n, up));
+  });
+
+  /* Edge-swipe back (installed web apps have no browser back gesture) */
+  let sx = null, sy = 0;
+  addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX < 24 ? t.clientX : null; sy = t.clientY; }, { passive: true });
+  addEventListener('touchend', e => {
+    if (sx === null || (current || '/') === '/') return; const t = e.changedTouches[0];
+    if (t.clientX - sx > 70 && Math.abs(t.clientY - sy) < 60 && !$('dialog[open]')) back();
+    sx = null;
+  }, { passive: true });
+
+  /* ---------- Sheets & dialogs ---------- */
+  /* <button data-open-sheet="menu">  opens <dialog class="sheet" id="menu">
+     [data-close] inside closes it; tapping the backdrop closes it; picking a link closes it. */
+  document.addEventListener('click', e => {
+    const o = e.target.closest('[data-open-sheet]');
+    if (o) { const d = document.getElementById(o.dataset.openSheet); if (d && !d.open) d.showModal(); return; }
+    const c = e.target.closest('[data-close]');
+    if (c) { c.closest('dialog')?.close(); return; }
+    if (e.target.tagName === 'DIALOG' && e.target.open) {          // backdrop tap
+      const r = e.target.getBoundingClientRect(), x = e.clientX, y = e.clientY;
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) e.target.close();
+    }
+    const inSheet = e.target.closest('dialog.sheet [data-route], dialog.sheet a, dialog.sheet [data-action]');
+    if (inSheet) inSheet.closest('dialog').close();
+  });
+
+  /* ---------- Toast ---------- */
+  function toast(msg, kind = '') {
+    let host = $('.toast-host');
+    if (!host) { host = document.createElement('div'); host.className = 'toast-host'; host.setAttribute('aria-live', 'polite'); document.body.appendChild(host); }
+    const t = document.createElement('div');
+    t.className = 'toast ' + kind; t.textContent = msg; host.appendChild(t);
+    const kill = () => t.remove();
+    t.addEventListener('click', kill);
+    if (kind !== 'error') setTimeout(kill, 2500);
+  }
+
+  /* ---------- Confirm: await PH.confirm('Delete all?', {ok: 'Delete', danger: true}) ---------- */
+  function confirm(message, { title = 'Confirm', ok = 'OK', cancel = 'Cancel', danger = false } = {}) {
+    return new Promise(res => {
+      const d = document.createElement('dialog'); d.className = 'dialog';
+      d.innerHTML = `<h2></h2><p></p><div class="actions"><button class="btn btn-ghost" value="0"></button><button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" value="1"></button></div>`;
+      d.querySelector('h2').textContent = title; d.querySelector('p').textContent = message;
+      const [c, k] = d.querySelectorAll('button'); c.textContent = cancel; k.textContent = ok;
+      d.addEventListener('click', e => { const b = e.target.closest('button'); if (b) d.close(b.value); });
+      d.addEventListener('close', () => { res(d.returnValue === '1'); d.remove(); });
+      document.body.appendChild(d); d.showModal(); c.focus();
+    });
+  }
+
+  /* ---------- Export: share sheet on iOS, download elsewhere ---------- */
+  async function exportFile(name, text, type = 'application/json') {
+    const file = new File([text], name, { type });
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; } } catch (e) { if (e.name === 'AbortError') return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  /* ---------- Boot ---------- */
+  function init(extraDefaults = {}) {
+    Object.assign(defaults, extraDefaults);
+    syncSettings(); applyDisplay(); render();
+  }
+  return { init, store, on, go, back, toast, confirm, exportFile, sync: syncSettings };
+})();
+
+  </script>
+  <script>
+/* What to Watch. One home page for Floyd's streaming services (US): popular and new titles filtered to
+   the services they have, "For you" picks built from titles they ♥, browse, search, and a title page
+   that opens the service. Listings and availability come from the TMDB API (availability is JustWatch
+   data); Floyd pastes their own free TMDB key in Settings. Everything stays in this phone's storage. */
+PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
+          homeSvc: 'all', brSvc: 'all', brType: 'movie', brGenre: '', brSort: 'popular' });
+(() => {
+  const $ = s => document.querySelector(s);
+  const KEY = 'what-to-watch:data:';   // every tool shares bgriffie.github.io, so keys are prefixed
+  const CKEY = 'what-to-watch:c:';     // cached TMDB answers (trimmed), pruned to the newest 90
+  const load = (k, d) => { try { const v = localStorage.getItem(KEY + k); return v === null ? d : JSON.parse(v); } catch { return d; } };
+  const save = (k, v) => { try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch {} };
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const HOUR = 36e5, DAY = 24 * HOUR;
+  const REGION = 'US';
+
+  /* ---------- Services ---------- */
+  // Provider ids are looked up by name from TMDB at runtime; these are the fallbacks.
+  const SERVICES = [
+    { id: 'hulu', name: 'Hulu', short: 'Hulu', match: /^hulu$/i, ids: [15],
+      open: t => 'https://www.hulu.com/search?q=' + encodeURIComponent(t) },
+    { id: 'prime', name: 'Prime Video', short: 'Prime', match: /^amazon prime video( with ads)?$/i, ids: [9, 2100],
+      open: t => 'https://www.primevideo.com/search/ref=atv_nb_sr?phrase=' + encodeURIComponent(t) },
+    { id: 'peacock', name: 'Peacock', short: 'Peacock', match: /^peacock/i, ids: [386, 387],
+      open: t => 'https://www.peacocktv.com/watch/search?q=' + encodeURIComponent(t) },
+  ];
+  const SVC = Object.fromEntries(SERVICES.map(s => [s.id, s]));
+  const active = () => SERVICES.filter(s => PH.store.get('svc_' + s.id));
+  const tagHtml = ids => ids.map(id => `<span class="tag s-${id}">${SVC[id].short}</span>`).join('');
+
+  /* ---------- TMDB ---------- */
+  let apiKey = load('key', '');
+  const isToken = k => k.length > 60;   // v4 Read Access Token (JWT) vs v3 API key
+  const mem = new Map();
+
+  function cacheGet(url) {
+    if (mem.has(url)) return mem.get(url);
+    try { const v = JSON.parse(localStorage.getItem(CKEY + url)); if (v) mem.set(url, v); return v; } catch { return null; }
+  }
+  function cachePut(url, d, persist) {
+    const v = { t: Date.now(), d };
+    mem.set(url, v);
+    if (!persist) return;
+    try { localStorage.setItem(CKEY + url, JSON.stringify(v)); } catch { prune(30); }
+    if (Math.random() < .15) prune(90);
+  }
+  function prune(keep) {
+    const ks = [];
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(CKEY)) ks.push(k); }
+    if (ks.length <= keep) return;
+    const age = k => { try { return JSON.parse(localStorage.getItem(k)).t || 0; } catch { return 0; } };
+    ks.map(k => [age(k), k]).sort((a, b) => b[0] - a[0]).slice(keep).forEach(([, k]) => localStorage.removeItem(k));
+  }
+  function clearCache() {
+    mem.clear(); provMap = {};
+    const ks = [];
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(CKEY)) ks.push(k); }
+    ks.forEach(k => localStorage.removeItem(k));
+    save('prov', {});
+  }
+
+  // GET a TMDB path. `trim` shrinks the answer before it is cached; `persist` keeps it across launches.
+  // If TMDB can't be reached, a stale cached answer is used instead.
+  async function tmdb(path, params = {}, { ttl = 6 * HOUR, persist = true, trim = d => d } = {}) {
+    if (!apiKey) throw new Error('Add your TMDB key in Settings.');
+    const qs = new URLSearchParams(params).toString();
+    const url = path + (qs ? '?' + qs : '');
+    const hit = cacheGet(url);
+    if (hit && Date.now() - hit.t < ttl) return hit.d;
+    let r;
+    try {
+      const full = 'https://api.themoviedb.org/3' + url + (isToken(apiKey) ? '' : (qs ? '&' : '?') + 'api_key=' + encodeURIComponent(apiKey));
+      r = await fetch(full, { headers: isToken(apiKey) ? { Authorization: 'Bearer ' + apiKey, accept: 'application/json' } : { accept: 'application/json' } });
+    } catch {
+      if (hit) return hit.d;
+      throw new Error(navigator.onLine === false ? 'No internet connection.' : 'Can\'t reach TMDB right now.');
+    }
+    if (r.status === 401) throw new Error('TMDB rejected the key. Check it in Settings.');
+    if (r.status === 404) throw new Error('TMDB doesn\'t have that title.');
+    if (!r.ok) { if (hit) return hit.d; throw new Error('TMDB error ' + r.status + '.'); }
+    const d = trim(await r.json());
+    cachePut(url, d, persist);
+    return d;
+  }
+
+  // A film or show, trimmed to what the cards need
+  const norm = (r, type) => ({
+    id: r.id, type: r.media_type || type, title: r.title || r.name || 'Untitled',
+    year: (r.release_date || r.first_air_date || '').slice(0, 4), poster: r.poster_path || '',
+    pop: r.popularity || 0, vote: r.vote_average || 0,
+  });
+  const ikey = it => it.type + '-' + it.id;
+  const known = new Map();   // ikey -> item, so a tapped card opens instantly
+  const trimList = d => ({ results: (d.results || []).filter(r => !r.adult && (r.media_type ? /^(movie|tv)$/.test(r.media_type) : true)).map(r => norm(r, r.media_type)), total: d.total_pages || 1 });
+
+  // Provider ids per service, by name from TMDB (cached a week)
+  let provIds = null;
+  async function providerIds() {
+    if (provIds) return provIds;
+    const ids = Object.fromEntries(SERVICES.map(s => [s.id, new Set(s.ids)]));
+    try {
+      for (const type of ['movie', 'tv']) {
+        const d = await tmdb('/watch/providers/' + type, { watch_region: REGION }, { ttl: 7 * DAY,
+          trim: d => ({ results: (d.results || []).map(p => ({ id: p.provider_id, name: p.provider_name })) }) });
+        d.results.forEach(p => SERVICES.forEach(s => { if (s.match.test(p.name)) ids[s.id].add(p.id); }));
+      }
+    } catch (e) { if (/key/.test(e.message)) throw e; }
+    provIds = Object.fromEntries(Object.entries(ids).map(([k, v]) => [k, [...v]]));
+    return provIds;
+  }
+  const svcOfProvider = (pid, ids) => SERVICES.find(s => ids[s.id].includes(pid))?.id;
+
+  // Which of the services a title is on (cached 3 days per title)
+  let provMap = load('prov', {});
+  let provDirty = 0;
+  function saveProv() {
+    clearTimeout(provDirty);
+    provDirty = setTimeout(() => {
+      const e = Object.entries(provMap);
+      if (e.length > 700) provMap = Object.fromEntries(e.sort((a, b) => b[1].t - a[1].t).slice(0, 500));
+      save('prov', provMap);
+    }, 400);
+  }
+  function parseProviders(us, ids) {
+    const svcs = new Set(), others = new Set();
+    ['flatrate', 'free', 'ads'].forEach(k => (us?.[k] || []).forEach(p => {
+      const s = svcOfProvider(p.provider_id, ids);
+      if (s) svcs.add(s); else others.add(p.provider_name);
+    }));
+    return { s: [...svcs], o: [...others].slice(0, 4), link: us?.link || '' };
+  }
+  async function servicesOf(it) {
+    const k = ikey(it), c = provMap[k];
+    if (c && Date.now() - c.t < 3 * DAY) return c;
+    const ids = await providerIds();
+    const d = await tmdb(`/${it.type}/${it.id}/watch/providers`, {}, { persist: false });
+    const v = { t: Date.now(), ...parseProviders(d.results?.[REGION], ids) };
+    provMap[k] = v; saveProv();
+    return v;
+  }
+  // Look up many titles, a few at a time
+  async function lookupAll(items, onEach) {
+    let i = 0;
+    const worker = async () => { while (i < items.length) { const it = items[i++]; try { onEach(it, await servicesOf(it)); } catch { onEach(it, null); } } };
+    await Promise.all([1, 2, 3, 4, 5].map(worker));
+  }
+
+  // Discover titles on one service
+  const daysAgo = n => new Date(Date.now() - n * DAY).toISOString().slice(0, 10);
+  async function discover(svcId, type, { sort = 'popular', genre = '', page = 1 } = {}) {
+    const ids = await providerIds();
+    const p = { watch_region: REGION, with_watch_providers: ids[svcId].join('|'),
+                with_watch_monetization_types: 'flatrate|free|ads', include_adult: 'false', page };
+    if (genre) p.with_genres = genre;
+    const date = type === 'movie' ? 'primary_release_date' : 'first_air_date';
+    if (sort === 'popular') { p.sort_by = 'popularity.desc'; p['vote_count.gte'] = 10; }
+    if (sort === 'top') { p.sort_by = 'vote_average.desc'; p['vote_count.gte'] = type === 'movie' ? 500 : 200; }
+    if (sort === 'new') { p.sort_by = 'popularity.desc'; p[date + '.gte'] = daysAgo(150); p[date + '.lte'] = daysAgo(0); }
+    const d = await tmdb('/discover/' + type, p, { trim: d => trimList({ ...d, results: (d.results || []).map(r => ({ ...r, media_type: type })) }) });
+    d.results.forEach(it => mark(it, svcId));
+    return d;
+  }
+  // Remember that discover found a title on a service (cheap partial answer until a full lookup)
+  const seenOn = {};   // ikey -> Set of services seen through discover
+  function mark(it, svcId) { (seenOn[ikey(it)] ||= new Set()).add(svcId); }
+  const svcsKnown = it => { const c = provMap[ikey(it)]; return c ? c.s : seenOn[ikey(it)] ? [...seenOn[ikey(it)]] : null; };
+
+  // Merge discover pages from several services, most popular first
+  async function discoverMany(svcIds, type, opts) {
+    const all = await Promise.all(svcIds.map(s => discover(s, type, opts).catch(e => ({ err: e, results: [], total: 0 }))));
+    const err = all.find(a => a.err);
+    if (err && all.every(a => a.err)) throw err.err;
+    const byKey = new Map();
+    all.forEach(a => a.results.forEach(it => { if (!byKey.has(ikey(it))) byKey.set(ikey(it), it); }));
+    let list = [...byKey.values()];
+    if (opts?.sort === 'top') list.sort((a, b) => b.vote - a.vote); else list.sort((a, b) => b.pop - a.pop);
+    return { results: list, total: Math.max(...all.map(a => a.total || 0)) };
+  }
+
+  /* ---------- Likes (♥) ---------- */
+  let likes = load('likes', []);   // newest first: { id, type, title, year, poster, at }
+  const isLiked = it => likes.some(l => l.id === it.id && l.type === it.type);
+  function toggleLike(it) {
+    if (isLiked(it)) likes = likes.filter(l => !(l.id === it.id && l.type === it.type));
+    else likes.unshift({ id: it.id, type: it.type, title: it.title, year: it.year, poster: it.poster, at: Date.now() });
+    save('likes', likes); forYouStale = true; likedCount();
+    return isLiked(it);
+  }
+  function likedCount() { const c = $('#liked-count'); c.textContent = likes.length; c.hidden = !likes.length; }
+
+  /* ---------- Cards ---------- */
+  const HEART = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20.5S3.5 15.3 3.5 9.3A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 8.5 2.3c0 6-8.5 11.2-8.5 11.2z"/></svg>';
+  const HEART_O = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 20.5S3.5 15.3 3.5 9.3A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 8.5 2.3c0 6-8.5 11.2-8.5 11.2z"/></svg>';
+  const img = (path, w) => path && PH.store.get('posters') ? `<img src="https://image.tmdb.org/t/p/${w}${esc(path)}" alt="" loading="lazy" onerror="this.remove()">` : '';
+  function card(it, svcFilter) {
+    known.set(ikey(it), it);
+    const s = svcsKnown(it), mine = s && s.filter(x => PH.store.get('svc_' + x));
+    const off = s && !mine.length && provMap[ikey(it)];
+    return `<button class="card${off ? ' off' : ''}" data-open="${ikey(it)}" aria-label="${esc(it.title)}">
+      <div class="poster"><span class="ph">${esc(it.title)}</span>${img(it.poster, 'w185')}${isLiked(it) ? `<span class="heart">${HEART}</span>` : ''}</div>
+      <div class="t">${esc(it.title)}${it.year ? ` <span class="t-dim">${it.year}</span>` : ''}</div>
+      <div class="tags">${mine ? tagHtml(mine) : ''}${off ? '<span class="tag s-none">Not yours</span>' : ''}</div></button>`;
+  }
+  // After a lookup, refresh that title's tags wherever its card is showing
+  function retag(it, v) {
+    document.querySelectorAll(`[data-open="${ikey(it)}"]`).forEach(c => {
+      const mine = (v?.s || []).filter(x => PH.store.get('svc_' + x));
+      c.classList.toggle('off', !!v && !mine.length);
+      c.querySelector('.tags').innerHTML = v ? (mine.length ? tagHtml(mine) : '<span class="tag s-none">Not yours</span>') : '';
+    });
+  }
+  document.addEventListener('click', e => {
+    const c = e.target.closest('[data-open]');
+    if (c) PH.go('/title/' + c.dataset.open);
+  });
+
+  function segButtons(el, setting, withAll) {
+    const opts = (withAll ? [{ id: 'all', short: 'All' }] : []).concat(active());
+    let cur = PH.store.get(setting);
+    if (!opts.some(o => o.id === cur)) cur = opts[0]?.id || 'all';
+    el.innerHTML = opts.map(o => `<button type="button" role="radio" aria-checked="${o.id === cur}" data-v="${o.id}">${o.short}</button>`).join('');
+    el.onclick = e => {
+      const b = e.target.closest('button[data-v]'); if (!b) return;
+      PH.store.set(setting, b.dataset.v);
+      el.querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', x === b));
+      el.dispatchEvent(new Event('change'));
+    };
+    return cur;
+  }
+  const svcList = sel => sel === 'all' ? active().map(s => s.id) : [sel];
+  const status = (el, msg, err) => { el.textContent = msg || ''; el.hidden = !msg; el.classList.toggle('err', !!err); };
+
+  /* ---------- Home ---------- */
+  let forYouStale = true, homeToken = 0;
+  function renderHome() {
+    const ready = !!apiKey;
+    $('#home-setup').hidden = ready; $('#home-main').hidden = !ready;
+    if (!ready) return;
+    if (!active().length) {
+      $('#home-svc').innerHTML = '';
+      $('#home-rows').innerHTML = '<p class="status">No services switched on. Pick yours in Settings › My services.</p>';
+      return;
+    }
+    const sel = segButtons($('#home-svc'), 'homeSvc', active().length > 1);
+    const svcs = svcList(sel), token = ++homeToken;
+    const rows = [
+      likes.length && { id: 'foryou', title: 'For you', hint: 'from your ♥', load: () => forYou(svcs) },
+      { id: 'tv', title: 'Popular shows', load: () => discoverMany(svcs, 'tv', { sort: 'popular' }) },
+      { id: 'movie', title: 'Popular films', load: () => discoverMany(svcs, 'movie', { sort: 'popular' }) },
+      { id: 'new', title: 'New this season', load: async () => {
+        const [a, b] = await Promise.all([discoverMany(svcs, 'tv', { sort: 'new' }), discoverMany(svcs, 'movie', { sort: 'new' })]);
+        return { results: [...a.results, ...b.results].sort((x, y) => y.pop - x.pop) };
+      } },
+      { id: 'top', title: 'Top rated films', load: () => discoverMany(svcs, 'movie', { sort: 'top' }) },
+    ].filter(Boolean);
+    if (!likes.length) rows.splice(2, 0, { id: 'hint', title: 'For you', text: 'Tap ♥ on titles you like and picks show up here.' });
+    $('#home-rows').innerHTML = rows.map(r => `<section class="shelf" id="row-${r.id}"><div class="shelf-h"><h2>${r.title}</h2>${r.hint ? `<span class="hint">${r.hint}</span>` : ''}</div>
+      <div class="strip">${r.text ? '' : '<p class="strip-empty">Loading…</p>'}</div>${r.text ? `<p class="strip-empty">${r.text}</p>` : ''}</section>`).join('');
+    rows.filter(r => r.load).forEach(async r => {
+      const strip = document.querySelector(`#row-${r.id} .strip`);
+      try {
+        const d = await r.load();
+        if (token !== homeToken) return;
+        const list = d.results.slice(0, 20);
+        strip.innerHTML = list.length ? list.map(it => card(it)).join('') : `<p class="strip-empty">${r.id === 'foryou' ? 'No picks on your services yet. ♥ a few more titles.' : 'Nothing here right now.'}</p>`;
+      } catch (e) {
+        if (token !== homeToken) return;
+        strip.innerHTML = `<p class="strip-empty" style="color:var(--amber)">${esc(e.message)}</p>`;
+      }
+    });
+  }
+
+  // "For you": TMDB recommendations for recent ♥ titles, scored by how often and how high they come up,
+  // then kept only if they're on the chosen services.
+  let forYouCache = null;
+  async function forYou(svcs) {
+    const sig = svcs.join(',');
+    if (!forYouStale && forYouCache?.sig === sig) return forYouCache.d;
+    const seeds = likes.slice(0, 10);
+    const lists = await Promise.all(seeds.map(l => tmdb(`/${l.type}/${l.id}/recommendations`, {}, { ttl: 2 * DAY,
+      trim: d => trimList({ ...d, results: (d.results || []).map(r => ({ ...r, media_type: r.media_type || l.type })) }) }).catch(() => ({ results: [] }))));
+    const score = new Map();
+    lists.forEach(l => l.results.forEach((it, i) => {
+      if (isLiked(it)) return;
+      const k = ikey(it), cur = score.get(k) || { it, s: 0 };
+      cur.s += 1 + (20 - i) / 20; score.set(k, cur);
+    }));
+    const cands = [...score.values()].sort((a, b) => b.s - a.s || b.it.pop - a.it.pop).slice(0, 45).map(x => x.it);
+    const keep = new Set();
+    await lookupAll(cands, (it, v) => { if (v && v.s.some(s => svcs.includes(s))) keep.add(ikey(it)); });
+    const d = { results: cands.filter(it => keep.has(ikey(it))) };
+    forYouCache = { sig, d }; forYouStale = false;
+    return d;
+  }
+
+  /* ---------- Browse ---------- */
+  let brPage = 1, brTotal = 1, brToken = 0;
+  async function genres(type) {
+    const d = await tmdb('/genre/' + type + '/list', {}, { ttl: 30 * DAY, trim: d => d.genres || [] });
+    return d;
+  }
+  async function renderBrowseFilters() {
+    segButtons($('#br-svc'), 'brSvc', active().length > 1);
+    $('#br-type').value = PH.store.get('brType');
+    $('#br-sort').value = PH.store.get('brSort');
+    try {
+      const g = await genres(PH.store.get('brType'));
+      $('#br-genre').innerHTML = '<option value="">All genres</option>' + g.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('');
+      $('#br-genre').value = PH.store.get('brGenre');
+      if ($('#br-genre').value !== String(PH.store.get('brGenre'))) PH.store.set('brGenre', '');
+    } catch {}
+  }
+  async function loadBrowse(reset) {
+    if (!apiKey) { $('#br-grid').innerHTML = ''; status($('#br-status'), 'Add your TMDB key in Settings first.', true); return; }
+    if (!active().length) { $('#br-grid').innerHTML = ''; status($('#br-status'), 'No services switched on.', true); return; }
+    if (reset) { brPage = 1; $('#br-grid').innerHTML = ''; }
+    const token = ++brToken;
+    status($('#br-status'), 'Loading…'); $('#br-more').hidden = true;
+    try {
+      const d = await discoverMany(svcList(PH.store.get('brSvc')), PH.store.get('brType'),
+        { sort: PH.store.get('brSort'), genre: PH.store.get('brGenre'), page: brPage });
+      if (token !== brToken) return;
+      brTotal = d.total;
+      const have = new Set([...document.querySelectorAll('#br-grid [data-open]')].map(c => c.dataset.open));
+      $('#br-grid').insertAdjacentHTML('beforeend', d.results.filter(it => !have.has(ikey(it))).map(it => card(it)).join(''));
+      status($('#br-status'), $('#br-grid').children.length ? '' : 'Nothing matches.');
+      $('#br-more').hidden = brPage >= Math.min(brTotal, 20);
+    } catch (e) { if (token === brToken) status($('#br-status'), e.message, true); }
+  }
+  $('#br-svc').addEventListener('change', () => loadBrowse(true));
+  $('#br-type').onchange = async e => { PH.store.set('brType', e.target.value); PH.store.set('brGenre', ''); await renderBrowseFilters(); loadBrowse(true); };
+  $('#br-genre').onchange = e => { PH.store.set('brGenre', e.target.value); loadBrowse(true); };
+  $('#br-sort').onchange = e => { PH.store.set('brSort', e.target.value); loadBrowse(true); };
+  $('#br-more').onclick = () => { brPage++; loadBrowse(false); };
+
+  /* ---------- Search ---------- */
+  let qTimer = 0, qToken = 0, lastQ = '';
+  async function runSearch() {
+    const q = $('#q').value.trim();
+    if (q === lastQ) return; lastQ = q;
+    const token = ++qToken;
+    if (!q) { $('#q-grid').innerHTML = ''; status($('#q-status'), ''); return; }
+    if (!apiKey) { status($('#q-status'), 'Add your TMDB key in Settings first.', true); return; }
+    status($('#q-status'), 'Searching…');
+    try {
+      const d = await tmdb('/search/multi', { query: q, include_adult: 'false' }, { persist: false, trim: trimList });
+      if (token !== qToken) return;
+      const list = d.results.filter(it => it.type === 'movie' || it.type === 'tv').slice(0, 24);
+      $('#q-grid').innerHTML = list.map(it => card(it)).join('');
+      status($('#q-status'), list.length ? '' : 'No matches.');
+      lookupAll(list, retag);
+    } catch (e) { if (token === qToken) status($('#q-status'), e.message, true); }
+  }
+  $('#q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(runSearch, 450); });
+  $('#q-form').onsubmit = e => { e.preventDefault(); clearTimeout(qTimer); runSearch(); $('#q').blur(); };
+
+  /* ---------- My list ---------- */
+  function renderLiked() {
+    $('#liked-grid').innerHTML = likes.map(l => card(l)).join('');
+    $('#liked-empty').hidden = !!likes.length;
+  }
+
+  /* ---------- Title page ---------- */
+  let openItem = null, ttToken = 0;
+  function likeKey() {
+    const k = $('#k-like'), on = !!openItem && isLiked(openItem);
+    k.innerHTML = on ? HEART : HEART_O;
+    k.setAttribute('aria-pressed', on); k.setAttribute('aria-label', on ? 'Remove from my list' : 'Add to my list');
+    k.style.color = on ? 'var(--ink-red)' : '';
+    const b = $('#tt-like');
+    if (b) { b.setAttribute('aria-pressed', on); b.innerHTML = (on ? HEART : HEART_O).replace('<svg', '<svg class="ico"') + (on ? ' On my list' : ' Add to my list'); }
+  }
+  function like() {
+    if (!openItem) return;
+    const on = toggleLike(openItem);
+    likeKey(); PH.toast(on ? 'Added to my list.' : 'Removed from my list.');
+  }
+  $('#k-like').onclick = like;
+
+  async function renderTitle() {
+    const m = /^#\/title\/(movie|tv)-(\d+)/.exec(location.hash);
+    const box = $('#tt');
+    if (!m) { box.innerHTML = '<p class="status">Pick a title first.</p>'; openItem = null; likeKey(); return; }
+    const type = m[1], id = +m[2], token = ++ttToken;
+    const base = known.get(type + '-' + id) || likes.find(l => l.id === id && l.type === type) || { id, type, title: '', year: '', poster: '' };
+    openItem = { ...base };
+    box.innerHTML = titleHtml(openItem, null);
+    likeKey();
+    $('.screen-body').scrollTop = 0;
+    if (!apiKey) return;
+    try {
+      const [d, ids] = await Promise.all([
+        tmdb(`/${type}/${id}`, { append_to_response: 'watch/providers,recommendations' }, { ttl: DAY, trim: d => ({
+          ...norm(d, type), overview: d.overview || '', runtime: d.runtime || (d.episode_run_time || [])[0] || 0,
+          seasons: d.number_of_seasons || 0, genres: (d.genres || []).map(g => g.name).slice(0, 3),
+          rating: d.vote_average || 0, prov: d['watch/providers']?.results?.[REGION] || null,
+          recs: trimList({ results: (d.recommendations?.results || []).map(r => ({ ...r, media_type: r.media_type || type })) }).results.slice(0, 16) }) }),
+        providerIds()]);
+      if (token !== ttToken) return;
+      const v = { t: Date.now(), ...parseProviders(d.prov, ids) };
+      provMap[ikey(d)] = v; saveProv();
+      openItem = { id: d.id, type: d.type, title: d.title, year: d.year, poster: d.poster };
+      box.innerHTML = titleHtml(d, v);
+      likeKey();
+      lookupAll(d.recs, retag);
+    } catch (e) {
+      if (token === ttToken) box.insertAdjacentHTML('beforeend', `<p class="status err">${esc(e.message)}</p>`);
+    }
+  }
+  function titleHtml(d, v) {
+    const facts = [d.year, d.type === 'tv' ? 'Show' : 'Film',
+      d.type === 'tv' ? (d.seasons ? d.seasons + (d.seasons > 1 ? ' seasons' : ' season') : '') : (d.runtime ? Math.floor(d.runtime / 60) + 'h ' + d.runtime % 60 + 'm' : ''),
+      d.rating ? '★ ' + d.rating.toFixed(1) : ''].filter(Boolean).join(' · ');
+    const mine = v ? v.s.filter(x => PH.store.get('svc_' + x)) : [];
+    let watch = '';
+    if (v) {
+      watch = mine.map(s => `<a class="btn btn-block${s === mine[0] ? ' btn-primary' : ''}" href="${esc(SVC[s].open(d.title))}" target="_blank" rel="noopener">Watch on ${SVC[s].name}</a>`).join('');
+      if (!mine.length) watch = `<p class="status err" style="margin:0">Not on your services right now.${v.o.length ? ' On ' + esc(v.o.join(', ')) + '.' : ''}</p>`;
+      if (v.link) watch += `<a class="btn btn-ghost btn-block" href="${esc(v.link)}" target="_blank" rel="noopener">All ways to watch</a>`;
+    } else watch = '<p class="status" style="margin:0">Checking your services…</p>';
+    const recs = d.recs || [];
+    return `<div class="ttl"><div class="poster"><span class="ph">${esc(d.title)}</span>${img(d.poster, 'w342')}</div>
+        <div><h1>${esc(d.title) || '…'}</h1><div class="facts">${esc(facts)}${d.genres?.length ? '<br>' + esc(d.genres.join(', ')) : ''}</div></div></div>
+      ${d.overview ? `<p class="overview">${esc(d.overview)}</p>` : ''}
+      <div class="watch">${watch}<button class="btn btn-block like-btn" id="tt-like" aria-pressed="false" type="button"></button></div>
+      ${recs.length ? `<section class="shelf"><div class="shelf-h"><h2>More like this</h2></div><div class="strip">${recs.map(it => card(it)).join('')}</div></section>` : ''}`;
+  }
+  document.addEventListener('click', e => { if (e.target.closest('#tt-like')) like(); });
+
+  /* ---------- Settings ---------- */
+  function renderSettings() {
+    $('#key-state').textContent = apiKey ? 'Set ··' + apiKey.slice(-4) : 'Not set';
+    $('#svc-state').textContent = active().map(s => s.short).join(', ') || 'None';
+  }
+  $('#key-save').onclick = async () => {
+    const k = $('#key-in').value.trim();
+    if (!k) { $('#key-in').setAttribute('aria-invalid', 'true'); $('#key-hint').textContent = 'Paste the key first.'; return; }
+    const old = apiKey; apiKey = k; $('#key-save').disabled = true; $('#key-hint').textContent = 'Testing…';
+    try {
+      await tmdb('/configuration', {}, { persist: false, ttl: 0 });
+      save('key', k); clearCache(); provIds = null; forYouStale = true;
+      $('#key-in').value = ''; $('#key-in').removeAttribute('aria-invalid'); $('#key-hint').textContent = 'Saved on this phone only.';
+      PH.toast('Key works. Loading listings.'); PH.go('/');
+    } catch (e) {
+      apiKey = old; $('#key-in').setAttribute('aria-invalid', 'true'); $('#key-hint').textContent = e.message;
+    } finally { $('#key-save').disabled = false; }
+  };
+  $('#key-form').onsubmit = e => { e.preventDefault(); $('#key-save').click(); };
+  ['svc_hulu', 'svc_prime', 'svc_peacock'].forEach(k => PH.on(k, () => { forYouStale = true; renderSettings(); }));
+  PH.on('posters', () => { forYouStale = true; });
+  $('#export').onclick = () => PH.exportFile('what-to-watch-list.json', JSON.stringify({ app: 'what-to-watch', version: 1, likes }, null, 2));
+  $('#clear-cache').onclick = () => { clearCache(); provIds = null; forYouStale = true; PH.toast('Listings will refresh.'); };
+  $('#erase').onclick = async () => {
+    if (await PH.confirm('Erase your key, your list and saved listings? This can\'t be undone.', { title: 'Erase data', ok: 'Erase', danger: true })) {
+      clearCache(); likes = []; apiKey = ''; provIds = null;
+      ['key', 'likes', 'prov'].forEach(k => localStorage.removeItem(KEY + k));
+      PH.store.reset(); likedCount(); renderSettings(); PH.toast('All data erased.', 'warn');
+    }
+  };
+
+  /* ---------- Routing ---------- */
+  function onRoute(r) {
+    if (r === '/') renderHome();
+    else if (r === '/browse') { renderBrowseFilters().then(() => { if (!$('#br-grid').children.length) loadBrowse(true); }); }
+    else if (r === '/search') { if (!$('#q').value) setTimeout(() => $('#q').focus(), 50); }
+    else if (r === '/liked') renderLiked();
+    else if (r === '/title') renderTitle();
+    else if (r.startsWith('/settings')) { renderSettings(); }
+  }
+  let lastRoute = null;
+  PH.on('route', r => {
+    // Coming back to Home or Browse keeps the page as it was unless something changed
+    if (r === '/' && lastRoute && lastRoute !== '/' && !forYouStale && $('#home-rows').children.length && homeSig === sig()) { lastRoute = r; return; }
+    if (r === '/') homeSig = sig();
+    lastRoute = r; onRoute(r);
+  });
+  let homeSig = '';
+  const sig = () => [apiKey, PH.store.get('homeSvc'), PH.store.get('posters'), active().map(s => s.id).join()].join('|');
+  $('#home-svc').addEventListener('change', () => { homeSig = sig(); renderHome(); });
+  ['svc_hulu', 'svc_prime', 'svc_peacock', 'posters'].forEach(k => PH.on(k, () => { $('#br-grid').innerHTML = ''; }));
+
+  likedCount(); renderSettings(); homeSig = sig();
+  onRoute((location.hash.replace(/^#/, '') || '/').startsWith('/title') ? '/title' : (document.querySelector('.view.is-active')?.dataset.route || '/'));
+  /* service worker: provided by Phosphor OS */
+})();
+
+  </script>
+<script>
+/* Phosphor OS embed shim: injected at the end of each bundled app's <body>.
+   The app runs inside the OS's screen in an iframe, keeps its own data (same origin,
+   same localStorage keys as the standalone version), and is driven by the OS's three keys. */
+(() => {
+  const os = window.parent !== window && window.parent.PhosphorOS;
+  if (!os || typeof PH === 'undefined') return;
+  const route = () => (location.hash.replace(/^#/, '') || '/').replace(/\/+$/, '') || '/';
+  const atHome = () => route() === '/';
+  const exit = () => os.closeApp();
+  const openDialog = () => document.querySelector('dialog[open]');
+  // The app's own page key (Pause, Undo, Add…), shown on the OS's right key when Settings allows
+  const keyEl = () => [...document.querySelectorAll('.app-controls .page-keys:not([hidden]) button')].find(b => !b.disabled);
+
+  window.OSChild = {
+    atHome: () => atHome() && !openDialog(),
+    back: () => { const d = openDialog(); if (d) d.close(); else PH.back(); },
+    route,
+    home: () => { document.querySelectorAll('dialog[open]').forEach(d => d.close()); location.replace(location.href.split('#')[0] + '#/'); },
+    openMenu: () => { const m = document.getElementById('menu'); if (!m) return; if (m.open) m.close(); else m.showModal(); },
+    pageKey: () => { const b = keyEl(); if (!b) return null;
+      return { text: b.textContent.trim(), svg: b.querySelector('svg')?.outerHTML || '', label: b.getAttribute('aria-label') || b.textContent.trim(), pressed: b.getAttribute('aria-pressed') }; },
+    pressKey: () => { const b = keyEl(); if (b) b.click(); },
+    // An app can define window.osBeforeClose() (returning a promise) to tidy up before the OS closes it
+    prepareClose: () => typeof window.osBeforeClose === 'function' ? window.osBeforeClose() : null,
+  };
+
+  PH.on('route', () => { os.saveRoute(route()); os.keysChanged(); });
+  // Pause ↔ play and similar key changes happen without a route change
+  const ctl = document.querySelector('.app-controls');
+  if (ctl) new MutationObserver(() => os.keysChanged()).observe(ctl, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden', 'aria-pressed', 'disabled'] });
+
+  // The app's ~/path line opens the OS's terminal menu, as it does on the OS's own pages
+  const path = document.querySelector('.screen > .path');
+  if (path && os.openTerm) {
+    const cmd = document.createElement('button');
+    cmd.className = 'os-path-cmd'; cmd.setAttribute('aria-label', 'Open the menu');
+    cmd.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M4 7l8 8 8-8"/></svg>menu';
+    cmd.addEventListener('click', () => os.openTerm());
+    path.after(cmd);
+    path.addEventListener('click', e => { if (!e.target.closest('a')) os.openTerm(); });
+  }
+
+  // Edge swipe right on the app's home page returns to the OS
+  let sx = null, sy = 0;
+  addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX < 24 ? t.clientX : null; sy = t.clientY; }, { passive: true });
+  addEventListener('touchend', e => {
+    if (sx === null || !atHome() || openDialog()) return;
+    const t = e.changedTouches[0];
+    if (t.clientX - sx > 70 && Math.abs(t.clientY - sy) < 60) exit();
+    sx = null;
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

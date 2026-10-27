@@ -6,7 +6,7 @@ apps/<id>/     = Floyd's other PHOSPHOR tools, bundled so they open inside the O
 import os, re
 B = '/mnt/project-files/brand/'
 T = '/mnt/project-files/tools/'
-APPS = {'arcade': 'phosphor-arcade', 'workout': 'gymlog', 'kitchen': 'kitchen-log', 'lights': 'kasa-lights', 'pc': 'pc-remote', 'tv': 'phosphor-tv'}
+APPS = {'arcade': 'phosphor-arcade', 'workout': 'gymlog', 'kitchen': 'kitchen-log', 'lights': 'kasa-lights', 'pc': 'pc-remote', 'tv': 'phosphor-tv', 'watch': 'what-to-watch'}
 
 h = open('src/app.html').read()
 h = h.replace('/*@@PHOSPHOR_CSS@@*/', open(B + 'phosphor.css').read()).replace('/*@@PHOSPHOR_JS@@*/', open(B + 'phosphor.js').read()).replace('/*@@APP_JS@@*/', open('src/music.js').read() + '\n' + open('src/app.js').read())
