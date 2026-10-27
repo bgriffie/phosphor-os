@@ -363,7 +363,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.18</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.19</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -897,9 +897,12 @@ const Art = (() => {
      see-through and the beige case drawn on top keeps the rounded corners (the Chromecast's video layer goes
      black or square-cornered under fades or rounded clipping). If a clip won't load, or loads but doesn't move
      within a few seconds, the next address is tried; if none play, the piece's drawn version carries on. */
-  const vid = { el: null, urls: null, at: 0, live: false, t: 0, pix: false, next: 0 };
-  const PROWS = 120, PFPS = 1000 / 20;
-  let pixLook = false, pcv = null, pg = null;
+  /* Pixel look: the Chromecast can't pixelate video itself (video drawn into a canvas comes out black there),
+     so the relay makes low-res copies of the filmed fireplaces on the PC and serves them next to this page.
+     With the pixel look on, a piece plays its copy first and falls back to the normal film. */
+  const vid = { el: null, urls: null, orig: null, at: 0, live: false, t: 0 };
+  const FIRE_PATH = /^\/fire\/\d\.mp4\?k=[A-Za-z0-9_-]{8,64}$/;
+  let pixLook = true, fires = {};
   const frame = () => cv.closest('.screen') || cv.parentNode;
   function vidEl() {
     if (vid.el) return vid.el;
@@ -910,36 +913,31 @@ const Art = (() => {
   }
   function vidLoad() {
     const v = vidEl(); clearInterval(vid.t);
-    vid.live = false; vid.pix = false; v.style.display = 'none'; frame().classList.remove('film', 'pix');
+    vid.live = false; v.style.display = 'none'; frame().classList.remove('film');
     if (vid.at >= vid.urls.length) { v.pause(); v.removeAttribute('src'); v.load(); return; }   // none play: the drawn version
     v.src = vid.urls[vid.at]; v.load(); v.play().catch(() => {});
     const t0 = performance.now();
     vid.t = setInterval(() => {   // start it only once it is really moving; give up on this one after 12 s
-      if (v.currentTime > .3 && !v.paused) { if (!vid.live) { vid.live = true; vidPlace(); v.style.display = 'block'; vidLook(); } return; }
+      if (v.currentTime > .3 && !v.paused) { if (!vid.live) { vid.live = true; vidPlace(); v.style.display = 'block'; frame().classList.add('film'); } return; }
       if (!vid.live && performance.now() - t0 > 12000) { vid.at++; vidLoad(); }
     }, 500);
-  }
-  function vidLook() {
-    if (!vid.live) return;
-    vid.pix = pixLook; vid.next = 0;
-    frame().classList.toggle('pix', pixLook); frame().classList.toggle('film', !pixLook);
-  }
-  function pixFrame(t) {
-    if (t < vid.next) return; vid.next = t + PFPS;
-    const ph = PROWS, pw = Math.max(1, Math.round(PROWS * W / H));
-    if (!pcv || pcv.width !== pw || pcv.height !== ph) { pcv = canvas(pw, ph); pg = pcv.getContext('2d', { alpha: false }); }
-    pg.imageSmoothingEnabled = true; pg.drawImage(vid.el, 0, 0, pw, ph);   // shrink smoothly, so each block is the average colour
-    x.imageSmoothingEnabled = false; x.drawImage(pcv, 0, 0, W, H); x.imageSmoothingEnabled = true;
   }
   function vidPlace() {   // exactly over the screen
     if (!vid.el) return; const b = frame().getBoundingClientRect(), st = vid.el.style;
     st.left = b.left + 'px'; st.top = b.top + 'px'; st.width = b.width + 'px'; st.height = b.height + 'px';
   }
   addEventListener('resize', vidPlace);
-  function vidStart(urls) { vid.urls = urls; vid.at = 0; vidLoad(); }
+  const withCopies = urls => pixLook ? urls.flatMap(u => fires[u] ? [fires[u], u] : [u]) : urls;
+  function vidStart(urls) { vid.orig = urls; vid.urls = withCopies(urls); vid.at = 0; vidLoad(); }
+  function vidRestart() {   // the pixel look changed, or a copy just got made: play the right version of this piece
+    if (!vid.orig) return;
+    const next = withCopies(vid.orig);
+    if (vid.live && vid.urls[vid.at] === next[0]) { vid.urls = next; vid.at = 0; return; }
+    vidStart(vid.orig);
+  }
   function vidStop() {
-    clearInterval(vid.t); vid.urls = null; vid.live = false; vid.pix = false;
-    if (vid.el) { vid.el.style.display = 'none'; vid.el.pause(); vid.el.removeAttribute('src'); vid.el.load(); frame().classList.remove('film', 'pix'); }
+    clearInterval(vid.t); vid.urls = null; vid.orig = null; vid.live = false;
+    if (vid.el) { vid.el.style.display = 'none'; vid.el.pause(); vid.el.removeAttribute('src'); vid.el.load(); frame().classList.remove('film'); }
   }
 
   function show(i) {
@@ -965,8 +963,7 @@ const Art = (() => {
     if (!hold && t - since > (piece.dur || DUR)) show(idx + 1);
     if (staticT > 0) { staticT -= dt; snow(); if (staticT <= 0) piece.init(); return; }
     const t0 = performance.now();
-    if (piece.video && vid.live) { if (vid.pix) pixFrame(t); }   // a film shown directly needs no drawing
-    else piece.frame(dt);
+    if (!(piece.video && vid.live)) piece.frame(dt);   // a film shown directly needs no drawing
     // If frames keep costing more than the box can afford, draw at a lower resolution
     cost += performance.now() - t0; if (++costN === 90) { const avg = cost / costN; cost = costN = 0;
       if (avg > 24 && lines > 240) { lines = Math.max(240, Math.round(lines * .8)); size(); piece.resized ? piece.resized() : piece.init(); } }
@@ -982,7 +979,11 @@ const Art = (() => {
     setHold(v) { hold = !!v; since = performance.now(); onChange(idx, piece.name, hold); return hold; },
     toggleHold() { return this.setHold(!hold); },
     resize() { if (on) { size(); piece.resized ? piece.resized() : piece.init(); vidPlace(); } },
-    setPix(v) { pixLook = !!v; vidLook(); },
+    setPix(v) { if (pixLook === !!v) return; pixLook = !!v; vidRestart(); },
+    setFires(m) {   // {film address: '/fire/N.mp4?k=…'} from the relay; only its own fixed paths are taken
+      const ok = {}; FILMS.forEach(u => { if (m && typeof m[u] === 'string' && FIRE_PATH.test(m[u])) ok[u] = m[u]; });
+      if (JSON.stringify(ok) === JSON.stringify(fires)) return; fires = ok; vidRestart();
+    },
     get index() { return idx; }, get hold() { return hold; }, get pix() { return pixLook; },
   };
 })();
@@ -1235,6 +1236,7 @@ const Sound = (() => {
     if (typeof d.key === 'string') press(d.key);
     if (typeof d.open === 'string' && SCREENS.includes(d.open)) go(d.open);
     if (d.art && typeof d.art === 'object') artCmd(d.art);
+    if (d.fires && typeof d.fires === 'object') Art.setFires(d.fires);
     if (d.sound && typeof d.sound === 'object') { stopFade(); Sound.set(d.sound); showSound(); }
     if (typeof d.fade === 'number') fadeOut(d.fade);
     if (typeof d.sleep === 'number') sleepFor(d.sleep);

@@ -885,7 +885,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.18</span>
+      <span class="app-meta">v1.19</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1021,7 +1021,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <div class="menu">
             <label class="menu-item"><span class="mi-label">Change by itself<small>A new piece every few minutes</small></span><input type="checkbox" role="switch" class="mi-switch" id="art-auto"></label>
-            <label class="menu-item" hidden><span class="mi-label">Pixel look<small>Filmed fireplaces drawn low-res, like an old game</small></span><input type="checkbox" role="switch" class="mi-switch" id="art-pix"></label>
+            <label class="menu-item"><span class="mi-label">Pixel look<small id="art-pix-note">Filmed fireplaces in chunky pixels, made on the PC</small></span><input type="checkbox" role="switch" class="mi-switch" id="art-pix" checked></label>
           </div>
         </div>
         <div class="menu-group">
@@ -1104,7 +1104,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.18</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.19</span></a>
           </div>
         </div>
       </section>
@@ -1446,7 +1446,7 @@ PH.init({});
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
   let lastErr = '', pollT = 0, busyPower = false, sleepAt = 0;
   const ready = () => !!(link && link.url && link.key);
-  const RELAY_WANTS = '1.9';   // tv_control.py version this app expects
+  const RELAY_WANTS = '2.0';   // tv_control.py version this app expects
   const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
   // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
   const toast = PH.toast;
@@ -1576,6 +1576,11 @@ PH.init({});
     }
     $('#art-auto').checked = !(a && a.hold);
     $('#art-pix').checked = !(a && a.pix === false);
+    const f = info && info.fires;   // the relay makes the pixelated copies once, in the background
+    $('#art-pix-note').textContent = !f ? 'Filmed fireplaces in chunky pixels, made on the PC'
+      : f.error ? 'Needs a one-time install on the PC: py -m pip install imageio-ffmpeg, then restart the relay'
+      : f.ready < f.of ? (f.busy ? `Making the pixel copies on the PC: ${f.ready} of ${f.of} ready` : `${f.ready} of ${f.of} pixel copies ready. Restart the relay to try the rest`)
+      : 'Filmed fireplaces in chunky pixels, made on the PC';
     $$('#art-list [data-i]').forEach(b => b.setAttribute('aria-checked', String(!!(onArt && a && a.i === +b.dataset.i))));
   }
 

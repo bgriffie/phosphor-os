@@ -4,6 +4,7 @@ art, background sound) on a Chromecast and lets the phone's TV app drive it like
 Drop this file next to kasa_bridge.py, install one library, and start the relay with --cast:
 
     py -m pip install pychromecast
+    py -m pip install imageio-ffmpeg      (optional: for the pixelated fireplace)
     py kasa_bridge.py --cast
 
 Without --cast the TV stays off and nothing extra listens. Delete the file to remove it entirely.
@@ -15,15 +16,16 @@ kept in tv_page.html) and one WebSocket. The phone never talks to the TV: it cal
 relay (127.0.0.1:7788, behind the relay key, through Tailscale) and the relay passes things on.
 
 Security (agreed with Floyd's security review):
-- Port 7790 is a separate aiohttp app with exactly two routes, / and /ws. No /pc, no /lights,
-  no files or folders. It binds to this PC's home-network address, not Tailscale.
+- Port 7790 is a separate aiohttp app with three routes: / (the page), /ws and /fire/<digit>.mp4,
+  which only hands out the relay's own pixelated fireplace copies (tv_fire/fire0-3.mp4) by number.
+  No /pc, no /lights, no other files or folders. It binds to this PC's home-network address, not Tailscale.
 - It answers only with a TV token made fresh each time the relay starts and checked with
   compare_digest. The relay's own key never goes over 7790, which is plain HTTP.
 - Control goes one way. The relay decides what the TV shows; the TV's WebSocket may only report
   status (which screen, which item is selected) and everything else it sends is ignored.
 - Windows asks once whether Python may use the network: tick Private networks only.
 """
-import asyncio, json, os, re, secrets, socket, time
+import asyncio, json, os, re, secrets, socket, subprocess, time
 from pathlib import Path
 
 from aiohttp import web, WSMsgType, ClientSession, ClientTimeout
@@ -33,6 +35,16 @@ PAGE_URL = 'https://bgriffie.github.io/phosphor-os/tv/'
 HERE = Path(__file__).resolve().parent
 CONFIG = HERE / 'tv_control.json'
 PAGE_CACHE = HERE / 'tv_page.html'
+# Pixelated fireplaces: the Chromecast can't pixelate video itself, so the relay makes a low-res copy of each
+# filmed fireplace once (ffmpeg from the imageio-ffmpeg package: py -m pip install imageio-ffmpeg) and the TV
+# plays those. Same addresses and order as FILMS in the TV page's art.js. Copies go in tv_fire/ next to this file.
+FIRE_FILMS = ('https://cdn.pixabay.com/video/2017/01/06/7070-198606760_large.mp4',
+              'https://static.videezy.com/system/resources/previews/000/005/865/original/MVI_5664.mp4',
+              'https://static.videezy.com/system/resources/previews/000/005/867/original/MVI_5666.mp4',
+              'https://assets.mixkit.co/videos/30252/30252-720.mp4')
+FIRE_DIR = HERE / 'tv_fire'
+FIRE_VF = 'fps=24,scale=192:108:flags=area,scale=1920:1080:flags=neighbor'   # 108 rows of chunky pixels, sharp edges at 1080p
+FIRE_MAX = 300 * 2**20     # largest download accepted, in bytes
 PAGE_MAX_AGE = 600         # seconds before the TV page is fetched again
 SCREENS = ('home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim', 'watch')
 # Background sound. The TV page holds the station addresses (fixed https links) and makes the
@@ -42,7 +54,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '1.9'           # the phone app compares this to know which features the relay has
+VERSION = '2.0'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -397,6 +409,7 @@ def setup(app, demo=False, lights=None, cast=False):
             'board': hub['board'], 'lights': lights is not None,
             'place': (cfg.get('place') or {}).get('name', ''), 'units': cfg.get('units') or '', 'unitsNow': units() if cfg.get('place') else '',
             'art': hub['art'] if linked else None, 'sound': hub['sound'], 'heard': hub['heard'] if linked else None,
+            'fires': {'ready': len(fires()), 'of': len(FIRE_FILMS), 'busy': hub.get('fire_busy', 0), 'error': hub.get('fire_err', '')},
             'scene': hub['scene'] if linked else '', 'focus': hub['focus'] if linked and hub['screen'] == 'watch' else '', 'scenes': scenes(), 'schedule': schedule(), 'auto': cfg.get('auto', True),
             'sleep': max(0, int(hub['sleep_at'] - time.time())) if hub['sleep_at'] else 0, 'clock': time.strftime('%H:%M'),
             'screenLink': tv_url() if c.fake else ''})
@@ -734,7 +747,7 @@ def setup(app, demo=False, lights=None, cast=False):
         print('TV: off.', problem)
         return None
 
-    # ---- TV side: port 7790 on the home network, TV token only, two routes ----
+    # ---- TV side: port 7790 on the home network, TV token only: the page, its socket, the fire copies ----
     @web.middleware
     async def tv_guard(request, handler):
         if not secrets.compare_digest(request.query.get('k', ''), token):
@@ -776,7 +789,7 @@ def setup(app, demo=False, lights=None, cast=False):
         try:
             if cfg.get('place') and time.time() - hub['weather_at'] > WEATHER_EVERY:
                 await refresh_weather(push=False)
-            await sock.send_json({'board': hub['board'], 'weather': hub['weather'], 'sound': hub['sound'], 'watch': hub['watch'], 'sleep': max(0, int(hub['sleep_at'] - time.time())) if hub['sleep_at'] else 0, **(await lights_list() if lights is not None else {'lights': False})})
+            await sock.send_json({'fires': fires(), 'board': hub['board'], 'weather': hub['weather'], 'sound': hub['sound'], 'watch': hub['watch'], 'sleep': max(0, int(hub['sleep_at'] - time.time())) if hub['sleep_at'] else 0, **(await lights_list() if lights is not None else {'lights': False})})
             if hub['scene']:   # the screen came back (it dropped off, or the PC restarted it): carry on with the scene
                 hub['scene_t'] = time.time()
                 await sock.send_json(scene_view(hub['scene']))
@@ -814,8 +827,67 @@ def setup(app, demo=False, lights=None, cast=False):
                 print('TV: the screen disconnected.')
         return sock
 
+    def fires():
+        """The pixelated copies made so far, as {film address: path on 7790}."""
+        return {u: f'/fire/{i}.mp4?k={token}' for i, u in enumerate(FIRE_FILMS) if (FIRE_DIR / f'fire{i}.mp4').is_file()}
+
+    async def tv_fire(request):
+        """One of the relay's own pixelated fireplace copies, by number. Nothing else on disk is reachable."""
+        n = int(request.match_info['n'])
+        out = FIRE_DIR / f'fire{n}.mp4'
+        if n >= len(FIRE_FILMS) or not out.is_file():
+            raise web.HTTPNotFound()
+        return web.FileResponse(out, headers={'Content-Type': 'video/mp4', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store'})
+
+    async def make_fires():
+        """Download each filmed fireplace once and save a pixelated copy. Runs in the background at start."""
+        todo = [i for i in range(len(FIRE_FILMS)) if not (FIRE_DIR / f'fire{i}.mp4').is_file()]
+        if not todo:
+            return
+        try:
+            import imageio_ffmpeg
+            exe = imageio_ffmpeg.get_ffmpeg_exe()
+        except Exception:
+            hub['fire_err'] = 'needs imageio-ffmpeg'
+            print('TV: for the pixelated fireplace, run once:  py -m pip install imageio-ffmpeg   then restart the relay.')
+            return
+        FIRE_DIR.mkdir(exist_ok=True)
+        for i in todo:
+            src, part, out = FIRE_DIR / f'src{i}.tmp', FIRE_DIR / f'fire{i}.part.mp4', FIRE_DIR / f'fire{i}.mp4'
+            hub['fire_busy'] = i + 1
+            try:
+                print(f'TV: making pixelated fireplace {i + 1} of {len(FIRE_FILMS)} (a minute or two)...')
+                async with ClientSession(timeout=ClientTimeout(total=600)) as s:
+                    async with s.get(FIRE_FILMS[i]) as r:
+                        if r.status != 200:
+                            raise RuntimeError(f'download failed, HTTP {r.status}')
+                        n = 0
+                        with open(src, 'wb') as f:
+                            async for chunk in r.content.iter_chunked(1 << 16):
+                                n += len(chunk)
+                                if n > FIRE_MAX:
+                                    raise RuntimeError('video too big')
+                                f.write(chunk)
+                cmd = [exe, '-y', '-loglevel', 'error', '-i', str(src), '-t', '120', '-an', '-vf', FIRE_VF,
+                       '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(part)]
+                p = await asyncio.to_thread(subprocess.run, cmd, capture_output=True, timeout=1200)
+                if p.returncode:
+                    raise RuntimeError(p.stderr.decode(errors='replace').strip()[-300:] or 'ffmpeg failed')
+                part.replace(out)
+                print(f'TV: pixelated fireplace {i + 1} is ready.')
+                await send_tv({'fires': fires()})
+            except Exception as e:
+                print(f'  Pixelated fireplace {i + 1}:', str(e) or type(e).__name__)
+            finally:
+                for t in (src, part):
+                    try:
+                        t.unlink()
+                    except OSError:
+                        pass
+        hub['fire_busy'] = 0
+
     tv_app = web.Application(middlewares=[tv_guard])
-    tv_app.add_routes([web.get('/', tv_page), web.get('/ws', tv_ws)])
+    tv_app.add_routes([web.get('/', tv_page), web.get('/ws', tv_ws), web.get(r'/fire/{n:\d}.mp4', tv_fire)])
     runner = web.AppRunner(tv_app, access_log=None)
 
     async def keep_alive():
@@ -852,9 +924,10 @@ def setup(app, demo=False, lights=None, cast=False):
             print(f'TV: could not listen on {bind}:{TV_PORT} ({e}). Is the relay already running in another window?')
         hub['task'] = asyncio.create_task(keep_alive())
         hub['clock'] = asyncio.create_task(clockwork())
+        hub['fire'] = asyncio.create_task(make_fires())
 
     async def on_stop(_app):
-        for k in ('task', 'clock'):
+        for k in ('task', 'clock', 'fire'):
             if hub.get(k):
                 hub[k].cancel()
         for s in list(hub['socks']):
