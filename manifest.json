@@ -1,5 +1,5 @@
 {
-  "name": "Phosphor OS",
+  "name": "phosphor.os",
   "short_name": "OS",
   "description": "A phone-style launcher: tiles for your apps, Shortcuts and tools, plus Phone, Notes and Calculator. Works offline.",
   "start_url": ".",

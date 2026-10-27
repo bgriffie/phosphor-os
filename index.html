@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Phosphor OS</title>
+  <title>phosphor.os</title>
   <meta name="theme-color" content="#D9CDB4">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -1069,8 +1069,8 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 <body>
   <main class="app">
     <header class="app-header">
-      <h1 class="app-title" data-view-title>Phosphor OS</h1>
-      <span class="app-meta">v1.56</span>
+      <h1 class="app-title" data-view-title>phosphor.os</h1>
+      <span class="app-meta">v1.57</span>
     </header>
     <div class="screen-slot">
     <div class="screen">
@@ -1090,7 +1090,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
       <div class="screen-body">
 
       <!-- ===== Home ===== -->
-      <section class="view home-view" data-route="/" data-title="Phosphor OS">
+      <section class="view home-view" data-route="/" data-title="phosphor.os">
         <div class="home-clock" aria-live="off">
           <div class="readout" id="clock">--:--</div>
           <div class="date" id="date"></div>
@@ -1101,7 +1101,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
       </section>
 
       <!-- ===== Bundled app (the frame covers this) ===== -->
-      <section class="view" data-route="/app" data-title="Phosphor OS"></section>
+      <section class="view" data-route="/app" data-title="phosphor.os"></section>
 
       <!-- ===== Spotify remote ===== -->
       <section class="view mu-home" data-route="/music" data-title="Spotify">
@@ -1197,7 +1197,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
           <button class="btn btn-danger btn-block" id="mu-disconnect" style="margin-top:var(--sp-3)" hidden>Disconnect</button>
         </section>
         <section class="panel" data-title="Pairing code" id="mu-pair-out" style="margin-top:var(--sp-5)" hidden>
-          <p>This login finished in Safari. Copy the code, open Phosphor OS from your home screen, and paste it under "Login opened in Safari?" in Spotify setup.</p>
+          <p>This login finished in Safari. Copy the code, open phosphor.os from your home screen, and paste it under "Login opened in Safari?" in Spotify setup.</p>
           <textarea class="textarea" id="mu-pair-code" readonly style="margin-top:var(--sp-3);min-height:72px"></textarea>
           <button class="btn btn-primary btn-block" data-copy="mu-pair-code" style="margin-top:var(--sp-3)">Copy code</button>
         </section>
@@ -1351,7 +1351,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.56</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.57</span></a>
           </div>
         </div>
       </section>
@@ -1394,8 +1394,8 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
       </section>
 
       <section class="view" data-route="/settings/about" data-title="About">
-        <section class="panel" data-title="Phosphor OS">
-          <div class="kv"><span>Version</span><span>1.56</span></div>
+        <section class="panel" data-title="phosphor.os">
+          <div class="kv"><span>Version</span><span>1.57</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
@@ -2256,7 +2256,7 @@ const PH = (() => {
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.56';
+  const VERSION = '1.57';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -2291,6 +2291,7 @@ const PH = (() => {
     bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5V16h8v-2.5A6 6 0 0 0 12 3z"/>',
     monitor: '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20h8M12 16v4"/>',
     tv: '<rect x="3" y="8" width="18" height="12" rx="1"/><path d="M9 22h6M8 3l4 4 4-4"/>',
+    house: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
     film: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/>',
   };
@@ -2299,7 +2300,7 @@ const PH = (() => {
 
   /* ---------- Tiles ---------- */
   // Built-in apps: OS pages, or Floyd's other tools bundled under apps/<id>/ and run in a full-screen frame
-  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'], lights: ['Lights', null, 'apps/lights/', false], pc: ['PC', null, 'apps/pc/', false], tv: ['TV', null, 'apps/tv/', false], watch: ['What to Watch', null, 'apps/watch/'],
+  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'], lights: ['Lights', null, 'apps/lights/', false], pc: ['PC', null, 'apps/pc/', false], tv: ['TV', null, 'apps/tv/', false], watch: ['What to Watch', null, 'apps/watch/'], home: ['Home Map', null, 'apps/home/', false],
     arcade: ['Arcade', null, 'apps/arcade/'], workout: ['Workout Log', null, 'apps/workout/'], kitchen: ['Kitchen Log', null, 'apps/kitchen/'] };
   const DEFAULT_TILES = () => [
     ['Phone', 'phone', 'app', 'phone'],
@@ -2313,6 +2314,7 @@ const PH = (() => {
     ['PC', 'monitor', 'app', 'pc'],
     ['TV', 'tv', 'app', 'tv'],
     ['Watch', 'film', 'app', 'watch'],
+    ['Map', 'house', 'app', 'home'],
     ['Notes', 'note', 'app', 'notes'],
     ['Arcade', 'game', 'app', 'arcade'],
     ['Workout', 'dumbbell', 'app', 'workout'],
@@ -2367,6 +2369,14 @@ const PH = (() => {
       tiles.splice(i < 0 ? tiles.length : i + 1, 0, { id: uid(), label: 'Watch', glyph: 'film', kind: 'app', target: 'watch' });
     }
     save('mig-watch', true);
+  }
+  // v1.57: a Home Map tile (3D floor plan with tappable lights and the TV), once, after Watch
+  if (!load('mig-home', false)) {
+    if (!tiles.some(t => t.kind === 'app' && t.target === 'home')) {
+      const i = tiles.findIndex(t => t.kind === 'app' && t.target === 'watch');
+      tiles.splice(i < 0 ? tiles.length : i + 1, 0, { id: uid(), label: 'Map', glyph: 'house', kind: 'app', target: 'home' });
+    }
+    save('mig-home', true);
   }
   save('tiles', tiles);
   const saveTiles = () => { save('tiles', tiles); renderGrid(); renderTileList(); };
@@ -2775,7 +2785,7 @@ const PH = (() => {
     const last = load('seen', 0);
     const el = $('#boot');
     if (!PH.store.get('boot') || Date.now() - last < 10 * 60000 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const lines = [`<b>PHOSPHOR OS ${VERSION}</b>`, 'MEMORY TEST ...... 640K OK', `TILES ............ ${tiles.length} LOADED`, `NOTES ............ ${notes.length}`, 'CLOCK ............ SYNCED', '', '<b>READY</b><span class="cursor"></span>'];
+    const lines = [`<b>PHOSPHOR.OS ${VERSION}</b>`, 'MEMORY TEST ...... 640K OK', `TILES ............ ${tiles.length} LOADED`, `NOTES ............ ${notes.length}`, 'CLOCK ............ SYNCED', '', '<b>READY</b><span class="cursor"></span>'];
     el.hidden = false; el.innerHTML = '';
     let i = 0, done = false;
     const finish = () => { if (done) return; done = true; el.hidden = true; };
@@ -2846,7 +2856,7 @@ const PH = (() => {
       save('notes', notes); save('favs', favs); saveTiles(); renderNotes(); renderDial();
       if (d.settings) ['clock', 'cols', 'boot'].forEach(k => { if (k in d.settings) PH.store.set(k, d.settings[k]); });
       PH.toast('Backup imported.');
-    } catch { PH.toast('That file isn\'t a Phosphor OS backup.', 'error'); }
+    } catch { PH.toast('That file isn\'t a phosphor.os backup.', 'error'); }
   });
   document.getElementById('erase').onclick = async () => {
     if (await PH.confirm('Erase all tiles, notes and favorites? This can\'t be undone.', { title: 'Erase data', ok: 'Erase', danger: true })) {
