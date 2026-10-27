@@ -789,6 +789,14 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     /* One light: same controls as Kasa Lights */
     .dim { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--sp-3); }
     .dim .readout { font-size: var(--fs-lg); min-width: 3.2em; text-align: right; }
+    .dims { display: grid; gap: var(--sp-2); }
+    .dims[hidden], .dim[hidden] { display: none; }
+    .tabs .rm-b { min-height: 32px; padding: 0 2px; font-size: var(--fs-xs); letter-spacing: .02em; }
+    .tabs .rm-b[aria-selected="true"] { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+    .tabs .rm-b[hidden] { display: none; }
+    .chips.mini .chip { min-height: 32px; font-size: var(--fs-xs); }
+    .chips.mini .chip[aria-checked="true"] { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+    .chips[hidden] { display: none; }
     .li-range { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 40px; margin: 0; background: none; touch-action: pan-y; }
     .li-range::-webkit-slider-runnable-track { height: 12px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface-2); }
     .li-range::-webkit-slider-thumb { -webkit-appearance: none; width: 32px; height: 32px; margin-top: -11px; border-radius: 4px; background: var(--accent); box-shadow: var(--glow-box); border: 0; }
@@ -811,7 +819,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .tv-mini.other .tv-big { color: var(--amber); text-shadow: none; }
     /* The live TV picture: the real TV page, drawn onto the TV on the map (or into the TV card) */
     .tv-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 3; }
-    .tv-live { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; border: 0; transform-origin: 0 0; pointer-events: none; background: #000; }
+    .tv-live { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; border: 0; transform-origin: 0 0; pointer-events: none; background: #000; max-width: none; max-height: none; }
     .tv-live[hidden] { display: none; }
     .sc-wrap { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-2); }
     .sc-chips { flex: 1; min-width: 0; border: 1px solid var(--line-strong); border-radius: 24px; background: rgba(8, 17, 10, .94); padding: 4px; }
@@ -858,7 +866,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.7</span>
+      <span class="app-meta">v1.8</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -985,6 +993,27 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
               <button class="rm-b" role="radio" data-s="1">Medium</button>
               <button class="rm-b" role="radio" data-s="1.6">Tall</button>
             </div>
+            <div class="chips mini" id="pl-fkind" role="radiogroup" aria-label="Kind of furniture" hidden>
+              <button class="chip" role="radio" data-k="sofa">Couch</button>
+              <button class="chip" role="radio" data-k="chair">Chair</button>
+              <button class="chip" role="radio" data-k="table">Table</button>
+              <button class="chip" role="radio" data-k="desk">Desk</button>
+              <button class="chip" role="radio" data-k="bed">Bed</button>
+              <button class="chip" role="radio" data-k="shelf">Shelf</button>
+              <button class="chip" role="radio" data-k="cabinet">Cabinet</button>
+              <button class="chip" role="radio" data-k="box">Box</button>
+            </div>
+            <div class="chips mini" id="pl-mon" role="radiogroup" aria-label="Which PC monitor it shows" hidden></div>
+            <div class="dims" id="pl-dims" hidden>
+              <div class="row tabs" id="pl-tabs" role="tablist" aria-label="Size" style="--n:5">
+                <button class="rm-b" role="tab" data-tab="len">Width</button>
+                <button class="rm-b" role="tab" data-tab="wid">Depth</button>
+                <button class="rm-b" role="tab" data-tab="h">Height</button>
+                <button class="rm-b" role="tab" data-tab="y0">Lift</button>
+                <button class="rm-b" role="tab" data-tab="a">Turn</button>
+              </div>
+              <div class="dim"><input type="range" class="li-range" id="pl-dim" aria-label="Size"><span class="readout" id="pl-dimv"></span></div>
+            </div>
             <div class="dim" id="pl-height">
               <input type="range" class="li-range" id="pl-y" min="0" max="2.5" step="0.02" aria-label="Height from the floor">
               <span class="readout" id="pl-yv">0′</span>
@@ -1005,13 +1034,13 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
             <a class="menu-item" href="#/settings/furniture"><span class="mi-label">Furniture</span><span class="mi-value" data-setting-value="furn"></span></a>
             <label class="menu-item"><span class="mi-label">Labels<small>Room, light and TV names on the map</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="labels"></label>
             <label class="menu-item"><span class="mi-label">Live sun<small>Today's real sunlight stays on the map</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="sunlive"></label>
-            <label class="menu-item"><span class="mi-label">Live TV picture<small>Shows what's on the TV, moving</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="live"></label>
+            <label class="menu-item"><span class="mi-label">Live pictures<small>TVs and PC monitors on the map show what's on them</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="live"></label>
           </div>
         </div>
         <div class="menu-group">
           <span class="label">Floor plan</span>
           <div class="menu">
-            <a class="menu-item" href="#/place"><span class="mi-label">Place lights, TV and plants</span><span class="mi-value" id="set-placed">—</span></a>
+            <a class="menu-item" href="#/place"><span class="mi-label">Place lights, TVs, plants and furniture</span><span class="mi-value" id="set-placed">—</span></a>
             <a class="menu-item" href="#/settings/rooms"><span class="mi-label">Room names</span><span class="mi-value" id="set-rooms">—</span></a>
             <button class="menu-item" id="scan-load"><span class="mi-label">Load a new scan<small>Polycam room scan, exported as OBJ</small></span></button>
             <button class="menu-item" id="scan-reset" hidden><span class="mi-label">Use the original scan</span></button>
@@ -1035,7 +1064,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.7</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.8</span></a>
           </div>
         </div>
       </section>
@@ -1050,9 +1079,11 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/furniture" data-title="Furniture">
         <div class="menu" role="radiogroup">
-          <button class="menu-item" role="radio" data-setting="furn" data-value="off" data-back-on-pick><span class="mi-label">Off<small>Just the walls</small></span></button>
+          <button class="menu-item" role="radio" data-setting="furn" data-value="off" data-back-on-pick><span class="mi-label">Off<small>Just the walls, and pieces you added or moved</small></span></button>
           <button class="menu-item" role="radio" data-setting="furn" data-value="main" data-back-on-pick><span class="mi-label">Main pieces<small>Couch, bed, counters, stove, fridge, tables and desk</small></span></button>
         </div>
+        <p class="menu-note">Move, resize, turn or remove furniture, or add new pieces and monitors, in Place.</p>
+        <div class="menu"><button class="menu-item" id="furn-reset"><span class="mi-label">Put scanned furniture back<small>Undo changes to the scan's pieces</small></span></button></div>
       </section>
 
       <section class="view" data-route="/settings/rooms" data-title="Rooms">
@@ -1483,6 +1514,12 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   let rooms = load('rooms', {});   // floor index -> name Floyd gave it
   let plants = load('plants', {});   // 'plant:N' -> { x, z, s: size in m }
   const isPlant = id => typeof id === 'string' && id.startsWith('plant:');
+  // Furniture: 'f:N' is the scan's piece N as Floyd changed it ({ gone } once removed), 'f:aN' a piece he added
+  // ({ n, c, len, wid, a, y }); 'mon:N' a monitor showing one of the PC's monitors live ({ c, len, a, y0, mon })
+  let furn = load('furniture', {});
+  const isFurn = id => typeof id === 'string' && id.startsWith('f:');
+  const isMon = id => typeof id === 'string' && id.startsWith('mon:');
+  const isBox = id => isFurn(id) || isMon(id);
   // Two TVs: the living-room screen (a Phosphor TV on the PC, relay room 'pc') and the small CRT on the kitchen fridge
   // (the Chromecast, relay room 'cast')
   const TVS = { tv: { room: 'pc', name: 'Living room TV' }, crt: { room: 'cast', name: 'Kitchen TV' } };
@@ -1800,7 +1837,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   const inPoly = (x, z, p) => { let k = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) k = !k; } return k; };
   function build() {
     const cut = CUT[PH.store.get('walls')] || 1.3;
-    const boxes = [], frames = [], doors = [], faces = [], walls = [], blockers = [];
+    const frames = [], doors = [], faces = [], walls = [], blockers = [];
     const ops = (plan.open || []).filter(o => o.len > 0.15);
     const wallSegs = [];
     for (const w of solidWalls()) {
@@ -1849,9 +1886,6 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       }
       if (at < L) piece(at, L, w.y[0], w.y[1]);
     }
-    const fm = furnMode();
-    if (fm !== 'off') for (const it of plan.items || []) { if (fm === 'main' && !mainPiece(it)) continue; const y1 = Math.min(it.y[1], Math.max(cut, 0.9)); if (y1 - it.y[0] > 0.02 && it.y[0] < Math.max(cut, 0.9)) boxes.push({ c: it.c, len: it.len, wid: it.wid, a: it.a, y0: it.y[0], y1, kind: 'item' }); }
-    boxes.forEach(b => boxFaces(b, faces));
     faces.push(...wallMesh(walls));
     const floors = plan.floors.map((f, i) => ({ i, pts: f.pts, c: centroid(f.pts) }));
     let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
@@ -1871,8 +1905,10 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     wins.sort((a, b) => b.len - a.len);
     if (wins.length) bigN = [wins[0].n[0], wins[0].n[2]];   // the big living-room window: Floyd's compass reference
     G = { faces, frames, doors, floors, walls, wallSegs, blockers, wins: wins.slice(0, MAXW), bigN, bounds: [x0, x1, z0, z1], cut, ver: (G ? G.ver : 0) + 1 };
-    buildTV(); glStatic();
+    monCache.clear(); buildTV(); glStatic();
   }
+  // How far (x, z) is from the nearest wall
+  const nearWall = (x, z) => Math.min(...G.wallSegs.map(([ax, az, bx, bz]) => { const vx = bx - ax, vz = bz - az, t = clamp(((x - ax) * vx + (z - az) * vz) / (vx * vx + vz * vz || 1), 0, 1); return Math.hypot(x - ax - vx * t, z - az - vz * t); }));
   // The TVs: the living-room one drawn a bit bigger than the scan (Floyd), 16:9; the kitchen one a boxy 4:3 CRT with a
   // bezel round its screen. Each faces away from the nearest wall unless turned by hand.
   function buildTV() {
@@ -1882,8 +1918,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       const crt = id === 'crt', len = crt ? tv.len : Math.max(tv.len * TV_GROW, 0.8), hgt = crt ? len * 0.85 : len * 9 / 16;
       const b = { c: tv.c, len, wid: crt ? tv.wid : Math.max(tv.wid, 0.06), a: tv.a, y0: tv.y[0], y1: tv.y[0] + hgt, kind: 'tv' };
       const nx = -Math.sin(tv.a), nz = Math.cos(tv.a);
-      const near = (x, z) => Math.min(...G.wallSegs.map(([ax, az, bx, bz]) => { const vx = bx - ax, vz = bz - az, t = clamp(((x - ax) * vx + (z - az) * vz) / (vx * vx + vz * vz || 1), 0, 1); return Math.hypot(x - ax - vx * t, z - az - vz * t); }));
-      const side = tv.face || (near(tv.c[0] + nx * 0.3, tv.c[1] + nz * 0.3) >= near(tv.c[0] - nx * 0.3, tv.c[1] - nz * 0.3) ? 'v+' : 'v-');
+      const side = tv.face || (nearWall(tv.c[0] + nx * 0.3, tv.c[1] + nz * 0.3) >= nearWall(tv.c[0] - nx * 0.3, tv.c[1] - nz * 0.3) ? 'v+' : 'v-');
       const faces = []; boxFaces(b, faces);
       if (!crt) faces.forEach(f => { if (f.side === side || f.side === 'top') f.screen = true; });
       // the screen's corners as the viewer sees them: top left, top right, bottom right, bottom left
@@ -1892,6 +1927,51 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       const quad = [Q(-L, b.y1 - m), Q(L, b.y1 - m), Q(L, b.y0 + m * 1.3), Q(-L, b.y0 + m * 1.3)];
       G.tvs[id] = { id, c: [tv.c[0], (b.y0 + b.y1) / 2, tv.c[1]], side, n: [fx, 0, fz], faces, hgt, quad, crt, pw: crt ? 960 : 1280, ph: crt ? 720 : 720 };
     }
+  }
+
+  /* Furniture: the scan's pieces, as Floyd moved, resized or removed them, and pieces he added. They are drawn each
+     frame (not with the walls) so dragging and the size sliders move them live. Pieces he added or changed always show;
+     the rest follow Settings › Furniture, and the main ones also show while placing so they can be picked. */
+  const FURN = { sofa: ['Couch', 2.0, 0.9, 0.8], chair: ['Chair', 0.55, 0.55, 0.9], table: ['Table', 1.2, 0.8, 0.75], desk: ['Desk', 1.4, 0.7, 0.75],
+    bed: ['Bed', 2.0, 1.5, 0.6], shelf: ['Shelf', 0.9, 0.4, 1.8], cabinet: ['Cabinet', 0.8, 0.5, 0.9], box: ['Box', 0.5, 0.5, 0.5] };
+  const SCAN_NAMES = [[/^sofa/, 'Couch'], [/^chair/, 'Chair'], [/^table/, 'Table'], [/^bed/, 'Bed'], [/^storage_shelf/, 'Shelf'], [/^storage_cabinet/, 'Cabinet'],
+    [/^refrigerator/, 'Fridge'], [/^oven/, 'Oven'], [/^stove/, 'Stove'], [/^sink/, 'Sink'], [/^toilet/, 'Toilet'], [/^bathtub/, 'Bathtub']];
+  const furnName = it => FURN[it.n] ? FURN[it.n][0] : (SCAN_NAMES.find(([r]) => r.test(it.n || '')) || [0, 'Furniture'])[1];
+  function furnGet(id) {
+    if (isMon(id)) return furn[id] || null;
+    if (furn[id]) return furn[id].gone ? null : furn[id];
+    const i = /^f:(\d+)$/.exec(id), it = i && (plan.items || [])[+i[1]];
+    return it ? { n: it.n, c: [...it.c], len: it.len, wid: it.wid, a: it.a, y: [...it.y] } : null;
+  }
+  function furnPut(id, v) { if (v) furn[id] = v; else delete furn[id]; monCache.delete(id); }
+  function furnShown() {
+    const fm = furnMode(), placing = mode() === 'place', out = [];
+    (plan.items || []).forEach((it, i) => {
+      const id = 'f:' + i, o = furn[id];
+      if (o ? !o.gone : (fm === 'main' || placing) && mainPiece(it)) out.push({ id, ...(o || it) });
+    });
+    for (const id in furn) if (/^f:a/.test(id)) out.push({ id, ...furn[id] });
+    return out;
+  }
+  // A monitor: a thin screen the PC monitor's shape, on a stand when it's up off the floor. It faces where it was put.
+  const monCache = new Map();
+  const monAspect = n => { const m = (pcMons || []).find(x => x.n === n); return m && m.w > 0 && m.h > 0 ? m.w / m.h : 16 / 9; };
+  function monGeom(id) {
+    const m = furn[id], asp = monAspect(m.mon), key = JSON.stringify(m) + asp;
+    const hit = monCache.get(id); if (hit && hit.key === key) return hit;
+    const hgt = m.len / asp, wid = 0.035, box = { c: m.c, len: m.len, wid, a: m.a, y0: m.y0, y1: m.y0 + hgt };
+    const fx = -Math.sin(m.a), fz = Math.cos(m.a), rx = fz, rz = -fx, bz = 0.01, L = m.len / 2 - bz, off = wid / 2 + 0.003;
+    const faces = []; boxFaces(box, faces);
+    const stand = [];
+    if (m.y0 > 0.14) {
+      const sc = [m.c[0] - fx * 0.05, m.c[1] - fz * 0.05];
+      boxFaces({ c: sc, len: 0.05, wid: 0.03, a: m.a, y0: m.y0 - 0.12, y1: m.y0 + hgt * 0.3 }, stand);
+      boxFaces({ c: sc, len: Math.min(0.26, m.len * 0.45), wid: 0.17, a: m.a, y0: m.y0 - 0.13, y1: m.y0 - 0.115 }, stand);
+    }
+    const fc = [m.c[0] + fx * off, m.c[1] + fz * off], Q = (u, y) => [fc[0] + rx * u, y, fc[1] + rz * u];
+    const quad = [Q(-L, box.y1 - bz), Q(L, box.y1 - bz), Q(L, box.y0 + bz), Q(-L, box.y0 + bz)];
+    const g = { key, box, faces, stand, quad, n: [fx, 0, fz], c: [m.c[0], (box.y0 + box.y1) / 2, m.c[1]], hgt, pw: 640, ph: Math.round(640 / asp) };
+    monCache.set(id, g); return g;
   }
 
   const roomAt = (x, z) => { for (const f of G.floors) if (inPoly(x, z, f.pts)) return f.i; return -1; };
@@ -2225,19 +2305,37 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   // Is the straight line from the eye to p blocked by a wall (as drawn now)? Used for pins, names and the TV picture.
   function hidden(p) {
     const d = [p[0] - E[0], p[1] - E[1], p[2] - E[2]], len = Math.hypot(...d), tEnd = 1 - 0.04 / Math.max(len, 0.05);
-    for (const b of G.walls) {
-      const dx = Math.cos(b.a), dz = Math.sin(b.a), ox = E[0] - b.c[0], oz = E[2] - b.c[1];
-      const o = [ox * dx + oz * dz, E[1], -ox * dz + oz * dx], v = [d[0] * dx + d[2] * dz, d[1], -d[0] * dz + d[2] * dx];
-      const lo = [-b.len / 2, b.y0, -b.wid / 2], hi = [b.len / 2, b.y1, b.wid / 2];
-      let t0 = 0, t1 = tEnd, ok = true;
-      for (let k = 0; k < 3 && ok; k++) {
-        if (Math.abs(v[k]) < 1e-9) { if (o[k] < lo[k] || o[k] > hi[k]) ok = false; continue; }
-        let a = (lo[k] - o[k]) / v[k], c = (hi[k] - o[k]) / v[k]; if (a > c) [a, c] = [c, a];
-        t0 = Math.max(t0, a); t1 = Math.min(t1, c); if (t0 > t1) ok = false;
-      }
-      if (ok) return true;
+    return G.walls.some(b => rayBox(E, d, b, tEnd) >= 0);
+  }
+  // Where the line o + t·d (0 ≤ t ≤ tEnd) first meets box b, or -1 if it misses
+  function rayBox(o, d, b, tEnd) {
+    const dx = Math.cos(b.a), dz = Math.sin(b.a), ox = o[0] - b.c[0], oz = o[2] - b.c[1];
+    const p = [ox * dx + oz * dz, o[1], -ox * dz + oz * dx], v = [d[0] * dx + d[2] * dz, d[1], -d[0] * dz + d[2] * dx];
+    const lo = [-b.len / 2, b.y0, -b.wid / 2], hi = [b.len / 2, b.y1, b.wid / 2];
+    let t0 = 0, t1 = tEnd;
+    for (let k = 0; k < 3; k++) {
+      if (Math.abs(v[k]) < 1e-9) { if (p[k] < lo[k] || p[k] > hi[k]) return -1; continue; }
+      let a = (lo[k] - p[k]) / v[k], c = (hi[k] - p[k]) / v[k]; if (a > c) [a, c] = [c, a];
+      t0 = Math.max(t0, a); t1 = Math.min(t1, c); if (t0 > t1) return -1;
     }
-    return false;
+    return t0;
+  }
+  // The piece of furniture or monitor under the finger, nearest first, unless a wall is in the way
+  const furnBox = it => ({ c: it.c, len: it.len, wid: it.wid, a: it.a, y0: it.y[0], y1: sel === it.id ? it.y[1] : Math.min(it.y[1], Math.max(G.cut, 0.9)) });
+  function pickBox(sx, sy) {
+    const xn = (sx - W / 2) / Fo, yn = -(sy - H / 2) / Fo, d = [0, 1, 2].map(k => R[k] * xn + U[k] * yn + Fw[k]);
+    let best = null, bt = 1e9;
+    const test = (id, b) => { const t = rayBox(E, d, b, 1e4); if (t >= 0 && t < bt) { bt = t; best = id; } };
+    for (const it of furnShown()) test(it.id, furnBox(it));
+    for (const id in furn) if (isMon(id)) test(id, monGeom(id).box);
+    return best && !G.walls.some(b => rayBox(E, d, b, bt) >= 0) ? best : null;
+  }
+  // The screen's corners on the phone, if the whole screen can be seen; else null
+  function screenOnPhone(quad, n) {
+    const fc = quad[0].map((v, k) => (v + quad[2][k]) / 2);
+    if (top() || (fc[0] - E[0]) * n[0] + (fc[2] - E[2]) * n[2] >= 0) return null;
+    const cs = quad.map(toCam), inset = quad.map(q => q.map((v, k) => v + (fc[k] - v) * 0.08 + n[k] * 0.02));
+    return cs.every(c => c[2] > NEAR) && !inset.some(hidden) && !hidden(fc.map((v, k) => v + n[k] * 0.02)) ? cs.map(scr) : null;
   }
   function resize() {
     const r = canvas.getBoundingClientRect();
@@ -2278,6 +2376,20 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
         quad(dynM, T.quad, scr0, T.n);
         T.quad.forEach((p, i) => seg(dynL, p, T.quad[(i + 1) % 4], edge, on || other ? 2 : 1.25));
       }
+    }
+    // furniture, and the monitors with the PC's pictures
+    const fTop = rgb('#0F2014', 0), fSide = rgbOf([10, 22, 13]), fEdge = rgb('#2A5233'), on = rgb(C.accent);
+    const boxDraw = (fs, tc, sc, edge, w) => { for (const f of fs) { quad(dynM, f.pts, f.side === 'top' ? tc : sc, f.n); f.pts.forEach((p, i) => seg(dynL, p, f.pts[(i + 1) % 4], edge, w)); } };
+    for (const it of furnShown()) {
+      const b = furnBox(it); if (b.y1 - b.y0 < 0.02) continue;
+      const fs = []; boxFaces(b, fs); boxDraw(fs, fTop, fSide, sel === it.id ? on : fEdge, sel === it.id ? 1.5 : 0.75);
+    }
+    const mBody = rgbOf([30, 33, 30]), mEdge = rgb('#5A6A5C');
+    for (const id in furn) if (isMon(id)) {
+      const g = monGeom(id), s = sel === id, live = pcLive[id] && pcLive[id].got;
+      boxDraw(g.faces, mBody, mBody, s ? on : mEdge, s ? 1.5 : 1); boxDraw(g.stand, mBody, mBody, mEdge, 0.75);
+      quad(dynM, g.quad, rgb(live ? '#000000' : '#04140A', 0), g.n);
+      g.quad.forEach((p, i) => seg(dynL, p, g.quad[(i + 1) % 4], s ? on : rgb(C.strong), 1.25));
     }
     // plants
     const pl = [];
@@ -2327,13 +2439,10 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       hits.push({ id, x: sx, y: sy, r });
     }
     // where each live TV picture goes: only when the whole screen can be seen
-    for (const id in G.tvs) {
-      const t = G.tvs[id], fc = t.quad[0].map((v, k) => (v + t.quad[2][k]) / 2); t.qs = null;
-      if (top() || (fc[0] - E[0]) * t.n[0] + (fc[2] - E[2]) * t.n[2] >= 0) continue;
-      const cs = t.quad.map(toCam), inset = t.quad.map(q => q.map((v, k) => v + (fc[k] - v) * 0.08 + t.n[k] * 0.02));
-      if (cs.every(c => c[2] > NEAR) && !inset.some(hidden) && !hidden(fc.map((v, k) => v + t.n[k] * 0.02))) t.qs = cs.map(scr);
-    }
-    placeMirror();
+    for (const id in G.tvs) { const t = G.tvs[id]; t.qs = screenOnPhone(t.quad, t.n); }
+    monQs = {};
+    for (const id in furn) if (isMon(id)) { const g = monGeom(id); monQs[id] = screenOnPhone(g.quad, g.n); }
+    placeMirror(); placeScreens();
   }
 
   /* ---------- Touch: drag to turn, pinch to zoom, two fingers to move; tap a light ---------- */
@@ -2348,6 +2457,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       let k = false; for (let i = 0, j = tvHit.length - 1; i < tvHit.length; j = i++) { const [xi, yi] = tvHit[i], [xj, yj] = tvHit[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) k = !k; }
       if (k || Math.hypot(tvHit.center[0] - x, tvHit.center[1] - y) < 30) return tvHit.id;
     }
+    // furniture and monitors can be picked while placing, unless something else is picked to put down
+    if (mode() === 'place' && (sel === null || (isBox(sel) && furnGet(sel)))) return pickBox(x, y);
     return null;
   }
   const two = () => { const [a, b] = [...ptrs.values()]; return { mid: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], span: Math.hypot(a[0] - b[0], a[1] - b[1]), ang: Math.atan2(b[1] - a[1], b[0] - a[0]) }; };
@@ -2364,8 +2475,10 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     if (ptrs.size === 1) {
       const h = mode() === 'place' ? hitAt(...p) : null;
       gest = { s: p, last: p, t: Date.now(), moved: false, multi: false, drag: h };
-      if (h) { sel = h; renderPlace(); req(); }
-      else if (mode() === 'map') {
+      if (h) {
+        sel = h; renderPlace(); req();
+        if (isBox(h)) { const b = furnGet(h), at = b && ray(p[0], p[1], boxLevel(h)); if (at) gest.off = [b.c[0] - at[0], b.c[1] - at[1]]; }
+      } else if (mode() === 'map') {
         const g = gest, hit = hitAt(...p);
         if (hit) g.hold = setTimeout(() => { if (gest !== g || g.moved || g.multi) return; g.held = true; openCard(hit); if (isTVid(hit)) refreshTV(); }, 450);
       }
@@ -2410,7 +2523,14 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   // keep the OS's and PH's edge swipe from firing mid-drag
   ['touchstart', 'touchmove', 'touchend'].forEach(t => canvas.addEventListener(t, e => { e.stopPropagation(); if (t === 'touchmove') e.preventDefault(); }, { passive: false }));
 
+  // The level a finger drags a piece along: a piece of furniture by its top, a monitor by its middle
+  const boxLevel = id => { const b = furnGet(id); return !b ? 0 : isMon(id) ? b.y0 + monGeom(id).hgt / 2 : Math.min(b.y[1], Math.max(G.cut, 0.9)); };
   function moveTo(id, p) {
+    if (isBox(id)) {
+      const b = furnGet(id), h = b && ray(p[0], p[1], boxLevel(id)); if (!h) return;
+      const o = (gest && gest.off) || [0, 0];
+      furnPut(id, { ...b, c: [+(h[0] + o[0]).toFixed(3), +(h[1] + o[1]).toFixed(3)] }); return;
+    }
     if (isPlant(id)) { const q = plants[id]; if (!q) return; const h = ray(p[0], p[1], q.y || 0); if (!h) return; q.x = +h[0].toFixed(2); q.z = +h[1].toFixed(2); return; }
     if (isTVid(id)) { const t = tvGet(id); if (!t) return; const h = ray(p[0], p[1], (t.y[0] + t.y[1]) / 2); if (!h) return; tvPut(id, { ...t, c: [+h[0].toFixed(2), +h[1].toFixed(2)] }); return; }
     const pin = pins[id]; if (!pin) return;
@@ -2421,8 +2541,14 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     const h = hitAt(...p);
     if (mode() === 'place') {
       if (h) { sel = h; renderPlace(); req(); return; }
-      if (sel === null) { PH.toast('Pick a light below first.'); return; }
-      if (isTVid(sel)) {
+      if (sel === null) { PH.toast('Pick something below, or tap a piece of furniture.'); return; }
+      if (isBox(sel)) {
+        const b = furnGet(sel) || draft; if (!b) return;
+        const at = ray(p[0], p[1], isMon(sel) ? b.y0 : b.y[0]); if (!at) return;
+        const v = { ...b, c: [+at[0].toFixed(3), +at[1].toFixed(3)] };
+        if (v.face) { v.a = Math.round(Math.atan2(at[0] - E[0], E[2] - at[1]) / (Math.PI / 12)) * Math.PI / 12; delete v.face; }   // a new monitor faces you
+        furnPut(sel, v);
+      } else if (isTVid(sel)) {
         const t = tvGet(sel) || (sel === 'crt' ? { c: [0, 0], len: 0.46, wid: 0.4, a: 0, y: [0.8, 1.15] } : { c: [0, 0], len: 1.0, wid: 0.08, a: 0, y: [0.8, 1.4] });
         const at = ray(p[0], p[1], (t.y[0] + t.y[1]) / 2); if (!at) return;
         tvPut(sel, { ...t, c: [+at[0].toFixed(2), +at[1].toFixed(2)] });
@@ -2449,7 +2575,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     }
     openCard(null);
   }
-  function savePins() { save('pins', pins); save('tv', tvBox); save('crt', crtBox); save('plants', plants); }
+  function savePins() { save('pins', pins); save('tv', tvBox); save('crt', crtBox); save('plants', plants); save('furniture', furn); }
 
   /* ---------- Cards over the map ---------- */
   function openCard(id) { cardId = id; if (id && sun.on) { sun.on = false; sunPlay = ''; renderSun(); } if (id && partyOpen) { partyOpen = false; renderParty(); } renderCard(); req(); requestAnimationFrame(placeMirror); }
@@ -2582,6 +2708,60 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   }
 
 
+  /* ---------- Live PC monitors ----------
+     A monitor on the map shows that PC monitor live, streamed the way the PC app's live view is (pc_control.py on the
+     relay: /pc/ws, a JSON "frame" line then the picture, each acked), small (640 px wide), while the map is open. */
+  let pcMons = load('pc-mons', null), pcLive = {}, monQs = {}, pcBack = 0;   // pcBack: don't retry the stream before this
+  async function refreshPCMons() {
+    if (!ready()) return;
+    try { const d = await call('/pc'); pcMons = d.monitors || []; save('pc-mons', pcMons); monCache.clear(); }
+    catch (e) { if (e.missing) pcMons = []; }
+    if (route() === '/place') renderPlace();
+    req();
+  }
+  const screenWanted = id => !!(PH.store.get('live') && route() === '/' && !document.hidden && ready() && furn[id] && Date.now() > pcBack);
+  function screenSync() {
+    for (const id in pcLive) if (!screenWanted(id) || pcLive[id].mon !== furn[id].mon) screenStop(id);
+    for (const id in furn) if (isMon(id) && !pcLive[id] && screenWanted(id)) screenStart(id);
+  }
+  function screenStop(id) {
+    const s = pcLive[id]; if (!s) return; delete pcLive[id];
+    if (s.ws) { s.ws.onclose = null; try { s.ws.send(JSON.stringify([{ stream: null }])); s.ws.close(); } catch {} }
+    s.cv.remove(); req();
+  }
+  const toBmp = blob => window.createImageBitmap ? createImageBitmap(blob)
+    : new Promise((ok, bad) => { const i = new Image(), u = URL.createObjectURL(blob); i.onload = () => { URL.revokeObjectURL(u); ok(i); }; i.onerror = bad; i.src = u; });
+  function screenStart(id) {
+    const m = furn[id], g = monGeom(id), cv = document.createElement('canvas');
+    cv.className = 'tv-live'; cv.width = g.pw; cv.height = g.ph; cv.style.width = g.pw + 'px'; cv.style.height = g.ph + 'px'; cv.hidden = true;
+    $('#tv-layer').appendChild(cv);
+    const s = pcLive[id] = { mon: m.mon, cv, cx: cv.getContext('2d'), meta: null, got: false, ws: null };
+    let ws; try { ws = s.ws = new WebSocket(link.url.replace(/^http/, 'ws') + '/pc/ws?key=' + encodeURIComponent(link.key)); } catch { screenStop(id); pcBack = Date.now() + 30000; return; }
+    ws.binaryType = 'blob';
+    ws.onopen = () => ws.send(JSON.stringify([{ stream: { mon: m.mon, w: g.pw, q: 50 } }]));
+    ws.onmessage = async e => {
+      if (typeof e.data === 'string') { try { const d = JSON.parse(e.data); if (d.frame) s.meta = d.frame; } catch {} return; }
+      try { ws.send('[{"ack":1}]'); } catch {}
+      const meta = s.meta || {}; s.meta = null;
+      let bmp; try { bmp = await toBmp(e.data.type ? e.data : new Blob([e.data], { type: meta.type || 'image/jpeg' })); } catch { return; }
+      if (pcLive[id] !== s) { bmp.close && bmp.close(); return; }
+      s.cx.drawImage(bmp, 0, 0, s.cv.width, s.cv.height); bmp.close && bmp.close();
+      if (!s.got) { s.got = true; req(); }
+      placeScreens();
+    };
+    // the relay has no PC control, or the link dropped: wait a bit before trying again
+    ws.onclose = () => { if (pcLive[id] !== s) return; pcBack = Date.now() + (s.got ? 5000 : 30000); screenStop(id); setTimeout(screenSync, (s.got ? 5000 : 30000) + 100); };
+  }
+  function placeScreens() {
+    const view = $('#tv-layer').getBoundingClientRect(), r = canvas.getBoundingClientRect(), ox = r.left - view.left, oy = r.top - view.top;
+    for (const id in pcLive) {
+      const s = pcLive[id], q = monQs[id];
+      const area = q ? Math.abs((q[1][0] - q[0][0]) * (q[3][1] - q[0][1]) - (q[3][0] - q[0][0]) * (q[1][1] - q[0][1])) : 0;
+      if (!s.got || area < 80) { s.cv.hidden = true; continue; }
+      s.cv.style.transform = matrixTo([q[0], q[1], q[3], q[2]].map(([x, y]) => [x + ox, y + oy]), s.cv.width, s.cv.height); s.cv.hidden = false;
+    }
+  }
+
   /* ---------- Sunlight: where the sun comes in, any day and time of the year ----------
      The home is 501 Wilson Ave, Reno NV, and the big living-room window faces 170° (just east of due south), per Floyd.
      That window's outward side in the scan fixes north on the map. The sun's place in the sky comes from the date, time and
@@ -2711,6 +2891,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   const ftin = m => { const i = Math.round(m / 0.0254); return Math.floor(i / 12) + '′ ' + (i % 12) + '″'; };
   const LEAF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M8 21h8l-1-5H9zM12 16V9M12 11c-4 0-6-2-6-6 4 0 6 2 6 6zM12 9c0-4 2-6 6-6 0 4-2 6-6 6z"/></svg>';
   const BULB = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>';
+  const SOFA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M5 11V7h14v4M3 11h4v4h10v-4h4v7H3zM5 18v2M19 18v2"/></svg>';
+  const MONI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="4" width="18" height="12"/><path d="M12 16v4M8 20h8"/></svg>';
   const TVI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M8 3l4 4 4-4"/></svg>';
   function placeList() {
     const out = lights.map(l => ({ id: l.id, name: l.name, l }));
@@ -2731,42 +2913,55 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     add('crt', 'Kitchen TV', !!tvGet('crt'), TVI, crtBox ? 'moved' : fridgeCRT() ? 'on the fridge' : 'not placed');
     Object.keys(plants).forEach((id, i) => add(id, 'Plant ' + (i + 1), true, LEAF));
     if (isPlant(sel) && !plants[sel]) add(sel, 'New plant', false, LEAF);
+    Object.keys(furn).filter(isMon).forEach(id => add(id, 'Monitor', true, MONI, 'PC screen ' + furn[id].mon));
+    Object.keys(furn).filter(id => /^f:a/.test(id)).forEach(id => add(id, furnName(furn[id]), true, SOFA, 'added'));
+    if (isBox(sel) && !furnGet(sel) && draft) add(sel, isMon(sel) ? 'New monitor' : 'New ' + furnName(draft).toLowerCase(), false, isMon(sel) ? MONI : SOFA);
     add('plant:new', '+ Plant', false, LEAF, 'add one');
+    add('f:new', '+ Furniture', false, SOFA, 'add a piece');
+    add('mon:new', '+ Monitor', false, MONI, 'live PC screen');
     if (!lights.length && !Object.keys(pins).length) {
-      const p = document.createElement('span'); p.className = 'pl-hint'; p.style.alignSelf = 'center';
+      const p = document.createElement('span'); p.className = 'pl-hint'; p.style.alignSelf = 'center'; p.style.flex = '0 0 210px';
       p.textContent = ready() ? (failing ? failing : 'Loading lights from the relay…') : 'Set up the relay in Settings to list your lights.';
       box.prepend(p);
     }
     const s = $('#pl-sel'); s.hidden = sel === null;
     if (sel !== null) {
-      const isTV = isTVid(sel), isP = isPlant(sel), l = lights.find(x => x.id === sel), pin = pins[sel];
-      $('#pl-name').textContent = isTV ? TVS[sel].name : isP ? 'Plant' : l ? l.name : (pin && pin.name) || 'Light';
-      const placed = isTV ? !!tvGet(sel) : isP ? !!plants[sel] : !!pin;
+      const isTV = isTVid(sel), isP = isPlant(sel), isB = isBox(sel), isM = isMon(sel), l = lights.find(x => x.id === sel), pin = pins[sel], fb = isB ? furnGet(sel) : null;
+      $('#pl-name').textContent = isTV ? TVS[sel].name : isP ? 'Plant' : isM ? 'Monitor' : isB ? furnName(fb || draft || {}) : l ? l.name : (pin && pin.name) || 'Light';
+      const placed = isTV ? !!tvGet(sel) : isP ? !!plants[sel] : isB ? !!fb : !!pin;
       $('#pl-sub').textContent = placed ? 'Drag it, or tap the map to move it' : 'Tap the map where it is';
-      $('#pl-dot').style.background = isTV ? '' : css(hsl(l) || [125, 0, 30]);
+      $('#pl-dot').style.background = isTV || isB ? '' : css(hsl(l) || [125, 0, 30]);
       $('#pl-remove').hidden = !placed; $('#pl-remove').textContent = isTV ? 'Turn' : 'Remove';
+      renderDims(isB ? fb || draft : null);
       $('#pl-size').hidden = $('#pl-kind').hidden = !isP;
       const q = plants[sel], ps = q ? q.s : lastPlant, pk = q ? plantKind(q) : lastKind;
       $$('#pl-size [data-s]').forEach(b => b.setAttribute('aria-checked', String(near(+b.dataset.s, ps, 0.05))));
       $$('#pl-kind [data-t]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.t === pk)));
       // height above the floor, floor to ceiling: a light's bulb, a plant's pot, the TV's bottom edge
-      const t = isTV ? tvGet(sel) : null, max = isTV ? CEIL - (G.tvs[sel] ? G.tvs[sel].hgt : 0.6) : CEIL;
-      const y = isTV ? (t ? t.y[0] : 0.8) : isP ? (q ? q.y || 0 : lastPlantY) : pin ? pin.y : lastH;
+      const t = isTV ? tvGet(sel) : null, bb = isB ? fb || draft : null;
+      const max = isTV ? CEIL - (G.tvs[sel] ? G.tvs[sel].hgt : 0.6) : isM ? CEIL - bb.len / monAspect(bb.mon) : isB ? CEIL - (bb.y[1] - bb.y[0]) : CEIL;
+      const y = isTV ? (t ? t.y[0] : 0.8) : isM ? bb.y0 : isB ? bb.y[0] : isP ? (q ? q.y || 0 : lastPlantY) : pin ? pin.y : lastH;
       const r = $('#pl-y'); r.max = max.toFixed(2); if (!heightDrag) r.value = y; $('#pl-yv').textContent = heightLabel(+r.value, max);
     }
     renderHint();
   }
   function renderHint() {
     const el = $('#pl-hint'); el.textContent = '';
-    if (sel === null) { el.append('Pick a light below, then tap where it is on the map.'); return; }
+    if (sel === null) { el.append('Pick something below and tap where it goes, or tap a piece of furniture to change it.'); return; }
     const b = document.createElement('b');
-    b.textContent = isTVid(sel) ? 'the ' + TVS[sel].name.replace(' TV', ' TV').toLowerCase().replace('tv', 'TV') : isPlant(sel) ? 'the plant' : (lights.find(x => x.id === sel) || pins[sel] || { name: 'it' }).name;
+    b.textContent = isMon(sel) ? 'the monitor' : isBox(sel) ? 'the ' + furnName(furnGet(sel) || draft || {}).toLowerCase() : isTVid(sel) ? 'the ' + TVS[sel].name.replace(' TV', ' TV').toLowerCase().replace('tv', 'TV') : isPlant(sel) ? 'the plant' : (lights.find(x => x.id === sel) || pins[sel] || { name: 'it' }).name;
     el.append('Tap the map to put ', b, ' there, or drag it.');
   }
   $('#pl-chips').addEventListener('click', e => {
     const c = e.target.closest('.chip'); if (!c) return;
     let id = c.dataset.id;
     if (id === 'plant:new') { let n = 1; while (plants['plant:' + n]) n++; id = 'plant:' + n; }
+    if (id === 'f:new' || id === 'mon:new') {
+      const m = id === 'mon:new', pre = m ? 'mon:' : 'f:a'; let n = 1; while (furn[pre + n]) n++; id = pre + n;
+      if (m) draft = { len: 0.6, a: 0, y0: 0.85, mon: (pcMons && pcMons[0] && pcMons[0].n) || 1, face: 'you' };
+      else { const [, len, wid, h] = FURN[draftKind]; draft = { n: draftKind, len, wid, a: 0, y: [0, h] }; }
+      if (m) refreshPCMons();
+    }
     sel = sel === id ? null : id; renderPlace(); req();
   });
   $('#pl-size').addEventListener('click', e => {
@@ -2782,7 +2977,11 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   let heightDrag = false;
   const heightLabel = (y, max) => y < 0.01 ? 'Floor' : y > max - 0.01 ? 'Ceiling' : ftin(y);
   function setHeight(y) {
-    if (isTVid(sel)) { const t = tvGet(sel); if (!t) return; tvPut(sel, { ...t, y: [+y.toFixed(2), +(y + t.y[1] - t.y[0]).toFixed(2)] }); }
+    if (isBox(sel)) {
+      const b = furnGet(sel) || draft; if (!b) return;
+      const v = isMon(sel) ? { ...b, y0: +y.toFixed(2) } : { ...b, y: [+y.toFixed(2), +(y + b.y[1] - b.y[0]).toFixed(2)] };
+      if (furnGet(sel)) furnPut(sel, v); else draft = v;
+    } else if (isTVid(sel)) { const t = tvGet(sel); if (!t) return; tvPut(sel, { ...t, y: [+y.toFixed(2), +(y + t.y[1] - t.y[0]).toFixed(2)] }); }
     else if (isPlant(sel)) { lastPlantY = y; if (plants[sel]) plants[sel].y = +y.toFixed(2); }
     else { lastH = y; if (pins[sel]) pins[sel].y = +y.toFixed(2); }
     $('#pl-yv').textContent = heightLabel(y, +$('#pl-y').max); req();
@@ -2790,9 +2989,63 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   $('#pl-y').addEventListener('input', e => { heightDrag = true; setHeight(+e.target.value); });
   $('#pl-y').addEventListener('change', e => { heightDrag = false; setHeight(+e.target.value); savePins(); renderPlace(); });
   $('#pl-remove').addEventListener('click', () => {
+    if (isBox(sel)) {
+      furnPut(sel, /^f:\d/.test(sel) ? { gone: true } : null); screenSync(); sel = null; savePins(); renderPlace(); req(); return;
+    }
     if (isTVid(sel)) { const t = tvGet(sel); if (!t) return; tvPut(sel, { ...t, a: (t.a + Math.PI / 2) % (Math.PI * 2), face: undefined }); savePins(); req(); return; }
     if (isPlant(sel)) { delete plants[sel]; plantCache.delete(sel); sel = null; savePins(); renderPlace(); req(); return; }
     delete pins[sel]; savePins(); renderPlace(); req();
+  });
+
+  /* Furniture and monitor sizes: width, depth, height and which way it faces, each on a slider. A monitor's height comes
+     from the PC monitor's shape, and it gets a row to pick which PC monitor it shows. */
+  let draft = null, draftKind = 'sofa', dimDrag = false, dimTab = 'len';
+  const DIMS = { len: [0.2, 4], wid: [0.1, 3], h: [0.05, 2.5], y0: [0, 2.5], a: [0, 355] };
+  const boxH = b => b.y ? b.y[1] - b.y[0] : b.len / monAspect(b.mon);
+  const dimOf = (b, k) => k === 'h' ? b.y[1] - b.y[0] : k === 'y0' ? (b.y ? b.y[0] : b.y0) : k === 'a' ? ((Math.round(b.a * 180 / Math.PI) % 360) + 360) % 360 : b[k];
+  const dimText = (k, v, max) => k === 'a' ? v + '°' : k === 'y0' ? heightLabel(v, max) : ftin(v);
+  function renderDims(b) {
+    const m = isMon(sel);
+    $('#pl-dims').hidden = !b; $('#pl-height').hidden = !!b;
+    $('#pl-fkind').hidden = !b || m || !!furnGet(sel) || !/^f:a/.test(sel); $('#pl-mon').hidden = !b || !m;
+    if (!b) return;
+    if (m && (dimTab === 'wid' || dimTab === 'h')) dimTab = 'len';
+    $$('#pl-tabs [data-tab]').forEach(t => { t.hidden = m && (t.dataset.tab === 'wid' || t.dataset.tab === 'h'); t.setAttribute('aria-selected', String(t.dataset.tab === dimTab)); });
+    $('#pl-tabs').style.setProperty('--n', m ? 3 : 5);
+    const r = $('#pl-dim'), k = dimTab, max = k === 'y0' ? +(CEIL - boxH(b)).toFixed(2) : k === 'len' && m ? 1.6 : DIMS[k][1];
+    r.min = k === 'len' && m ? 0.3 : DIMS[k][0]; r.max = max; r.step = k === 'a' ? 5 : 0.01;
+    if (!dimDrag) r.value = dimOf(b, k);
+    $('#pl-dimv').textContent = dimText(k, +r.value, max);
+    $$('#pl-fkind [data-k]').forEach(x => x.setAttribute('aria-checked', String(x.dataset.k === b.n)));
+    if (m) {
+      const box = $('#pl-mon'), list = pcMons && pcMons.length ? pcMons.map(x => x.n) : [1, 2, 3];
+      if (box.dataset.list !== list.join()) { box.dataset.list = list.join(); box.innerHTML = list.map(n => `<button class="chip" role="radio" data-mon="${n}">PC screen ${n}</button>`).join(''); }
+      $$('#pl-mon [data-mon]').forEach(x => x.setAttribute('aria-checked', String(+x.dataset.mon === b.mon)));
+    }
+  }
+  function setDim(k, v) {
+    const b = furnGet(sel) || draft; if (!b) return;
+    const n = { ...b };
+    if (k === 'h') n.y = [b.y[0], +(b.y[0] + v).toFixed(2)];
+    else if (k === 'y0') { if (b.y) n.y = [+v.toFixed(2), +(v + b.y[1] - b.y[0]).toFixed(2)]; else n.y0 = +v.toFixed(2); }
+    else if (k === 'a') { n.a = +(v * Math.PI / 180).toFixed(4); delete n.face; }
+    else n[k] = +v.toFixed(2);
+    if (furnGet(sel)) furnPut(sel, n); else draft = n;
+    renderPlace(); req();
+  }
+  $('#pl-tabs').addEventListener('click', e => { const t = e.target.closest('[data-tab]'); if (!t) return; dimTab = t.dataset.tab; renderPlace(); });
+  $('#pl-dim').addEventListener('input', e => { dimDrag = true; setDim(dimTab, +e.target.value); });
+  $('#pl-dim').addEventListener('change', e => { dimDrag = false; setDim(dimTab, +e.target.value); savePins(); });
+  $('#pl-fkind').addEventListener('click', e => {
+    const b = e.target.closest('[data-k]'); if (!b || !draft) return;
+    draftKind = b.dataset.k; const [, len, wid, h] = FURN[draftKind];
+    draft = { ...draft, n: draftKind, len, wid, y: [draft.y[0], draft.y[0] + h] }; renderPlace(); req();
+  });
+  $('#pl-mon').addEventListener('click', e => {
+    const b = e.target.closest('[data-mon]'); if (!b) return;
+    const v = { ...(furnGet(sel) || draft), mon: +b.dataset.mon };
+    if (furnGet(sel)) { furnPut(sel, v); savePins(); screenSync(); } else draft = v;
+    renderPlace(); req();
   });
 
   /* ---------- Rendering the rest ---------- */
@@ -2814,7 +3067,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     $('#ab-walls').textContent = plan.walls.length + ' pieces, ' + (plan.open || []).length + ' doors and windows';
     $('#relay-shared').textContent = ready() ? 'Connected to ' + link.url.replace(/^https?:\/\//, '') + '.' : sharedLink() ? '' : 'Not set up yet.';
     if (route() === '/place') renderPlace();
-    renderCard(); renderRooms(); renderScenes(); mirrorSync(); req();
+    renderCard(); renderRooms(); renderScenes(); mirrorSync(); screenSync(); req();
   }
   function renderRooms() {
     const box = $('#rooms-list'); if (route() !== '/settings/rooms') return; box.textContent = '';
@@ -2848,6 +3101,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   PH.on('view', () => { render(); });
   ['walls', 'furn'].forEach(k => PH.on(k, () => { build(); req(); }));
   PH.on('live', () => { render(); });
+  PH.on('furn', () => { if (route() === '/place') renderPlace(); });
   PH.on('labels', req);
 
   $('#li-save').addEventListener('click', async () => {
@@ -2868,15 +3122,21 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     try {
       const p = HomeScan.parse(await f.text());
       if (!await PH.confirm(`Found ${p.floors.length} rooms, ${p.walls.length} wall pieces and ${(p.open || []).length} doors and windows. Use this scan? Lights you placed may need moving.`, { title: 'New scan', ok: 'Use it' })) return;
-      plan = p; save('plan', p); tvBox = crtBox = null; rooms = {}; save('rooms', rooms); savePins(); build(); fit(); save('cam', cam); render();
+      plan = p; save('plan', p); tvBox = crtBox = null; scanFurnReset(); rooms = {}; save('rooms', rooms); savePins(); build(); fit(); save('cam', cam); render();
       PH.toast('New scan loaded.'); PH.go('/');
     } catch (err) { PH.toast(err.message || 'That file isn\'t a room scan.', 'error'); }
   });
   $('#scan-reset').addEventListener('click', async () => {
     if (!await PH.confirm('Go back to the scan this app came with? Room names reset too.', { title: 'Original scan', ok: 'Use original' })) return;
-    plan = BUILT_PLAN; save('plan', null); tvBox = crtBox = null; rooms = {}; save('rooms', rooms); savePins(); build(); fit(); render();
+    plan = BUILT_PLAN; save('plan', null); tvBox = crtBox = null; scanFurnReset(); rooms = {}; save('rooms', rooms); savePins(); build(); fit(); render();
   });
-  $('#export').addEventListener('click', () => PH.exportFile('home-map-layout.json', JSON.stringify({ app: 'home-map', pins, plants, tv: tvBox, crt: crtBox, rooms, plan: load('plan', null) || undefined }, null, 2), 'application/json'));
+  // Scanned pieces go back to how the scan found them; added pieces and monitors stay
+  const scanFurnReset = () => { for (const id in furn) if (/^f:\d/.test(id)) delete furn[id]; };
+  $('#furn-reset').addEventListener('click', async () => {
+    if (!await PH.confirm('Put every scanned piece of furniture back the way the scan found it? Pieces and monitors you added stay.', { title: 'Scanned furniture', ok: 'Put back' })) return;
+    scanFurnReset(); savePins(); req(); PH.toast('Scanned furniture put back.');
+  });
+  $('#export').addEventListener('click', () => PH.exportFile('home-map-layout.json', JSON.stringify({ app: 'home-map', pins, plants, tv: tvBox, crt: crtBox, furniture: furn, rooms, plan: load('plan', null) || undefined }, null, 2), 'application/json'));
   $('#erase').addEventListener('click', async () => {
     if (!await PH.confirm('Take every light off the map and put both TVs back where they started?', { title: 'Clear map', ok: 'Clear', danger: true })) return;
     pins = {}; tvBox = crtBox = null; savePins(); build(); render(); PH.toast('Map cleared.', 'warn');
@@ -2897,6 +3157,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     const live = ['/', '/place'].includes(route());
     if (document.hidden || !ready() || !live) { render(); return; }
     refreshLights(); refreshParty(); if (tvOf() || tvGet('crt')) refreshTV();
+    if (Object.keys(furn).some(isMon) && !pcMons) refreshPCMons();
     pollT = setInterval(() => {
       if (dragging || gest) return;
       refreshLights(); if (partyHas !== false || ++tick % 12 === 0) refreshParty();
