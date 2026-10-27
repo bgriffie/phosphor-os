@@ -140,7 +140,7 @@
     .date { color: var(--text-dim); font-size: calc(2.6 * var(--u)); text-transform: uppercase; letter-spacing: var(--tracking-label); margin-top: calc(1.2 * var(--u)); }
     .home-note { text-align: right; color: var(--text-dim); max-width: 46%; }
     .home-note .msg { color: var(--text); font-size: calc(2.6 * var(--u)); display: block; margin-top: calc(.6 * var(--u)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .tiles { margin-top: auto; display: grid; grid-template-columns: repeat(5, 1fr); gap: calc(2 * var(--u)); }
+    .tiles { margin-top: auto; display: grid; grid-template-columns: repeat(6, 1fr); gap: calc(2 * var(--u)); }
     .tile { aspect-ratio: 1 / .92; border: 2px solid var(--line-strong); border-radius: var(--radius); background: var(--surface-1);
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(1.6 * var(--u)); color: var(--text-dim);
       text-transform: uppercase; letter-spacing: var(--tracking-label); font-size: calc(2.2 * var(--u)); font-weight: 700; transition: none; }
@@ -213,6 +213,21 @@
     #v-dim { display: none; }
     #v-dim.on { display: grid; place-items: center; background: #000; }
     .dim-time { color: var(--accent); opacity: .22; font-size: calc(4 * var(--u)); letter-spacing: .1em; text-shadow: none; transition: transform 2s steps(8); }
+    /* Watch: poster rows from What to Watch. The phone sends them; the arrows move the green frame. */
+    #v-watch { padding-bottom: 0; }
+    .w-head { min-height: calc(9 * var(--u)); }
+    .w-title { font-size: calc(4.4 * var(--u)); color: var(--accent); text-shadow: var(--glow-lg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .w-sub { display: flex; gap: calc(1.2 * var(--u)); align-items: center; color: var(--text-dim); font-size: calc(2.2 * var(--u)); text-transform: uppercase; letter-spacing: var(--tracking-label); margin-top: calc(.6 * var(--u)); }
+    .w-tag { border: 1px solid currentColor; padding: 0 calc(.8 * var(--u)); color: var(--accent); }
+    .w-rows { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: calc(2 * var(--u)); margin-top: calc(1.5 * var(--u)); }
+    .w-row h3 { margin: 0 0 calc(1 * var(--u)); font-size: calc(2.2 * var(--u)); color: var(--text-dim); text-transform: uppercase; letter-spacing: var(--tracking-label); font-weight: 700; }
+    .w-strip { display: flex; gap: calc(1.6 * var(--u)); transition: transform .25s steps(4); }
+    .w-card { flex: none; width: calc(16 * var(--u)); aspect-ratio: 2 / 3; border: 2px solid var(--line-strong); background: var(--surface-1); position: relative; overflow: hidden;
+      display: flex; align-items: flex-end; padding: calc(.8 * var(--u)); box-sizing: border-box; color: var(--text-dim); font-size: calc(1.8 * var(--u)); }
+    .w-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .w-card.focus { border-color: var(--accent); box-shadow: var(--glow-box), 0 0 0 calc(.5 * var(--u)) var(--accent); }
+    .w-row:not(.cur) { opacity: .55; }
+    .w-rows[hidden], #w-empty[hidden], .w-head[hidden] { display: none; }
     .ov-card { background: var(--surface-2); border: 2px solid var(--accent); border-radius: var(--radius); padding: calc(3 * var(--u)) calc(5 * var(--u)); text-align: center; box-shadow: var(--glow-box); min-width: 40%; }
     .ov-card h2 { margin: 0 0 calc(1 * var(--u)); font-size: calc(4.4 * var(--u)); color: var(--accent); text-shadow: var(--glow-lg); text-transform: uppercase; letter-spacing: var(--tracking-label); }
     .ov-card p { margin: calc(.6 * var(--u)) 0 0; color: var(--text-dim); }
@@ -286,6 +301,7 @@
           <div class="tiles" id="tiles">
             <div class="tile" data-go="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><circle cx="12" cy="14" r="4"/><path d="M12 4v3M4.9 8.9l2.1 2.1M19.1 8.9 17 11M2 20h20"/></svg>Today</div>
             <div class="tile" data-go="art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M3 4h18v16H3z"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8" r="1.5"/></svg>Art</div>
+            <div class="tile" data-go="watch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M3 5h18v12H3zM8 21h8M10 8.5v5l4.5-2.5z"/></svg>Watch</div>
             <div class="tile" data-go="clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Clock</div>
             <div class="tile" data-go="lights"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>Lights</div>
             <div class="tile" data-go="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M3 4h18v13H8l-5 4z"/><path d="M7 9h10M7 13h6"/></svg>Board</div>
@@ -294,6 +310,12 @@
         </section>
 
         <section class="view" id="v-dim"><div class="dim-time" id="d-time">--:--</div></section>
+
+        <section class="view" id="v-watch">
+          <div class="w-head" id="w-head"><div class="w-title" id="w-title"></div><div class="w-sub" id="w-sub"></div></div>
+          <div class="w-rows" id="w-rows"></div>
+          <div class="empty" id="w-empty">Open Watch in the TV app on your phone to fill this with picks from Hulu, Prime Video and Peacock.</div>
+        </section>
 
         <section class="view" id="v-clock">
           <div class="clock-wrap" id="clock-wrap">
@@ -341,7 +363,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.15</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.16</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -1205,9 +1227,9 @@ const Sound = (() => {
    Everything shown that came from outside goes in with textContent, never as HTML. */
 (() => {
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-  const SCREENS = ['home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim'];
+  const SCREENS = ['home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim', 'watch'];
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let screen = 'home', weather = null, tileAt = 0, lightAt = 0, lights = null, lightsErr = '', hasLights = true, board = [], linked = false, idleT = 0;
+  let watch = [], wRow = 0, wCol = [], screen = 'home', weather = null, tileAt = 0, lightAt = 0, lights = null, lightsErr = '', hasLights = true, board = [], linked = false, idleT = 0;
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
   /* ---------- Talking to the relay ---------- */
@@ -1220,6 +1242,7 @@ const Sound = (() => {
     if (Array.isArray(d.board)) { board = d.board.filter(m => m && typeof m.text === 'string'); renderBoard(); if (screen === 'today') renderToday(); }
     if ('weather' in d) { weather = d.weather && typeof d.weather === 'object' ? d.weather : null; if (screen === 'today') renderToday(); }
     if (d.say && typeof d.say.text === 'string') showSay(d.say.text);
+    if (Array.isArray(d.watch)) { watch = d.watch.filter(r => r && Array.isArray(r.items) && r.items.length); wRow = Math.min(wRow, Math.max(0, watch.length - 1)); if (screen === 'watch') renderWatch(); }
     if (typeof d.key === 'string') press(d.key);
     if (typeof d.open === 'string' && SCREENS.includes(d.open)) go(d.open);
     if (d.art && typeof d.art === 'object') artCmd(d.art);
@@ -1243,7 +1266,7 @@ const Sound = (() => {
   Sound.onState(() => { showSound(); status(); });
   const showLinked = () => { $('#offline').hidden = linked; $('#led').classList.toggle('off', !linked); };
   // The only thing this page sends: where it is and what is selected
-  const status = () => send({ screen, focus: screen === 'lights' ? focusId() : '', art: { i: Art.index, hold: Art.hold, full }, heard: Sound.state() });
+  const status = () => send({ screen, focus: screen === 'lights' ? focusId() : screen === 'watch' ? watchKey() : '', art: { i: Art.index, hold: Art.hold, full }, heard: Sound.state() });
   // Full screen art: no case, no labels, no glow or grid; just the picture across the whole TV
   let full = false;
   function fullView() { document.body.classList.toggle('full', full && screen === 'art'); if (screen === 'art') requestAnimationFrame(() => Art.resize()); }
@@ -1328,6 +1351,7 @@ const Sound = (() => {
     if (name === 'lights') renderLights();
     if (name === 'board') renderBoard();
     if (name === 'today') renderToday();
+    if (name === 'watch') renderWatch();
     if (name === 'art') Art.start($('#art'), artChanged, art);
     tick(); idle();
     status();
@@ -1349,9 +1373,53 @@ const Sound = (() => {
       else if (k === 'right') focusTile(tileAt + 1);
       else if (k === 'ok') go($$('.tile')[tileAt].dataset.go);
     } else if (screen === 'lights') lightsKey(k);
+    else if (screen === 'watch') watchKey(k);
     else if (screen === 'art') { if (k === 'right' || k === 'down') Art.next(); else if (k === 'left' || k === 'up') Art.prev(); else if (k === 'ok') Art.toggleHold(); }
     else if (screen === 'dim') go('home');
     else if (k === 'ok' && (screen === 'clock' || screen === 'today' || screen === 'board')) go('home');
+  }
+
+  /* ---------- Watch: picks from What to Watch ---------- */
+  const SVC_NAME = { hulu: 'Hulu', prime: 'Prime Video', peacock: 'Peacock' };
+  const POSTER = 'https://image.tmdb.org/t/p/w342';   // fixed address; the relay only passes a checked file path
+  const wItem = () => watch[wRow] && watch[wRow].items[wCol[wRow] || 0];
+  function watchKey(k) {
+    if (k === undefined) { const it = wItem(); return it ? it.k : ''; }   // no key: report what is selected
+    if (!watch.length) return;
+    const n = watch[wRow].items.length, c = wCol[wRow] || 0;
+    if (k === 'left') wCol[wRow] = Math.max(0, c - 1);
+    else if (k === 'right') wCol[wRow] = Math.min(n - 1, c + 1);
+    else if (k === 'up') wRow = Math.max(0, wRow - 1);
+    else if (k === 'down') wRow = Math.min(watch.length - 1, wRow + 1);
+    else if (k === 'ok') { showSay('Open it from the TV app on your phone'); return; }
+    renderWatch(); status();
+  }
+  function renderWatch() {
+    const box = $('#w-rows'), has = watch.length > 0;
+    $('#w-empty').hidden = has; box.hidden = !has; $('#w-head').hidden = !has;
+    box.textContent = '';
+    if (!has) return;
+    // Show the selected row and the next ones; rows above it scroll away
+    watch.forEach((r, i) => {
+      if (i < wRow) return;
+      const row = el('div', 'w-row' + (i === wRow ? ' cur' : '')); row.appendChild(el('h3', '', r.title));
+      const strip = el('div', 'w-strip'), c = wCol[i] || 0;
+      r.items.forEach((it, j) => {
+        const card = el('div', 'w-card' + (i === wRow && j === c ? ' focus' : ''), it.title);
+        if (typeof it.poster === 'string' && /^\/[\w-]+\.(jpg|png)$/.test(it.poster)) { const im = el('img'); im.alt = ''; im.src = POSTER + it.poster; im.onerror = () => im.remove(); card.appendChild(im); }
+        strip.appendChild(card);
+      });
+      // Keep the selected poster in view: slide the row along under it
+      strip.style.transform = `translateX(calc(${-Math.max(0, c - 2)} * (16 * var(--u) + 1.6 * var(--u))))`;
+      row.appendChild(strip); box.appendChild(row);
+    });
+    const it = wItem();
+    $('#w-title').textContent = it ? it.title : '';
+    const sub = $('#w-sub'); sub.textContent = '';
+    if (it) {
+      if (it.year) sub.appendChild(el('span', '', it.year));
+      (it.svcs || []).forEach(x => SVC_NAME[x] && sub.appendChild(el('span', 'w-tag', SVC_NAME[x])));
+    }
   }
 
   /* ---------- Lights ---------- */

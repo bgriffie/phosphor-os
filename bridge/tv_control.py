@@ -23,7 +23,7 @@ Security (agreed with Floyd's security review):
   status (which screen, which item is selected) and everything else it sends is ignored.
 - Windows asks once whether Python may use the network: tick Private networks only.
 """
-import asyncio, json, os, secrets, socket, time
+import asyncio, json, os, re, secrets, socket, time
 from pathlib import Path
 
 from aiohttp import web, WSMsgType, ClientSession, ClientTimeout
@@ -34,7 +34,7 @@ HERE = Path(__file__).resolve().parent
 CONFIG = HERE / 'tv_control.json'
 PAGE_CACHE = HERE / 'tv_page.html'
 PAGE_MAX_AGE = 600         # seconds before the TV page is fetched again
-SCREENS = ('home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim')
+SCREENS = ('home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim', 'watch')
 # Background sound. The TV page holds the station addresses (fixed https links) and makes the
 # rain/fire/ocean sounds itself; the relay only passes along which one to play.
 MUSIC = ('swiss-classic', 'swiss-jazz', 'sonic-universe', 'bossa', 'secret-agent', 'lounge', 'romantic-jazz', 'fluid', 'groove-salad', 'drone-zone')
@@ -42,7 +42,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '1.6'           # the phone app compares this to know which features the relay has
+VERSION = '1.7'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # morning = the Today summary; away = a dark screen with the sound still playing (for the plants);
@@ -53,6 +53,9 @@ SCENE_SOUND = {'morning': {'music': 'swiss-classic', 'amb': ''}, 'away': {'music
 DEFAULT_SCHEDULE = [{'scene': 'morning', 'at': '07:00', 'days': [0, 1, 2, 3, 4, 5, 6]},
                     {'scene': 'away', 'at': '08:30', 'days': [0, 1, 2, 3, 4]},
                     {'scene': 'home', 'at': '17:30', 'days': [0, 1, 2, 3, 4]}]
+WATCH_KEY = re.compile(r'^(movie|tv)-[0-9]{1,9}$')
+WATCH_POSTER = re.compile(r'^/[A-Za-z0-9_-]{4,64}\.(jpg|png)$')   # a TMDB poster path; the TV page adds the fixed image.tmdb.org address
+WATCH_SVCS = ('hulu', 'prime', 'peacock')
 FIREPLACE = 1              # the filmed fireplace's place in the TV page's art list
 SLEEP_FADE = 60            # seconds the sound takes to fade before the sleep timer turns the TV off
 FAHRENHEIT = ('US', 'LR', 'MM', 'BS', 'BZ', 'KY', 'PW', 'FM', 'MH')
@@ -273,7 +276,7 @@ def setup(app, demo=False, lights=None, cast=False):
     token = secrets.token_urlsafe(18)           # new every start; never the relay key
     host = '127.0.0.1' if demo else lan_ip()
     hub = {'socks': set(), 'screen': '', 'focus': '', 'want': None, 'started': 0.0, 'board': cfg.get('board', [])[-12:], 'weather': None, 'weather_at': 0.0,
-           'art': None, 'heard': None, 'scene': '', 'sleep_at': 0.0, 'fading': False, 'ran': {}, 'sound': {'music': '', 'amb': '', 'mv': 70, 'av': 60, **cfg.get('sound', {})}}
+           'art': None, 'heard': None, 'scene': '', 'watch': [], 'sleep_at': 0.0, 'fading': False, 'ran': {}, 'sound': {'music': '', 'amb': '', 'mv': 70, 'av': 60, **cfg.get('sound', {})}}
     page = {'html': None, 'at': 0.0}
     casts, problem = None, ''
     if not enabled:
@@ -386,7 +389,7 @@ def setup(app, demo=False, lights=None, cast=False):
             'board': hub['board'], 'lights': lights is not None,
             'place': (cfg.get('place') or {}).get('name', ''), 'units': cfg.get('units') or '', 'unitsNow': units() if cfg.get('place') else '',
             'art': hub['art'] if linked else None, 'sound': hub['sound'], 'heard': hub['heard'] if linked else None,
-            'scene': hub['scene'] if linked else '', 'scenes': scenes(), 'schedule': schedule(), 'auto': cfg.get('auto', True),
+            'scene': hub['scene'] if linked else '', 'focus': hub['focus'] if linked and hub['screen'] == 'watch' else '', 'scenes': scenes(), 'schedule': schedule(), 'auto': cfg.get('auto', True),
             'sleep': max(0, int(hub['sleep_at'] - time.time())) if hub['sleep_at'] else 0, 'clock': time.strftime('%H:%M'),
             'screenLink': tv_url() if c.fake else ''})
 
@@ -646,6 +649,35 @@ def setup(app, demo=False, lights=None, cast=False):
             except Exception as e:
                 print('  Schedule:', str(e) or type(e).__name__)
 
+    async def watch(request):
+        """What to Watch rows for the TV, sent by the phone (which holds the TMDB key; it never comes here).
+        Only short text, a title key, a year, a TMDB poster path and service ids are passed on."""
+        body = await body_of(request)
+        rows = body.get('rows')
+        if not isinstance(rows, list):
+            raise web.HTTPBadRequest(text='Nothing to show.')
+        clean = []
+        for r in rows[:5]:
+            if not isinstance(r, dict) or not isinstance(r.get('items'), list):
+                continue
+            items = []
+            for it in r['items'][:20]:
+                if not isinstance(it, dict) or not isinstance(it.get('k'), str) or not WATCH_KEY.match(it['k']):
+                    continue
+                poster, year = it.get('poster'), it.get('year')
+                items.append({'k': it['k'], 'title': ' '.join(str(it.get('title') or '').split())[:80] or 'Untitled',
+                              'year': year if isinstance(year, str) and len(year) == 4 and year.isdigit() else '',
+                              'poster': poster if isinstance(poster, str) and WATCH_POSTER.match(poster) else '',
+                              'svcs': [x for x in (it.get('svcs') or []) if x in WATCH_SVCS][:3] if isinstance(it.get('svcs'), list) else []})
+            if items:
+                clean.append({'title': ' '.join(str(r.get('title') or '').split())[:40], 'items': items})
+        hub['watch'] = clean
+        msg = {'watch': clean}
+        if body.get('show') is True:
+            msg['open'] = 'watch'
+        shown = await send_tv(msg)
+        return web.json_response({'ok': True, 'shown': shown, 'rows': len(clean)})
+
     async def clear(request):
         hub['board'] = []
         cfg['board'] = []; save_config(cfg)
@@ -656,7 +688,8 @@ def setup(app, demo=False, lights=None, cast=False):
                     web.post('/tv/volume', volume), web.post('/tv/media', media), web.post('/tv/key', key),
                     web.post('/tv/open', open_), web.post('/tv/say', say), web.post('/tv/board/clear', clear), web.post('/tv/place', place),
                     web.post('/tv/art', art), web.post('/tv/sound', sound),
-                    web.post('/tv/scene', scene), web.post('/tv/schedule', plan), web.post('/tv/sleep', sleep)])
+                    web.post('/tv/scene', scene), web.post('/tv/schedule', plan), web.post('/tv/sleep', sleep),
+                    web.post('/tv/watch', watch)])
 
     if casts is None:
         print('TV: off.', problem)
@@ -704,7 +737,7 @@ def setup(app, demo=False, lights=None, cast=False):
         try:
             if cfg.get('place') and time.time() - hub['weather_at'] > WEATHER_EVERY:
                 await refresh_weather(push=False)
-            await sock.send_json({'board': hub['board'], 'weather': hub['weather'], 'sound': hub['sound'], 'sleep': max(0, int(hub['sleep_at'] - time.time())) if hub['sleep_at'] else 0, **(await lights_list() if lights is not None else {'lights': False})})
+            await sock.send_json({'board': hub['board'], 'weather': hub['weather'], 'sound': hub['sound'], 'watch': hub['watch'], 'sleep': max(0, int(hub['sleep_at'] - time.time())) if hub['sleep_at'] else 0, **(await lights_list() if lights is not None else {'lights': False})})
             if hub['scene']:   # the screen came back (it dropped off, or the PC restarted it): carry on with the scene
                 hub['scene_t'] = time.time()
                 await sock.send_json(scene_view(hub['scene']))

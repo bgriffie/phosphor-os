@@ -779,7 +779,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .rc-side { display: flex; flex-direction: column; gap: var(--sp-2); }
 
     /* Channels: what's on the TV, the current one lit */
-    .chans { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--sp-2); }
+    .chans { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--sp-2); }
     .ch { min-height: 58px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text-dim);
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font: inherit; font-size: 10px; font-weight: 700;
       text-transform: uppercase; letter-spacing: .06em; cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; padding: 0; }
@@ -798,6 +798,8 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .line-t { font-weight: 700; font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .line-s { color: var(--text-dim); font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .an-ch { color: var(--accent); }
+    .watch-now .rm-b.wn-open { min-height: 40px; padding: 0 var(--sp-3); }
+    #wn-like[aria-pressed="true"] svg { fill: currentColor; }
     .rm-b.ic { width: 40px; min-height: 40px; padding: 0; flex: none; border-color: var(--line); }
 
     /* The remote: Back/Home/Say | round pad | volume */
@@ -880,7 +882,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.15</span>
+      <span class="app-meta">v1.16</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -938,6 +940,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
               <div class="chans" id="shortcuts" role="group" aria-label="Put on the TV">
                 <button class="ch" data-screen="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="14" r="4"/><path d="M12 4v3M4.9 8.9l2.1 2.1M19.1 8.9 17 11M2 20h20"/></svg><span>Today</span></button>
                 <button class="ch" data-screen="art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v16H3z"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg><span>Art</span></button>
+                <button class="ch" id="ch-watch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 5h18v12H3zM8 21h8M10 8.5v5l4.5-2.5z"/></svg><span>Watch</span></button>
                 <button class="ch" data-screen="clock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Clock</span></button>
                 <button class="ch" data-screen="lights"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg><span>Lights</span></button>
                 <button class="ch" data-screen="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v13H8l-5 4z"/><path d="M7 9h10M7 13h6"/></svg><span>Board</span></button>
@@ -950,6 +953,14 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
                 <button class="rm-b ic" data-art="1" aria-label="Next art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
                 <button class="rm-b ic" id="an-hold" aria-pressed="false" aria-label="Stay on this one"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M7 4v16M17 4v16"/></svg></button>
                 <button class="rm-b ic" id="an-full" aria-pressed="false" aria-label="Full screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
+              </div>
+
+              <!-- Only while Watch is on: the title picked on the TV, ♥ it, or open it on its service -->
+              <div class="line watch-now" id="watch-now" hidden>
+                <button class="rm-b ic" id="wn-like" aria-pressed="false" aria-label="Like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 20.5S3.5 15.3 3.5 9.3A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 8.5 2.3c0 6-8.5 11.2-8.5 11.2z"/></svg></button>
+                <div class="line-main"><span class="line-t" id="wn-name">Pick a title on the TV</span><span class="line-s" id="wn-sub">Swipe on the remote to move</span></div>
+                <button class="rm-b ic" id="wn-reload" aria-label="New picks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg></button>
+                <button class="rm-b wn-open" id="wn-open" disabled><span>Open</span></button>
               </div>
 
               <!-- Music and background sound: tap to change -->
@@ -1088,7 +1099,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.15</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.16</span></a>
           </div>
         </div>
       </section>
@@ -1146,10 +1157,11 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor TV">
-          <div class="kv"><span>Version</span><span>1.15</span></div>
+          <div class="kv"><span>Version</span><span>1.16</span></div>
           <div class="kv"><span>Chromecast</span><span id="ab-cast">—</span></div>
           <div class="kv"><span>Needs</span><span>Relay with --cast</span></div>
           <div class="kv"><span>Fireplace film</span><span>Pixabay, Videezy</span></div>
+          <div class="kv"><span>Watch picks</span><span>TMDB, JustWatch</span></div>
         </section>
         <section class="panel" data-title="Remote" style="margin-top:var(--sp-5)">
           <div class="kv"><span>Move</span><span>Swipe or tap an arrow</span></div>
@@ -1429,7 +1441,7 @@ PH.init({});
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
   let lastErr = '', pollT = 0, busyPower = false, sleepAt = 0;
   const ready = () => !!(link && link.url && link.key);
-  const RELAY_WANTS = '1.6';   // tv_control.py version this app expects
+  const RELAY_WANTS = '1.7';   // tv_control.py version this app expects
   const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
   // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
   const toast = PH.toast;
@@ -1480,9 +1492,9 @@ PH.init({});
   const castName = () => { const d = info && (info.devices || []).find(x => x.id === info.id); return d ? d.name : ''; };
 
   /* ---------- Remote keys: sent one after another so fast swipes arrive in order ---------- */
-  let chain = Promise.resolve();
+  let chain = Promise.resolve(), keyCheckT = 0;   // on Watch, check what the TV has selected right after a move
   function key(k) {
-    chain = chain.then(() => call('/tv/key', { key: k }, 6000)).catch(e => { PH.toast(e.message, 'warn'); check(); });
+    chain = chain.then(() => call('/tv/key', { key: k }, 6000)).then(() => { if (tv().screen === 'watch') { clearTimeout(keyCheckT); keyCheckT = setTimeout(check, 250); } }).catch(e => { PH.toast(e.message, 'warn'); check(); });
   }
   const pad = $('#pad');
   let t0 = null;
@@ -1705,6 +1717,118 @@ PH.init({});
   }
   setInterval(() => { if (sleepAt && !document.hidden) renderPlan(); }, 30000);
 
+  /* ---------- Watch: What to Watch's picks on the TV ----------
+     Uses What to Watch's TMDB key, ♥ list and caches on this phone (same site, same storage). The phone
+     asks TMDB and sends the relay only titles, years, poster file paths and which of Floyd's services
+     (Hulu, Prime Video, Peacock) have them; the key never leaves the phone. Opening a title happens on
+     the phone, in that service. */
+  const WW = 'what-to-watch:data:', WWC = 'what-to-watch:c:';
+  const wwGet = (k, d) => { try { const v = localStorage.getItem(WW + k); return v === null ? d : JSON.parse(v); } catch { return d; } };
+  const wwSet = (k, v) => { try { localStorage.setItem(WW + k, JSON.stringify(v)); } catch {} };
+  const WSVC = [
+    { id: 'hulu', name: 'Hulu', match: /^hulu$/i, ids: [15], open: t => 'https://www.hulu.com/search?q=' + encodeURIComponent(t) },
+    { id: 'prime', name: 'Prime Video', match: /^amazon prime video( with ads)?$/i, ids: [9, 2100], open: t => 'https://www.primevideo.com/search/ref=atv_nb_sr?phrase=' + encodeURIComponent(t) },
+    { id: 'peacock', name: 'Peacock', match: /^peacock/i, ids: [386, 387], open: t => 'https://www.peacocktv.com/watch/search?q=' + encodeURIComponent(t) },
+  ];
+  const WDAY = 864e5;
+  async function tmdb(path, params = {}, ttl = 6 * 36e5) {
+    const key = wwGet('key', '');
+    if (!key) { const e = new Error('Add your TMDB key in What to Watch first (its Settings).'); e.nokey = true; throw e; }
+    const qs = new URLSearchParams(params).toString(), url = path + (qs ? '?' + qs : '');
+    let hit = null; try { hit = JSON.parse(localStorage.getItem(WWC + url)); } catch {}
+    if (hit && Date.now() - hit.t < ttl) return hit.d;
+    const tok = key.length > 60;
+    let r;
+    try { r = await fetch('https://api.themoviedb.org/3' + url + (tok ? '' : (qs ? '&' : '?') + 'api_key=' + encodeURIComponent(key)), { headers: tok ? { Authorization: 'Bearer ' + key, accept: 'application/json' } : { accept: 'application/json' } }); }
+    catch { if (hit) return hit.d; throw new Error('Can\'t reach TMDB right now.'); }
+    if (r.status === 401) throw new Error('TMDB rejected the key. Check it in What to Watch.');
+    if (!r.ok) { if (hit) return hit.d; throw new Error('TMDB error ' + r.status + '.'); }
+    const d = await r.json();
+    try { localStorage.setItem(WWC + url, JSON.stringify({ t: Date.now(), d })); } catch {}
+    return d;
+  }
+  const wNorm = (r, type) => ({ id: r.id, type: r.media_type || type, title: r.title || r.name || 'Untitled', year: (r.release_date || r.first_air_date || '').slice(0, 4), poster: r.poster_path || '', pop: r.popularity || 0 });
+  const wKey = it => it.type + '-' + it.id;
+  let wProv = null;
+  async function wProviders() {
+    if (wProv) return wProv;
+    const ids = Object.fromEntries(WSVC.map(s => [s.id, new Set(s.ids)]));
+    for (const type of ['movie', 'tv']) {
+      try { const d = await tmdb('/watch/providers/' + type, { watch_region: 'US' }, 7 * WDAY); (d.results || []).forEach(p => WSVC.forEach(s => { if (s.match.test(p.provider_name)) ids[s.id].add(p.provider_id); })); }
+      catch (e) { if (e.nokey || /key/.test(e.message)) throw e; }
+    }
+    return (wProv = Object.fromEntries(Object.entries(ids).map(([k, v]) => [k, [...v]])));
+  }
+  // Popular / new titles on each service, merged, with the services each was found on
+  async function wDiscover(type, sort) {
+    const ids = await wProviders(), byKey = new Map();
+    await Promise.all(WSVC.map(async s => {
+      const p = { watch_region: 'US', with_watch_providers: ids[s.id].join('|'), with_watch_monetization_types: 'flatrate|free|ads', include_adult: 'false', sort_by: 'popularity.desc', 'vote_count.gte': 10 };
+      if (sort === 'new') { const f = type === 'movie' ? 'primary_release_date' : 'first_air_date'; delete p['vote_count.gte']; p[f + '.gte'] = new Date(Date.now() - 150 * WDAY).toISOString().slice(0, 10); p[f + '.lte'] = new Date().toISOString().slice(0, 10); }
+      try { const d = await tmdb('/discover/' + type, p); (d.results || []).forEach(r => { const it = wNorm(r, type), k = wKey(it); const cur = byKey.get(k) || { ...it, svcs: [] }; cur.svcs.push(s.id); byKey.set(k, cur); }); } catch (e) { if (e.nokey) throw e; }
+    }));
+    return [...byKey.values()].sort((a, b) => b.pop - a.pop);
+  }
+  async function wServices(it) {
+    const prov = wwGet('prov', {}), c = prov[wKey(it)];
+    if (c && Date.now() - c.t < 3 * WDAY) return c.s || [];
+    const ids = await wProviders(), d = await tmdb(`/${it.type}/${it.id}/watch/providers`, {}, WDAY), us = d.results && d.results.US, s = new Set();
+    ['flatrate', 'free', 'ads'].forEach(k => ((us && us[k]) || []).forEach(p => WSVC.forEach(x => { if (ids[x.id].includes(p.provider_id)) s.add(x.id); })));
+    return [...s];
+  }
+  // "For you": recommendations from recent ♥ titles, kept only if they're on one of the services
+  async function wForYou() {
+    const likes = wwGet('likes', []).slice(0, 8);
+    if (!likes.length) return [];
+    const score = new Map(), liked = new Set(likes.map(wKey));
+    const lists = await Promise.all(likes.map(l => tmdb(`/${l.type}/${l.id}/recommendations`, {}, 2 * WDAY).catch(() => ({ results: [] }))));
+    lists.forEach((d, n) => (d.results || []).forEach((r, i) => { const it = wNorm(r, likes[n].type), k = wKey(it); if (liked.has(k)) return; const c = score.get(k) || { it, s: 0 }; c.s += 1 + (20 - i) / 20; score.set(k, c); }));
+    const cands = [...score.values()].sort((a, b) => b.s - a.s).slice(0, 30).map(x => x.it), out = [];
+    await Promise.all(cands.map(async it => { try { const s = await wServices(it); if (s.length) out.push({ ...it, svcs: s }); } catch {} }));
+    return cands.map(c => out.find(o => wKey(o) === wKey(c))).filter(Boolean);
+  }
+  let wRows = load('watch-rows', []), wBusy = false;   // what the TV was last sent, to look the selected title back up
+  const wSend = it => ({ k: wKey(it), title: it.title, year: it.year, poster: it.poster, svcs: it.svcs });
+  async function watchOnTv() {
+    if (wBusy) return;
+    if (!isOn()) { PH.toast('Turn Phosphor TV on first.', 'warn'); return; }
+    if (relayOld()) { PH.toast('The TV file on your PC is out of date. Download tv_control.py again (Settings › Relay).', 'warn'); return; }
+    wBusy = true; $('#ch-watch').disabled = true; PH.toast('Finding picks…');
+    try {
+      const [fy, tv, mv, nt, nm] = await Promise.all([wForYou().catch(() => []), wDiscover('tv', 'popular'), wDiscover('movie', 'popular'), wDiscover('tv', 'new').catch(() => []), wDiscover('movie', 'new').catch(() => [])]);
+      const fresh = [...nt, ...nm].sort((a, b) => b.pop - a.pop);
+      wRows = [['For you', fy], ['Popular shows', tv], ['Popular films', mv], ['New this season', fresh]].filter(r => r[1].length).map(([title, items]) => ({ title, items: items.slice(0, 20) }));
+      if (!wRows.length) throw new Error('No titles came back from TMDB. Try again in a minute.');
+      await call('/tv/watch', { rows: wRows.map(r => ({ title: r.title, items: r.items.map(wSend) })), show: true }, 10000);
+      save('watch-rows', wRows);
+      if (info && info.tv) info.tv.screen = 'watch'; render(); setTimeout(check, 600);
+    } catch (e) { PH.toast(e.message, 'warn'); }
+    finally { wBusy = false; $('#ch-watch').disabled = false; }
+  }
+  $('#ch-watch').addEventListener('click', watchOnTv);
+  $('#wn-reload').addEventListener('click', watchOnTv);
+  const wPicked = () => { const k = info && info.focus; for (const r of wRows) for (const it of r.items) if (wKey(it) === k) return it; return null; };
+  $('#wn-open').addEventListener('click', () => {
+    const it = wPicked(); if (!it) return;
+    const s = WSVC.find(x => (it.svcs || []).includes(x.id)); if (!s) return;
+    window.open(s.open(it.title), '_blank', 'noopener');
+  });
+  $('#wn-like').addEventListener('click', () => {
+    const it = wPicked(); if (!it) return;
+    let likes = wwGet('likes', []);
+    const on = likes.some(l => l.id === it.id && l.type === it.type);
+    likes = on ? likes.filter(l => !(l.id === it.id && l.type === it.type)) : [{ id: it.id, type: it.type, title: it.title, year: it.year, poster: it.poster, at: Date.now() }].concat(likes);
+    wwSet('likes', likes); renderWatchNow(); PH.toast(on ? 'Removed from your ♥' : 'Added to your ♥. It shapes For you.');
+  });
+  function renderWatchNow() {
+    const onW = isOn() && tv().screen === 'watch', it = onW ? wPicked() : null;
+    $('#watch-now').hidden = !onW;
+    $('#wn-name').textContent = it ? it.title : wRows.length ? 'Pick a title on the TV' : 'Tap ↻ to load picks';
+    $('#wn-sub').textContent = it ? [it.year, (it.svcs || []).map(x => WSVC.find(s => s.id === x).name).join(' · ')].filter(Boolean).join(' · ') : 'Swipe on the remote to move';
+    $('#wn-open').disabled = !(it && (it.svcs || []).length);
+    $('#wn-like').setAttribute('aria-pressed', String(!!(it && wwGet('likes', []).some(l => l.id === it.id && l.type === it.type))));
+  }
+
   /* ---------- Power, volume, media ---------- */
   async function power(on) {
     if (busyPower) return;
@@ -1860,7 +1984,8 @@ PH.init({});
     $('#rc-off').hidden = on; $('#vol-off').hidden = !c;
     renderVol();
     $$('#shortcuts [data-screen]').forEach(b => b.classList.toggle('cur', b.dataset.screen === t.screen));
-    renderArt(); renderSound(); renderPlan();
+    $('#ch-watch').classList.toggle('cur', t.screen === 'watch');
+    renderArt(); renderSound(); renderPlan(); renderWatchNow();
     $('#m-power-label').textContent = on ? 'Turn TV off' : 'Turn TV on';
     const pw = $('#tv-power'); pw.hidden = !on; pw.disabled = busyPower;
     pw.setAttribute('aria-pressed', String(on)); pw.setAttribute('aria-label', on ? 'Turn TV off' : 'Turn TV on');
