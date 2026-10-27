@@ -42,14 +42,22 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '1.8'           # the phone app compares this to know which features the relay has
+VERSION = '1.9'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
-# morning = the Today summary; away = a dark screen with the sound still playing (for the plants);
-# home = the fireplace full screen with music; off = Phosphor TV off. Each scene's sound is Floyd's to pick.
-SCENES = ('morning', 'away', 'home', 'off')
-SCENE_SOUND = {'morning': {'music': 'swiss-classic', 'amb': ''}, 'away': {'music': 'swiss-classic', 'amb': ''},
-               'home': {'music': 'swiss-jazz', 'amb': 'fire'}}
+# Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
+# all of it is Floyd's to change. off = Phosphor TV off.
+SCENES = ('morning', 'away', 'home', 'romantic', 'off')
+SCENE_PAGES = ('today', 'fire', 'dim', 'art', 'clock', 'board', 'watch', 'lights')   # 'fire' = the fireplace, full screen
+SCENE_DEFAULTS = {
+    'morning': {'page': 'today', 'music': 'swiss-classic', 'amb': '', 'glow': '', 'lights': []},
+    'away': {'page': 'dim', 'music': 'swiss-classic', 'amb': '', 'glow': '', 'lights': []},
+    'home': {'page': 'fire', 'music': 'swiss-jazz', 'amb': 'fire', 'glow': '', 'lights': []},
+    'romantic': {'page': 'fire', 'music': 'romantic-jazz', 'amb': 'fire', 'glow': 'red', 'lights': None},   # None = lights named "living"
+}
+GLOW = {'red': {'on': True, 'hsv': [0, 100, 10]}, 'warm': {'on': True, 'temp': 2700, 'brightness': 30},
+        'on': {'on': True}, 'off': {'on': False}}   # '' leaves the lights as they are
+LIGHT_ID = re.compile(r'^[A-Za-z0-9_.:-]{1,64}$')
 DEFAULT_SCHEDULE = [{'scene': 'morning', 'at': '07:00', 'days': [0, 1, 2, 3, 4, 5, 6]},
                     {'scene': 'away', 'at': '08:30', 'days': [0, 1, 2, 3, 4]},
                     {'scene': 'home', 'at': '17:30', 'days': [0, 1, 2, 3, 4]}]
@@ -523,19 +531,41 @@ def setup(app, demo=False, lights=None, cast=False):
     # ---- scenes, the schedule and the sleep timer ----
     def scenes():
         saved = cfg.get('scenes') or {}
-        return {k: {**v, **{f: saved[k][f] for f in ('music', 'amb') if isinstance(saved.get(k), dict) and f in saved[k]}} for k, v in SCENE_SOUND.items()}
+        return {k: {**v, **{f: saved[k][f] for f in v if isinstance(saved.get(k), dict) and f in saved[k]}} for k, v in SCENE_DEFAULTS.items()}
+
+    def scene_screen(name):
+        page = scenes().get(name, {}).get('page', '')
+        return 'art' if page == 'fire' else page
 
     def schedule():
         return cfg['schedule'] if isinstance(cfg.get('schedule'), list) else DEFAULT_SCHEDULE
 
     def scene_view(name):
-        if name == 'morning':
-            return {'open': 'today'}
-        if name == 'away':
-            return {'open': 'dim'}
-        if name == 'home':
+        page = scenes().get(name, {}).get('page')
+        if page == 'fire':
             return {'art': {'piece': FIREPLACE, 'hold': True, 'full': True}}
-        return {}
+        if page == 'art':
+            return {'art': {'hold': False, 'full': False}}
+        return {'open': page} if page in SCENE_PAGES else {}
+
+    async def scene_lights(name):
+        """Set the scene's lights (e.g. Romantic: the living room dim red). Failures only go to the log."""
+        sc = scenes().get(name, {})
+        look = GLOW.get(sc.get('glow') or '')
+        if lights is None or not look:
+            return
+        try:
+            found = await asyncio.wait_for(lights.list(), 30)   # also finds the lights if the relay just started
+            ids = sc.get('lights')
+            if not isinstance(ids, list):
+                ids = [d['id'] for d in found if 'living' in d['name'].lower()]
+            for i in ids:
+                try:
+                    await asyncio.wait_for(lights.set(i, dict(look)), 10)
+                except Exception as e:
+                    print(f'  Scene lights: {i}:', getattr(e, 'text', '') or str(e) or type(e).__name__)
+        except Exception as e:
+            print('  Scene lights:', str(e) or type(e).__name__)
 
     async def wait_linked(cid, seconds=45):
         """Open Phosphor TV if it isn't on, and wait for its screen to connect."""
@@ -562,10 +592,11 @@ def setup(app, demo=False, lights=None, cast=False):
                 await s.close()
             return True
         hub['scene'] = ''
+        asyncio.ensure_future(scene_lights(name))
         if not await wait_linked(cid):
             raise web.HTTPGatewayTimeout(text='Phosphor TV didn\'t come on. Try turning it on from the remote.')
         snd = hub['sound']
-        snd.update(scenes()[name]); cfg['sound'] = snd; save_config(cfg)
+        snd.update({f: scenes()[name][f] for f in ('music', 'amb')}); cfg['sound'] = snd; save_config(cfg)
         hub['scene'], hub['scene_t'] = name, time.time()
         return await send_tv({'sound': snd, **scene_view(name)})
 
@@ -579,7 +610,8 @@ def setup(app, demo=False, lights=None, cast=False):
         return web.json_response({'ok': True, 'shown': shown})
 
     async def plan(request):
-        """Save the schedule {schedule: [{scene, at: 'HH:MM', days: [0-6, Monday = 0]}], auto: bool, scenes: {name: {music, amb}}}."""
+        """Save the schedule {schedule: [{scene, at: 'HH:MM', days: [0-6, Monday = 0]}], auto: bool,
+        scenes: {name: {page, music, amb, glow, lights: [light ids]}}}."""
         body = await body_of(request)
         if 'schedule' in body:
             rows = body['schedule']
@@ -599,11 +631,18 @@ def setup(app, demo=False, lights=None, cast=False):
         if isinstance(body.get('scenes'), dict):
             saved = cfg.get('scenes') or {}
             for k, v in body['scenes'].items():
-                if k in SCENE_SOUND and isinstance(v, dict):
+                if k in SCENE_DEFAULTS and isinstance(v, dict):
+                    one = saved.setdefault(k, {})
+                    if v.get('page', None) in SCENE_PAGES:
+                        one['page'] = v['page']
                     if v.get('music', None) in MUSIC + ('',):
-                        saved.setdefault(k, {})['music'] = v['music']
+                        one['music'] = v['music']
                     if v.get('amb', None) in AMBIENCE + ('',):
-                        saved.setdefault(k, {})['amb'] = v['amb']
+                        one['amb'] = v['amb']
+                    if v.get('glow', None) in tuple(GLOW) + ('',):
+                        one['glow'] = v['glow']
+                    if isinstance(v.get('lights'), list) and len(v['lights']) <= 30 and all(isinstance(i, str) and LIGHT_ID.match(i) for i in v['lights']):
+                        one['lights'] = v['lights']
             cfg['scenes'] = saved
         save_config(cfg)
         return web.json_response({'ok': True, 'schedule': schedule(), 'auto': cfg.get('auto', True), 'scenes': scenes()})
@@ -753,7 +792,7 @@ def setup(app, demo=False, lights=None, cast=False):
                     continue
                 if d.get('screen') in SCREENS:
                     # Moving off the scene's screen by hand ends the scene (the TV takes a moment to get there first)
-                    if hub['scene'] and d['screen'] != {'morning': 'today', 'away': 'dim', 'home': 'art'}.get(hub['scene']) and time.time() - hub.get('scene_t', 0) > 5:
+                    if hub['scene'] and d['screen'] != scene_screen(hub['scene']) and time.time() - hub.get('scene_t', 0) > 5:
                         hub['scene'] = ''
                     entering = d['screen'] in ('lights', 'today') and hub['screen'] != d['screen']
                     hub['screen'] = d['screen']
@@ -763,7 +802,7 @@ def setup(app, demo=False, lights=None, cast=False):
                     hub['focus'] = d['focus'][:80]
                 a = d.get('art')
                 if isinstance(a, dict) and isinstance(a.get('i'), int) and 0 <= a['i'] < ART_MAX:
-                    hub['art'] = {'i': a['i'], 'hold': bool(a.get('hold')), 'full': bool(a.get('full')), 'pix': a.get('pix') is not False}
+                    hub['art'] = {'i': a['i'], 'hold': bool(a.get('hold')), 'full': bool(a.get('full')), 'pix': bool(a.get('pix'))}
                 h = d.get('heard')
                 if isinstance(h, dict) and h.get('state') in ('playing', 'loading', 'error', 'blocked', 'off'):
                     hub['heard'] = {'state': h['state'], 'what': h.get('what') if h.get('what') in MUSIC + AMBIENCE else ''}
