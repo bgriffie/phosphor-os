@@ -819,6 +819,8 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .sc-chips .chip { min-height: 36px; }
     .sc-chips .chip:disabled { opacity: .5; }
     .sc-btn { background: rgba(8, 17, 10, .94); }
+    .dim .readout.sun-r { font-size: var(--fs-sm); min-width: 5.6em; }
+    #sun-year[aria-pressed="true"], #sun-dayplay[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
     .sc-btn[aria-expanded="true"], .sc-btn.is-sel { color: var(--accent); border-color: var(--accent); box-shadow: var(--glow-box); }
     .tv-clock { position: absolute; top: 4px; right: 8px; font-size: 10px; color: var(--text-faint); }
     .tv-ch { font-size: 10px; letter-spacing: .04em; }
@@ -856,7 +858,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.4</span>
+      <span class="app-meta">v1.5</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -884,6 +886,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
               <button class="chip" data-scene="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M8 3l4 4 4-4"/></svg><span>TV off</span></button>
               <button class="chip" data-scene="lights-off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><span>Lights off</span></button>
             </div>
+            <button class="rm-b pow sc-btn" id="sun-btn" aria-label="Sunlight" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
             <button class="rm-b pow sc-btn" id="sc-btn" aria-label="Scenes" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/></svg></button>
           </div>
           <p class="strip" id="first-hint" hidden>No lights on the map yet. <a href="#/place" style="color:var(--cyan)">Place lights</a></p>
@@ -901,6 +904,21 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
             </div>
             <div class="sw-row" id="lc-sw"></div>
             <div class="row wh-row" id="lc-wh"></div>
+          </section>
+
+          <section class="card" id="sunc" hidden aria-label="Sunlight">
+            <div class="c-top">
+              <span class="dot is-on" style="background:#FFD27A;color:#FFD27A" aria-hidden="true"></span>
+              <div class="c-who"><div class="who-t">Sunlight</div><div class="who-s" id="sun-s">—</div></div>
+              <button class="rm-b ic" id="sun-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            </div>
+            <div class="dim"><input type="range" class="li-range" id="sun-day" min="0" max="364" step="1" aria-label="Day of the year"><span class="readout sun-r" id="sun-dayv">—</span></div>
+            <div class="dim"><input type="range" class="li-range" id="sun-time" min="300" max="1260" step="5" aria-label="Time of day"><span class="readout sun-r" id="sun-timev">—</span></div>
+            <div class="row" style="--n:3">
+              <button class="rm-b" id="sun-now">Now</button>
+              <button class="rm-b" id="sun-year" aria-pressed="false">Play year</button>
+              <button class="rm-b" id="sun-dayplay" aria-pressed="false">Play day</button>
+            </div>
           </section>
 
           <section class="card" id="tc" hidden aria-label="TV">
@@ -994,7 +1012,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.4</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.5</span></a>
           </div>
         </div>
       </section>
@@ -1420,7 +1438,7 @@ const HomeScan = (() => {
 })();
 if (typeof module !== 'undefined') module.exports = HomeScan;
 
-const BUILT_PLAN = {"walls":[{"c":[-2.14,-0.88],"len":0.17,"wid":0.06,"a":2.356,"y":[0,2.56]},{"c":[-4.52,-1.88],"len":2.14,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[2.8,2.91],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.29,1.17],"len":0.5,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.42,-0.08],"len":1.44,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.24,0.83],"len":0.1,"wid":0.08,"a":-1.036,"y":[0,2.56]},{"c":[-1.62,-0.23],"len":0.98,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-2.1,-0.6],"len":0.64,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.69,1.37],"len":0.89,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.63,1.34],"len":3.24,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,-0.18],"len":0.19,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.2,-1.88],"len":1.94,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-0.86],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.14,2.91],"len":2.08,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.58,-0.08],"len":0.54,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-3.39,-0.23],"len":2.58,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,0.36],"len":0.9,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.3,-1.49],"len":2.72,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.93,2.91],"len":3.51,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,1.13],"len":0.48,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,2.11],"len":1.49,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,0.39],"len":0.95,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,-1.47],"len":2.77,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.95,-2.9],"len":2.5,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.6,-2.9],"len":0.59,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[2.8,-2.9],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.7,0.86],"len":0.84,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[4.64,0],"len":5.91,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,1.86],"len":2,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-2.9],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.28,0.86],"len":1.14,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.52,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-2.1,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[0.3,-0.08],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-2.1,-0.23],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-4.63,-0.23],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-2.18,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[0.32,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[4.64,-2.9],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-2.2,-0.86],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-1.18,2.91],"len":0.1,"wid":0.1,"a":0,"y":[0,2.56],"j":1},{"c":[0.9,2.91],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[0.88,-0.07],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56],"j":1},{"c":[0.91,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[0.88,0.88],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56],"j":1},{"c":[-0.28,0.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[-1.18,0.84],"len":0.14,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-1.16,-0.07],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56],"j":1},{"c":[-1.18,-0.23],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-1.16,1.38],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56],"j":1},{"c":[-4.52,-2.9],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-4.63,2.91],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[4.64,2.91],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-0.29,1.37],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-4.63,-0.545],"len":0.73,"wid":0.1,"a":1.571,"y":[0,2.56]}],"open":[{"c":[-4.52,-1.39],"len":0.75,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[-0.7,-0.08],"len":0.62,"wid":0.01,"a":0,"y":[0,2.08],"k":"door"},{"c":[-3.64,-0.23],"len":0.7,"wid":0.01,"a":0,"y":[0,2.15],"k":"door"},{"c":[-1.18,0.74],"len":0.04,"wid":0.01,"a":1.571,"y":[0,2.09],"k":"door"},{"c":[-1.18,0.34],"len":0.73,"wid":0.01,"a":1.571,"y":[0,2.13],"k":"door"},{"c":[0.9,-1.11],"len":1.65,"wid":0.01,"a":1.571,"y":[0,2.17],"k":"closed"},{"c":[4.64,-2.34],"len":0.91,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[0.13,0.86],"len":0.71,"wid":0.01,"a":0,"y":[0,2.09],"k":"door"},{"c":[-4.52,-2.45],"len":0.72,"wid":0.01,"a":1.571,"y":[0.73,2.21],"k":"window"},{"c":[2.8,2.91],"len":2.31,"wid":0.01,"a":0,"y":[0.62,2.23],"k":"window"},{"c":[-4.63,0.99],"len":0.82,"wid":0.01,"a":1.571,"y":[0.74,2.14],"k":"window"},{"c":[0,2.91],"len":0.68,"wid":0.01,"a":0,"y":[1.21,2.12],"k":"window"},{"c":[-2.06,2.91],"len":0.84,"wid":0.01,"a":0,"y":[0.79,2.15],"k":"window"},{"c":[4.64,-0.52],"len":1.21,"wid":0.01,"a":1.571,"y":[0.76,2.11],"k":"window"},{"c":[-2.2,-1.88],"len":1.5,"wid":0.1,"a":1.571,"y":[0,2.25],"k":"arch"}],"floors":[{"name":"Living room","pts":[[4.64,-2.9],[4.64,2.91],[0.9,2.91],[0.9,-2.9]]},{"name":"","pts":[[-2.2,-0.86],[-4.52,-0.86],[-4.52,-2.9],[-2.2,-2.9]]},{"name":"Kitchen","pts":[[-2.2,-0.86],[-2.2,-2.9],[0.3,-2.9],[0.3,-0.08],[-1.18,-0.08],[-1.18,-0.23],[-2.1,-0.23],[-2.1,-0.86]]},{"name":"Closet","pts":[[0.9,-2.9],[0.3,-2.9],[0.3,-0.08],[0.9,-0.08]]},{"name":"Bedroom","pts":[[-4.63,-0.23],[-4.63,2.91],[-1.18,2.91],[-1.18,-0.23]]},{"name":"Hallway","pts":[[-1.18,-0.08],[0.9,-0.08],[0.9,0.86],[-1.18,0.86]]},{"name":"","pts":[[-1.18,0.86],[-1.18,1.37],[-0.29,1.37],[-0.29,0.86]]},{"name":"Bathroom","pts":[[-0.29,0.86],[0.9,0.86],[0.9,2.91],[-1.18,2.91],[-1.18,1.37],[-0.29,1.37]]}],"items":[{"c":[-1.65,-0.62],"len":0.89,"wid":0.8,"a":1.571,"y":[0.04,1.73],"n":"refrigerator"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.04,0.92],"n":"oven"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.92,1.02],"n":"stove"},{"c":[0.53,1.89],"len":0.64,"wid":0.49,"a":1.571,"y":[0.04,0.84],"n":"storage_cabinet_mid1"},{"c":[-0.1,-1.44],"len":0.49,"wid":0.43,"a":1.571,"y":[0.76,0.98],"n":"sink"},{"c":[0.53,1.91],"len":0.53,"wid":0.41,"a":1.571,"y":[0.53,0.84],"n":"sink"},{"c":[0.44,2.53],"len":0.67,"wid":0.42,"a":0,"y":[0.06,0.84],"n":"toilet"},{"c":[0.04,-0.64],"len":0.77,"wid":0.44,"a":1.571,"y":[1.53,2.37],"n":"storage_cabinet_mid2"},{"c":[-0.66,-2.6],"len":1.12,"wid":0.42,"a":0,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-1.6,-2.58],"len":0.77,"wid":0.42,"a":0,"y":[1.97,2.47],"n":"storage_cabinet_low2"},{"c":[0.06,-1.38],"len":0.7,"wid":0.39,"a":1.571,"y":[2.01,2.37],"n":"storage_cabinet_low2"},{"c":[-0.68,2.12],"len":1.44,"wid":0.73,"a":1.571,"y":[0.06,0.49],"n":"bathtub"},{"c":[0.69,2.59],"len":0.63,"wid":0.39,"a":1.571,"y":[1.3,1.98],"n":"storage_cabinet_low1"},{"c":[0.09,-2.3],"len":1.13,"wid":0.35,"a":1.571,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-0.08,-1.47],"len":2.51,"wid":0.67,"a":1.571,"y":[0.04,0.98],"n":"storage_cabinet_mid5"},{"c":[-3.37,1.76],"len":2.26,"wid":1.59,"a":1.571,"y":[0.04,0.74],"n":"bed"},{"c":[1.4,1.66],"len":1.03,"wid":0.59,"a":1.571,"y":[0.04,0.43],"n":"table_other_rect"},{"c":[-3.3,-2.39],"len":0.81,"wid":0.8,"a":0.305,"y":[0.04,1.1],"n":"table_dining_elliptic"},{"c":[3.55,-2.63],"len":0.49,"wid":0.41,"a":0,"y":[0.04,0.72],"n":"table_other_rect"},{"c":[3.19,2.61],"len":0.85,"wid":0.5,"a":0,"y":[0.04,1.65],"n":"storage_shelf"},{"c":[-2.33,2.58],"len":0.6,"wid":0.47,"a":0,"y":[0.04,0.62],"n":"table_other_rect"},{"c":[3.26,1.46],"len":1.19,"wid":0.74,"a":1.571,"y":[0.04,0.54],"n":"table_dining_rect"},{"c":[2.32,2.59],"len":0.98,"wid":0.63,"a":0,"y":[0.04,0.82],"n":"storage_shelf"},{"c":[-2.61,-2.27],"len":0.4,"wid":0.36,"a":0,"y":[0.04,0.72],"n":"chair_stool_four_no_no"},{"c":[1.95,-2.04],"len":0.6,"wid":0.53,"a":0,"y":[0.06,0.85],"n":"chair_dining_four_back_no"},{"c":[4.14,0.68],"len":0.55,"wid":0.5,"a":0,"y":[0.06,0.46],"n":"table_dining_rect"},{"c":[1.98,-2.61],"len":0.7,"wid":0.39,"a":0,"y":[0.06,0.82],"n":"table_other_rect"},{"c":[4.16,1.24],"len":3.33,"wid":0.92,"a":1.571,"y":[0.04,0.79],"n":"sofa_rect"},{"c":[-1.69,2.22],"len":0.75,"wid":0.56,"a":0.797,"y":[0.07,0.9],"n":"chair_other_four_back_no"},{"c":[2.97,-2.1],"len":0.41,"wid":0.38,"a":1.571,"y":[0.06,0.55],"n":"chair_other_four_back_no"},{"c":[2.11,-2.08],"len":2.1,"wid":1.52,"a":0,"y":[0.04,0.82],"n":"table_other_rect"},{"c":[2.36,-0.5],"len":1.92,"wid":0.9,"a":0,"y":[0.04,0.79],"n":"sofa_single"},{"c":[2.11,-1.4],"len":0.65,"wid":0.59,"a":1.571,"y":[0.04,0.89],"n":"chair_dining_four_back_no"},{"c":[1.26,-2.33],"len":0.92,"wid":0.75,"a":1.571,"y":[0.06,0.82],"n":"table_other_rect"}],"tv":{"c":[1.06,1.69],"len":1.06,"wid":0.1,"a":1.57,"y":[0.85,1.46]},"v":1,"at":"2026-10-27","edited":true};
+const BUILT_PLAN = {"walls":[{"c":[-2.14,-0.88],"len":0.17,"wid":0.06,"a":2.356,"y":[0,2.56]},{"c":[-4.52,-1.88],"len":2.14,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[2.8,2.91],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.29,1.17],"len":0.5,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.42,-0.08],"len":1.44,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.24,0.83],"len":0.1,"wid":0.08,"a":-1.036,"y":[0,2.56]},{"c":[-1.62,-0.23],"len":0.98,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-2.1,-0.6],"len":0.64,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.69,1.37],"len":0.89,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.63,1.34],"len":3.24,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,-0.18],"len":0.19,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.2,-1.88],"len":1.94,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-0.86],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.14,2.91],"len":2.08,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.58,-0.08],"len":0.54,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-3.39,-0.23],"len":2.58,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,0.36],"len":0.9,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.3,-1.49],"len":2.72,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.93,2.91],"len":3.51,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,1.13],"len":0.48,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,2.11],"len":1.49,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,0.39],"len":0.95,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,-1.47],"len":2.77,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.95,-2.9],"len":2.5,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.6,-2.9],"len":0.59,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[2.8,-2.9],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.7,0.86],"len":0.84,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[4.64,0],"len":5.91,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,1.86],"len":2,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-2.9],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.28,0.86],"len":1.14,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.52,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-2.1,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[0.3,-0.08],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-2.1,-0.23],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-4.63,-0.23],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-2.18,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[0.32,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[4.64,-2.9],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-2.2,-0.86],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-1.18,2.91],"len":0.1,"wid":0.1,"a":0,"y":[0,2.56],"j":1},{"c":[0.9,2.91],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[0.88,-0.07],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56],"j":1},{"c":[0.91,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[0.88,0.88],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56],"j":1},{"c":[-0.28,0.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[-1.18,0.84],"len":0.14,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-1.16,-0.07],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56],"j":1},{"c":[-1.18,-0.23],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-1.16,1.38],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56],"j":1},{"c":[-4.52,-2.9],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-4.63,2.91],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[4.64,2.91],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-0.29,1.37],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-4.63,-0.545],"len":0.73,"wid":0.1,"a":1.571,"y":[0,2.56]}],"open":[{"c":[-4.52,-1.39],"len":0.75,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[-0.7,-0.08],"len":0.62,"wid":0.01,"a":0,"y":[0,2.08],"k":"door"},{"c":[-3.64,-0.23],"len":0.7,"wid":0.01,"a":0,"y":[0,2.15],"k":"door"},{"c":[-1.18,0.74],"len":0.04,"wid":0.01,"a":1.571,"y":[0,2.09],"k":"door"},{"c":[-1.18,0.34],"len":0.73,"wid":0.01,"a":1.571,"y":[0,2.13],"k":"door"},{"c":[0.9,-1.11],"len":1.65,"wid":0.01,"a":1.571,"y":[0,2.17],"k":"closed"},{"c":[4.64,-2.34],"len":0.91,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[0.13,0.86],"len":0.71,"wid":0.01,"a":0,"y":[0,2.09],"k":"door"},{"c":[-4.52,-2.45],"len":0.72,"wid":0.01,"a":1.571,"y":[0.73,2.21],"k":"window"},{"c":[2.8,2.91],"len":2.31,"wid":0.01,"a":0,"y":[0.62,2.23],"k":"window"},{"c":[-4.63,0.99],"len":0.82,"wid":0.01,"a":1.571,"y":[0.74,2.14],"k":"window"},{"c":[0,2.91],"len":0.68,"wid":0.01,"a":0,"y":[1.21,2.12],"k":"window"},{"c":[-2.06,2.91],"len":0.84,"wid":0.01,"a":0,"y":[0.79,2.15],"k":"window"},{"c":[4.64,-0.52],"len":1.21,"wid":0.01,"a":1.571,"y":[0.76,2.11],"k":"window"},{"c":[-2.2,-1.88],"len":1.5,"wid":0.1,"a":1.571,"y":[0,2.25],"k":"arch"}],"floors":[{"name":"Living room","pts":[[4.64,-2.9],[4.64,2.91],[0.9,2.91],[0.9,-2.9]]},{"name":"","pts":[[-2.2,-0.86],[-4.52,-0.86],[-4.52,-2.9],[-2.2,-2.9]]},{"name":"Kitchen","pts":[[-2.2,-0.86],[-2.2,-2.9],[0.3,-2.9],[0.3,-0.08],[-1.18,-0.08],[-1.18,-0.23],[-2.1,-0.23],[-2.1,-0.86]]},{"name":"Closet","pts":[[0.9,-2.9],[0.3,-2.9],[0.3,-0.08],[0.9,-0.08]]},{"name":"Bedroom","pts":[[-4.63,-0.23],[-4.63,2.91],[-1.18,2.91],[-1.18,-0.23]]},{"name":"Hallway","pts":[[-1.18,-0.08],[0.9,-0.08],[0.9,0.86],[-1.18,0.86]]},{"name":"","pts":[[-1.18,0.86],[-1.18,1.37],[-0.29,1.37],[-0.29,0.86]]},{"name":"Bathroom","pts":[[-0.29,0.86],[0.9,0.86],[0.9,2.91],[-1.18,2.91],[-1.18,1.37],[-0.29,1.37]]}],"items":[{"c":[-1.65,-0.62],"len":0.89,"wid":0.8,"a":1.571,"y":[0.04,1.73],"n":"refrigerator"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.04,0.92],"n":"oven"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.92,1.02],"n":"stove"},{"c":[0.53,1.89],"len":0.64,"wid":0.49,"a":1.571,"y":[0.04,0.84],"n":"storage_cabinet_mid1"},{"c":[-0.1,-1.44],"len":0.49,"wid":0.43,"a":1.571,"y":[0.76,0.98],"n":"sink"},{"c":[0.53,1.91],"len":0.53,"wid":0.41,"a":1.571,"y":[0.53,0.84],"n":"sink"},{"c":[0.44,2.53],"len":0.67,"wid":0.42,"a":0,"y":[0.06,0.84],"n":"toilet"},{"c":[0.04,-0.64],"len":0.77,"wid":0.44,"a":1.571,"y":[1.53,2.37],"n":"storage_cabinet_mid2"},{"c":[-0.66,-2.6],"len":1.12,"wid":0.42,"a":0,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-1.6,-2.58],"len":0.77,"wid":0.42,"a":0,"y":[1.97,2.47],"n":"storage_cabinet_low2"},{"c":[0.06,-1.38],"len":0.7,"wid":0.39,"a":1.571,"y":[2.01,2.37],"n":"storage_cabinet_low2"},{"c":[-0.68,2.12],"len":1.44,"wid":0.73,"a":1.571,"y":[0.06,0.49],"n":"bathtub"},{"c":[0.69,2.59],"len":0.63,"wid":0.39,"a":1.571,"y":[1.3,1.98],"n":"storage_cabinet_low1"},{"c":[0.09,-2.3],"len":1.13,"wid":0.35,"a":1.571,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-0.08,-1.47],"len":2.51,"wid":0.67,"a":1.571,"y":[0.04,0.98],"n":"storage_cabinet_mid5"},{"c":[-3.37,1.76],"len":2.26,"wid":1.59,"a":1.571,"y":[0.04,0.74],"n":"bed"},{"c":[1.4,1.66],"len":1.03,"wid":0.59,"a":1.571,"y":[0.04,0.43],"n":"table_other_rect"},{"c":[-3.3,-2.39],"len":0.81,"wid":0.8,"a":0.305,"y":[0.04,1.1],"n":"table_dining_elliptic"},{"c":[3.55,-2.63],"len":0.49,"wid":0.41,"a":0,"y":[0.04,0.72],"n":"table_other_rect"},{"c":[3.19,2.61],"len":0.85,"wid":0.5,"a":0,"y":[0.04,1.65],"n":"storage_shelf"},{"c":[-2.33,2.58],"len":0.6,"wid":0.47,"a":0,"y":[0.04,0.62],"n":"table_other_rect"},{"c":[3.26,1.46],"len":1.19,"wid":0.74,"a":1.571,"y":[0.04,0.54],"n":"table_dining_rect"},{"c":[2.32,2.59],"len":0.98,"wid":0.63,"a":0,"y":[0.04,0.82],"n":"storage_shelf"},{"c":[-2.61,-2.27],"len":0.4,"wid":0.36,"a":0,"y":[0.04,0.72],"n":"chair_stool_four_no_no"},{"c":[1.95,-2.04],"len":0.6,"wid":0.53,"a":0,"y":[0.06,0.85],"n":"chair_dining_four_back_no"},{"c":[4.14,0.68],"len":0.55,"wid":0.5,"a":0,"y":[0.06,0.46],"n":"table_dining_rect"},{"c":[1.98,-2.61],"len":0.7,"wid":0.39,"a":0,"y":[0.06,0.82],"n":"table_other_rect"},{"c":[4.16,1.24],"len":3.33,"wid":0.92,"a":1.571,"y":[0.04,0.79],"n":"sofa_rect"},{"c":[-1.69,2.22],"len":0.75,"wid":0.56,"a":0.797,"y":[0.07,0.9],"n":"chair_other_four_back_no"},{"c":[2.97,-2.1],"len":0.41,"wid":0.38,"a":1.571,"y":[0.06,0.55],"n":"chair_other_four_back_no"},{"c":[2.11,-2.08],"len":2.1,"wid":1.52,"a":0,"y":[0.04,0.82],"n":"table_other_rect"},{"c":[2.955,-1.27],"len":3.33,"wid":0.92,"a":0,"y":[0.04,0.79],"n":"sofa_single"},{"c":[2.11,-1.4],"len":0.65,"wid":0.59,"a":1.571,"y":[0.04,0.89],"n":"chair_dining_four_back_no"},{"c":[1.26,-2.33],"len":0.92,"wid":0.75,"a":1.571,"y":[0.06,0.82],"n":"table_other_rect"}],"tv":{"c":[1.06,1.69],"len":1.06,"wid":0.1,"a":1.57,"y":[0.85,1.46]},"v":1,"at":"2026-10-27","edited":true};
 /* Home Map: a light 3D outline of Floyd's home, made from a Polycam room scan (src/scan.js),
    with the Kasa lights and the TV on it. Lights and TV go through the same home relay as
    Kasa Lights and Phosphor TV (kasa_bridge.py, Tailscale, the same link and key). */
@@ -1772,7 +1790,20 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
     plan.floors.forEach(f => f.pts.forEach(([x, z]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }));
     if (x0 > x1) { x0 = z0 = -3; x1 = z1 = 3; }
-    G = { faces, frames, doors, floors, walls, wallSegs, blockers, bounds: [x0, x1, z0, z1], cut, ver: (G ? G.ver : 0) + 1 };
+    // windows to the outside, for sunlight: each with its outward side and the room it lights
+    const wins = []; let bigN = [0, 1];
+    for (const o of plan.open || []) {
+      if (o.k !== 'window') continue;
+      const u = [Math.cos(o.a), Math.sin(o.a)]; let n = [-u[1], u[0]];
+      const inRoom = (x, z) => floors.find(f => inPoly(x, z, f.pts));
+      if (inRoom(o.c[0] + n[0] * 0.3, o.c[1] + n[1] * 0.3)) n = [-n[0], -n[1]];
+      const room = inRoom(o.c[0] - n[0] * 0.3, o.c[1] - n[1] * 0.3); if (!room) continue;
+      const xs = room.pts.map(q => q[0]), zs = room.pts.map(q => q[1]);
+      wins.push({ c: [o.c[0], (o.y[0] + o.y[1]) / 2, o.c[1]], half: o.len / 2, u: [u[0], 0, u[1]], n: [n[0], 0, n[1]], y: o.y, box: [Math.min(...xs) - 0.06, Math.min(...zs) - 0.06, Math.max(...xs) + 0.06, Math.max(...zs) + 0.06], len: o.len });
+    }
+    wins.sort((a, b) => b.len - a.len);
+    if (wins.length) bigN = [wins[0].n[0], wins[0].n[2]];   // the big living-room window: Floyd's compass reference
+    G = { faces, frames, doors, floors, walls, wallSegs, blockers, wins: wins.slice(0, MAXW), bigN, bounds: [x0, x1, z0, z1], cut, ver: (G ? G.ver : 0) + 1 };
     buildTV(); glStatic();
   }
   // The TV: drawn a bit bigger than the scan (Floyd), 16:9, at its own height, the screen facing away from the nearest wall
@@ -1959,7 +1990,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   }
 
   /* ---------- WebGL ---------- */
-  const MAXL = 8, SH_N = 512;
+  const MAXL = 8, SH_N = 512, MAXW = 6;
   let gl = null, PM = null, PL = null, buf = {}, shTex = null, shKey = '', shData = new Uint8Array(SH_N * MAXL * 4), staticCount = 0, staticLines = 0;
   const VS_CAM = `uniform vec3 uE, uR, uU, uF; uniform vec2 uS; uniform float uN, uFar;
     vec3 cam(vec3 w) { vec3 d = w - uE; return vec3(dot(d, uR), dot(d, uU), dot(d, uF)); }
@@ -1968,6 +1999,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     void main() { vP = aP; vN = aN; vC = aC; gl_Position = clip(cam(aP)); }`;
   const FS_MESH = `precision highp float; varying vec3 vP, vN; varying vec4 vC;
     uniform vec3 uE, uSun; uniform int uNL; uniform vec4 uLP[${MAXL}]; uniform vec3 uLC[${MAXL}]; uniform sampler2D uSh;
+    uniform vec3 uSunD; uniform float uSunK; uniform int uNW; uniform vec4 uWC[${MAXW}], uWU[${MAXW}], uWN[${MAXW}], uWB[${MAXW}], uHouse;
     void main() {
       vec3 n = normalize(vN); if (dot(n, uE - vP) < 0.0) n = -n;
       vec3 base = vC.rgb * mix(1.0, 0.55 + 0.45 * abs(dot(n, uSun)), vC.a), light = vec3(0.0);
@@ -1980,6 +2012,19 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
         float wall = (t.r * 65280.0 + t.g * 255.0) / 100.0;
         float lit = 1.0 - smoothstep(wall - 0.005, wall + 0.03, length(r));
         light += uLC[i] * min(uLP[i].w * 1.8 / (1.0 + 0.55 * d * d) * ndl * lit, 1.3);
+      }
+      // sunlight: a point is in the sun if the line to the sun leaves through one of its room's windows (or it is outdoors)
+      if (uSunK > 0.0) {
+        float inSun = (vP.x < uHouse.x || vP.x > uHouse.z || vP.z < uHouse.y || vP.z > uHouse.w) ? 1.0 : 0.0;
+        for (int i = 0; i < ${MAXW}; i++) {
+          if (i >= uNW) break;
+          vec3 wn = uWN[i].xyz; float den = dot(wn, uSunD); if (den <= 0.0) continue;
+          vec4 b = uWB[i]; if (vP.x < b.x || vP.x > b.z || vP.z < b.y || vP.z > b.w) continue;
+          float t = dot(wn, uWC[i].xyz - vP) / den; if (t < 0.0) continue;
+          vec3 h = vP + uSunD * t;
+          if (abs(dot(h - uWC[i].xyz, uWU[i].xyz)) <= uWC[i].w && h.y >= uWU[i].w && h.y <= uWN[i].w) inSun = 1.0;
+        }
+        light += vec3(1.0, 0.85, 0.55) * inSun * max(dot(n, uSunD), 0.0) * uSunK * 2.2;
       }
       gl_FragColor = vec4(base + light * (0.34 + base * 2.2), 1.0);
     }`;
@@ -2082,6 +2127,13 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     shadowRing(lit);
     gl.useProgram(PM.p); setCam(PM);
     gl.uniform3fv(PM.u.uSun, SUN); gl.uniform1i(PM.u.uNL, lit.length);
+    const sd = sunNow(), W4 = k => { const a = new Float32Array(MAXW * 4); G.wins.forEach((w, i) => a.set(k(w), i * 4)); return a; };
+    gl.uniform1f(PM.u.uSunK, sd ? sd.k : 0); gl.uniform3fv(PM.u.uSunD, sd ? sd.d : [0, 1, 0]); gl.uniform1i(PM.u.uNW, G.wins.length);
+    if (G.wins.length) {
+      gl.uniform4fv(PM.u.uWC, W4(w => [...w.c, w.half])); gl.uniform4fv(PM.u.uWU, W4(w => [...w.u, w.y[0]]));
+      gl.uniform4fv(PM.u.uWN, W4(w => [...w.n, w.y[1]])); gl.uniform4fv(PM.u.uWB, W4(w => w.box));
+    }
+    const [hx0, hx1, hz0, hz1] = G.bounds; gl.uniform4f(PM.u.uHouse, hx0 - 0.02, hz0 - 0.02, hx1 + 0.02, hz1 + 0.02);
     const lp = new Float32Array(MAXL * 4), lc = new Float32Array(MAXL * 3);
     lit.forEach((l, i) => { lp.set([l.x, l.y, l.z, l.k], i * 4); lc.set(l.c, i * 3); });
     gl.uniform4fv(PM.u.uLP, lp); gl.uniform3fv(PM.u.uLC, lc);
@@ -2319,7 +2371,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   function savePins() { save('pins', pins); save('tv', tvBox); save('plants', plants); }
 
   /* ---------- Cards over the map ---------- */
-  function openCard(id) { cardId = id; renderCard(); req(); requestAnimationFrame(placeMirror); }
+  function openCard(id) { cardId = id; if (id && sun.on) { sun.on = false; sunPlay = ''; renderSun(); } renderCard(); req(); requestAnimationFrame(placeMirror); }
   const SWATCH = [['Green', 125, 85], ['Cyan', 185, 90], ['Blue', 225, 95], ['Purple', 275, 85], ['Pink', 320, 75], ['Red', 0, 95], ['Orange', 28, 95], ['Gold', 45, 85]];
   const WHITES = [['Warm', 2700], ['Soft', 3500], ['Neutral', 4500], ['Day', 6500]];
   const near = (a, b, d) => Math.abs(a - b) < d;
@@ -2446,6 +2498,79 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     f.style.transform = matrixTo([q[0], q[1], q[3], q[2]].map(([x, y]) => [x + ox, y + oy])); f.hidden = false;
   }
 
+  /* ---------- Sunlight: where the sun comes in, any day and time of the year ----------
+     The home is 501 Wilson Ave, Reno NV, and the big living-room window faces 170° (just east of due south), per Floyd.
+     That window's outward side in the scan fixes north on the map. The sun's place in the sky comes from the date, time and
+     location (the usual NOAA approximation), then each window lets it in on whatever its beam reaches in that room. */
+  const HOME = { lat: 39.52, lon: -119.81, face: 170 };
+  const rad = Math.PI / 180;
+  let sun = { on: false, day: 171, min: 720 }, sunPlay = '', sunT = 0;
+  function sunPos(ms) {
+    const d = ms / 86400000 - 10957.5;   // days since noon, 1 Jan 2000 (UTC)
+    const g = (357.529 + 0.98560028 * d) * rad, q = 280.459 + 0.98564736 * d;
+    const L = (q + 1.915 * Math.sin(g) + 0.02 * Math.sin(2 * g)) * rad, e = (23.439 - 0.00000036 * d) * rad;
+    const ra = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L)), dec = Math.asin(Math.sin(e) * Math.sin(L));
+    const H = ((280.46061837 + 360.98564736629 * d + HOME.lon) * rad) - ra, la = HOME.lat * rad;
+    const alt = Math.asin(Math.sin(la) * Math.sin(dec) + Math.cos(la) * Math.cos(dec) * Math.cos(H));
+    const az = Math.atan2(-Math.cos(dec) * Math.sin(H), Math.sin(dec) * Math.cos(la) - Math.cos(dec) * Math.cos(H) * Math.sin(la));
+    return { alt, az: (az / rad + 360) % 360 };
+  }
+  // Reno clock time (Pacific, with daylight saving) on a day of this year -> UTC
+  const sunYear = new Date().getFullYear();
+  function renoUTC(day, min) {
+    const y = sunYear, sundays = (mon, n) => { const f = new Date(Date.UTC(y, mon, 1)).getUTCDay(); return 1 + (7 - f) % 7 + 7 * (n - 1); };
+    const t = Date.UTC(y, 0, 1 + day), dst = t >= Date.UTC(y, 2, sundays(2, 2)) && t < Date.UTC(y, 10, sundays(10, 1));
+    return t + min * 60000 + (dst ? 7 : 8) * 3600000;
+  }
+  function renoNow() {
+    try {
+      const f = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }).formatToParts(new Date()).map(p => [p.type, +p.value || 0]));
+      return { day: Math.round((Date.UTC(f.year, f.month - 1, f.day) - Date.UTC(f.year, 0, 1)) / 86400000), min: f.hour * 60 + f.minute };
+    } catch { const n = new Date(); return { day: Math.round((n - new Date(n.getFullYear(), 0, 1)) / 86400000), min: n.getHours() * 60 + n.getMinutes() }; }
+  }
+  const COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+  // The sun as the map draws it: direction to it in map terms and strength, or null when it's off or down
+  function sunNow() {
+    if (!sun.on || !G) return null;
+    const p = sunPos(renoUTC(sun.day, sun.min)); if (p.alt <= 0) return null;
+    const ph = (p.az - HOME.face) * rad, [nx, nz] = G.bigN, hx = nx * Math.cos(ph) - nz * Math.sin(ph), hz = nx * Math.sin(ph) + nz * Math.cos(ph);
+    return { d: [hx * Math.cos(p.alt), Math.sin(p.alt), hz * Math.cos(p.alt)], k: Math.min(1, p.alt / 0.15) };
+  }
+  const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dayLabel = d => { const t = new Date(Date.UTC(sunYear, 0, 1 + d)); return MON[t.getUTCMonth()] + ' ' + t.getUTCDate(); };
+  const timeLabel = m => { const h = Math.floor(m / 60) % 24, mm = String(m % 60).padStart(2, '0'); return (h % 12 || 12) + ':' + mm + (h < 12 ? ' am' : ' pm'); };
+  function renderSun() {
+    $('#sunc').hidden = !sun.on; $('#sun-btn').setAttribute('aria-expanded', String(sun.on)); $('#first-hint').hidden = Object.keys(pins).length > 0 || !!cardId || sun.on;
+    if (!sun.on) return;
+    if (!sunDragging) { $('#sun-day').value = sun.day; $('#sun-time').value = sun.min; }
+    $('#sun-dayv').textContent = dayLabel(Math.floor(sun.day)); $('#sun-timev').textContent = timeLabel(Math.round(sun.min / 5) * 5);
+    const p = sunPos(renoUTC(sun.day, sun.min));
+    $('#sun-s').textContent = p.alt <= 0 ? 'The sun is down' : 'Sun ' + Math.round(p.alt / rad) + '° up, from the ' + COMPASS[Math.round(p.az / 22.5) % 16];
+    $('#sun-year').setAttribute('aria-pressed', String(sunPlay === 'year')); $('#sun-year').textContent = sunPlay === 'year' ? 'Pause' : 'Play year';
+    $('#sun-dayplay').setAttribute('aria-pressed', String(sunPlay === 'day')); $('#sun-dayplay').textContent = sunPlay === 'day' ? 'Pause' : 'Play day';
+  }
+  let sunDragging = false;
+  function sunStep(t) {
+    if (!sunPlay || !sun.on) { sunPlay = ''; renderSun(); return; }
+    const dt = Math.min(100, t - (sunT || t)); sunT = t;
+    if (sunPlay === 'year') sun.day = (sun.day + dt / 8000 * 365) % 365;    // a year in 8 seconds
+    else { sun.min += dt / 8000 * 960; if (sun.min > 1260) sun.min = 300; }   // 5 am to 9 pm in 8 seconds
+    renderSun(); req(); requestAnimationFrame(sunStep);
+  }
+  function sunToggle(play) { sunPlay = sunPlay === play ? '' : play; sunT = 0; renderSun(); if (sunPlay) requestAnimationFrame(sunStep); }
+  $('#sun-btn').addEventListener('click', () => {
+    sun.on = !sun.on; sunPlay = '';
+    if (sun.on) { if (!sun.set) Object.assign(sun, renoNow(), { set: true }); cardId = null; renderCard(); }
+    renderSun(); req();
+  });
+  $('#sun-close').addEventListener('click', () => { sun.on = false; sunPlay = ''; renderSun(); req(); });
+  $('#sun-day').addEventListener('input', e => { sunDragging = true; sunPlay = ''; sun.day = +e.target.value; renderSun(); req(); });
+  $('#sun-time').addEventListener('input', e => { sunDragging = true; sunPlay = ''; sun.min = +e.target.value; renderSun(); req(); });
+  ['sun-day', 'sun-time'].forEach(id => $('#' + id).addEventListener('change', () => { sunDragging = false; renderSun(); }));
+  $('#sun-now').addEventListener('click', () => { sunPlay = ''; Object.assign(sun, renoNow()); renderSun(); req(); });
+  $('#sun-year').addEventListener('click', () => sunToggle('year'));
+  $('#sun-dayplay').addEventListener('click', () => sunToggle('day'));
+
   /* ---------- Scenes: the Phosphor TV scenes (TV, music and lights together) ---------- */
   let scenesOpen = false, sceneBusy = '';
   async function runScene(name) {
@@ -2566,7 +2691,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     $('#m-view').textContent = t ? '3D view' : 'Top view';
     const note = !ready() ? 'Lights need the relay. Set it up in Settings › Relay.' : failing;
     $('#map-note').textContent = note; $('#map-note').hidden = !note;
-    $('#first-hint').hidden = Object.keys(pins).length > 0 || !!cardId;
+    $('#first-hint').hidden = Object.keys(pins).length > 0 || !!cardId || sun.on;
     $('#set-relay').textContent = !ready() ? 'Not set' : failing ? 'Can\'t reach' : lastOk ? 'Connected' : '…';
     $('#set-placed').textContent = Object.keys(pins).length + ' light' + (Object.keys(pins).length === 1 ? '' : 's');
     $('#set-rooms').textContent = String(plan.floors.length);
