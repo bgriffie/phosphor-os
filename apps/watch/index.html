@@ -825,7 +825,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>What to Watch</h1>
-      <span class="app-meta">v1.0</span>
+      <span class="app-meta">v1.1</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -840,6 +840,10 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <button class="btn btn-primary btn-block" data-route="/settings/key">Add TMDB key</button>
         </div>
         <div id="home-main" hidden>
+          <form class="search" id="home-q-form" role="search">
+            <input class="input" type="search" id="home-q" placeholder="Search films, shows, actors" aria-label="Search across your services"
+                   autocomplete="off" autocorrect="off" enterkeyhint="search">
+          </form>
           <div class="segmented svc" role="radiogroup" aria-label="Service" id="home-svc"></div>
           <div id="home-rows"></div>
         </div>
@@ -866,11 +870,12 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/search" data-title="Search">
         <form class="search" id="q-form" role="search">
-          <input class="input" type="search" id="q" placeholder="Film or show" aria-label="Search films and shows"
+          <input class="input" type="search" id="q" placeholder="Search films, shows, actors" aria-label="Search films, shows and actors"
                  autocomplete="off" autocorrect="off" enterkeyhint="search">
         </form>
-        <div class="grid" id="q-grid"></div>
         <p class="status" id="q-status" hidden></p>
+        <div class="grid" id="q-grid"></div>
+        <div id="q-more" style="margin-top:var(--sp-5)"></div>
       </section>
 
       <section class="view" data-route="/liked" data-title="My list">
@@ -894,6 +899,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <div class="menu">
             <a class="menu-item" href="#/settings/key"><span class="mi-label">TMDB key</span><span class="mi-value" id="key-state">Not set</span></a>
             <a class="menu-item" href="#/settings/services"><span class="mi-label">My services</span><span class="mi-value" id="svc-state"></span></a>
+            <a class="menu-item" href="#/settings/services"><span class="mi-label">Peacock plan</span><span class="mi-value" id="plan-state"></span></a>
             <label class="menu-item"><span class="mi-label">Posters<small>Turn off to save data</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="posters"></label>
           </div>
         </div>
@@ -915,7 +921,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.0</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.1</span></a>
           </div>
         </div>
       </section>
@@ -940,7 +946,14 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <label class="menu-item"><span class="mi-label"><span class="tag s-prime">Prime</span> Prime Video</span><input type="checkbox" role="switch" class="mi-switch" data-setting="svc_prime"></label>
           <label class="menu-item"><span class="mi-label"><span class="tag s-peacock">Peacock</span></span><input type="checkbox" role="switch" class="mi-switch" data-setting="svc_peacock"></label>
         </div>
-        <p class="menu-note">Region: United States. Peacock listings include Premium titles, which may need an upgrade on the free plan.</p>
+        <div class="menu-group" style="margin-top:var(--sp-5)">
+          <span class="label">Peacock plan</span>
+          <div class="menu" role="radiogroup">
+            <button class="menu-item" role="radio" data-setting="peacockPlan" data-value="free"><span class="mi-label">Free<small>Only titles free with ads</small></span></button>
+            <button class="menu-item" role="radio" data-setting="peacockPlan" data-value="premium"><span class="mi-label">Premium<small>Pick this if Peacock comes with a bundle, e.g. Xfinity</small></span></button>
+          </div>
+        </div>
+        <p class="menu-note">Region: United States. Only titles included with your plans are shown; rentals and purchases are left out.</p>
       </section>
 
       <section class="view" data-route="/settings/display" data-title="Display">
@@ -952,12 +965,12 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="What to Watch">
-          <div class="kv"><span>Version</span><span>1.0</span></div>
+          <div class="kv"><span>Version</span><span>1.1</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Last listings</span></div>
           <div class="kv"><span>Region</span><span>US</span></div>
           <div class="kv"><span>Data</span><span>On this phone</span></div>
         </section>
-        <p class="hint" style="margin-top:var(--sp-4);line-height:1.5">Listings and streaming availability come from TMDB, with availability data from JustWatch. This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+        <p class="hint" style="margin-top:var(--sp-4);line-height:1.5">Listings and streaming availability come from TMDB, with availability data from JustWatch. Links straight to a title on Hulu, Prime Video and Peacock come from Wikidata. This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
       </section>
       </div><!-- /.screen-body -->
     </div><!-- /.screen -->
@@ -1212,7 +1225,7 @@ const PH = (() => {
    the services they have, "For you" picks built from titles they ♥, browse, search, and a title page
    that opens the service. Listings and availability come from the TMDB API (availability is JustWatch
    data); Floyd pastes their own free TMDB key in Settings. Everything stays in this phone's storage. */
-PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
+PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true, peacockPlan: 'free',
           homeSvc: 'all', brSvc: 'all', brType: 'movie', brGenre: '', brSort: 'popular' });
 (() => {
   const $ = s => document.querySelector(s);
@@ -1226,14 +1239,14 @@ PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
 
   /* ---------- Services ---------- */
   // Provider ids are looked up by name from TMDB at runtime; these are the fallbacks.
+  // `wd` finds the service's title-ID properties on Wikidata, used to open the exact title (see deepLinks).
   const SERVICES = [
-    { id: 'hulu', name: 'Hulu', short: 'Hulu', match: /^hulu$/i, ids: [15],
-      open: t => 'https://www.hulu.com/search?q=' + encodeURIComponent(t) },
-    { id: 'prime', name: 'Prime Video', short: 'Prime', match: /^amazon prime video( with ads)?$/i, ids: [9, 2100],
-      open: t => 'https://www.primevideo.com/search/ref=atv_nb_sr?phrase=' + encodeURIComponent(t) },
-    { id: 'peacock', name: 'Peacock', short: 'Peacock', match: /^peacock/i, ids: [386, 387],
-      open: t => 'https://www.peacocktv.com/watch/search?q=' + encodeURIComponent(t) },
+    { id: 'hulu', name: 'Hulu', short: 'Hulu', match: /^hulu$/i, ids: [15], wd: ['Hulu'] },
+    { id: 'prime', name: 'Prime Video', short: 'Prime', match: /^amazon prime video( with ads)?$/i, ids: [9, 2100], wd: ['Prime Video'] },
+    { id: 'peacock', name: 'Peacock', short: 'Peacock', match: /^peacock/i, ids: [386, 387], wd: ['Peacock'] },
   ];
+  // Floyd has free Peacock: Premium-only titles don't count unless the plan is switched in Settings
+  const peacockOk = name => PH.store.get('peacockPlan') === 'premium' || !/premium/i.test(name);
   const SVC = Object.fromEntries(SERVICES.map(s => [s.id, s]));
   const active = () => SERVICES.filter(s => PH.store.get('svc_' + s.id));
   const tagHtml = ids => ids.map(id => `<span class="tag s-${id}">${SVC[id].short}</span>`).join('');
@@ -1307,12 +1320,14 @@ PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
   let provIds = null;
   async function providerIds() {
     if (provIds) return provIds;
-    const ids = Object.fromEntries(SERVICES.map(s => [s.id, new Set(s.ids)]));
+    const ids = Object.fromEntries(SERVICES.map(s => [s.id, new Set(s.id === 'peacock' && PH.store.get('peacockPlan') !== 'premium' ? [] : s.ids)]));
     try {
       for (const type of ['movie', 'tv']) {
         const d = await tmdb('/watch/providers/' + type, { watch_region: REGION }, { ttl: 7 * DAY,
           trim: d => ({ results: (d.results || []).map(p => ({ id: p.provider_id, name: p.provider_name })) }) });
-        d.results.forEach(p => SERVICES.forEach(s => { if (s.match.test(p.name)) ids[s.id].add(p.id); }));
+        d.results.forEach(p => SERVICES.forEach(s => {
+          if (s.match.test(p.name) && (s.id !== 'peacock' || peacockOk(p.name))) ids[s.id].add(p.id);
+        }));
       }
     } catch (e) { if (/key/.test(e.message)) throw e; }
     provIds = Object.fromEntries(Object.entries(ids).map(([k, v]) => [k, [...v]]));
@@ -1359,6 +1374,7 @@ PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
   const daysAgo = n => new Date(Date.now() - n * DAY).toISOString().slice(0, 10);
   async function discover(svcId, type, { sort = 'popular', genre = '', page = 1 } = {}) {
     const ids = await providerIds();
+    if (!ids[svcId].length) return { results: [], total: 0 };
     const p = { watch_region: REGION, with_watch_providers: ids[svcId].join('|'),
                 with_watch_monetization_types: 'flatrate|free|ads', include_adult: 'false', page };
     if (genre) p.with_genres = genre;
@@ -1402,22 +1418,20 @@ PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
   const HEART = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20.5S3.5 15.3 3.5 9.3A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 8.5 2.3c0 6-8.5 11.2-8.5 11.2z"/></svg>';
   const HEART_O = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 20.5S3.5 15.3 3.5 9.3A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 8.5 2.3c0 6-8.5 11.2-8.5 11.2z"/></svg>';
   const img = (path, w) => path && PH.store.get('posters') ? `<img src="https://image.tmdb.org/t/p/${w}${esc(path)}" alt="" loading="lazy" onerror="this.remove()">` : '';
-  function card(it, svcFilter) {
+  const mineOf = v => (v?.s || []).filter(x => PH.store.get('svc_' + x));
+  function card(it) {
     known.set(ikey(it), it);
     const s = svcsKnown(it), mine = s && s.filter(x => PH.store.get('svc_' + x));
-    const off = s && !mine.length && provMap[ikey(it)];
-    return `<button class="card${off ? ' off' : ''}" data-open="${ikey(it)}" aria-label="${esc(it.title)}">
+    return `<button class="card" data-open="${ikey(it)}" aria-label="${esc(it.title)}">
       <div class="poster"><span class="ph">${esc(it.title)}</span>${img(it.poster, 'w185')}${isLiked(it) ? `<span class="heart">${HEART}</span>` : ''}</div>
       <div class="t">${esc(it.title)}${it.year ? ` <span class="t-dim">${it.year}</span>` : ''}</div>
-      <div class="tags">${mine ? tagHtml(mine) : ''}${off ? '<span class="tag s-none">Not yours</span>' : ''}</div></button>`;
+      <div class="tags">${mine ? tagHtml(mine) : ''}</div></button>`;
   }
-  // After a lookup, refresh that title's tags wherever its card is showing
-  function retag(it, v) {
-    document.querySelectorAll(`[data-open="${ikey(it)}"]`).forEach(c => {
-      const mine = (v?.s || []).filter(x => PH.store.get('svc_' + x));
-      c.classList.toggle('off', !!v && !mine.length);
-      c.querySelector('.tags').innerHTML = v ? (mine.length ? tagHtml(mine) : '<span class="tag s-none">Not yours</span>') : '';
-    });
+  // Keep only titles on Floyd's services (checked one by one), in the original order
+  async function onlyMine(list, svcs = active().map(s => s.id)) {
+    const keep = new Set();
+    await lookupAll(list, (it, v) => { if (v && v.s.some(s => svcs.includes(s))) keep.add(ikey(it)); });
+    return list.filter(it => keep.has(ikey(it)));
   }
   document.addEventListener('click', e => {
     const c = e.target.closest('[data-open]');
@@ -1472,7 +1486,10 @@ PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
         const d = await r.load();
         if (token !== homeToken) return;
         const list = d.results.slice(0, 20);
-        strip.innerHTML = list.length ? list.map(it => card(it)).join('') : `<p class="strip-empty">${r.id === 'foryou' ? 'No picks on your services yet. ♥ a few more titles.' : 'Nothing here right now.'}</p>`;
+        const none = r.id === 'foryou' ? 'No picks on your services yet. ♥ a few more titles.'
+          : sel === 'peacock' && PH.store.get('peacockPlan') !== 'premium' ? 'Nothing on Peacock\'s free plan here. If your Peacock comes with a bundle, set the plan to Premium in Settings.'
+          : 'Nothing here right now.';
+        strip.innerHTML = list.length ? list.map(it => card(it)).join('') : `<p class="strip-empty">${none}</p>`;
       } catch (e) {
         if (token !== homeToken) return;
         strip.innerHTML = `<p class="strip-empty" style="color:var(--amber)">${esc(e.message)}</p>`;
@@ -1496,9 +1513,7 @@ PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
       cur.s += 1 + (20 - i) / 20; score.set(k, cur);
     }));
     const cands = [...score.values()].sort((a, b) => b.s - a.s || b.it.pop - a.it.pop).slice(0, 45).map(x => x.it);
-    const keep = new Set();
-    await lookupAll(cands, (it, v) => { if (v && v.s.some(s => svcs.includes(s))) keep.add(ikey(it)); });
-    const d = { results: cands.filter(it => keep.has(ikey(it))) };
+    const d = { results: await onlyMine(cands, svcs) };
     forYouCache = { sig, d }; forYouStale = false;
     return d;
   }
@@ -1544,30 +1559,128 @@ PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
   $('#br-more').onclick = () => { brPage++; loadBrowse(false); };
 
   /* ---------- Search ---------- */
-  let qTimer = 0, qToken = 0, lastQ = '';
+  // Titles, plus the best-known titles of any person matched (search an actor and get their work).
+  // Only titles on Floyd's services are shown; picks under them come from the top matches' recommendations.
+  const trimSearch = d => {
+    const out = [];
+    (d.results || []).forEach(r => {
+      if (r.media_type === 'person') (r.known_for || []).forEach(k => /^(movie|tv)$/.test(k.media_type) && out.push(k));
+      else if (/^(movie|tv)$/.test(r.media_type)) out.push(r);
+    });
+    return trimList({ results: out });
+  };
+  let qTimer = 0, qToken = 0, lastQ = null;
   async function runSearch() {
     const q = $('#q').value.trim();
     if (q === lastQ) return; lastQ = q;
     const token = ++qToken;
-    if (!q) { $('#q-grid').innerHTML = ''; status($('#q-status'), ''); return; }
+    $('#q-grid').innerHTML = ''; $('#q-more').innerHTML = '';
     if (!apiKey) { status($('#q-status'), 'Add your TMDB key in Settings first.', true); return; }
-    status($('#q-status'), 'Searching…');
+    if (!q) { status($('#q-status'), ''); return searchPicks(token); }
+    status($('#q-status'), 'Searching your services…');
     try {
-      const d = await tmdb('/search/multi', { query: q, include_adult: 'false' }, { persist: false, trim: trimList });
+      const pages = await Promise.all([1, 2].map(page => tmdb('/search/multi', { query: q, include_adult: 'false', page },
+        { persist: false, trim: trimSearch }).catch(e => { if (page === 1) throw e; return { results: [] }; })));
       if (token !== qToken) return;
-      const list = d.results.filter(it => it.type === 'movie' || it.type === 'tv').slice(0, 24);
-      $('#q-grid').innerHTML = list.map(it => card(it)).join('');
-      status($('#q-status'), list.length ? '' : 'No matches.');
-      lookupAll(list, retag);
+      const seen = new Set(), all = [];
+      pages.forEach(pg => pg.results.forEach(it => { if (!seen.has(ikey(it))) { seen.add(ikey(it)); all.push(it); } }));
+      const mine = await onlyMine(all.slice(0, 40));
+      if (token !== qToken) return;
+      $('#q-grid').innerHTML = mine.map(it => card(it)).join('');
+      status($('#q-status'), mine.length ? '' : all.length ? `Nothing matching "${q}" is on your services.` : 'No matches.');
+      // "You might also like": recommendations for the top matches (even ones you can't watch)
+      const seeds = all.slice(0, 3);
+      if (!seeds.length) return;
+      $('#q-more').innerHTML = shelf('q-like', 'You might also like', '<p class="strip-empty">Finding picks…</p>');
+      const recs = await Promise.all(seeds.map(it => recsOf(it).catch(() => [])));
+      const cands = [], have = new Set(mine.map(ikey));
+      recs.flat().forEach(it => { if (!have.has(ikey(it))) { have.add(ikey(it)); cands.push(it); } });
+      const picks = (await onlyMine(cands.slice(0, 30))).slice(0, 16);
+      if (token !== qToken) return;
+      fillShelf('q-like', picks, 'No similar titles on your services.');
     } catch (e) { if (token === qToken) status($('#q-status'), e.message, true); }
+  }
+  // With nothing typed: picks for you (from ♥) or what's popular on your services
+  async function searchPicks(token) {
+    $('#q-more').innerHTML = shelf('q-like', likes.length ? 'Picks for you' : 'Popular on your services', '<p class="strip-empty">Loading…</p>');
+    try {
+      const svcs = active().map(s => s.id);
+      const d = likes.length ? await forYou(svcs) : await discoverMany(svcs, 'tv', { sort: 'popular' });
+      if (token === qToken) fillShelf('q-like', d.results.slice(0, 20), 'Nothing yet.');
+    } catch (e) { if (token === qToken) fillShelf('q-like', [], e.message); }
+  }
+  const recsOf = it => tmdb(`/${it.type}/${it.id}/recommendations`, {}, { ttl: 2 * DAY,
+    trim: d => trimList({ ...d, results: (d.results || []).map(r => ({ ...r, media_type: r.media_type || it.type })) }) }).then(d => d.results);
+  const shelf = (id, title, inner) => `<section class="shelf" id="${id}"><div class="shelf-h"><h2>${title}</h2></div><div class="strip">${inner}</div></section>`;
+  function fillShelf(id, list, empty) {
+    const st = document.querySelector('#' + id + ' .strip');
+    if (st) st.innerHTML = list.length ? list.map(it => card(it)).join('') : `<p class="strip-empty">${esc(empty)}</p>`;
   }
   $('#q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(runSearch, 450); });
   $('#q-form').onsubmit = e => { e.preventDefault(); clearTimeout(qTimer); runSearch(); $('#q').blur(); };
+  // The search box on Home hands its text to the Search page
+  $('#home-q-form').onsubmit = e => {
+    e.preventDefault();
+    const v = $('#home-q').value.trim(); if (!v) return;
+    $('#q').value = v; $('#home-q').value = ''; $('#home-q').blur();
+    PH.go('/search'); runSearch();
+  };
 
   /* ---------- My list ---------- */
   function renderLiked() {
     $('#liked-grid').innerHTML = likes.map(l => card(l)).join('');
     $('#liked-empty').hidden = !!likes.length;
+  }
+
+  /* ---------- Deep links ----------
+     TMDB doesn't know each service's own title IDs, but Wikidata does (Hulu, Prime Video and Peacock ID
+     properties, each with a URL template). The service IDs are found by name once a month; each title's
+     Wikidata item comes from TMDB's external_ids. Without one, Watch goes to TMDB's where-to-watch page,
+     whose service buttons lead to the exact title. */
+  const WD = 'https://www.wikidata.org/w/api.php?format=json&origin=*&';
+  async function wdFetch(qs, ttl, trim = d => d) {
+    const url = 'wd:' + qs, hit = cacheGet(url);
+    if (hit && Date.now() - hit.t < ttl) return hit.d;
+    try {
+      const r = await fetch(WD + qs);
+      if (!r.ok) throw 0;
+      const d = trim(await r.json());
+      cachePut(url, d, true);
+      return d;
+    } catch { if (hit) return hit.d; throw new Error('Wikidata unreachable'); }
+  }
+  const wdVal = c => { const v = (c || []).find(x => x.rank === 'preferred') || (c || [])[0]; return v?.mainsnak?.datavalue?.value; };
+  let wdPropsP = null;
+  function wdProps() {
+    return wdPropsP ||= (async () => {
+      const found = {};
+      for (const s of SERVICES) for (const term of s.wd) {
+        const d = await wdFetch('action=wbsearchentities&type=property&language=en&limit=25&search=' + encodeURIComponent(term), 30 * DAY,
+          d => (d.search || []).map(r => ({ id: r.id, label: r.label || '' })));
+        d.forEach(r => {
+          if (r.label.toLowerCase().includes(term.toLowerCase()) && /\bID\b/.test(r.label) &&
+              !/episode|season|person|people|actor|channel|collection|genre|studio/i.test(r.label)) (found[s.id] ||= []).push(r.id);
+        });
+      }
+      const all = [...new Set(Object.values(found).flat())];
+      if (!all.length) return {};
+      const f = await wdFetch('action=wbgetentities&props=claims&ids=' + all.join('|'), 30 * DAY,
+        d => Object.fromEntries(Object.entries(d.entities || {}).map(([k, e]) => [k, wdVal(e.claims?.P1630) || ''])));
+      return Object.fromEntries(Object.entries(found).map(([svc, ps]) => [svc, ps.filter(p => /^https:\/\//.test(f[p] || '')).map(p => ({ p, f: f[p] }))]));
+    })().catch(e => { wdPropsP = null; throw e; });
+  }
+  async function deepLinks(qid) {
+    if (!/^Q\d+$/.test(qid || '')) return {};
+    const props = await wdProps();
+    const want = Object.values(props).flat().map(x => x.p);
+    if (!want.length) return {};
+    const claims = await wdFetch('action=wbgetentities&props=claims&ids=' + qid, 7 * DAY,
+      d => Object.fromEntries(want.map(p => [p, wdVal(d.entities?.[qid]?.claims?.[p])]).filter(([, v]) => typeof v === 'string')));
+    const out = {};
+    for (const [svc, ps] of Object.entries(props)) for (const { p, f } of ps) {
+      if (claims[p] && !out[svc]) out[svc] = f.replace('$1', encodeURIComponent(claims[p]).replace(/%2F/g, '/'));
+    }
+    return out;
   }
 
   /* ---------- Title page ---------- */
@@ -1600,10 +1713,10 @@ PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
     if (!apiKey) return;
     try {
       const [d, ids] = await Promise.all([
-        tmdb(`/${type}/${id}`, { append_to_response: 'watch/providers,recommendations' }, { ttl: DAY, trim: d => ({
+        tmdb(`/${type}/${id}`, { append_to_response: 'watch/providers,recommendations,external_ids' }, { ttl: DAY, trim: d => ({
           ...norm(d, type), overview: d.overview || '', runtime: d.runtime || (d.episode_run_time || [])[0] || 0,
           seasons: d.number_of_seasons || 0, genres: (d.genres || []).map(g => g.name).slice(0, 3),
-          rating: d.vote_average || 0, prov: d['watch/providers']?.results?.[REGION] || null,
+          rating: d.vote_average || 0, prov: d['watch/providers']?.results?.[REGION] || null, wd: d.external_ids?.wikidata_id || '',
           recs: trimList({ results: (d.recommendations?.results || []).map(r => ({ ...r, media_type: r.media_type || type })) }).results.slice(0, 16) }) }),
         providerIds()]);
       if (token !== ttToken) return;
@@ -1612,7 +1725,12 @@ PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
       openItem = { id: d.id, type: d.type, title: d.title, year: d.year, poster: d.poster };
       box.innerHTML = titleHtml(d, v);
       likeKey();
-      lookupAll(d.recs, retag);
+      deepLinks(d.wd).then(links => {
+        if (token !== ttToken) return;
+        box.querySelectorAll('[data-watch]').forEach(a => { const u = links[a.dataset.watch]; if (u) { a.href = u; a.dataset.exact = '1'; } });
+      }).catch(() => {});
+      const recs = await onlyMine(d.recs);
+      if (token === ttToken) fillShelf('tt-more', recs, 'Nothing similar on your services yet.');
     } catch (e) {
       if (token === ttToken) box.insertAdjacentHTML('beforeend', `<p class="status err">${esc(e.message)}</p>`);
     }
@@ -1624,16 +1742,16 @@ PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
     const mine = v ? v.s.filter(x => PH.store.get('svc_' + x)) : [];
     let watch = '';
     if (v) {
-      watch = mine.map(s => `<a class="btn btn-block${s === mine[0] ? ' btn-primary' : ''}" href="${esc(SVC[s].open(d.title))}" target="_blank" rel="noopener">Watch on ${SVC[s].name}</a>`).join('');
-      if (!mine.length) watch = `<p class="status err" style="margin:0">Not on your services right now.${v.o.length ? ' On ' + esc(v.o.join(', ')) + '.' : ''}</p>`;
-      if (v.link) watch += `<a class="btn btn-ghost btn-block" href="${esc(v.link)}" target="_blank" rel="noopener">All ways to watch</a>`;
+      const fallback = v.link || 'https://www.themoviedb.org/' + d.type + '/' + d.id + '/watch?locale=' + REGION;
+      watch = mine.map(s => `<a class="btn btn-block${s === mine[0] ? ' btn-primary' : ''}" data-watch="${s}" href="${esc(fallback)}" target="_blank" rel="noopener">Watch on ${SVC[s].name}</a>`).join('');
+      if (!mine.length) watch = `<p class="status err" style="margin:0">Not on your services any more.</p>`;
     } else watch = '<p class="status" style="margin:0">Checking your services…</p>';
-    const recs = d.recs || [];
+    const recs = d.recs;
     return `<div class="ttl"><div class="poster"><span class="ph">${esc(d.title)}</span>${img(d.poster, 'w342')}</div>
         <div><h1>${esc(d.title) || '…'}</h1><div class="facts">${esc(facts)}${d.genres?.length ? '<br>' + esc(d.genres.join(', ')) : ''}</div></div></div>
       ${d.overview ? `<p class="overview">${esc(d.overview)}</p>` : ''}
       <div class="watch">${watch}<button class="btn btn-block like-btn" id="tt-like" aria-pressed="false" type="button"></button></div>
-      ${recs.length ? `<section class="shelf"><div class="shelf-h"><h2>More like this</h2></div><div class="strip">${recs.map(it => card(it)).join('')}</div></section>` : ''}`;
+      ${recs ? shelf('tt-more', 'More like this', '<p class="strip-empty">Finding more on your services…</p>') : ''}`;
   }
   document.addEventListener('click', e => { if (e.target.closest('#tt-like')) like(); });
 
@@ -1641,6 +1759,7 @@ PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
   function renderSettings() {
     $('#key-state').textContent = apiKey ? 'Set ··' + apiKey.slice(-4) : 'Not set';
     $('#svc-state').textContent = active().map(s => s.short).join(', ') || 'None';
+    $('#plan-state').textContent = PH.store.get('peacockPlan') === 'premium' ? 'Premium' : 'Free';
   }
   $('#key-save').onclick = async () => {
     const k = $('#key-in').value.trim();
@@ -1658,6 +1777,7 @@ PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
   $('#key-form').onsubmit = e => { e.preventDefault(); $('#key-save').click(); };
   ['svc_hulu', 'svc_prime', 'svc_peacock'].forEach(k => PH.on(k, () => { forYouStale = true; renderSettings(); }));
   PH.on('posters', () => { forYouStale = true; });
+  PH.on('peacockPlan', () => { clearCache(); provIds = null; forYouStale = true; $('#br-grid').innerHTML = ''; renderSettings(); });
   $('#export').onclick = () => PH.exportFile('what-to-watch-list.json', JSON.stringify({ app: 'what-to-watch', version: 1, likes }, null, 2));
   $('#clear-cache').onclick = () => { clearCache(); provIds = null; forYouStale = true; PH.toast('Listings will refresh.'); };
   $('#erase').onclick = async () => {
@@ -1672,7 +1792,7 @@ PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
   function onRoute(r) {
     if (r === '/') renderHome();
     else if (r === '/browse') { renderBrowseFilters().then(() => { if (!$('#br-grid').children.length) loadBrowse(true); }); }
-    else if (r === '/search') { if (!$('#q').value) setTimeout(() => $('#q').focus(), 50); }
+    else if (r === '/search') { if (!$('#q').value) { lastQ = null; runSearch(); } }
     else if (r === '/liked') renderLiked();
     else if (r === '/title') renderTitle();
     else if (r.startsWith('/settings')) { renderSettings(); }
@@ -1685,9 +1805,9 @@ PH.init({ posters: true, svc_hulu: true, svc_prime: true, svc_peacock: true,
     lastRoute = r; onRoute(r);
   });
   let homeSig = '';
-  const sig = () => [apiKey, PH.store.get('homeSvc'), PH.store.get('posters'), active().map(s => s.id).join()].join('|');
+  const sig = () => [apiKey, PH.store.get('homeSvc'), PH.store.get('posters'), PH.store.get('peacockPlan'), active().map(s => s.id).join()].join('|');
   $('#home-svc').addEventListener('change', () => { homeSig = sig(); renderHome(); });
-  ['svc_hulu', 'svc_prime', 'svc_peacock', 'posters'].forEach(k => PH.on(k, () => { $('#br-grid').innerHTML = ''; }));
+  ['svc_hulu', 'svc_prime', 'svc_peacock', 'posters', 'peacockPlan'].forEach(k => PH.on(k, () => { $('#br-grid').innerHTML = ''; lastQ = null; }));
 
   likedCount(); renderSettings(); homeSig = sig();
   onRoute((location.hash.replace(/^#/, '') || '/').startsWith('/title') ? '/title' : (document.querySelector('.view.is-active')?.dataset.route || '/'));
