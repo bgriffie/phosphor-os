@@ -363,7 +363,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.20</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.21</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -1019,6 +1019,7 @@ const Sound = (() => {
   const rnd = (a, b) => a + Math.random() * (b - a), TAU = Math.PI * 2;
   let want = { music: '', amb: '', mv: 70, av: 60 }, onState = () => {};
   let mState = 'off', aState = 'off';
+  const MUSIC_MAX = .8;   // music never at full scale, so it and the background added together don't clip
 
   /* ---------- Music ---------- */
   const au = new Audio(); au.preload = 'none';
@@ -1037,7 +1038,7 @@ const Sound = (() => {
     au.play().catch(e => { if (e && e.name === 'NotAllowedError') setM('blocked'); });
   }
   const again = () => { if (!mId) return; clearTimeout(mRetry); mTry++; mRetry = setTimeout(load, 1500); };
-  au.addEventListener('playing', () => { mTry = 0; setM('playing'); fadeTo(want.mv / 100); });
+  au.addEventListener('playing', () => { mTry = 0; setM('playing'); fadeTo(want.mv / 100 * MUSIC_MAX); });
   // Music volume always glides (about a second), so switching stations or levels never jumps
   let fadeT = 0;
   function fadeTo(v, done) {
@@ -1055,7 +1056,7 @@ const Sound = (() => {
      then the end is blended into the start so the loop has no seam). Playing it is then just one looping
      buffer: nothing is built while it plays, so it can't stutter or crackle under the music.
      With music on, the background sits lower (ducked) and its top end is softened so the two don't fight. */
-  const LOOP = 30, BLEND = 3;
+  const LOOP = 30, BLEND = 3, AMB_PEAK = .4;   // headroom: see MUSIC_MAX
   let ctx = null, bus = null, duck = null, tone = null, cur = null, aId = '', want2 = 0;
   const made = {};
   function noise(c, kind, secs = 4) {
@@ -1153,13 +1154,21 @@ const Sound = (() => {
       .then(full => {   // add the drops, then blend the extra seconds at the end into the start: a seamless 30 s loop
         if (c.drops) mixDrops(c.drops, full.getChannelData(0), full.getChannelData(1), sr);
         const n = sr * LOOP, bl = sr * BLEND, out = ctx.createBuffer(2, n, sr);
+        let peak = 0;
         for (let ch = 0; ch < 2; ch++) { const a = full.getChannelData(ch), d = out.getChannelData(ch);
-          d.set(a.subarray(0, n)); for (let i = 0; i < bl; i++) { const f = i / bl; d[i] = a[i] * f + a[n + i] * (1 - f); } }
+          d.set(a.subarray(0, n)); for (let i = 0; i < bl; i++) { const f = i / bl; d[i] = a[i] * f + a[n + i] * (1 - f); }
+          for (let i = 0; i < n; i++) { const v = Math.abs(d[i]); if (v > peak) peak = v; } }
+        // Every loop is scaled to the same safe peak, so a loud crackle can never clip, alone or added to the music
+        const k = peak > 0 ? AMB_PEAK / peak : 1;
+        for (let ch = 0; ch < 2; ch++) { const d = out.getChannelData(ch); for (let i = 0; i < n; i++) d[i] *= k; }
         return out; });
   }
   function ensureCtx() {
     if (ctx) return;
-    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // 'playback' asks for big audio buffers: the Chromecast is slow, and small buffers run dry while it draws
+    // or plays video, which is heard as crackling
+    const AC = window.AudioContext || window.webkitAudioContext;
+    try { ctx = new AC({ latencyHint: 'playback' }); } catch { ctx = new AC(); }
     bus = ctx.createGain(); duck = ctx.createGain(); tone = ctx.createBiquadFilter(); tone.type = 'lowpass'; tone.frequency.value = 20000;
     bus.connect(tone); tone.connect(duck); duck.connect(ctx.destination);
   }
@@ -1195,7 +1204,7 @@ const Sound = (() => {
     set(s) {
       if (!s || typeof s !== 'object') return;
       for (const k of ['mv', 'av']) if (typeof s[k] === 'number' && s[k] >= 0 && s[k] <= 100) want[k] = s[k];
-      if (mState === 'playing' && (!('music' in s) || s.music === mId)) fadeTo(want.mv / 100);
+      if (mState === 'playing' && (!('music' in s) || s.music === mId)) fadeTo(want.mv / 100 * MUSIC_MAX);
       mixLevels();
       if ('music' in s) { want.music = MUSIC[s.music] ? s.music : ''; music(want.music); }
       if ('amb' in s) { want.amb = AMB[s.amb] ? s.amb : ''; amb(want.amb); }
