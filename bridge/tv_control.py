@@ -42,7 +42,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '1.7'           # the phone app compares this to know which features the relay has
+VERSION = '1.8'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # morning = the Today summary; away = a dark screen with the sound still playing (for the plants);
@@ -493,7 +493,7 @@ def setup(app, demo=False, lights=None, cast=False):
             msg['piece'] = body['piece']
         if body.get('step') in (-1, 1):
             msg['step'] = body['step']
-        for k in ('hold', 'full'):
+        for k in ('hold', 'full', 'pix'):
             if isinstance(body.get(k), bool):
                 msg[k] = body[k]
         if not msg:
@@ -763,7 +763,7 @@ def setup(app, demo=False, lights=None, cast=False):
                     hub['focus'] = d['focus'][:80]
                 a = d.get('art')
                 if isinstance(a, dict) and isinstance(a.get('i'), int) and 0 <= a['i'] < ART_MAX:
-                    hub['art'] = {'i': a['i'], 'hold': bool(a.get('hold')), 'full': bool(a.get('full'))}
+                    hub['art'] = {'i': a['i'], 'hold': bool(a.get('hold')), 'full': bool(a.get('full')), 'pix': a.get('pix') is not False}
                 h = d.get('heard')
                 if isinstance(h, dict) and h.get('state') in ('playing', 'loading', 'error', 'blocked', 'off'):
                     hub['heard'] = {'state': h['state'], 'what': h.get('what') if h.get('what') in MUSIC + AMBIENCE else ''}

@@ -363,7 +363,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.16</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.17</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -651,8 +651,9 @@ const Art = (() => {
 
   /* ---------- Fireplace ---------- */
   const FILMS = ['https://cdn.pixabay.com/video/2017/01/06/7070-198606760_large.mp4',        // cottage fireplace (Pixabay)
-    'https://cdn.pixabay.com/video/2022/11/25/140483-775376142_large.mp4',                       // holiday mantel and tree (Pixabay, Joe_hackney)
-    'https://static.videezy.com/system/resources/previews/000/005/865/original/MVI_5664.mp4'];   // wide shot of the logs (Videezy)
+    'https://static.videezy.com/system/resources/previews/000/005/865/original/MVI_5664.mp4',    // wide shot of the logs (Videezy)
+    'https://static.videezy.com/system/resources/previews/000/005/867/original/MVI_5666.mp4',    // roaring wood fire, same fireplace (Videezy)
+    'https://assets.mixkit.co/videos/30252/30252-720.mp4'];                                      // firewood burning in a fireplace (Mixkit)
   // A real-colour log fire: soft flame puffs rise off the logs and add their light together,
   // cooling from white-yellow to orange to red as they climb. The brick, logs and their glowing
   // cracks are drawn once; each frame only moves the flames, the glow and a few sparks.
@@ -879,7 +880,8 @@ const Art = (() => {
           x.fill(); }
         if (this.t > 60000) this.init(); } },
     fireplace(false),
-    fireplace(FILMS[1], 'Fireplace: holiday'),
+    fireplace(FILMS[2], 'Fireplace: roaring'),
+    fireplace(FILMS[3], 'Fireplace: firewood'),
   ];
 
   function size() {
@@ -887,61 +889,46 @@ const Art = (() => {
     W = cv.width = Math.round(cv.clientWidth * sc); H = cv.height = Math.round(cv.clientHeight * sc);
   }
   /* ---------- Filmed pieces ----------
-     Real retro pixels: each frame of the clip is shrunk to a 96-row picture, its colours cut down to a small
-     warm palette with an ordered (Bayer) dither like old consoles, and blown back up with hard square edges.
-     The video itself plays hidden under the screen. That needs the clip's server to allow reading its
-     frames (CORS); if it doesn't, or the box hands back only black frames, the video is shown directly
-     instead: it then sits behind the page exactly where the screen is, the screen turns see-through and
-     the beige case drawn on top keeps the rounded corners (the Chromecast's video layer goes black or
-     square-cornered under fades or rounded clipping). If a clip won't load, or loads but doesn't move
+     Slightly pixelated: each frame of the clip is drawn into a small canvas (about 120 rows) and blown back up
+     with hard square edges. Drawing a video works whatever server it comes from (only reading its pixels back
+     would need CORS, and these clip servers don't allow that, which is why v1.11's version never showed on
+     the TV). The video itself plays hidden under the screen. With the pixel look switched off on the phone, the
+     video is shown directly instead: it sits behind the page exactly where the screen is, the screen turns
+     see-through and the beige case drawn on top keeps the rounded corners (the Chromecast's video layer goes
+     black or square-cornered under fades or rounded clipping). If a clip won't load, or loads but doesn't move
      within a few seconds, the next address is tried; if none play, the piece's drawn version carries on. */
-  const vid = { el: null, urls: null, at: 0, live: false, t: 0, cors: true, pix: false, dark: 0, next: 0 };
-  const PROWS = 96, PFPS = 1000 / 15;
-  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + .5) / 16 - .5);
-  const LV = [8, 6, 4];   // levels of red, green, blue: about 190 colours, leaning warm
-  let pcv = null, pg = null;
+  const vid = { el: null, urls: null, at: 0, live: false, t: 0, pix: false, next: 0 };
+  const PROWS = 120, PFPS = 1000 / 20;
+  let pixLook = true, pcv = null, pg = null;
   const frame = () => cv.closest('.screen') || cv.parentNode;
   function vidEl() {
     if (vid.el) return vid.el;
     const v = vid.el = document.createElement('video'); v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto'; v.setAttribute('muted', '');
     v.className = 'art-vid'; v.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100vh;object-fit:fill;z-index:0;display:none';
-    v.addEventListener('error', () => { if (!vid.urls) return; if (vid.cors) vid.cors = false; else { vid.at++; vid.cors = true; } vidLoad(); });
+    v.addEventListener('error', () => { if (vid.urls) { vid.at++; vidLoad(); } });
     document.body.insertBefore(v, document.body.firstChild); return v;
   }
   function vidLoad() {
     const v = vidEl(); clearInterval(vid.t);
     vid.live = false; vid.pix = false; v.style.display = 'none'; frame().classList.remove('film', 'pix');
     if (vid.at >= vid.urls.length) { v.pause(); v.removeAttribute('src'); v.load(); return; }   // none play: the drawn version
-    if (vid.cors) v.crossOrigin = 'anonymous'; else v.removeAttribute('crossorigin');
     v.src = vid.urls[vid.at]; v.load(); v.play().catch(() => {});
     const t0 = performance.now();
     vid.t = setInterval(() => {   // start it only once it is really moving; give up on this one after 12 s
-      if (v.currentTime > .3 && !v.paused) { if (!vid.live) { vid.live = true; vidPlace(); v.style.display = 'block'; vid.cors ? pixOn() : filmOn(); } return; }
-      if (!vid.live && performance.now() - t0 > 12000) { vid.at++; vid.cors = true; vidLoad(); }
+      if (v.currentTime > .3 && !v.paused) { if (!vid.live) { vid.live = true; vidPlace(); v.style.display = 'block'; vidLook(); } return; }
+      if (!vid.live && performance.now() - t0 > 12000) { vid.at++; vidLoad(); }
     }, 500);
   }
-  function pixOn() { vid.pix = true; vid.dark = 0; vid.next = 0; frame().classList.remove('film'); frame().classList.add('pix'); }
-  function filmOn() { vid.pix = false; frame().classList.remove('pix'); frame().classList.add('film'); }
+  function vidLook() {
+    if (!vid.live) return;
+    vid.pix = pixLook; vid.next = 0;
+    frame().classList.toggle('pix', pixLook); frame().classList.toggle('film', !pixLook);
+  }
   function pixFrame(t) {
     if (t < vid.next) return; vid.next = t + PFPS;
-    const v = vid.el, ph = PROWS, pw = Math.max(1, Math.round(PROWS * W / H));
-    if (!pcv || pcv.width !== pw || pcv.height !== ph) { pcv = canvas(pw, ph); pg = pcv.getContext('2d', { willReadFrequently: true }); }
-    let img;
-    try { pg.drawImage(v, 0, 0, pw, ph); img = pg.getImageData(0, 0, pw, ph); } catch (e) { filmOn(); return; }   // frames can't be read: show the video itself
-    const d = img.data; let sum = 0;
-    for (let yy = 0, q = 0; yy < ph; yy++) {
-      for (let xx = 0; xx < pw; xx++, q += 4) {
-        const b = BAYER[(yy & 3) * 4 + (xx & 3)];
-        sum += d[q] + d[q + 1];
-        for (let c = 0; c < 3; c++) {
-          const n = LV[c] - 1, val = d[q + c] / 255 * n + b;
-          d[q + c] = Math.max(0, Math.min(n, Math.round(val))) * 255 / n;
-        }
-      }
-    }
-    // A box that can't copy its video frames hands back black ones: after 3 s of that, show the video directly
-    if (sum < pw * ph * 6) { if (++vid.dark > 45) { filmOn(); return; } } else vid.dark = 0;
-    pg.putImageData(img, 0, 0);
+    const ph = PROWS, pw = Math.max(1, Math.round(PROWS * W / H));
+    if (!pcv || pcv.width !== pw || pcv.height !== ph) { pcv = canvas(pw, ph); pg = pcv.getContext('2d', { alpha: false }); }
+    pg.imageSmoothingEnabled = true; pg.drawImage(vid.el, 0, 0, pw, ph);   // shrink smoothly, so each block is the average colour
     x.imageSmoothingEnabled = false; x.drawImage(pcv, 0, 0, W, H); x.imageSmoothingEnabled = true;
   }
   function vidPlace() {   // exactly over the screen
@@ -949,7 +936,7 @@ const Art = (() => {
     st.left = b.left + 'px'; st.top = b.top + 'px'; st.width = b.width + 'px'; st.height = b.height + 'px';
   }
   addEventListener('resize', vidPlace);
-  function vidStart(urls) { vid.urls = urls; vid.at = 0; vid.cors = true; vidLoad(); }
+  function vidStart(urls) { vid.urls = urls; vid.at = 0; vidLoad(); }
   function vidStop() {
     clearInterval(vid.t); vid.urls = null; vid.live = false; vid.pix = false;
     if (vid.el) { vid.el.style.display = 'none'; vid.el.pause(); vid.el.removeAttribute('src'); vid.el.load(); frame().classList.remove('film', 'pix'); }
@@ -995,7 +982,8 @@ const Art = (() => {
     setHold(v) { hold = !!v; since = performance.now(); onChange(idx, piece.name, hold); return hold; },
     toggleHold() { return this.setHold(!hold); },
     resize() { if (on) { size(); piece.resized ? piece.resized() : piece.init(); vidPlace(); } },
-    get index() { return idx; }, get hold() { return hold; },
+    setPix(v) { pixLook = !!v; vidLook(); },
+    get index() { return idx; }, get hold() { return hold; }, get pix() { return pixLook; },
   };
 })();
 
@@ -1019,8 +1007,9 @@ const Sound = (() => {
     'fluid': { name: 'Lo-fi beats', urls: soma('fluid') },
     'groove-salad': { name: 'Space ambient', urls: soma('deepspaceone') },
     'drone-zone': { name: 'Sleep', urls: soma('dronezone') },
-    'sonic-universe': { name: 'Romantic jazz', urls: rj(1) },
-    'secret-agent': { name: 'Calm classical', urls: srg('rsc_de') },
+    // 70s/80s Japanese city pop and jazz fusion (Takanaka, Casiopea and friends). Old hidden ids reused so the relay's list still matches.
+    'sonic-universe': { name: 'Japanese city pop', urls: ['https://boxradio-edge-00.streamafrica.net/jpopchill', 'https://stream.zeno.fm/ricmeoweux2uv'] },
+    'secret-agent': { name: 'Japanese fusion', urls: ['https://nonstopcasiopea.radioca.st/', 'https://nonstopcasiopea.radioca.st/stream'] },
   };
 
 
@@ -1255,6 +1244,7 @@ const Sound = (() => {
     if (screen !== 'art') go('art', i); else if (i != null) Art.go(i);
     if (a.step === 1) Art.next(); else if (a.step === -1) Art.prev();
     if (typeof a.hold === 'boolean') Art.setHold(a.hold);
+    if (typeof a.pix === 'boolean') { Art.setPix(a.pix); status(); }
     if (typeof a.full === 'boolean') { full = a.full; fullView(); status(); }
   }
   // The little note in the bottom bar says what is playing
@@ -1266,7 +1256,7 @@ const Sound = (() => {
   Sound.onState(() => { showSound(); status(); });
   const showLinked = () => { $('#offline').hidden = linked; $('#led').classList.toggle('off', !linked); };
   // The only thing this page sends: where it is and what is selected
-  const status = () => send({ screen, focus: screen === 'lights' ? focusId() : screen === 'watch' ? watchKey() : '', art: { i: Art.index, hold: Art.hold, full }, heard: Sound.state() });
+  const status = () => send({ screen, focus: screen === 'lights' ? focusId() : screen === 'watch' ? watchKey() : '', art: { i: Art.index, hold: Art.hold, full, pix: Art.pix }, heard: Sound.state() });
   // Full screen art: no case, no labels, no glow or grid; just the picture across the whole TV
   let full = false;
   function fullView() { document.body.classList.toggle('full', full && screen === 'art'); if (screen === 'art') requestAnimationFrame(() => Art.resize()); }

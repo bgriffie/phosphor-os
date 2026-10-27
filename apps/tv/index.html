@@ -882,7 +882,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.16</span>
+      <span class="app-meta">v1.17</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1018,6 +1018,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <div class="menu">
             <label class="menu-item"><span class="mi-label">Change by itself<small>A new piece every few minutes</small></span><input type="checkbox" role="switch" class="mi-switch" id="art-auto"></label>
+            <label class="menu-item"><span class="mi-label">Pixel look<small>Filmed fireplaces drawn low-res, like an old game</small></span><input type="checkbox" role="switch" class="mi-switch" id="art-pix" checked></label>
           </div>
         </div>
         <div class="menu-group">
@@ -1099,7 +1100,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.16</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.17</span></a>
           </div>
         </div>
       </section>
@@ -1441,7 +1442,7 @@ PH.init({});
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
   let lastErr = '', pollT = 0, busyPower = false, sleepAt = 0;
   const ready = () => !!(link && link.url && link.key);
-  const RELAY_WANTS = '1.7';   // tv_control.py version this app expects
+  const RELAY_WANTS = '1.8';   // tv_control.py version this app expects
   const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
   // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
   const toast = PH.toast;
@@ -1533,7 +1534,7 @@ PH.init({});
   const ARTS = [['Solar system', 'The whole system, then each world up close'], ['Fireplace', 'Filmed: a cottage fireplace'], ['Harmonograph', 'Pendulum drawings'],
     ['Flow field', 'Drifting currents'], ['Life', 'Conway\'s Game of Life'], ['Warp', 'Stars rushing past'], ['Outrun', 'Retro sunset road'], ['Plasma', 'Slow glowing waves'],
     ['Tunnel', 'Endless tunnel'], ['Matrix rain', 'Falling code'], ['10 PRINT', 'The classic maze'], ['Sunflower', 'Golden-angle spiral'],
-    ['Fireplace (drawn)', 'The drawn fire, if the filmed one won\'t play'], ['Fireplace: holiday', 'Filmed: mantel, garland and tree lights']];
+    ['Fireplace (drawn)', 'The drawn fire, if the filmed one won\'t play'], ['Fireplace: roaring', 'Filmed: a big roaring wood fire'], ['Fireplace: firewood', 'Filmed: logs burning close up']];
   const art = () => (info && info.art) || null;
   async function artSend(body, after) {
     try { await call('/tv/art', body, 8000); if (after) after(); setTimeout(check, 400); }
@@ -1545,6 +1546,8 @@ PH.init({});
   }));
   // Full screen: the art fills the whole TV, with no case, labels or effects
   $('#an-full').addEventListener('click', () => { const a = art(), v = !(a && a.full); if (a) { a.full = v; renderArt(); } artSend({ full: v }); });
+  // Pixel look: the filmed fireplaces drawn low-res with chunky pixels (on by default)
+  $('#art-pix').addEventListener('change', e => { const a = art(); if (a) a.pix = e.target.checked; artSend({ pix: e.target.checked }); });
   $('#an-hold').addEventListener('click', () => { const a = art(), v = !(a && a.hold); if (a) { a.hold = v; renderArt(); } artSend({ hold: v }); });
   $('#art-auto').addEventListener('change', e => { const a = art(); if (a) a.hold = !e.target.checked; renderArt(); artSend({ hold: !e.target.checked }); });
   ARTS.forEach(([name, sub], i) => {
@@ -1568,12 +1571,14 @@ PH.init({});
       $('#an-full').setAttribute('aria-pressed', String(!!a.full));
     }
     $('#art-auto').checked = !(a && a.hold);
+    $('#art-pix').checked = !(a && a.pix === false);
     $$('#art-list [data-i]').forEach(b => b.setAttribute('aria-checked', String(!!(onArt && a && a.i === +b.dataset.i))));
   }
 
   /* ---------- Sound ---------- */
   // Ids match MUSIC / AMBIENCE in tv_control.py and src/sound.js on the TV
   const MUSIC = [['swiss-classic', 'Calm classical', 'Radio Swiss Classic: gentle, mostly slow pieces'], ['romantic-jazz', 'Romantic jazz', 'RelaxingJazz.com: slow, mellow smooth jazz'],
+    ['sonic-universe', 'Japanese city pop', 'Smooth 70s and 80s Japanese city pop, chill'], ['secret-agent', 'Japanese fusion', '70s Japanese jazz fusion like Takanaka and Casiopea, a bit livelier'],
     ['swiss-jazz', 'Classic jazz', 'Radio Swiss Jazz: relaxed standards and swing'], ['bossa', 'Bossa nova', 'SomaFM Bossa Beyond'], ['lounge', 'Cocktail lounge', 'SomaFM Illinois Street Lounge'],
     ['fluid', 'Lo-fi beats', 'SomaFM Fluid: chill instrumental hip-hop'], ['groove-salad', 'Space ambient', 'SomaFM Deep Space One: slow and spacey'], ['drone-zone', 'Sleep', 'SomaFM Drone Zone: very quiet, for sleep']];
   const AMB = [['rain', 'Rain'], ['storm', 'Thunderstorm'], ['fire', 'Fireplace'], ['ocean', 'Ocean waves'], ['wind', 'Wind'], ['brown', 'Brown noise']];
@@ -1731,6 +1736,10 @@ PH.init({});
     { id: 'peacock', name: 'Peacock', match: /^peacock/i, ids: [386, 387], open: t => 'https://www.peacocktv.com/watch/search?q=' + encodeURIComponent(t) },
   ];
   const WDAY = 864e5;
+  // Only what Floyd can actually watch: services switched on in What to Watch, and on free Peacock no Premium-only titles
+  const wOpt = (k, d) => { try { const v = localStorage.getItem('what-to-watch:' + k); return v === null ? d : JSON.parse(v); } catch { return d; } };
+  const wPremium = () => wOpt('peacockPlan', 'free') === 'premium';
+  const wSvcs = () => WSVC.filter(s => wOpt('svc_' + s.id, true) !== false);
   async function tmdb(path, params = {}, ttl = 6 * 36e5) {
     const key = wwGet('key', '');
     if (!key) { const e = new Error('Add your TMDB key in What to Watch first (its Settings).'); e.nokey = true; throw e; }
@@ -1749,20 +1758,24 @@ PH.init({});
   }
   const wNorm = (r, type) => ({ id: r.id, type: r.media_type || type, title: r.title || r.name || 'Untitled', year: (r.release_date || r.first_air_date || '').slice(0, 4), poster: r.poster_path || '', pop: r.popularity || 0 });
   const wKey = it => it.type + '-' + it.id;
-  let wProv = null;
+  let wProv = null, wProvFor = '';
   async function wProviders() {
-    if (wProv) return wProv;
-    const ids = Object.fromEntries(WSVC.map(s => [s.id, new Set(s.ids)]));
+    const tag = wSvcs().map(s => s.id).join() + (wPremium() ? '+' : '');
+    if (wProv && wProvFor === tag) return wProv;
+    const ok = (s, name) => s.id !== 'peacock' || wPremium() || !/premium/i.test(name);
+    const ids = Object.fromEntries(WSVC.map(s => [s.id, new Set(!wSvcs().includes(s) || (s.id === 'peacock' && !wPremium()) ? [] : s.ids)]));
     for (const type of ['movie', 'tv']) {
-      try { const d = await tmdb('/watch/providers/' + type, { watch_region: 'US' }, 7 * WDAY); (d.results || []).forEach(p => WSVC.forEach(s => { if (s.match.test(p.provider_name)) ids[s.id].add(p.provider_id); })); }
+      try { const d = await tmdb('/watch/providers/' + type, { watch_region: 'US' }, 7 * WDAY); (d.results || []).forEach(p => wSvcs().forEach(s => { if (s.match.test(p.provider_name) && ok(s, p.provider_name)) ids[s.id].add(p.provider_id); })); }
       catch (e) { if (e.nokey || /key/.test(e.message)) throw e; }
     }
+    wProvFor = tag;
     return (wProv = Object.fromEntries(Object.entries(ids).map(([k, v]) => [k, [...v]])));
   }
   // Popular / new titles on each service, merged, with the services each was found on
   async function wDiscover(type, sort) {
     const ids = await wProviders(), byKey = new Map();
     await Promise.all(WSVC.map(async s => {
+      if (!ids[s.id].length) return;   // an empty provider list would mean "any service"
       const p = { watch_region: 'US', with_watch_providers: ids[s.id].join('|'), with_watch_monetization_types: 'flatrate|free|ads', include_adult: 'false', sort_by: 'popularity.desc', 'vote_count.gte': 10 };
       if (sort === 'new') { const f = type === 'movie' ? 'primary_release_date' : 'first_air_date'; delete p['vote_count.gte']; p[f + '.gte'] = new Date(Date.now() - 150 * WDAY).toISOString().slice(0, 10); p[f + '.lte'] = new Date().toISOString().slice(0, 10); }
       try { const d = await tmdb('/discover/' + type, p); (d.results || []).forEach(r => { const it = wNorm(r, type), k = wKey(it); const cur = byKey.get(k) || { ...it, svcs: [] }; cur.svcs.push(s.id); byKey.set(k, cur); }); } catch (e) { if (e.nokey) throw e; }
@@ -1770,9 +1783,9 @@ PH.init({});
     return [...byKey.values()].sort((a, b) => b.pop - a.pop);
   }
   async function wServices(it) {
-    const prov = wwGet('prov', {}), c = prov[wKey(it)];
-    if (c && Date.now() - c.t < 3 * WDAY) return c.s || [];
-    const ids = await wProviders(), d = await tmdb(`/${it.type}/${it.id}/watch/providers`, {}, WDAY), us = d.results && d.results.US, s = new Set();
+    const ids = await wProviders(), prov = wwGet('prov', {}), c = prov[wKey(it)];
+    if (c && Date.now() - c.t < 3 * WDAY) return (c.s || []).filter(x => (ids[x] || []).length);
+    const d = await tmdb(`/${it.type}/${it.id}/watch/providers`, {}, WDAY), us = d.results && d.results.US, s = new Set();
     ['flatrate', 'free', 'ads'].forEach(k => ((us && us[k]) || []).forEach(p => WSVC.forEach(x => { if (ids[x.id].includes(p.provider_id)) s.add(x.id); })));
     return [...s];
   }
@@ -1808,10 +1821,54 @@ PH.init({});
   $('#ch-watch').addEventListener('click', watchOnTv);
   $('#wn-reload').addEventListener('click', watchOnTv);
   const wPicked = () => { const k = info && info.focus; for (const r of wRows) for (const it of r.items) if (wKey(it) === k) return it; return null; };
+  /* Watch opens the exact title: TMDB's external_ids give the Wikidata item, whose Hulu / Prime Video / Peacock
+     ID properties have URL templates (same as What to Watch). The link is looked up as soon as a title is picked,
+     so the tap can open it straight away; without one it falls back to TMDB's where-to-watch page. */
+  const WD = 'https://www.wikidata.org/w/api.php?format=json&origin=*&', WDC = KEY + 'wd:';
+  async function wdFetch(qs, ttl, trim) {
+    let hit = null; try { hit = JSON.parse(localStorage.getItem(WDC + qs)); } catch {}
+    if (hit && Date.now() - hit.t < ttl) return hit.d;
+    try { const r = await fetch(WD + qs); if (!r.ok) throw 0; const d = trim(await r.json()); try { localStorage.setItem(WDC + qs, JSON.stringify({ t: Date.now(), d })); } catch {} return d; }
+    catch { if (hit) return hit.d; throw new Error('Wikidata unreachable'); }
+  }
+  const wdVal = c => { const v = (c || []).find(x => x.rank === 'preferred') || (c || [])[0]; return v && v.mainsnak && v.mainsnak.datavalue && v.mainsnak.datavalue.value; };
+  const WDNAME = { hulu: 'Hulu', prime: 'Prime Video', peacock: 'Peacock' };
+  let wdPropsP = null;
+  function wdProps() {
+    return wdPropsP || (wdPropsP = (async () => {
+      const found = {};
+      for (const [svc, term] of Object.entries(WDNAME)) {
+        const d = await wdFetch('action=wbsearchentities&type=property&language=en&limit=25&search=' + encodeURIComponent(term), 30 * WDAY, d => (d.search || []).map(r => ({ id: r.id, label: r.label || '' })));
+        d.forEach(r => { if (r.label.toLowerCase().includes(term.toLowerCase()) && /\bID\b/.test(r.label) && !/episode|season|person|people|actor|channel|collection|genre|studio/i.test(r.label)) (found[svc] = found[svc] || []).push(r.id); });
+      }
+      const all = [...new Set(Object.values(found).flat())];
+      if (!all.length) return {};
+      const f = await wdFetch('action=wbgetentities&props=claims&ids=' + all.join('|'), 30 * WDAY, d => Object.fromEntries(Object.entries(d.entities || {}).map(([k, e]) => [k, wdVal(e.claims && e.claims.P1630) || ''])));
+      return Object.fromEntries(Object.entries(found).map(([svc, ps]) => [svc, ps.filter(p => /^https:\/\//.test(f[p] || '')).map(p => ({ p, f: f[p] }))]));
+    })().catch(e => { wdPropsP = null; throw e; }));
+  }
+  async function deepLinks(qid) {
+    if (!/^Q\d+$/.test(qid || '')) return {};
+    const props = await wdProps(), want = Object.values(props).flat().map(x => x.p);
+    if (!want.length) return {};
+    const claims = await wdFetch('action=wbgetentities&props=claims&ids=' + qid, 7 * WDAY, d => Object.fromEntries(want.map(p => [p, wdVal(d.entities && d.entities[qid] && d.entities[qid].claims && d.entities[qid].claims[p])]).filter(([, v]) => typeof v === 'string')));
+    const out = {};
+    for (const [svc, ps] of Object.entries(props)) for (const { p, f } of ps) if (claims[p] && !out[svc]) out[svc] = f.replace('$1', encodeURIComponent(claims[p]).replace(/%2F/g, '/'));
+    return out;
+  }
+  const wLinks = new Map();   // title key -> exact link (or TMDB's where-to-watch page)
+  async function wLink(it) {
+    const k = wKey(it); if (wLinks.has(k)) return;
+    const fallback = `https://www.themoviedb.org/${it.type}/${it.id}/watch?locale=US`;
+    wLinks.set(k, fallback);
+    try {
+      const d = await tmdb(`/${it.type}/${it.id}/external_ids`, {}, 30 * WDAY), links = await deepLinks(d.wikidata_id);
+      const s = (it.svcs || []).find(x => links[x]); if (s) wLinks.set(k, links[s]);
+    } catch {}
+  }
   $('#wn-open').addEventListener('click', () => {
     const it = wPicked(); if (!it) return;
-    const s = WSVC.find(x => (it.svcs || []).includes(x.id)); if (!s) return;
-    window.open(s.open(it.title), '_blank', 'noopener');
+    window.open(wLinks.get(wKey(it)) || `https://www.themoviedb.org/${it.type}/${it.id}/watch?locale=US`, '_blank', 'noopener');
   });
   $('#wn-like').addEventListener('click', () => {
     const it = wPicked(); if (!it) return;
@@ -1826,6 +1883,7 @@ PH.init({});
     $('#wn-name').textContent = it ? it.title : wRows.length ? 'Pick a title on the TV' : 'Tap ↻ to load picks';
     $('#wn-sub').textContent = it ? [it.year, (it.svcs || []).map(x => WSVC.find(s => s.id === x).name).join(' · ')].filter(Boolean).join(' · ') : 'Swipe on the remote to move';
     $('#wn-open').disabled = !(it && (it.svcs || []).length);
+    if (it) wLink(it);
     $('#wn-like').setAttribute('aria-pressed', String(!!(it && wwGet('likes', []).some(l => l.id === it.id && l.type === it.type))));
   }
 
