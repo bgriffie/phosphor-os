@@ -880,7 +880,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.13</span>
+      <span class="app-meta">v1.15</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1027,7 +1027,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <div class="menu" role="radiogroup" aria-label="Background sound" id="amb-list"></div>
           <div class="segmented lvl" role="radiogroup" aria-label="Background level" id="amb-lvl"><button role="radio" data-v="35">Low</button><button role="radio" data-v="65">Medium</button><button role="radio" data-v="100">High</button></div>
         </div>
-        <p class="menu-note">Play one of each, like jazz with rain. Music is calm internet radio, mostly from HearMe.fm. Rain, fire and the rest are made on the TV, so they need no internet. With music on, the background plays softer underneath it. The TV's own volume is on the remote page.</p>
+        <p class="menu-note">Play one of each, like jazz with rain. Music is internet radio from Radio Swiss, RelaxingJazz.com and SomaFM. Rain, fire and the rest are made on the TV, so they need no internet. With music on, the background plays softer underneath it. The TV's own volume is on the remote page.</p>
       </section>
 
       <section class="view" data-route="/schedule" data-title="Schedule">
@@ -1088,7 +1088,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.13</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.15</span></a>
           </div>
         </div>
       </section>
@@ -1146,7 +1146,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor TV">
-          <div class="kv"><span>Version</span><span>1.13</span></div>
+          <div class="kv"><span>Version</span><span>1.15</span></div>
           <div class="kv"><span>Chromecast</span><span id="ab-cast">—</span></div>
           <div class="kv"><span>Needs</span><span>Relay with --cast</span></div>
           <div class="kv"><span>Fireplace film</span><span>Pixabay, Videezy</span></div>
@@ -1561,10 +1561,9 @@ PH.init({});
 
   /* ---------- Sound ---------- */
   // Ids match MUSIC / AMBIENCE in tv_control.py and src/sound.js on the TV
-  const MUSIC = [['swiss-classic', 'Calm classical', 'Slow, gentle orchestral and piano pieces'], ['swiss-jazz', 'Mellow jazz', 'Soft, laid-back instrumental jazz'],
-    ['sonic-universe', 'Piano jazz', 'Quiet piano and piano trios'], ['bossa', 'Bossa nova', 'Smooth, breezy Brazilian jazz'], ['secret-agent', 'Solo piano', 'Just a piano, soft and slow'],
-    ['lounge', 'Soft lounge', 'Smooth, elegant background music'], ['romantic-jazz', 'Romantic jazz', 'Love songs and slow jazz ballads'], ['fluid', 'Lo-fi beats', 'Chill hop with a gentle beat'],
-    ['groove-salad', 'Ambient chill', 'Floating, atmospheric and calm'], ['drone-zone', 'Sleep', 'Very quiet, slow music for sleep']];
+  const MUSIC = [['swiss-classic', 'Calm classical', 'Radio Swiss Classic: gentle, mostly slow pieces'], ['romantic-jazz', 'Romantic jazz', 'RelaxingJazz.com: slow, mellow smooth jazz'],
+    ['swiss-jazz', 'Classic jazz', 'Radio Swiss Jazz: relaxed standards and swing'], ['bossa', 'Bossa nova', 'SomaFM Bossa Beyond'], ['lounge', 'Cocktail lounge', 'SomaFM Illinois Street Lounge'],
+    ['fluid', 'Lo-fi beats', 'SomaFM Fluid: chill instrumental hip-hop'], ['groove-salad', 'Space ambient', 'SomaFM Deep Space One: slow and spacey'], ['drone-zone', 'Sleep', 'SomaFM Drone Zone: very quiet, for sleep']];
   const AMB = [['rain', 'Rain'], ['storm', 'Thunderstorm'], ['fire', 'Fireplace'], ['ocean', 'Ocean waves'], ['wind', 'Wind'], ['brown', 'Brown noise']];
   const snd = () => (info && info.sound) || { music: '', amb: '', mv: 70, av: 60 };
   async function soundSend(body) {

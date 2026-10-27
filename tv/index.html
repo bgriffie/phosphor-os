@@ -341,7 +341,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.14</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.15</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -983,24 +983,24 @@ const Art = (() => {
 const Sound = (() => {
   const soma = id => [1, 2, 4, 6].map(n => `https://ice${n}.somafm.com/${id}-128-mp3`);
   const srg = id => [`https://stream.srg-ssr.ch/m/${id}/mp3_128`, `https://stream.srg-ssr.ch/srgssr/${id}/mp3/128`];
-  // Calm stations (Floyd found the earlier ones too upbeat for their names). HearMe.fm has the calmest channels
-  // but didn't connect on Floyd's Chromecast, so every station also has an https stream that is known to play
-  // there (Radio Swiss, SomaFM) or likely to (RelaxingJazz.com); where that one is calm too, it goes first.
-  // The ids stay the same as before so saved choices and the relay's allow-list still match.
-  const hm = (...ports) => ports.map(p => `http://radio.hearme.fm:${p}/stream`);
-  const rj = ['https://443-1.autopo.st/171/stream/1/'];   // RelaxingJazz.com, instrumental smooth jazz
+  // Stations that play on Floyd's Chromecast: https streams from Radio Swiss, SomaFM and RelaxingJazz.com.
+  // (HearMe.fm had calmer channels but can't be reached from Floyd's home.) The ids stay the same as before so
+  // saved choices and the relay's allow-list still match; Piano jazz and Solo piano had no working stream, so the
+  // phone no longer lists them and their ids just play the nearest calm station.
+  const rj = n => [`https://443-1.autopo.st/171/stream/${n}/`];   // RelaxingJazz.com: slow, mellow smooth jazz
   const MUSIC = {
-    'swiss-classic': { name: 'Calm classical', urls: srg('rsc_de').concat(hm(8174, 8300)) },            // Radio Swiss Classic; HearMe Relaxing Classical, Nocturnes
-    'swiss-jazz': { name: 'Mellow jazz', urls: rj.concat(hm(8720, 8740), srg('rsj')) },                // RelaxingJazz; HearMe Mellow Jazz, Mellow Smooth Jazz
-    'sonic-universe': { name: 'Piano jazz', urls: hm(8730, 8780).concat(rj) },                          // HearMe Mellow Piano Jazz, Piano Trios
-    'bossa': { name: 'Bossa nova', urls: hm(8800, 8210).concat(soma('bossa')) },                        // HearMe Smooth Bossa Nova, Bossa Nova; SomaFM Bossa Beyond
-    'secret-agent': { name: 'Solo piano', urls: hm(8110, 8990).concat(srg('rsc_de')) },                 // HearMe Solo Piano, Relaxing Ambient Piano
-    'lounge': { name: 'Soft lounge', urls: hm(8810, 8440).concat(soma('illstreet')) },                  // HearMe Smooth Lounge, Lounge
-    'romantic-jazz': { name: 'Romantic jazz', urls: hm(9680, 8690, 8820).concat(rj) },                  // HearMe Love Smooth Jazz, Jazz Ballads, Smooth Vocals
-    'fluid': { name: 'Lo-fi beats', urls: hm(9230, 9650).concat(soma('fluid')) },                       // HearMe Chill Hop, Jazz Hop
-    'groove-salad': { name: 'Ambient chill', urls: soma('deepspaceone').concat(hm(9170, 9190)) },       // SomaFM Deep Space One; HearMe Ambient Chillout, Smooth Ambient
-    'drone-zone': { name: 'Sleep', urls: soma('dronezone').concat(hm(9000, 8188)) },                    // SomaFM Drone Zone; HearMe Sleep Relaxation
+    'swiss-classic': { name: 'Calm classical', urls: srg('rsc_de') },
+    'romantic-jazz': { name: 'Romantic jazz', urls: rj(1).concat(rj(3)) },
+    'swiss-jazz': { name: 'Classic jazz', urls: srg('rsj') },
+    'bossa': { name: 'Bossa nova', urls: soma('bossa') },
+    'lounge': { name: 'Cocktail lounge', urls: soma('illstreet') },
+    'fluid': { name: 'Lo-fi beats', urls: soma('fluid') },
+    'groove-salad': { name: 'Space ambient', urls: soma('deepspaceone') },
+    'drone-zone': { name: 'Sleep', urls: soma('dronezone') },
+    'sonic-universe': { name: 'Romantic jazz', urls: rj(1) },
+    'secret-agent': { name: 'Calm classical', urls: srg('rsc_de') },
   };
+
 
 
   const AMB = { rain: 'Rain', storm: 'Thunderstorm', fire: 'Fireplace', ocean: 'Ocean waves', wind: 'Wind', brown: 'Brown noise' };
