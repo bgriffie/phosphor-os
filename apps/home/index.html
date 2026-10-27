@@ -820,7 +820,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .sc-chips .chip:disabled { opacity: .5; }
     .sc-btn { background: rgba(8, 17, 10, .94); }
     .dim .readout.sun-r { font-size: var(--fs-sm); min-width: 5.6em; }
-    #sun-year[aria-pressed="true"], #sun-dayplay[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+    #sun-year[aria-pressed="true"], #sun-dayplay[aria-pressed="true"], #sun-live[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
     .sc-btn[aria-expanded="true"], .sc-btn.is-sel { color: var(--accent); border-color: var(--accent); box-shadow: var(--glow-box); }
     .tv-clock { position: absolute; top: 4px; right: 8px; font-size: 10px; color: var(--text-faint); }
     .tv-ch { font-size: 10px; letter-spacing: .04em; }
@@ -858,7 +858,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.5</span>
+      <span class="app-meta">v1.6</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -884,6 +884,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
               <button class="chip" data-scene="romantic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg><span>Romantic</span></button>
               <button class="chip" data-scene="away"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 21c-4-3-7-6-7-10a7 7 0 0 1 14 0c0 4-3 7-7 10zM12 21V9M12 13l-3-2M12 11l3-2"/></svg><span>Away</span></button>
               <button class="chip" data-scene="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M8 3l4 4 4-4"/></svg><span>TV off</span></button>
+              <button class="chip" data-scene="party"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span>Party</span></button>
               <button class="chip" data-scene="lights-off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><span>Lights off</span></button>
             </div>
             <button class="rm-b pow sc-btn" id="sun-btn" aria-label="Sunlight" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
@@ -906,6 +907,26 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
             <div class="row wh-row" id="lc-wh"></div>
           </section>
 
+          <section class="card" id="pc" hidden aria-label="Party">
+            <div class="c-top">
+              <span class="led" id="pc-led" aria-hidden="true"></span>
+              <div class="c-who"><div class="who-t">Party</div><div class="who-s" id="pc-sub">—</div></div>
+              <button class="rm-b ic" id="pc-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            </div>
+            <div class="row" id="pc-mode" role="radiogroup" aria-label="Party style" style="--n:3">
+              <button class="rm-b" role="radio" data-mode="strobe">Strobe</button>
+              <button class="rm-b" role="radio" data-mode="color">Colour</button>
+              <button class="rm-b" role="radio" data-mode="both">Both</button>
+            </div>
+            <div class="row" id="pc-speed" role="radiogroup" aria-label="Party speed" style="--n:3">
+              <button class="rm-b" role="radio" data-speed="slow">Slow</button>
+              <button class="rm-b" role="radio" data-speed="medium">Medium</button>
+              <button class="rm-b" role="radio" data-speed="fast">Fast</button>
+            </div>
+            <button class="rm-b" id="pc-go">Start party</button>
+            <p class="note" id="pc-note" hidden>Party runs on the relay now, so it keeps going when you leave. Your relay needs party.py first (Kasa Lights has the steps).</p>
+          </section>
+
           <section class="card" id="sunc" hidden aria-label="Sunlight">
             <div class="c-top">
               <span class="dot is-on" style="background:#FFD27A;color:#FFD27A" aria-hidden="true"></span>
@@ -919,6 +940,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
               <button class="rm-b" id="sun-year" aria-pressed="false">Play year</button>
               <button class="rm-b" id="sun-dayplay" aria-pressed="false">Play day</button>
             </div>
+            <button class="rm-b" id="sun-live" aria-pressed="false">Live sun: off</button>
           </section>
 
           <section class="card" id="tc" hidden aria-label="TV">
@@ -982,6 +1004,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
             <a class="menu-item" href="#/settings/walls"><span class="mi-label">Walls</span><span class="mi-value" data-setting-value="walls"></span></a>
             <a class="menu-item" href="#/settings/furniture"><span class="mi-label">Furniture</span><span class="mi-value" data-setting-value="furn"></span></a>
             <label class="menu-item"><span class="mi-label">Labels<small>Room, light and TV names on the map</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="labels"></label>
+            <label class="menu-item"><span class="mi-label">Live sun<small>Today's real sunlight stays on the map</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="sunlive"></label>
             <label class="menu-item"><span class="mi-label">Live TV picture<small>Shows what's on the TV, moving</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="live"></label>
           </div>
         </div>
@@ -1012,7 +1035,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.5</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.6</span></a>
           </div>
         </div>
       </section>
@@ -1442,7 +1465,7 @@ const BUILT_PLAN = {"walls":[{"c":[-2.14,-0.88],"len":0.17,"wid":0.06,"a":2.356,
 /* Home Map: a light 3D outline of Floyd's home, made from a Polycam room scan (src/scan.js),
    with the Kasa lights and the TV on it. Lights and TV go through the same home relay as
    Kasa Lights and Phosphor TV (kasa_bridge.py, Tailscale, the same link and key). */
-PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
+PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sunlive: false, partyMode: 'strobe', partySpeed: 'medium' });
 (() => {
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const KEY = 'home-map:data:';   // every tool shares bgriffie.github.io, so keys are prefixed
@@ -1514,8 +1537,37 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     catch (e) { PH.toast(e.message, 'warn'); }
     render();
   }
+  /* ---------- Party: runs on the relay (party.py), so it keeps going whatever app is open ----------
+     GET /party says whether one is on and since when; the map replays the same beats to show each light. */
+  const BEAT = { slow: 1200, medium: 600, fast: 250 };
+  let party = null, partyHas = null, partyBusy = false;   // party: the relay's last answer; partyHas: false = relay has no party yet
+  const partyOn = () => !!(party && party.on);
+  async function refreshParty() {
+    try { party = await call('/party'); partyHas = true; } catch (e) { if (e.missing) { partyHas = false; party = null; } }
+    renderParty(); partyTick();
+  }
+  async function setParty(body) {
+    if (!ready()) { PH.go('/settings/relay'); return; }
+    partyBusy = true; renderParty();
+    try { party = await call('/party', body, 20000); partyHas = true; if ('on' in body) PH.toast(body.on ? 'Party on. It keeps going until you stop it.' : 'Party over. Lights restored.'); }
+    catch (e) { if (e.missing) partyHas = false; PH.toast(e.missing ? 'Party needs the relay update (party.py). See Kasa Lights.' : /409/.test(e.message) ? 'No lights are responding right now.' : e.message, 'warn'); }
+    partyBusy = false; renderParty(); partyTick(); if (body.on === false) refreshLights();
+  }
+  // What a light is doing on this beat of the party, as the relay sends it: [h, s, l], or null for a dark flash
+  function partyHSL(l) {
+    const i = party.lights.indexOf(l.id); if (i < 0) return undefined;
+    const ms = BEAT[party.speed] || 600, k = Math.max(0, Math.floor((Date.now() - party.since * 1000) / ms)), on = k % 2 === 0;
+    if (l.hsv && (party.mode === 'color' || (party.mode === 'both' && on))) return [((k * 137) % 360 + i * 60) % 360, 100, 55];
+    return party.mode === 'color' || on ? [42, 90, 62] : null;
+  }
+  let partyT = null;
+  function partyTick() {
+    clearInterval(partyT); partyT = null;
+    if (partyOn() && !document.hidden) partyT = setInterval(() => { req(); if (cardId) renderCard(); }, Math.min(250, BEAT[party.speed] || 600) / 2);
+  }
   // The colour a bulb is showing, as [hue, sat, light]
   function hsl(l) {
+    if (l && partyOn()) { const c = partyHSL(l); if (c !== undefined) return l.online ? c : null; }
     if (!l || !l.on || !l.online) return null;
     if (l.hsv && !l.temp) return [l.hsv[0], Math.max(40, l.hsv[1]), 55];
     if (l.temp) { const t = clamp((l.temp - 2500) / 4000, 0, 1); return [38 - t * 8, 90 - t * 80, 62 + t * 20]; }
@@ -2362,6 +2414,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     if (h) {
       const l = lights.find(x => x.id === h);
       if (!ready()) { PH.toast('Set up the relay first.', 'warn'); return; }
+      if (partyOn() && party.lights.includes(h)) { PH.toast('Party is on. Stop it to switch lights.'); return; }
       if (l && l.online) setLight(h, { on: !l.on });
       else PH.toast(l ? l.name + ' isn\'t answering.' : 'The relay doesn\'t know this light any more.', 'warn');
       return;
@@ -2371,7 +2424,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   function savePins() { save('pins', pins); save('tv', tvBox); save('plants', plants); }
 
   /* ---------- Cards over the map ---------- */
-  function openCard(id) { cardId = id; if (id && sun.on) { sun.on = false; sunPlay = ''; renderSun(); } renderCard(); req(); requestAnimationFrame(placeMirror); }
+  function openCard(id) { cardId = id; if (id && sun.on) { sun.on = false; sunPlay = ''; renderSun(); } if (id && partyOpen) { partyOpen = false; renderParty(); } renderCard(); req(); requestAnimationFrame(placeMirror); }
   const SWATCH = [['Green', 125, 85], ['Cyan', 185, 90], ['Blue', 225, 95], ['Purple', 275, 85], ['Pink', 320, 75], ['Red', 0, 95], ['Orange', 28, 95], ['Gold', 45, 85]];
   const WHITES = [['Warm', 2700], ['Soft', 3500], ['Neutral', 4500], ['Day', 6500]];
   const near = (a, b, d) => Math.abs(a - b) < d;
@@ -2529,10 +2582,11 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     } catch { const n = new Date(); return { day: Math.round((n - new Date(n.getFullYear(), 0, 1)) / 86400000), min: n.getHours() * 60 + n.getMinutes() }; }
   }
   const COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
-  // The sun as the map draws it: direction to it in map terms and strength, or null when it's off or down
+  // The sun as the map draws it: direction to it in map terms and strength, or null when it's off or down.
+  // With the card open it follows the sliders; closed, Live sun keeps today's real sun on.
   function sunNow() {
-    if (!sun.on || !G) return null;
-    const p = sunPos(renoUTC(sun.day, sun.min)); if (p.alt <= 0) return null;
+    if (!G || !(sun.on || PH.store.get('sunlive'))) return null;
+    const at = sun.on ? sun : renoNow(), p = sunPos(renoUTC(at.day, at.min)); if (p.alt <= 0) return null;
     const ph = (p.az - HOME.face) * rad, [nx, nz] = G.bigN, hx = nx * Math.cos(ph) - nz * Math.sin(ph), hz = nx * Math.sin(ph) + nz * Math.cos(ph);
     return { d: [hx * Math.cos(p.alt), Math.sin(p.alt), hz * Math.cos(p.alt)], k: Math.min(1, p.alt / 0.15) };
   }
@@ -2540,6 +2594,9 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   const dayLabel = d => { const t = new Date(Date.UTC(sunYear, 0, 1 + d)); return MON[t.getUTCMonth()] + ' ' + t.getUTCDate(); };
   const timeLabel = m => { const h = Math.floor(m / 60) % 24, mm = String(m % 60).padStart(2, '0'); return (h % 12 || 12) + ':' + mm + (h < 12 ? ' am' : ' pm'); };
   function renderSun() {
+    const live = !!PH.store.get('sunlive');
+    $('#sun-btn').classList.toggle('is-sel', live);
+    $('#sun-live').setAttribute('aria-pressed', String(live)); $('#sun-live').textContent = live ? 'Live sun: on' : 'Live sun: off';
     $('#sunc').hidden = !sun.on; $('#sun-btn').setAttribute('aria-expanded', String(sun.on)); $('#first-hint').hidden = Object.keys(pins).length > 0 || !!cardId || sun.on;
     if (!sun.on) return;
     if (!sunDragging) { $('#sun-day').value = sun.day; $('#sun-time').value = sun.min; }
@@ -2560,7 +2617,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   function sunToggle(play) { sunPlay = sunPlay === play ? '' : play; sunT = 0; renderSun(); if (sunPlay) requestAnimationFrame(sunStep); }
   $('#sun-btn').addEventListener('click', () => {
     sun.on = !sun.on; sunPlay = '';
-    if (sun.on) { if (!sun.set) Object.assign(sun, renoNow(), { set: true }); cardId = null; renderCard(); }
+    if (sun.on) { if (!sun.set) Object.assign(sun, renoNow(), { set: true }); cardId = null; renderCard(); partyOpen = false; renderParty(); }
     renderSun(); req();
   });
   $('#sun-close').addEventListener('click', () => { sun.on = false; sunPlay = ''; renderSun(); req(); });
@@ -2569,13 +2626,37 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   ['sun-day', 'sun-time'].forEach(id => $('#' + id).addEventListener('change', () => { sunDragging = false; renderSun(); }));
   $('#sun-now').addEventListener('click', () => { sunPlay = ''; Object.assign(sun, renoNow()); renderSun(); req(); });
   $('#sun-year').addEventListener('click', () => sunToggle('year'));
+  // Live sun: today's real sunlight stays on after the card is closed, moving with the clock
+  $('#sun-live').addEventListener('click', () => { const on = !PH.store.get('sunlive'); PH.store.set('sunlive', on); if (on) { sunPlay = ''; Object.assign(sun, renoNow()); } });
+  PH.on('sunlive', () => { renderSun(); req(); });
+  setInterval(() => { if (PH.store.get('sunlive') && !sun.on && !document.hidden && route() === '/') req(); }, 60000);
   $('#sun-dayplay').addEventListener('click', () => sunToggle('day'));
+
+  /* ---------- Party card ---------- */
+  let partyOpen = false;
+  const MODE_T = { strobe: 'Strobe', color: 'Colour', both: 'Strobe + colour' }, SPEED_T = { slow: 'Slow', medium: 'Medium', fast: 'Fast' };
+  function renderParty() {
+    const on = partyOn(), m = on ? party.mode : PH.store.get('partyMode'), sp = on ? party.speed : PH.store.get('partySpeed');
+    $('#pc').hidden = !partyOpen;
+    const chip = $('#sc-row [data-scene="party"]'); if (chip) chip.classList.toggle('is-sel', on || partyOpen);
+    $('#pc-led').className = 'led' + (partyBusy ? ' wait' : on ? ' on' : '');
+    $('#pc-sub').textContent = partyHas === false ? 'Needs the relay update' : on ? MODE_T[m] + ' · ' + SPEED_T[sp] + ' · ' + party.lights.length + ' light' + (party.lights.length === 1 ? '' : 's') : 'Every light flashes together';
+    $$('#pc-mode [data-mode]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.mode === m)));
+    $$('#pc-speed [data-speed]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.speed === sp)));
+    const go = $('#pc-go'); go.textContent = on ? 'Stop party' : 'Start party'; go.classList.toggle('is-sel', on); go.disabled = partyBusy;
+    $('#pc-note').hidden = partyHas !== false;
+  }
+  $('#pc-go').addEventListener('click', () => partyOn() ? setParty({ on: false }) : setParty({ on: true, mode: PH.store.get('partyMode'), speed: PH.store.get('partySpeed') }));
+  $('#pc-mode').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if (!b) return; PH.store.set('partyMode', b.dataset.mode); if (partyOn()) setParty({ mode: b.dataset.mode }); else renderParty(); });
+  $('#pc-speed').addEventListener('click', e => { const b = e.target.closest('[data-speed]'); if (!b) return; PH.store.set('partySpeed', b.dataset.speed); if (partyOn()) setParty({ speed: b.dataset.speed }); else renderParty(); });
+  $('#pc-close').addEventListener('click', () => { partyOpen = false; renderParty(); });
 
   /* ---------- Scenes: the Phosphor TV scenes (TV, music and lights together) ---------- */
   let scenesOpen = false, sceneBusy = '';
   async function runScene(name) {
     if (!ready()) { PH.go('/settings/relay'); return; }
     if (name === 'lights-off') { allOff(); return; }
+    if (name === 'party') { partyOpen = !partyOpen; if (partyOpen) { cardId = null; renderCard(); if (sun.on) { sun.on = false; sunPlay = ''; renderSun(); } refreshParty(); } renderParty(); return; }
     if (name !== 'off' && tvInfo && !tvInfo.id) { PH.toast('Pick your Chromecast in the TV app first.', 'warn'); return; }
     sceneBusy = name; renderScenes();
     PH.toast(name === 'off' ? 'Turning Phosphor TV off…' : (SCENES[name] || name) + ' scene…');
@@ -2780,12 +2861,13 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   let pollT = null, tick = 0;
   function sync() {
     clearInterval(pollT); pollT = null;
+    partyTick();
     const live = ['/', '/place'].includes(route());
     if (document.hidden || !ready() || !live) { render(); return; }
-    refreshLights(); if (tvOf()) refreshTV();
+    refreshLights(); refreshParty(); if (tvOf()) refreshTV();
     pollT = setInterval(() => {
       if (dragging || gest) return;
-      refreshLights();
+      refreshLights(); if (partyHas !== false || ++tick % 12 === 0) refreshParty();
       // the TV every other time, or every time while its card is open
       if (tvOf() && tvState !== 'none' && (cardId === 'tv' || mir || ++tick % 2 === 0)) refreshTV();
     }, 5000);
