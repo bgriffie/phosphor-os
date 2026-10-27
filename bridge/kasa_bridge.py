@@ -61,11 +61,38 @@ class KasaLights:
         self.scanned = 0
         self.lock = asyncio.Lock()
 
-    async def scan(self):
+    async def scan(self, rounds=1, verbose=False):
+        """Find the bulbs and plugs. A broadcast can miss a device whose reply is late or lost, so a full scan
+        broadcasts twice, and every scan also asks each address seen before directly (saved as 'hosts' in
+        kasa_bridge.json), so a light found once isn't dropped after a restart."""
         from kasa import Discover
         async with self.lock:
-            found = await Discover.discover(credentials=self.creds, discovery_timeout=4)
+            known = load_config().get('hosts', [])
+            have = {d.host for d in self.devices.values()}
+
+            async def broadcast():
+                got = {}
+                for _ in range(rounds):
+                    try:
+                        got.update(await Discover.discover(credentials=self.creds, discovery_timeout=6 if rounds > 1 else 4))
+                    except Exception as e:
+                        print(f'  discovery failed: {e}')
+                return got
+
+            async def probe(host):
+                try:
+                    return await Discover.discover_single(host, credentials=self.creds, discovery_timeout=4)
+                except Exception:
+                    return None
+
+            asked = [h for h in known if h not in have]
+            found, *probed = await asyncio.gather(broadcast(), *(probe(h) for h in asked))
+            for host, dev in zip(asked, probed):
+                if dev is not None and host not in found:
+                    found[host] = dev
             for dev in found.values():
+                if dev.host in have and rounds == 1:
+                    continue   # already connected; a quick rescan only adds new ones
                 try:
                     await dev.update()
                 except Exception as e:
@@ -79,6 +106,17 @@ class KasaLights:
                     except Exception:
                         pass
                 self.devices[key] = dev
+            hosts = sorted({d.host for d in self.devices.values()} | set(known))
+            if hosts != known:
+                cfg = load_config()
+                cfg['hosts'] = hosts
+                save_config(cfg)
+            if verbose:
+                for dev in sorted(self.devices.values(), key=lambda d: (d.alias or '').lower()):
+                    print(f'  {dev.alias or "(no name)":24} {dev.host}')
+                missing = [h for h in known if h not in {d.host for d in self.devices.values()}]
+                for h in missing:
+                    print(f'  {"(not answering)":24} {h}')
             self.scanned = time.time()
             return len(self.devices)
 
@@ -143,7 +181,7 @@ class DemoLights:
             'fan': {'id': 'fan', 'name': 'Fan plug', 'model': 'HS103', 'kind': 'plug', 'on': False, 'online': True},
         }
 
-    async def scan(self):
+    async def scan(self, rounds=1, verbose=False):
         return len(self.devices)
 
     async def list(self):
@@ -196,7 +234,7 @@ def make_app(lights, key, cast=False):
         return web.json_response({'lights': await lights.list()})
 
     async def rescan(request):
-        await lights.scan()
+        await lights.scan(rounds=2)
         return web.json_response({'lights': await lights.list()})
 
     async def set_light(request):
@@ -260,7 +298,7 @@ def main():
     lights = DemoLights() if args.demo else KasaLights(cfg.get('username'), cfg.get('password'))
 
     async def start(app):
-        n = await lights.scan()
+        n = await lights.scan(rounds=2, verbose=True)
         print(f'Found {n} light(s) and plug(s).' + ('' if n else ' Is this computer on the same Wi-Fi as the bulbs?'))
     app = make_app(lights, cfg['key'], cast=args.cast)
     app.on_startup.append(start)
