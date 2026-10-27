@@ -363,7 +363,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.19</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.20</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -1041,7 +1041,7 @@ const Sound = (() => {
   // Music volume always glides (about a second), so switching stations or levels never jumps
   let fadeT = 0;
   function fadeTo(v, done) {
-    clearInterval(fadeT); const from = au.volume, steps = 12; let k = 0;
+    clearInterval(fadeT); const from = au.volume, steps = 24; let k = 0;
     fadeT = setInterval(() => { k++; au.volume = Math.max(0, Math.min(1, from + (v - from) * k / steps)); if (k >= steps) { clearInterval(fadeT); if (done) done(); } }, 80);
   }
   au.addEventListener('error', again);
@@ -1086,8 +1086,8 @@ const Sound = (() => {
       bed(c, o, N.pink, [['highpass', 3200]], .02, T);
       for (let t = 0; t < T; t += rnd(.03, .25)) {   // crackles come in little clusters, now and then a pop
         let at = t; const n = 1 + (Math.random() * 4 | 0), pan = rnd(-.6, .6);
-        for (let k = 0; k < n; k++) { at += rnd(.004, .04); drop(c, o, N.white, at, rnd(.002, .007), rnd(1500, 5500), 1, rnd(.08, .45), pan); }
-        if (Math.random() < .03) drop(c, o, N.white, t + .01, rnd(.015, .03), rnd(500, 1100), 1.2, rnd(.4, .75), pan);
+        for (let k = 0; k < n; k++) { at += rnd(.004, .04); drop(c, o, N.white, at, rnd(.002, .007), rnd(1200, 4000), 1, rnd(.05, .28), pan); }
+        if (Math.random() < .03) drop(c, o, N.white, t + .01, rnd(.015, .03), rnd(500, 1100), 1.2, rnd(.25, .45), pan);
       }
     },
     ocean(c, o, N, T) {
@@ -1163,13 +1163,15 @@ const Sound = (() => {
     bus = ctx.createGain(); duck = ctx.createGain(); tone = ctx.createBiquadFilter(); tone.type = 'lowpass'; tone.frequency.value = 20000;
     bus.connect(tone); tone.connect(duck); duck.connect(ctx.destination);
   }
-  // Background level: the chosen level, and lower and softer while music is playing
+  // Background level: the chosen level, and well under the music while it plays. With music the background
+  // also loses its sharp top end (crackles and drops turn into a soft, warm bed), so it sits behind the music
+  // instead of fighting it. Changes glide over a couple of seconds, so nothing jumps.
   function mixLevels(fast) {
     if (!ctx) return;
-    const t = ctx.currentTime, k = fast ? .05 : .8, withMusic = !!mId && mState !== 'error' && mState !== 'off';
-    bus.gain.setTargetAtTime(want.av / 100, t, .15);
-    duck.gain.setTargetAtTime(withMusic ? .5 : 1, t, k);
-    tone.frequency.setTargetAtTime(withMusic ? 5000 : 20000, t, k);
+    const t = ctx.currentTime, k = fast ? .05 : 1.2, withMusic = !!mId && mState !== 'error' && mState !== 'off';
+    bus.gain.setTargetAtTime(want.av / 100, t, .3);
+    duck.gain.setTargetAtTime(withMusic ? .3 : 1, t, k);
+    tone.frequency.setTargetAtTime(withMusic ? 1800 : 20000, t, k);
   }
   function amb(id) {
     if (id === aId) return;
