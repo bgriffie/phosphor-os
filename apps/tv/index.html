@@ -880,7 +880,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.12</span>
+      <span class="app-meta">v1.13</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1027,7 +1027,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <div class="menu" role="radiogroup" aria-label="Background sound" id="amb-list"></div>
           <div class="segmented lvl" role="radiogroup" aria-label="Background level" id="amb-lvl"><button role="radio" data-v="35">Low</button><button role="radio" data-v="65">Medium</button><button role="radio" data-v="100">High</button></div>
         </div>
-        <p class="menu-note">Play one of each, like jazz with rain. Music is internet radio from Radio Swiss, SomaFM and HearMe.fm. Rain, fire and the rest are made on the TV, so they need no internet. With music on, the background plays softer underneath it. The TV's own volume is on the remote page.</p>
+        <p class="menu-note">Play one of each, like jazz with rain. Music is calm internet radio, mostly from HearMe.fm. Rain, fire and the rest are made on the TV, so they need no internet. With music on, the background plays softer underneath it. The TV's own volume is on the remote page.</p>
       </section>
 
       <section class="view" data-route="/schedule" data-title="Schedule">
@@ -1088,7 +1088,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.12</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.13</span></a>
           </div>
         </div>
       </section>
@@ -1146,7 +1146,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Phosphor TV">
-          <div class="kv"><span>Version</span><span>1.12</span></div>
+          <div class="kv"><span>Version</span><span>1.13</span></div>
           <div class="kv"><span>Chromecast</span><span id="ab-cast">—</span></div>
           <div class="kv"><span>Needs</span><span>Relay with --cast</span></div>
           <div class="kv"><span>Fireplace film</span><span>Pixabay, Videezy</span></div>
@@ -1561,10 +1561,10 @@ PH.init({});
 
   /* ---------- Sound ---------- */
   // Ids match MUSIC / AMBIENCE in tv_control.py and src/sound.js on the TV
-  const MUSIC = [['swiss-classic', 'Classical', 'Radio Swiss Classic'], ['swiss-jazz', 'Classic jazz', 'Radio Swiss Jazz: swing, standards, soul'],
-    ['sonic-universe', 'Modern jazz', 'SomaFM Sonic Universe'], ['bossa', 'Bossa nova', 'SomaFM Bossa Beyond'], ['secret-agent', 'Spy lounge', 'SomaFM Secret Agent: cool jazz and spy themes'],
-    ['lounge', 'Cocktail lounge', 'SomaFM Illinois Street Lounge'], ['romantic-jazz', 'Romantic jazz', 'Love songs and slow jazz ballads (HearMe.fm)'], ['fluid', 'Lo-fi beats', 'SomaFM Fluid: instrumental hip-hop'],
-    ['groove-salad', 'Chill', 'SomaFM Groove Salad: downtempo'], ['drone-zone', 'Deep ambient', 'SomaFM Drone Zone: for sleep or focus']];
+  const MUSIC = [['swiss-classic', 'Calm classical', 'Slow, gentle orchestral and piano pieces'], ['swiss-jazz', 'Mellow jazz', 'Soft, laid-back instrumental jazz'],
+    ['sonic-universe', 'Piano jazz', 'Quiet piano and piano trios'], ['bossa', 'Bossa nova', 'Smooth, breezy Brazilian jazz'], ['secret-agent', 'Solo piano', 'Just a piano, soft and slow'],
+    ['lounge', 'Soft lounge', 'Smooth, elegant background music'], ['romantic-jazz', 'Romantic jazz', 'Love songs and slow jazz ballads'], ['fluid', 'Lo-fi beats', 'Chill hop with a gentle beat'],
+    ['groove-salad', 'Ambient chill', 'Floating, atmospheric and calm'], ['drone-zone', 'Sleep', 'Very quiet, slow music for sleep']];
   const AMB = [['rain', 'Rain'], ['storm', 'Thunderstorm'], ['fire', 'Fireplace'], ['ocean', 'Ocean waves'], ['wind', 'Wind'], ['brown', 'Brown noise']];
   const snd = () => (info && info.sound) || { music: '', amb: '', mv: 70, av: 60 };
   async function soundSend(body) {
@@ -1699,7 +1699,7 @@ PH.init({});
     $('#sc-clock').textContent = info.clock ? 'By the PC\'s clock, now ' + hm(info.clock) : 'Uses the PC\'s clock';
     renderSched(); renderSceneSound();
     const nx = nextUp(), line = $('#sched-now');
-    line.hidden = !(state === 'ok' && info.schedule && !relayOld());
+    line.hidden = !(state === 'ok' && !relayOld() && (left || (info.scene && isOn())));   // only while a scene or the sleep timer is running, so the remote stays one screen
     line.classList.toggle('is-on', !!left);
     $('#sc-name').textContent = left ? 'Sleep in ' + fmtLeft(left) : info.scene && isOn() ? SCENES[info.scene] + ' scene' : 'Schedule & sleep';
     $('#sc-sub').textContent = nx ? 'Next: ' + SCENES[nx.r.scene] + ' ' + (nx.day === 0 ? 'at ' : nx.day === 1 ? 'tomorrow ' : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][(((new Date().getDay() + 6) % 7) + nx.day) % 7] + ' ') + hm(nx.r.at) : info.auto ? 'No times set' : 'Schedule is off';
@@ -1943,10 +1943,4 @@ PH.init({});
   addEventListener('touchend', e => {
     if (sx === null || !atHome() || openDialog()) return;
     const t = e.changedTouches[0];
-    if (t.clientX - sx > 70 && Math.abs(t.clientY - sy) < 60) exit();
-    sx = null;
-  }, { passive: true });
-})();
-</script>
-</body>
-</html>
+    if (t.clientX - sx > 70 && Math.abs(t.clientY - sy) 
