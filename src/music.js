@@ -152,13 +152,13 @@
   const pos = () => state && state.item ? Math.min(state.item.duration_ms, state.progress_ms + (state.is_playing ? Date.now() - stamp : 0)) : 0;
   const seekBy = ms => cmd(async () => {
     const to = Math.max(0, Math.min(state.item.duration_ms - 1000, pos() + ms));
-    await api('/me/player/seek', { method: 'PUT', query: { position_ms: Math.round(to) } });
+    await api('/me/player/seek', { method: 'PUT', query: { position_ms: Math.round(to), ...devQuery() } });
     state.progress_ms = to; stamp = Date.now(); tickBar();
   });
   const actions = {
     toggle: () => cmd(async () => {
       if (state && state.device) {
-        try { await api('/me/player/' + (state.is_playing ? 'pause' : 'play'), { method: 'PUT' }); if (state) { state.progress_ms = pos(); stamp = Date.now(); state.is_playing = !state.is_playing; renderNow(); } return; }
+        try { await api('/me/player/' + (state.is_playing ? 'pause' : 'play'), { method: 'PUT', query: devQuery() }); if (state) { state.progress_ms = pos(); stamp = Date.now(); state.is_playing = !state.is_playing; renderNow(); } return; }
         catch (e) {
           if (e.status === 403 && e.reason !== 'PREMIUM_REQUIRED') { later(); return; }   // already paused/playing: just refresh
           if (!(e.reason === 'NO_ACTIVE_DEVICE' || e.status === 404)) throw e;   // fall through and wake a device
@@ -168,10 +168,31 @@
       await api('/me/player', { method: 'PUT', body: { device_ids: [dev.id], play: true } });
     }),
     // Episodes skip 15 s back / 30 s ahead; songs go to the previous / next track
-    left: () => isEpisode() ? seekBy(-15000)
-      : cmd(() => (state && state.progress_ms > 3000) ? api('/me/player/seek', { method: 'PUT', query: { position_ms: 0 } }) : api('/me/player/previous', { method: 'POST' })),
-    right: () => isEpisode() ? seekBy(30000) : cmd(() => api('/me/player/next', { method: 'POST' })),
+    left: () => isEpisode() ? seekBy(-15000) : skip(-1),
+    right: () => isEpisode() ? seekBy(30000) : skip(1),
   };
+  // Next / previous song. One at a time (a double tap sent two skips at once), aimed at the device that's
+  // playing, then a check that Spotify really moved on and is still running, with a clear note if not (v1.49).
+  let skipping = false;
+  const devQuery = () => state && state.device && state.device.id ? { device_id: state.device.id } : undefined;
+  async function skip(dir) {
+    if (skipping) return;
+    if (!(state && state.device)) { say(Object.assign(new Error(''), { reason: 'NO_ACTIVE_DEVICE' })); return; }
+    skipping = true; document.querySelectorAll('#mu-left, #mu-right').forEach(b => b.disabled = true);
+    const before = state.item && state.item.uri, restart = dir < 0 && pos() > 3000;
+    try {
+      if (restart) await api('/me/player/seek', { method: 'PUT', query: { position_ms: 0, ...devQuery() } });
+      else await api('/me/player/' + (dir > 0 ? 'next' : 'previous'), { method: 'POST', query: devQuery() });
+      if (restart) { state.progress_ms = 0; stamp = Date.now(); tickBar(); return; }
+      for (const ms of [600, 1200, 1800]) {   // Spotify can take a moment to switch
+        await wait(ms); await poll();
+        if (!state || !state.device || (state.item && state.item.uri !== before)) break;
+      }
+      if (!state || !state.device) PH.toast('Spotify stopped after the skip. Open Spotify on your phone, or tap play here to start it again.', 'warn');
+      else if (state.item && state.item.uri === before) PH.toast('Spotify didn\'t move to another song. It may not allow skipping in what\'s playing (like a radio or DJ mix).', 'warn');
+    } catch (e) { say(e); later(); }
+    finally { skipping = false; document.querySelectorAll('#mu-left, #mu-right').forEach(b => b.disabled = false); }
+  }
   // body: { uris, position_ms }
   async function play(body) {
     try {
