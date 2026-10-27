@@ -94,6 +94,7 @@
        (overscan), so the beige case doubles as a safe margin. */
     :root { --u: 1vh; }
     html, body { margin: 0; height: 100%; overflow: hidden; cursor: none; }
+    html { transform-origin: 50% 50%; }   /* manual fit (setFit in tv.js) */
     body { background: var(--plastic-noise), var(--plastic); color: var(--text); font-family: var(--font-mono);
       font-variant-numeric: tabular-nums slashed-zero; -webkit-font-smoothing: antialiased; font-size: calc(2.4 * var(--u)); line-height: 1.4; }
     .case { position: fixed; inset: 0; display: flex; flex-direction: column; padding: calc(3 * var(--u)) calc(3.5 * var(--u)) 0; }
@@ -383,7 +384,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.22</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.23</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -1043,7 +1044,7 @@ const Sound = (() => {
 
   /* ---------- Music ---------- */
   const au = new Audio(); au.preload = 'none';
-  let mId = '', mTry = 0, mRetry = 0, connT = 0;
+  let mId = '', mTry = 0, mRetry = 0, connT = 0, relay = null, sink = '';
   function music(id) {
     if (id === mId) return;
     mId = id; mTry = 0; clearTimeout(mRetry);
@@ -1051,7 +1052,7 @@ const Sound = (() => {
     if (au.src && !au.paused) fadeTo(0, load); else load();
   }
   function load() {
-    const urls = MUSIC[mId].urls;
+    const urls = (relay ? [relay(mId)] : []).concat(MUSIC[mId].urls);   // through the relay first, then the station itself
     if (mTry >= urls.length * 2) { setM('error'); mRetry = setTimeout(() => { mTry = 0; load(); }, 60000); return; }   // try again in a minute
     au.src = urls[mTry % urls.length]; au.volume = 0; setM('loading');
     clearTimeout(connT); connT = setTimeout(() => { if (mId && mState === 'loading') again(); }, 10000);   // a server that never answers: move on
@@ -1189,6 +1190,7 @@ const Sound = (() => {
     // or plays video, which is heard as crackling
     const AC = window.AudioContext || window.webkitAudioContext;
     try { ctx = new AC({ latencyHint: 'playback' }); } catch { ctx = new AC(); }
+    if (sink && ctx.setSinkId) ctx.setSinkId(sink).catch(() => {});
     bus = ctx.createGain(); duck = ctx.createGain(); tone = ctx.createBiquadFilter(); tone.type = 'lowpass'; tone.frequency.value = 20000;
     bus.connect(tone); tone.connect(duck); duck.connect(ctx.destination);
   }
@@ -1231,6 +1233,26 @@ const Sound = (() => {
       onState();
     },
     // If the TV refused to start sound without a button press, any key from the phone gets another go
+    viaRelay(fn) { relay = fn; },
+    // Join the station again (the relay starts everyone at their synced place)
+    resync() { if (mId && MUSIC[mId]) { clearTimeout(mRetry); mTry = 0; load(); } },
+    // Where the sound goes, on the PC: '' = the PC's default output
+    setSink(id) {
+      sink = id;
+      if (au.setSinkId) au.setSinkId(id).catch(() => {});
+      if (ctx && ctx.setSinkId) ctx.setSinkId(id).catch(() => {});
+    },
+    async outputs() {
+      try {
+        const md = navigator.mediaDevices; if (!md || !md.enumerateDevices) return [];
+        let list = await md.enumerateDevices();
+        if (!list.some(d => d.kind === 'audiooutput' && d.label)) {   // names show only after a (fake) microphone is allowed
+          try { const st = await md.getUserMedia({ audio: true }); st.getTracks().forEach(t => t.stop()); list = await md.enumerateDevices(); } catch {}
+        }
+        return list.filter(d => d.kind === 'audiooutput' && d.deviceId && d.deviceId !== 'default' && d.deviceId !== 'communications')
+          .map(d => ({ id: d.deviceId, label: d.label || 'Output' })).slice(0, 16);
+      } catch { return []; }
+    },
     nudge() { if (mState === 'blocked') { mTry = 0; load(); } if (ctx && ctx.state !== 'running') ctx.resume().then(() => aId && cur && setA('playing')).catch(() => {}); },
     levels() { return { mv: want.mv, av: want.av }; },
     label() { return [MUSIC[mId] && MUSIC[mId].name, AMB[aId]].filter(Boolean).join(' + '); },
@@ -1268,8 +1290,13 @@ const Sound = (() => {
     if (typeof d.open === 'string' && SCREENS.includes(d.open)) go(d.open);
     if (d.art && typeof d.art === 'object') artCmd(d.art);
     if (d.fires && typeof d.fires === 'object') Art.setFires(d.fires);
+    if (d.fit && typeof d.fit === 'object') setFit(d.fit);
     if (typeof d.shape === 'string') setShape(d.shape, d.test === true);
+    // Music comes through the relay, which hands both TVs the same stream, lined up (see /radio in tv_control.py)
+    if (d.radio === true && tvKey) Sound.viaRelay(id => '/radio/' + id + '?k=' + encodeURIComponent(tvKey) + (onPc ? '&room=pc' : ''));
+    if (typeof d.sink === 'string') Sound.setSink(d.sink);
     if (d.sound && typeof d.sound === 'object') { stopFade(); Sound.set(d.sound); showSound(); }
+    if (d.resync === true) Sound.resync();
     if (typeof d.fade === 'number') fadeOut(d.fade);
     if (typeof d.sleep === 'number') sleepFor(d.sleep);
   }
@@ -1284,6 +1311,13 @@ const Sound = (() => {
     b.classList.toggle('crt', s === 'squeeze' || s === 'box');
     requestAnimationFrame(() => dispatchEvent(new Event('resize')));
     if (test) { $('#shape-test').hidden = false; clearTimeout(shapeT); shapeT = setTimeout(() => { $('#shape-test').hidden = true; }, 20000); }
+  }
+  /* Manual fit on top of the shape: stretch the whole picture (w, h in %) and nudge it (x, y in % of the screen)
+     until the test circle is round and the frame just fits the CRT. */
+  function setFit(f) {
+    const n = (k, lo, hi, d) => Number.isFinite(f[k]) ? Math.max(lo, Math.min(hi, f[k])) : d;
+    const w = n('w', 60, 140, 100), h = n('h', 60, 140, 100), x = n('x', -20, 20, 0), y = n('y', -20, 20, 0);
+    document.documentElement.style.transform = w === 100 && h === 100 && !x && !y ? '' : 'translate(' + x + 'vw,' + y + 'vh) scale(' + w / 100 + ',' + h / 100 + ')';
   }
   function artCmd(a) {
     const n = Art.pieces().length, i = Number.isInteger(a.piece) && a.piece >= 0 && a.piece < n ? a.piece : null;
@@ -1310,14 +1344,22 @@ const Sound = (() => {
   function startSocket(k) {
     let tries = 0;
     const open = () => {
-      const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?k=' + encodeURIComponent(k));
-      ws.onopen = () => { tries = 0; send = d => ws.readyState === 1 && ws.send(JSON.stringify(d)); status(); };
+      const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?k=' + encodeURIComponent(k) + (onPc ? '&room=pc' : ''));
+      ws.onopen = () => { tries = 0; send = d => ws.readyState === 1 && ws.send(JSON.stringify(d)); status(); if (onPc) sendOuts(); };
       ws.onmessage = e => { try { onMsg(JSON.parse(e.data)); } catch {} };
       ws.onclose = () => { send = () => {}; linked = false; showLinked(); setTimeout(open, Math.min(15000, 1000 * 2 ** tries++)); };
     };
     open();
   }
   const tvKey = new URLSearchParams(location.search).get('k');
+  // The living room TV is a monitor on the PC, showing this page in a full-screen window (?room=pc). Its sound can
+  // go to the TV's speakers rather than the PC's: the page lists the PC's sound outputs and the phone picks one.
+  const onPc = new URLSearchParams(location.search).get('room') === 'pc';
+  async function sendOuts() {
+    const outs = await Sound.outputs();
+    if (outs.length) send({ outs });
+  }
+  if (onPc && navigator.mediaDevices) navigator.mediaDevices.addEventListener('devicechange', () => sendOuts());
   if (tvKey) startSocket(tvKey);
   else $('#offline').textContent = 'Open Phosphor TV from the TV app on your phone';
   showLinked();

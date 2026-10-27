@@ -16,9 +16,11 @@ kept in tv_page.html) and one WebSocket. The phone never talks to the TV: it cal
 relay (127.0.0.1:7788, behind the relay key, through Tailscale) and the relay passes things on.
 
 Security (agreed with Floyd's security review):
-- Port 7790 is a separate aiohttp app with three routes: / (the page), /ws and /fire/<digit>.mp4,
-  which only hands out the relay's own pixelated fireplace copies (tv_fire/fire0-3.mp4) by number.
-  No /pc, no /lights, no other files or folders. It binds to this PC's home-network address, not Tailscale.
+- Port 7790 is a separate aiohttp app with four routes: / (the page), /ws, /fire/<digit>.mp4, which only
+  hands out the relay's own pixelated fireplace copies (tv_fire/fire0-3.mp4) by number, and /radio/<station>,
+  which only passes on the stations in RADIO's fixed list. No /pc, no /lights, no other files or folders.
+- A second TV can be a monitor on this PC (the living room TV over HDMI): the relay opens the same page there in
+  a full-screen Chrome/Edge window (kiosk mode, own profile). It talks to the relay exactly like the Chromecast. It binds to this PC's home-network address, not Tailscale.
 - It answers only with a TV token made fresh each time the relay starts and checked with
   compare_digest. The relay's own key never goes over 7790, which is plain HTTP.
 - Control goes one way. The relay decides what the TV shows; the TV's WebSocket may only report
@@ -47,14 +49,31 @@ FIRE_VF = 'fps=24,scale=192:108:flags=area,scale=1920:1080:flags=neighbor'   # 1
 FIRE_MAX = 300 * 2**20     # largest download accepted, in bytes
 PAGE_MAX_AGE = 600         # seconds before the TV page is fetched again
 SCREENS = ('home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim', 'watch')
-# Background sound. The TV page holds the station addresses (fixed https links) and makes the
-# rain/fire/ocean sounds itself; the relay only passes along which one to play.
-MUSIC = ('swiss-classic', 'swiss-jazz', 'sonic-universe', 'bossa', 'secret-agent', 'lounge', 'romantic-jazz', 'fluid', 'groove-salad', 'drone-zone')
+# Background sound. The TV page makes the rain/fire/ocean sounds itself. Music is internet radio: the relay fetches
+# each station once and passes the same stream to every TV (7790 /radio/<id>), so two TVs playing the same station
+# stay in step; the TV page falls back to the station's own address if that doesn't work. Same list as sound.js.
+_soma = lambda i: [f'https://ice{n}.somafm.com/{i}-128-mp3' for n in (1, 2, 4, 6)]
+_srg = lambda i: [f'https://stream.srg-ssr.ch/m/{i}/mp3_128', f'https://stream.srg-ssr.ch/srgssr/{i}/mp3/128']
+_rj = lambda n: [f'https://443-1.autopo.st/171/stream/{n}/']
+RADIO = {
+    'swiss-classic': _srg('rsc_de'), 'romantic-jazz': _rj(1) + _rj(3), 'swiss-jazz': _srg('rsj'), 'bossa': _soma('bossa'),
+    'lounge': _soma('illstreet'), 'fluid': _soma('fluid'), 'groove-salad': _soma('deepspaceone'), 'drone-zone': _soma('dronezone'),
+    'sonic-universe': ['https://boxradio-edge-00.streamafrica.net/jpopchill', 'https://stream.zeno.fm/ricmeoweux2uv'],
+    'secret-agent': ['https://nonstopcasiopea.radioca.st/', 'https://nonstopcasiopea.radioca.st/stream'],
+}
+MUSIC = tuple(RADIO)
+RADIO_LAG = 4.0            # seconds behind the live edge every listener starts, so all TVs line up
+RADIO_KEEP = 10.0          # seconds of each station kept, for the lag plus the sync offset
+RADIO_MAX_OFFSET = 3000    # ms the living room can be shifted against the kitchen, either way
+# Two TVs: 'cast' = the Chromecast (the kitchen CRT), 'pc' = a monitor on this PC (the living room TV, over HDMI)
+ROOMS = ('cast', 'pc')
+ROOM_NAMES = {'cast': 'Kitchen', 'pc': 'Living room'}
+SINK_ID = re.compile(r'^[A-Za-z0-9+/=_.-]{1,200}$')
 AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '2.1'           # the phone app compares this to know which features the relay has
+VERSION = '3.1'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -72,6 +91,10 @@ GLOW = {'red': {'on': True, 'hsv': [0, 100, 10]}, 'warm': {'on': True, 'temp': 2
 # Screen shape: 'wide' = a normal 16:9 TV; for a 4:3 TV behind an HDMI-to-AV box, 'squeeze' = the box squashes the
 # whole picture into 4:3, 'box' = the box shows only the middle 4:3 (or adds bars). Floyd picks whichever looks right.
 SHAPES = ('wide', 'squeeze', 'box')
+# Manual fit on top of the shape (Floyd: "manually set the ratio until it fits"): width/height in % (100 = as is),
+# x/y shift in % of the screen. FIT_RANGE[k] = (min, max).
+FIT_RANGE = {'w': (60, 140), 'h': (60, 140), 'x': (-20, 20), 'y': (-20, 20)}
+FIT_DEFAULT = {'w': 100, 'h': 100, 'x': 0, 'y': 0}
 LIGHT_ID = re.compile(r'^[A-Za-z0-9_.:-]{1,64}$')
 DEFAULT_SCHEDULE = [{'scene': 'morning', 'at': '07:00', 'days': [0, 1, 2, 3, 4, 5, 6]},
                     {'scene': 'away', 'at': '08:30', 'days': [0, 1, 2, 3, 4]},
@@ -290,7 +313,191 @@ class FakeCasts:
         self.check(cid)
 
 
+# ---------- The PC's own TV: a full-screen kiosk window on one monitor ----------
+# The living-room TV is a monitor on this PC (HDMI). Phosphor TV opens there as its own browser window: Chrome or
+# Edge in kiosk mode with a separate profile, so it has no tabs, address bar or taskbar, isn't mixed in with the
+# PC's own browser windows, and stays put while the PC is used on the other monitors. It loads the same TV page as
+# the Chromecast, from this relay, and the phone drives it the same way.
+KIOSK_BROWSERS = (('chrome.exe', (r'%ProgramFiles%\Google\Chrome\Application', r'%ProgramFiles(x86)%\Google\Chrome\Application',
+                                  r'%LocalAppData%\Google\Chrome\Application')),
+                  ('msedge.exe', (r'%ProgramFiles(x86)%\Microsoft\Edge\Application', r'%ProgramFiles%\Microsoft\Edge\Application')))
+KIOSK_PROFILE = HERE / 'tv_kiosk_profile'
+
+
+def win_monitors():
+    """This PC's monitors, numbered 1, 2, 3… left to right like PC Remote does. [] if not on Windows."""
+    if os.name != 'nt':
+        return []
+    import ctypes
+    from ctypes import wintypes
+    user32 = ctypes.WinDLL('user32')
+    try:
+        user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))
+    except Exception:
+        pass
+
+    class MONITORINFOEXW(ctypes.Structure):
+        _fields_ = [('cbSize', wintypes.DWORD), ('rcMonitor', wintypes.RECT), ('rcWork', wintypes.RECT),
+                    ('dwFlags', wintypes.DWORD), ('szDevice', wintypes.WCHAR * 32)]
+    found = []
+    PROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HMONITOR, wintypes.HDC, ctypes.POINTER(wintypes.RECT), wintypes.LPARAM)
+
+    def cb(hmon, hdc, rect, lp):
+        mi = MONITORINFOEXW(); mi.cbSize = ctypes.sizeof(MONITORINFOEXW)
+        user32.GetMonitorInfoW(hmon, ctypes.byref(mi))
+        r = mi.rcMonitor
+        found.append({'x': r.left, 'y': r.top, 'w': r.right - r.left, 'h': r.bottom - r.top, 'primary': bool(mi.dwFlags & 1)})
+        return True
+    user32.EnumDisplayMonitors(None, None, PROC(cb), 0)
+    found.sort(key=lambda m: (m['x'], m['y']))
+    for i, m in enumerate(found, 1):
+        m['n'] = i
+    return found
+
+
+class Kiosk:
+    """Opens and closes the full-screen Phosphor TV window on one of this PC's monitors."""
+    fake = False
+
+    def __init__(self):
+        self.proc = None
+
+    def browser(self):
+        for exe, dirs in KIOSK_BROWSERS:
+            for d in dirs:
+                p = os.path.join(os.path.expandvars(d), exe)
+                if os.path.exists(p):
+                    return p
+        return None
+
+    def monitors(self):
+        return [{'n': m['n'], 'w': m['w'], 'h': m['h'], 'primary': m['primary']} for m in win_monitors()]
+
+    def running(self):
+        return bool(self.proc and self.proc.poll() is None)
+
+    def open(self, url, n):
+        mon = next((m for m in win_monitors() if m['n'] == n), None)
+        if mon is None:
+            raise web.HTTPBadRequest(text=f'There is no monitor {n} right now. Is the TV on?')
+        exe = self.browser()
+        if not exe:
+            raise web.HTTPBadRequest(text='Phosphor TV needs Google Chrome or Microsoft Edge on the PC for this.')
+        self.close()
+        # A point well inside that monitor; kiosk mode then fills the whole monitor it lands on
+        x, y = mon['x'] + mon['w'] // 4, mon['y'] + mon['h'] // 4
+        self.proc = subprocess.Popen([
+            exe, f'--user-data-dir={KIOSK_PROFILE}', '--kiosk', f'--app={url}', '--new-window',
+            f'--window-position={x},{y}', '--autoplay-policy=no-user-gesture-required',
+            '--no-first-run', '--no-default-browser-check', '--disable-session-crashed-bubble', '--noerrdialogs',
+            '--disable-translate', '--disable-features=Translate,HardwareMediaKeyHandling', '--overscroll-history-navigation=0',
+            # lets the page list the sound outputs by name, so its sound can go to the TV instead of the PC speakers
+            '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    def close(self):
+        if self.running():
+            self.proc.terminate()
+            try:
+                self.proc.wait(5)
+            except Exception:
+                self.proc.kill()
+        self.proc = None
+
+
+class FakeKiosk(Kiosk):
+    """--demo: pretends there are two monitors and a window, without opening anything."""
+    fake = True
+
+    def monitors(self):
+        return [{'n': 1, 'w': 2560, 'h': 1440, 'primary': True}, {'n': 2, 'w': 1920, 'h': 1080, 'primary': False}]
+
+    def running(self):
+        return bool(self.proc)
+
+    def open(self, url, n):
+        if n not in (1, 2):
+            raise web.HTTPBadRequest(text=f'There is no monitor {n} right now. Is the TV on?')
+        self.proc = {'url': url, 'n': n}
+
+    def close(self):
+        self.proc = None
+
+
 # ---------- Setup ----------
+
+class Station:
+    """One internet radio station, fetched once by the relay and handed to every TV that plays it.
+    Listeners start a fixed time (RADIO_LAG, plus their room's sync offset) behind the live edge, counted in bytes
+    of the stream, so two TVs that join at different moments still play the same moment together."""
+
+    def __init__(self, sid, on_idle):
+        self.sid, self.on_idle = sid, on_idle
+        self.buf, self.base, self.rate = bytearray(), 0, 16000   # bytes kept, stream position of buf[0], bytes a second
+        self.ctype, self.listeners, self.ready = 'audio/mpeg', set(), asyncio.Event()
+        self.failed, self.idle_t = False, None
+        self.task = asyncio.create_task(self.pull())
+
+    async def pull(self):
+        fails = 0
+        while fails < 3:
+            for url in RADIO[self.sid]:
+                t0 = time.time()
+                try:
+                    async with ClientSession(timeout=ClientTimeout(total=None, sock_connect=10, sock_read=20)) as s:
+                        async with s.get(url, headers={'Icy-MetaData': '0', 'User-Agent': 'PhosphorTV'}) as r:
+                            if r.status != 200:
+                                raise RuntimeError(f'HTTP {r.status}')
+                            self.ctype = r.headers.get('Content-Type', 'audio/mpeg').split(';')[0]
+                            if not self.ctype.startswith('audio/'):
+                                raise RuntimeError('not audio')
+                            br = r.headers.get('icy-br', '').split(',')[0].strip()
+                            self.rate = int(br) * 125 if br.isdigit() and 32 <= int(br) <= 320 else 16000
+                            async for chunk in r.content.iter_chunked(4096):
+                                self.buf += chunk
+                                extra = len(self.buf) - int(RADIO_KEEP * self.rate)
+                                if extra > 0:
+                                    del self.buf[:extra]; self.base += extra
+                                if not self.ready.is_set() and self.base + len(self.buf) >= RADIO_LAG * self.rate:
+                                    self.ready.set()
+                                for q in list(self.listeners):
+                                    if q.qsize() > 400:   # a listener that stopped reading
+                                        self.listeners.discard(q); q.put_nowait(None)
+                                    else:
+                                        q.put_nowait(chunk)
+                except asyncio.CancelledError:
+                    raise
+                except Exception as e:
+                    print(f'  Radio {self.sid}: {url}:', str(e) or type(e).__name__)
+                if time.time() - t0 > 60:   # it played for a while and then dropped: start over from the first address
+                    fails = 0
+                    break
+            else:
+                fails += 1
+            await asyncio.sleep(2)
+        self.failed = True
+        for q in list(self.listeners):
+            q.put_nowait(None)
+        self.on_idle(self)
+
+    def join(self, delay_ms):
+        """A new listener: (backlog to send first, queue of live chunks)."""
+        q = asyncio.Queue()
+        end = self.base + len(self.buf)
+        start = max(self.base, end - int((RADIO_LAG + delay_ms / 1000) * self.rate))
+        self.listeners.add(q)
+        if self.idle_t:
+            self.idle_t.cancel(); self.idle_t = None
+        return bytes(self.buf[start - self.base:]), q
+
+    def leave(self, q):
+        self.listeners.discard(q)
+        if not self.listeners and not self.idle_t:
+            self.idle_t = asyncio.get_running_loop().call_later(15, lambda: self.on_idle(self) if not self.listeners else None)
+
+    def stop(self):
+        self.task.cancel()
+
 
 def setup(app, demo=False, lights=None, cast=False):
     """Add the /tv routes to the relay (behind its key check) and, with --cast, the TV's own server."""
@@ -298,8 +505,23 @@ def setup(app, demo=False, lights=None, cast=False):
     enabled = cast or demo
     token = secrets.token_urlsafe(18)           # new every start; never the relay key
     host = '127.0.0.1' if demo else lan_ip()
-    hub = {'socks': set(), 'screen': '', 'focus': '', 'want': None, 'started': 0.0, 'board': cfg.get('board', [])[-12:], 'weather': None, 'weather_at': 0.0,
-           'art': None, 'heard': None, 'scene': '', 'watch': [], 'sleep_at': 0.0, 'fading': False, 'ran': {}, 'sound': {'music': '', 'amb': '', 'mv': 70, 'av': 60, **cfg.get('sound', {})}}
+    # Old single-TV settings become the kitchen's
+    rcfg = cfg.setdefault('rooms', {})
+    rcfg.setdefault('cast', {})
+    rcfg.setdefault('pc', {})
+    for k in ('sound', 'shape'):
+        if k in cfg:
+            rcfg['cast'].setdefault(k, cfg.pop(k))
+    cfg['schedule'] = [dict(r, room=r.get('room', 'cast')) for r in cfg['schedule']] if isinstance(cfg.get('schedule'), list) else None
+    if cfg['schedule'] is None:
+        del cfg['schedule']
+    hub = {'board': cfg.get('board', [])[-12:], 'weather': None, 'weather_at': 0.0, 'ran': {}, 'stations': {}}
+
+    def new_room(r):
+        return {'id': r, 'socks': set(), 'screen': '', 'focus': '', 'want': None, 'started': 0.0, 'art': None, 'heard': None,
+                'scene': '', 'scene_t': 0.0, 'watch': [], 'sleep_at': 0.0, 'fading': False, 'outs': [],
+                'sound': {'music': '', 'amb': '', 'mv': 70, 'av': 60, **rcfg[r].get('sound', {})}}
+    rooms = {r: new_room(r) for r in ROOMS}
     page = {'html': None, 'at': 0.0}
     casts, problem = None, ''
     if not enabled:
@@ -309,14 +531,23 @@ def setup(app, demo=False, lights=None, cast=False):
             casts = FakeCasts() if demo else RealCasts()
         except ImportError:
             problem = 'pychromecast isn\'t installed on the PC. Run:  py -m pip install pychromecast'
+    kiosk = FakeKiosk() if demo else Kiosk() if os.name == 'nt' else None
 
     def need():
         if casts is None:
             raise web.HTTPServiceUnavailable(text=problem)
         return casts
 
-    def tv_url():
-        return f'http://{host or lan_ip() or "127.0.0.1"}:{TV_PORT}/?k={token}'
+    def room_of(request, body=None):
+        r = (body or {}).get('room') or request.query.get('room') or 'cast'
+        if r not in ROOMS:
+            raise web.HTTPBadRequest(text='Unknown TV.')
+        if r == 'pc' and kiosk is None:
+            raise web.HTTPBadRequest(text='The living room TV needs the relay to run on Windows.')
+        return rooms[r]
+
+    def tv_url(r='cast'):
+        return f'http://{host or lan_ip() or "127.0.0.1"}:{TV_PORT}/?k={token}' + ('&room=pc' if r == 'pc' else '')
 
     def pick(body):
         cid = str(body.get('id') or cfg.get('cast') or '')
@@ -324,13 +555,19 @@ def setup(app, demo=False, lights=None, cast=False):
             raise web.HTTPBadRequest(text='Pick your Chromecast first.')
         return cid
 
-    async def send_tv(msg):
+    async def send_tv(room, msg):
         sent = False
-        for s in list(hub['socks']):
+        for s in list(room['socks']):
             try:
                 await s.send_json(msg); sent = True
             except Exception:
-                hub['socks'].discard(s)
+                room['socks'].discard(s)
+        return sent
+
+    async def send_all(msg):
+        sent = False
+        for room in rooms.values():
+            sent = await send_tv(room, msg) or sent
         return sent
 
     async def lights_list():
@@ -359,11 +596,11 @@ def setup(app, demo=False, lights=None, cast=False):
                     hub['weather'] = {'error': 'couldn\'t get the forecast', 'place': p['name']}
         hub['weather_at'] = time.time()
         if push:
-            await send_tv({'weather': hub['weather']})
+            await send_all({'weather': hub['weather']})
 
-    async def toggle_focused():
+    async def toggle_focused(room):
         """OK pressed on the phone while the TV shows Lights: switch the light the TV has selected."""
-        f = hub['focus']
+        f = room['focus']
         if lights is None or not f:
             return
         try:
@@ -376,46 +613,101 @@ def setup(app, demo=False, lights=None, cast=False):
                 if cur and cur['online']:
                     await lights.set(f, {'on': not cur['on']})
         except Exception as e:
-            await send_tv({'lightsError': getattr(e, 'text', None) or str(e) or 'Light didn\'t answer'})
-        await send_tv(await lights_list())
+            await send_tv(room, {'lightsError': getattr(e, 'text', None) or str(e) or 'Light didn\'t answer'})
+        await send_all(await lights_list())
+
+    # ---- the two TVs: on, off, and whether their screen is connected ----
+    def linked(room):
+        return bool(room['socks'])
+
+    async def tv_on(room):
+        """Open Phosphor TV on that TV: the Chromecast casts the page; the PC opens its full-screen window."""
+        room['started'] = time.time()
+        if room['id'] == 'pc':
+            n = rcfg['pc'].get('monitor')
+            if not isinstance(n, int):
+                raise web.HTTPBadRequest(text='Pick which monitor is the living room TV first (Settings › Living room TV).')
+            room['want'] = 'pc'
+            await asyncio.to_thread(kiosk.open, tv_url('pc'), n)
+        else:
+            cid = cfg.get('cast')
+            if not cid:
+                raise web.HTTPBadRequest(text='Pick your Chromecast first.')
+            room['want'] = cid
+            await asyncio.wait_for(asyncio.to_thread(need().start, cid, tv_url('cast')), 20)
+
+    async def tv_off(room):
+        room['want'], room['scene'], room['sleep_at'], room['fading'] = None, '', 0.0, False
+        if room['id'] == 'pc':
+            await asyncio.to_thread(kiosk.close)
+        elif cfg.get('cast'):
+            await asyncio.wait_for(asyncio.to_thread(need().stop, cfg['cast']), 15)
+        for s in list(room['socks']):
+            await s.close()
+
+    def sync_on():
+        return bool(cfg.get('sync')) and kiosk is not None
+
+    def offset():
+        o = cfg.get('offset', 0)
+        return o if isinstance(o, int) else 0
+
+    def delay_of(r):   # ms this TV's music runs behind the other: + delays the living room, - the kitchen
+        return max(0, offset()) if r == 'pc' else max(0, -offset())
 
     # ---- phone side: 127.0.0.1:7788 through Tailscale, behind the relay key ----
     async def body_of(request):
         try:
-            return await request.json()
+            b = await request.json()
+            return b if isinstance(b, dict) else {}
         except Exception:
             return {}
 
+    def room_view(room):
+        on = linked(room)
+        since = time.time() - room['started']
+        r = room['id']
+        if r == 'pc':
+            power = on or (bool(room['want']) and kiosk.running())
+        else:
+            power = None   # worked out from the Chromecast's status below
+        return {'on': power, 'linked': on, 'screen': room['screen'] if on else '',
+                'waiting': bool(room['want']) and not on and since < 30, 'stuck': bool(room['want']) and not on and since >= 30}
+
     async def info(request):
         c = need()
+        room = room_of(request)
+        r = room['id']
         devs = await asyncio.to_thread(c.devices)
         cid = cfg.get('cast') or ''
         video = [d for d in devs if d['video']]
         if not cid and len(video) == 1:
             cid = cfg['cast'] = video[0]['id']; save_config(cfg)
         st, err = None, ''
-        if cid:
+        if cid and r == 'cast':
             try:
                 st = await asyncio.wait_for(asyncio.to_thread(c.status, cid), 15)
             except web.HTTPException as e:
                 err = e.text
             except Exception as e:
                 err = 'The Chromecast didn\'t answer: ' + (str(e) or type(e).__name__)
-        casting = bool(st and st['appId'] == DASHCAST)
-        linked = bool(hub['socks'])
-        since = time.time() - hub['started']
+        tv = room_view(room)
+        if r == 'cast':
+            tv['on'] = tv['linked'] or (bool(st and st['appId'] == DASHCAST) and bool(room['want']))
+        on = tv['linked']
         return web.json_response({
             'ok': True, 'version': VERSION, 'demo': c.fake, 'devices': devs, 'id': cid, 'cast': st, 'error': err,
-            'tv': {'on': linked or (casting and bool(hub['want'])), 'linked': linked, 'screen': hub['screen'] if linked else '',
-                   'waiting': bool(hub['want']) and not linked and since < 30,
-                   'stuck': bool(hub['want']) and not linked and since >= 30},
-            'board': hub['board'], 'lights': lights is not None,
+            'room': r, 'rooms': [{'id': x, 'name': ROOM_NAMES[x], 'on': bool(rooms[x]['socks'])} for x in ROOMS if x == 'cast' or kiosk is not None],
+            'pc': {'monitor': rcfg['pc'].get('monitor'), 'monitors': kiosk.monitors() if kiosk else [], 'outs': rooms['pc']['outs'],
+                   'sink': rcfg['pc'].get('sink', '')} if kiosk else None,
+            'sync': sync_on(), 'offset': offset(),
+            'tv': tv, 'board': hub['board'], 'lights': lights is not None,
             'place': (cfg.get('place') or {}).get('name', ''), 'units': cfg.get('units') or '', 'unitsNow': units() if cfg.get('place') else '',
-            'art': hub['art'] if linked else None, 'sound': hub['sound'], 'heard': hub['heard'] if linked else None,
-            'shape': shape(), 'fires': {'ready': len(fires()), 'of': len(FIRE_FILMS), 'busy': hub.get('fire_busy', 0), 'error': hub.get('fire_err', '')},
-            'scene': hub['scene'] if linked else '', 'focus': hub['focus'] if linked and hub['screen'] == 'watch' else '', 'scenes': scenes(), 'schedule': schedule(), 'auto': cfg.get('auto', True),
-            'sleep': max(0, int(hub['sleep_at'] - time.time())) if hub['sleep_at'] else 0, 'clock': time.strftime('%H:%M'),
-            'screenLink': tv_url() if c.fake else ''})
+            'art': room['art'] if on else None, 'sound': room['sound'], 'heard': room['heard'] if on else None,
+            'shape': shape(r), 'fit': fit(r), 'fires': {'ready': len(fires()), 'of': len(FIRE_FILMS), 'busy': hub.get('fire_busy', 0), 'error': hub.get('fire_err', '')},
+            'scene': room['scene'] if on else '', 'focus': room['focus'] if on and room['screen'] == 'watch' else '', 'scenes': scenes(), 'schedule': schedule(), 'auto': cfg.get('auto', True),
+            'sleep': max(0, int(room['sleep_at'] - time.time())) if room['sleep_at'] else 0, 'clock': time.strftime('%H:%M'),
+            'screenLink': tv_url(r) if c.fake else ''})
 
     async def choose(request):
         body = await body_of(request)
@@ -446,38 +738,97 @@ def setup(app, demo=False, lights=None, cast=False):
         return web.json_response({'ok': True, 'place': (cfg.get('place') or {}).get('name', ''), 'units': cfg.get('units') or '',
                                   'unitsNow': units() if cfg.get('place') else '', 'weather': hub['weather']})
 
-    def shape():
-        return cfg.get('shape') if cfg.get('shape') in SHAPES else 'wide'
+    def shape(r):
+        s = rcfg[r].get('shape')
+        return s if s in SHAPES else 'wide'
+
+    def fit(r):
+        f = rcfg[r].get('fit') if isinstance(rcfg[r].get('fit'), dict) else {}
+        return {k: (f[k] if type(f.get(k)) is int and lo <= f[k] <= hi else FIT_DEFAULT[k]) for k, (lo, hi) in FIT_RANGE.items()}
 
     async def screen_shape(request):
-        """{shape: 'wide'|'squeeze'|'box'}; the TV shows a test pattern for a little while after a change."""
+        """{shape: 'wide'|'squeeze'|'box'} and/or {fit: {w, h, x, y}}; the TV shows a test pattern for a little while after a change."""
         body = await body_of(request)
-        if body.get('shape') not in SHAPES:
+        room = room_of(request, body)
+        if 'shape' not in body and 'fit' not in body:
             raise web.HTTPBadRequest(text='Pick a screen shape.')
-        cfg['shape'] = body['shape']; save_config(cfg)
-        shown = await send_tv({'shape': shape(), 'test': True})
-        return web.json_response({'ok': True, 'shape': shape(), 'shown': shown})
+        if 'shape' in body:
+            if body['shape'] not in SHAPES:
+                raise web.HTTPBadRequest(text='Pick a screen shape.')
+            rcfg[room['id']]['shape'] = body['shape']
+        if 'fit' in body:
+            f = body['fit']
+            if not isinstance(f, dict) or any(type(f.get(k)) is not int or not lo <= f[k] <= hi for k, (lo, hi) in FIT_RANGE.items()):
+                raise web.HTTPBadRequest(text='That screen fit is out of range.')
+            rcfg[room['id']]['fit'] = {k: f[k] for k in FIT_RANGE}
+        save_config(cfg)
+        shown = await send_tv(room, {'shape': shape(room['id']), 'fit': fit(room['id']), 'test': True})
+        return web.json_response({'ok': True, 'shape': shape(room['id']), 'fit': fit(room['id']), 'shown': shown})
+
+    async def pc_setup(request):
+        """The living room TV: {monitor: n} which of this PC's monitors it is, {sink: id} which sound output is its
+        speakers ('' = the PC's default), {sync: bool} same music as the kitchen, {offset: ms} lining the two up."""
+        body = await body_of(request)
+        if kiosk is None:
+            raise web.HTTPBadRequest(text='The living room TV needs the relay to run on Windows.')
+        pc = rooms['pc']
+        if 'monitor' in body:
+            n = body['monitor']
+            if not isinstance(n, int) or not any(m['n'] == n for m in kiosk.monitors()):
+                raise web.HTTPBadRequest(text='No such monitor.')
+            rcfg['pc']['monitor'] = n
+            if pc['want'] or kiosk.running():   # move the window over
+                await tv_on(pc)
+        if 'sink' in body:
+            s = body['sink']
+            if not isinstance(s, str) or (s and not SINK_ID.match(s)):
+                raise web.HTTPBadRequest(text='Unknown sound output.')
+            rcfg['pc']['sink'] = s
+            await send_tv(pc, {'sink': s})
+        resync = False
+        if isinstance(body.get('sync'), bool):
+            cfg['sync'] = body['sync']
+            if body['sync']:   # the living room takes the kitchen's music and background
+                for k in ('music', 'amb'):
+                    pc['sound'][k] = rooms['cast']['sound'][k]
+                rcfg['pc']['sound'] = pc['sound']
+                await send_tv(pc, {'sound': pc['sound']})
+                resync = True
+        if isinstance(body.get('offset'), int):
+            cfg['offset'] = max(-RADIO_MAX_OFFSET, min(RADIO_MAX_OFFSET, body['offset']))
+            resync = True
+        save_config(cfg)
+        if resync and sync_on():
+            await send_all({'resync': True})   # both TVs rejoin the station at their new places
+        return web.json_response({'ok': True, 'sync': sync_on(), 'offset': offset(), 'monitor': rcfg['pc'].get('monitor'),
+                                  'sink': rcfg['pc'].get('sink', '')})
 
     async def start(request):
         body = await body_of(request)
-        c, cid = need(), pick(body)
-        if cfg.get('cast') != cid:
-            cfg['cast'] = cid; save_config(cfg)
-        hub['want'], hub['started'] = cid, time.time()
-        await asyncio.wait_for(asyncio.to_thread(c.start, cid, tv_url()), 20)
+        room = room_of(request, body)
+        if room['id'] == 'cast':
+            c, cid = need(), pick(body)
+            if cfg.get('cast') != cid:
+                cfg['cast'] = cid; save_config(cfg)
+            room['want'], room['started'] = cid, time.time()
+            await asyncio.wait_for(asyncio.to_thread(c.start, cid, tv_url('cast')), 20)
+        else:
+            await tv_on(room)
         return web.json_response({'ok': True})
 
     async def stop(request):
         body = await body_of(request)
-        c, cid = need(), pick(body)
-        hub['want'], hub['scene'], hub['sleep_at'], hub['fading'] = None, '', 0.0, False
-        await asyncio.wait_for(asyncio.to_thread(c.stop, cid), 15)
-        for s in list(hub['socks']):
-            await s.close()
+        room = room_of(request, body)
+        if room['id'] == 'cast':
+            pick(body)
+        await tv_off(room)
         return web.json_response({'ok': True})
 
     async def volume(request):
         body = await body_of(request)
+        room = room_of(request, body)
+        if room['id'] == 'pc':
+            raise web.HTTPBadRequest(text='Use the TV\'s own remote for its volume.')
         c, cid = need(), pick(body)
         await asyncio.wait_for(asyncio.to_thread(c.volume, cid, body), 10)
         return web.json_response({'ok': True})
@@ -493,21 +844,23 @@ def setup(app, demo=False, lights=None, cast=False):
 
     async def key(request):
         body = await body_of(request)
+        room = room_of(request, body)
         k = body.get('key')
         if k not in KEYS:
             raise web.HTTPBadRequest(text='Unknown key.')
-        if not await send_tv({'key': k}):
+        if not await send_tv(room, {'key': k}):
             raise web.HTTPConflict(text='Phosphor TV isn\'t on the TV right now.')
-        if k == 'ok' and hub['screen'] == 'lights':
-            await toggle_focused()
+        if k == 'ok' and room['screen'] == 'lights':
+            await toggle_focused(room)
         return web.json_response({'ok': True})
 
     async def open_(request):
         body = await body_of(request)
+        room = room_of(request, body)
         s = body.get('screen')
         if s not in SCREENS:
             raise web.HTTPBadRequest(text='Unknown screen.')
-        if not await send_tv({'open': s}):
+        if not await send_tv(room, {'open': s}):
             raise web.HTTPConflict(text='Phosphor TV isn\'t on the TV right now.')
         return web.json_response({'ok': True})
 
@@ -519,11 +872,12 @@ def setup(app, demo=False, lights=None, cast=False):
         msg = {'text': text, 't': int(time.time() * 1000)}
         hub['board'] = (hub['board'] + [msg])[-12:]
         cfg['board'] = hub['board']; save_config(cfg)
-        shown = await send_tv({'say': msg, 'board': hub['board']})
+        shown = await send_all({'say': msg, 'board': hub['board']})
         return web.json_response({'ok': True, 'shown': shown, 'board': hub['board']})
 
     async def art(request):
         body = await body_of(request)
+        room = room_of(request, body)
         msg = {}
         if isinstance(body.get('piece'), int) and 0 <= body['piece'] < ART_MAX:
             msg['piece'] = body['piece']
@@ -534,27 +888,42 @@ def setup(app, demo=False, lights=None, cast=False):
                 msg[k] = body[k]
         if not msg:
             raise web.HTTPBadRequest(text='Nothing to change.')
-        if not await send_tv({'art': msg}):
+        if not await send_tv(room, {'art': msg}):
             raise web.HTTPConflict(text='Phosphor TV isn\'t on the TV right now.')
         return web.json_response({'ok': True})
 
+    async def set_sound(room, change):
+        """Change one TV's sound; with sync on, the music and background follow on the other TV too."""
+        snd = room['sound']
+        snd.update(change)
+        rcfg[room['id']]['sound'] = snd
+        shown = await send_tv(room, {'sound': snd})
+        if sync_on():
+            shared = {k: change[k] for k in ('music', 'amb') if k in change}
+            if shared:
+                other = rooms['pc' if room['id'] == 'cast' else 'cast']
+                other['sound'].update(shared); rcfg[other['id']]['sound'] = other['sound']
+                await send_tv(other, {'sound': other['sound']})
+        save_config(cfg)
+        return shown
+
     async def sound(request):
         body = await body_of(request)
-        snd = hub['sound']
+        room = room_of(request, body)
+        change = {}
         if 'music' in body:
             if body['music'] not in MUSIC + ('',):
                 raise web.HTTPBadRequest(text='Unknown station.')
-            snd['music'] = body['music']
+            change['music'] = body['music']
         if 'amb' in body:
             if body['amb'] not in AMBIENCE + ('',):
                 raise web.HTTPBadRequest(text='Unknown sound.')
-            snd['amb'] = body['amb']
+            change['amb'] = body['amb']
         for k in ('mv', 'av'):
             if isinstance(body.get(k), (int, float)):
-                snd[k] = max(0, min(100, int(body[k])))
-        cfg['sound'] = snd; save_config(cfg)
-        shown = await send_tv({'sound': snd})
-        return web.json_response({'ok': True, 'shown': shown, 'sound': snd})
+                change[k] = max(0, min(100, int(body[k])))
+        shown = await set_sound(room, change)
+        return web.json_response({'ok': True, 'shown': shown, 'sound': room['sound']})
 
     # ---- scenes, the schedule and the sleep timer ----
     def scenes():
@@ -566,7 +935,7 @@ def setup(app, demo=False, lights=None, cast=False):
         return 'art' if page == 'fire' else page
 
     def schedule():
-        return cfg['schedule'] if isinstance(cfg.get('schedule'), list) else DEFAULT_SCHEDULE
+        return cfg['schedule'] if isinstance(cfg.get('schedule'), list) else [dict(r, room='cast') for r in DEFAULT_SCHEDULE]
 
     def scene_view(name):
         page = scenes().get(name, {}).get('page')
@@ -595,50 +964,43 @@ def setup(app, demo=False, lights=None, cast=False):
         except Exception as e:
             print('  Scene lights:', str(e) or type(e).__name__)
 
-    async def wait_linked(cid, seconds=45):
-        """Open Phosphor TV if it isn't on, and wait for its screen to connect."""
-        if hub['socks']:
+    async def wait_linked(room, seconds=45):
+        """Open Phosphor TV on that TV if it isn't on, and wait for its screen to connect."""
+        if room['socks']:
             return True
-        hub['want'], hub['started'] = cid, time.time()
-        await asyncio.wait_for(asyncio.to_thread(casts.start, cid, tv_url()), 20)
+        await tv_on(room)
         for _ in range(seconds * 2):
-            if hub['socks']:
+            if room['socks']:
                 await asyncio.sleep(1.5)   # let it settle in before giving it the scene
                 return True
             await asyncio.sleep(.5)
         return False
 
-    async def run_scene(name, why):
-        cid = cfg.get('cast')
-        if not cid:
-            raise web.HTTPBadRequest(text='Pick your Chromecast first.')
-        print(f'TV: {name} ({why}).')
+    async def run_scene(room, name, why):
+        print(f'TV ({ROOM_NAMES[room["id"]]}): {name} ({why}).')
         if name == 'off':
-            hub['want'], hub['scene'], hub['sleep_at'], hub['fading'] = None, '', 0.0, False
-            await asyncio.wait_for(asyncio.to_thread(casts.stop, cid), 15)
-            for s in list(hub['socks']):
-                await s.close()
+            await tv_off(room)
             return True
-        hub['scene'] = ''
+        room['scene'] = ''
         asyncio.ensure_future(scene_lights(name))
-        if not await wait_linked(cid):
+        if not await wait_linked(room):
             raise web.HTTPGatewayTimeout(text='Phosphor TV didn\'t come on. Try turning it on from the remote.')
-        snd = hub['sound']
-        snd.update({f: scenes()[name][f] for f in ('music', 'amb')}); cfg['sound'] = snd; save_config(cfg)
-        hub['scene'], hub['scene_t'] = name, time.time()
-        return await send_tv({'sound': snd, **scene_view(name)})
+        await set_sound(room, {f: scenes()[name][f] for f in ('music', 'amb')})
+        room['scene'], room['scene_t'] = name, time.time()
+        return await send_tv(room, scene_view(name))
 
     async def scene(request):
         body = await body_of(request)
+        room = room_of(request, body)
         name = body.get('scene')
         if name not in SCENES:
             raise web.HTTPBadRequest(text='Unknown scene.')
         need()
-        shown = await run_scene(name, 'asked from the phone')
+        shown = await run_scene(room, name, 'asked from the phone')
         return web.json_response({'ok': True, 'shown': shown})
 
     async def plan(request):
-        """Save the schedule {schedule: [{scene, at: 'HH:MM', days: [0-6, Monday = 0]}], auto: bool,
+        """Save the schedule {schedule: [{scene, at: 'HH:MM', days: [0-6, Monday = 0], room}], auto: bool,
         scenes: {name: {page, music, amb, glow, lights: [light ids]}}}."""
         body = await body_of(request)
         if 'schedule' in body:
@@ -652,7 +1014,7 @@ def setup(app, demo=False, lights=None, cast=False):
                 days = sorted({d for d in r.get('days', []) if isinstance(d, int) and 0 <= d <= 6}) if ok else []
                 if not ok or r.get('scene') not in SCENES:
                     raise web.HTTPBadRequest(text='Each time needs a scene and a time like 07:30.')
-                clean.append({'scene': r['scene'], 'at': at, 'days': days})
+                clean.append({'scene': r['scene'], 'at': at, 'days': days, 'room': r.get('room') if r.get('room') in ROOMS else 'cast'})
             cfg['schedule'] = clean
         if isinstance(body.get('auto'), bool):
             cfg['auto'] = body['auto']
@@ -676,50 +1038,59 @@ def setup(app, demo=False, lights=None, cast=False):
         return web.json_response({'ok': True, 'schedule': schedule(), 'auto': cfg.get('auto', True), 'scenes': scenes()})
 
     async def sleep(request):
-        """Sleep timer: {minutes: 1-240} turns Phosphor TV off then (the sound fades first); 0 cancels."""
+        """Sleep timer: {minutes: 1-240} turns that TV's Phosphor TV off then (the sound fades first); 0 cancels."""
         body = await body_of(request)
+        room = room_of(request, body)
         m = body.get('minutes')
         if not isinstance(m, int) or not 0 <= m <= 240:
             raise web.HTTPBadRequest(text='Pick up to 4 hours.')
-        if m and not cfg.get('cast'):
+        if m and room['id'] == 'cast' and not cfg.get('cast'):
             raise web.HTTPBadRequest(text='Pick your Chromecast first.')
-        hub['sleep_at'] = time.time() + m * 60 if m else 0.0
-        if hub['fading'] and not m:
-            await send_tv({'sound': hub['sound']})   # cancelled mid-fade: bring the sound back
-        hub['fading'] = False
-        await send_tv({'sleep': m * 60})
+        room['sleep_at'] = time.time() + m * 60 if m else 0.0
+        if room['fading'] and not m:
+            await send_tv(room, {'sound': room['sound']})   # cancelled mid-fade: bring the sound back
+        room['fading'] = False
+        await send_tv(room, {'sleep': m * 60})
         return web.json_response({'ok': True, 'sleep': m * 60})
 
     async def clockwork():
-        """Runs the schedule and the sleep timer, by this PC's clock."""
+        """Runs the schedule and the sleep timers, by this PC's clock."""
         while True:
             await asyncio.sleep(10)
-            try:
-                now = time.time()
-                if hub['sleep_at']:
-                    if not hub['fading'] and now >= hub['sleep_at'] - SLEEP_FADE:
-                        hub['fading'] = True
-                        await send_tv({'fade': SLEEP_FADE})
-                    if now >= hub['sleep_at']:
-                        await run_scene('off', 'sleep timer')
-                if not cfg.get('auto', True) or not cfg.get('cast'):
-                    continue
-                t = time.localtime(now)
-                hhmm, today = time.strftime('%H:%M', t), time.strftime('%Y-%m-%d', t)
-                for i, r in enumerate(schedule()):
-                    tag = f'{i}:{r["scene"]}:{r["at"]}'
-                    if r['at'] == hhmm and t.tm_wday in r['days'] and hub['ran'].get(tag) != today:
-                        hub['ran'][tag] = today
-                        await run_scene(r['scene'], 'scheduled for ' + r['at'])
-            except web.HTTPException as e:
-                print('  Schedule:', e.text)
-            except Exception as e:
-                print('  Schedule:', str(e) or type(e).__name__)
+            now = time.time()
+            for room in rooms.values():
+                try:
+                    if room['sleep_at']:
+                        if not room['fading'] and now >= room['sleep_at'] - SLEEP_FADE:
+                            room['fading'] = True
+                            await send_tv(room, {'fade': SLEEP_FADE})
+                        if now >= room['sleep_at']:
+                            await run_scene(room, 'off', 'sleep timer')
+                except Exception as e:
+                    print('  Sleep timer:', getattr(e, 'text', '') or str(e) or type(e).__name__)
+            if not cfg.get('auto', True):
+                continue
+            t = time.localtime(now)
+            hhmm, today = time.strftime('%H:%M', t), time.strftime('%Y-%m-%d', t)
+            for i, r in enumerate(schedule()):
+                tag = f'{i}:{r["scene"]}:{r["at"]}:{r.get("room")}'
+                if r['at'] == hhmm and t.tm_wday in r['days'] and hub['ran'].get(tag) != today:
+                    hub['ran'][tag] = today
+                    room = rooms.get(r.get('room')) or rooms['cast']
+                    if room['id'] == 'pc' and kiosk is None:
+                        continue
+                    try:
+                        await run_scene(room, r['scene'], 'scheduled for ' + r['at'])
+                    except web.HTTPException as e:
+                        print('  Schedule:', e.text)
+                    except Exception as e:
+                        print('  Schedule:', str(e) or type(e).__name__)
 
     async def watch(request):
         """What to Watch rows for the TV, sent by the phone (which holds the TMDB key; it never comes here).
         Only short text, a title key, a year, a TMDB poster path and service ids are passed on."""
         body = await body_of(request)
+        room = room_of(request, body)
         rows = body.get('rows')
         if not isinstance(rows, list):
             raise web.HTTPBadRequest(text='Nothing to show.')
@@ -738,22 +1109,23 @@ def setup(app, demo=False, lights=None, cast=False):
                               'svcs': [x for x in (it.get('svcs') or []) if x in WATCH_SVCS][:3] if isinstance(it.get('svcs'), list) else []})
             if items:
                 clean.append({'title': ' '.join(str(r.get('title') or '').split())[:40], 'items': items})
-        hub['watch'] = clean
+        room['watch'] = clean
         msg = {'watch': clean}
         if body.get('show') is True:
             msg['open'] = 'watch'
-        shown = await send_tv(msg)
+        shown = await send_tv(room, msg)
         return web.json_response({'ok': True, 'shown': shown, 'rows': len(clean)})
 
     async def clear(request):
         hub['board'] = []
         cfg['board'] = []; save_config(cfg)
-        await send_tv({'board': []})
+        await send_all({'board': []})
         return web.json_response({'ok': True, 'board': []})
 
     app.add_routes([web.get('/tv', info), web.post('/tv/choose', choose), web.post('/tv/start', start), web.post('/tv/stop', stop),
                     web.post('/tv/volume', volume), web.post('/tv/media', media), web.post('/tv/key', key),
-                    web.post('/tv/open', open_), web.post('/tv/say', say), web.post('/tv/board/clear', clear), web.post('/tv/place', place), web.post('/tv/shape', screen_shape),
+                    web.post('/tv/open', open_), web.post('/tv/say', say), web.post('/tv/board/clear', clear), web.post('/tv/place', place),
+                    web.post('/tv/shape', screen_shape), web.post('/tv/pc', pc_setup),
                     web.post('/tv/art', art), web.post('/tv/sound', sound),
                     web.post('/tv/scene', scene), web.post('/tv/schedule', plan), web.post('/tv/sleep', sleep),
                     web.post('/tv/watch', watch)])
@@ -762,7 +1134,7 @@ def setup(app, demo=False, lights=None, cast=False):
         print('TV: off.', problem)
         return None
 
-    # ---- TV side: port 7790 on the home network, TV token only: the page, its socket, the fire copies ----
+    # ---- TV side: port 7790 on the home network, TV token only: the page, its socket, the fire copies, the radio ----
     @web.middleware
     async def tv_guard(request, handler):
         if not secrets.compare_digest(request.query.get('k', ''), token):
@@ -797,21 +1169,27 @@ def setup(app, demo=False, lights=None, cast=False):
                             headers={'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer'})
 
     async def tv_ws(request):
-        sock = web.WebSocketResponse(heartbeat=20, max_msg_size=4096)
+        room = rooms['pc' if request.query.get('room') == 'pc' else 'cast']
+        sock = web.WebSocketResponse(heartbeat=20, max_msg_size=8192)
         await sock.prepare(request)
-        hub['socks'].add(sock)
-        print('TV: the screen is connected.')
+        room['socks'].add(sock)
+        print(f'TV ({ROOM_NAMES[room["id"]]}): the screen is connected.')
         try:
             if cfg.get('place') and time.time() - hub['weather_at'] > WEATHER_EVERY:
                 await refresh_weather(push=False)
-            await sock.send_json({'shape': shape(), 'fires': fires(), 'board': hub['board'], 'weather': hub['weather'], 'sound': hub['sound'], 'watch': hub['watch'], 'sleep': max(0, int(hub['sleep_at'] - time.time())) if hub['sleep_at'] else 0, **(await lights_list() if lights is not None else {'lights': False})})
-            if hub['scene']:   # the screen came back (it dropped off, or the PC restarted it): carry on with the scene
-                hub['scene_t'] = time.time()
-                await sock.send_json(scene_view(hub['scene']))
+            hello = {'room': room['id'], 'radio': True, 'shape': shape(room['id']), 'fit': fit(room['id']), 'fires': fires(), 'board': hub['board'], 'weather': hub['weather'],
+                     'sound': room['sound'], 'watch': room['watch'], 'sleep': max(0, int(room['sleep_at'] - time.time())) if room['sleep_at'] else 0,
+                     **(await lights_list() if lights is not None else {'lights': False})}
+            if room['id'] == 'pc':
+                hello['sink'] = rcfg['pc'].get('sink', '')
+            await sock.send_json(hello)
+            if room['scene']:   # the screen came back (it dropped off, or the PC restarted it): carry on with the scene
+                room['scene_t'] = time.time()
+                await sock.send_json(scene_view(room['scene']))
             async for msg in sock:
                 if msg.type != WSMsgType.TEXT:
                     continue
-                # Status only: which screen, which item is selected. Anything else is ignored.
+                # Status only: which screen, which item is selected, what it hears. Anything else is ignored.
                 try:
                     d = json.loads(msg.data)
                 except ValueError:
@@ -820,26 +1198,30 @@ def setup(app, demo=False, lights=None, cast=False):
                     continue
                 if d.get('screen') in SCREENS:
                     # Moving off the scene's screen by hand ends the scene (the TV takes a moment to get there first)
-                    if hub['scene'] and d['screen'] != scene_screen(hub['scene']) and time.time() - hub.get('scene_t', 0) > 5:
-                        hub['scene'] = ''
-                    entering = d['screen'] in ('lights', 'today') and hub['screen'] != d['screen']
-                    hub['screen'] = d['screen']
+                    if room['scene'] and d['screen'] != scene_screen(room['scene']) and time.time() - room.get('scene_t', 0) > 5:
+                        room['scene'] = ''
+                    entering = d['screen'] in ('lights', 'today') and room['screen'] != d['screen']
+                    room['screen'] = d['screen']
                     if entering:
                         await sock.send_json(await lights_list())
                 if isinstance(d.get('focus'), str):
-                    hub['focus'] = d['focus'][:80]
+                    room['focus'] = d['focus'][:80]
                 a = d.get('art')
                 if isinstance(a, dict) and isinstance(a.get('i'), int) and 0 <= a['i'] < ART_MAX:
-                    hub['art'] = {'i': a['i'], 'hold': bool(a.get('hold')), 'full': bool(a.get('full')), 'pix': bool(a.get('pix'))}
+                    room['art'] = {'i': a['i'], 'hold': bool(a.get('hold')), 'full': bool(a.get('full')), 'pix': bool(a.get('pix'))}
                 h = d.get('heard')
                 if isinstance(h, dict) and h.get('state') in ('playing', 'loading', 'error', 'blocked', 'off'):
-                    hub['heard'] = {'state': h['state'], 'what': h.get('what') if h.get('what') in MUSIC + AMBIENCE else ''}
+                    room['heard'] = {'state': h['state'], 'what': h.get('what') if h.get('what') in MUSIC + AMBIENCE else ''}
+                outs = d.get('outs')   # the living room PC's sound outputs, by name, for picking the TV's speakers
+                if room['id'] == 'pc' and isinstance(outs, list):
+                    room['outs'] = [{'id': o['id'], 'label': ' '.join(str(o.get('label') or '').split())[:80] or 'Unnamed output'}
+                                    for o in outs[:16] if isinstance(o, dict) and isinstance(o.get('id'), str) and SINK_ID.match(o['id'])]
         finally:
-            hub['socks'].discard(sock)
-            if not hub['socks']:
-                hub['screen'] = hub['focus'] = ''
-                hub['art'] = hub['heard'] = None
-                print('TV: the screen disconnected.')
+            room['socks'].discard(sock)
+            if not room['socks']:
+                room['screen'] = room['focus'] = ''
+                room['art'] = room['heard'] = None
+                print(f'TV ({ROOM_NAMES[room["id"]]}): the screen disconnected.')
         return sock
 
     def fires():
@@ -853,6 +1235,42 @@ def setup(app, demo=False, lights=None, cast=False):
         if n >= len(FIRE_FILMS) or not out.is_file():
             raise web.HTTPNotFound()
         return web.FileResponse(out, headers={'Content-Type': 'video/mp4', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store'})
+
+    def station_idle(st):
+        if hub['stations'].get(st.sid) is st:
+            del hub['stations'][st.sid]
+        st.stop()
+
+    async def tv_radio(request):
+        """A station from RADIO's fixed list, fetched once by the relay and shared by both TVs."""
+        sid = request.match_info['sid']
+        if sid not in RADIO:
+            raise web.HTTPNotFound()
+        r = 'pc' if request.query.get('room') == 'pc' else 'cast'
+        st = hub['stations'].get(sid)
+        if st is None or st.failed:
+            st = hub['stations'][sid] = Station(sid, station_idle)
+        try:
+            await asyncio.wait_for(st.ready.wait(), 15)
+        except asyncio.TimeoutError:
+            if not st.listeners:
+                station_idle(st)
+            raise web.HTTPBadGateway(text='The station didn\'t answer.')
+        backlog, q = st.join(delay_of(r) if sync_on() else 0)
+        resp = web.StreamResponse(headers={'Content-Type': st.ctype, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
+        try:
+            await resp.prepare(request)
+            await resp.write(backlog)
+            while True:
+                chunk = await q.get()
+                if chunk is None:
+                    break
+                await resp.write(chunk)
+        except (ConnectionResetError, asyncio.CancelledError):
+            pass
+        finally:
+            st.leave(q)
+        return resp
 
     async def make_fires():
         """Download each filmed fireplace once and save a pixelated copy. Runs in the background at start."""
@@ -890,7 +1308,7 @@ def setup(app, demo=False, lights=None, cast=False):
                     raise RuntimeError(p.stderr.decode(errors='replace').strip()[-300:] or 'ffmpeg failed')
                 part.replace(out)
                 print(f'TV: pixelated fireplace {i + 1} is ready.')
-                await send_tv({'fires': fires()})
+                await send_all({'fires': fires()})
             except Exception as e:
                 print(f'  Pixelated fireplace {i + 1}:', str(e) or type(e).__name__)
             finally:
@@ -902,28 +1320,41 @@ def setup(app, demo=False, lights=None, cast=False):
         hub['fire_busy'] = 0
 
     tv_app = web.Application(middlewares=[tv_guard])
-    tv_app.add_routes([web.get('/', tv_page), web.get('/ws', tv_ws), web.get(r'/fire/{n:\d}.mp4', tv_fire)])
+    tv_app.add_routes([web.get('/', tv_page), web.get('/ws', tv_ws), web.get(r'/fire/{n:\d}.mp4', tv_fire),
+                       web.get(r'/radio/{sid:[a-z-]{1,24}}', tv_radio)])
     runner = web.AppRunner(tv_app, access_log=None)
 
     async def keep_alive():
-        """If the Chromecast drops the screen by itself, open it again. Casting something else
-        (Netflix, YouTube) counts as turning Phosphor TV off."""
+        """If a TV drops the screen by itself, open it again. On the Chromecast, casting something else
+        (Netflix, YouTube) counts as turning Phosphor TV off; on the PC, closing the window does."""
         while True:
             await asyncio.sleep(30)
-            if hub['socks'] and cfg.get('place') and time.time() - hub['weather_at'] > WEATHER_EVERY:
+            if any(r['socks'] for r in rooms.values()) and cfg.get('place') and time.time() - hub['weather_at'] > WEATHER_EVERY:
                 await refresh_weather()
-            cid = hub['want']
-            if not cid or hub['socks'] or time.time() - hub['started'] < 40:
+            pc = rooms['pc']
+            if pc['want'] and not pc['socks'] and time.time() - pc['started'] >= 40:
+                if kiosk.running():
+                    try:
+                        print('TV (Living room): the screen dropped off, opening it again.')
+                        await tv_on(pc)
+                    except Exception as e:
+                        print('  TV check failed:', getattr(e, 'text', '') or e)
+                else:
+                    print('TV (Living room): the window was closed, Phosphor TV is off there.')
+                    pc['want'] = None
+            room = rooms['cast']
+            cid = room['want']
+            if not cid or room['socks'] or time.time() - room['started'] < 40:
                 continue
             try:
                 st = await asyncio.to_thread(casts.status, cid)
                 if st['idle'] or st['appId'] == DASHCAST:
-                    print('TV: the screen dropped off, opening it again.')
-                    hub['started'] = time.time()
-                    await asyncio.to_thread(casts.start, cid, tv_url())
+                    print('TV (Kitchen): the screen dropped off, opening it again.')
+                    room['started'] = time.time()
+                    await asyncio.to_thread(casts.start, cid, tv_url('cast'))
                 else:
-                    print(f'TV: {st["app"] or "another app"} took over the TV, Phosphor TV is off.')
-                    hub['want'] = None
+                    print(f'TV (Kitchen): {st["app"] or "another app"} took over the TV, Phosphor TV is off.')
+                    room['want'] = None
             except Exception as e:
                 print('  TV check failed:', e)
 
@@ -932,9 +1363,9 @@ def setup(app, demo=False, lights=None, cast=False):
         bind = host or '0.0.0.0'
         try:
             await web.TCPSite(runner, bind, TV_PORT).start()
-            print(f'TV: listening on the home network at {bind}:{TV_PORT} for the Chromecast (TV token only).')
+            print(f'TV: listening on the home network at {bind}:{TV_PORT} for the TVs (TV token only).')
             if casts.fake:
-                print(f'    Demo TV screen: {tv_url()}')
+                print(f'    Demo TV screens: {tv_url("cast")}  and  {tv_url("pc")}')
         except OSError as e:
             print(f'TV: could not listen on {bind}:{TV_PORT} ({e}). Is the relay already running in another window?')
         hub['task'] = asyncio.create_task(keep_alive())
@@ -945,15 +1376,21 @@ def setup(app, demo=False, lights=None, cast=False):
         for k in ('task', 'clock', 'fire'):
             if hub.get(k):
                 hub[k].cancel()
-        for s in list(hub['socks']):
-            await s.close()
+        for st in list(hub['stations'].values()):
+            st.stop()
+        for room in rooms.values():
+            for s in list(room['socks']):
+                await s.close()
+        if kiosk:
+            kiosk.close()
         await runner.cleanup()
 
     app.on_startup.append(on_start)
     app.on_cleanup.append(on_stop)
     if not host and not demo:
         print('TV: could not tell this PC\'s home-network address, so port 7790 listens on all networks.')
-    print('TV: on' + (' (demo).' if casts.fake else '. Looking for Chromecasts on the Wi-Fi.'))
+    print('TV: on' + (' (demo).' if casts.fake else '. Looking for Chromecasts on the Wi-Fi.')
+          + (' The living room TV (a monitor on this PC) is available too.' if kiosk and not casts.fake else ''))
     return casts
 
 
