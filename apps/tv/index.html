@@ -1943,4 +1943,10 @@ PH.init({});
   addEventListener('touchend', e => {
     if (sx === null || !atHome() || openDialog()) return;
     const t = e.changedTouches[0];
-    if (t.clientX - sx > 70 && Math.abs(t.clientY - sy) 
+    if (t.clientX - sx > 70 && Math.abs(t.clientY - sy) < 60) exit();
+    sx = null;
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>
