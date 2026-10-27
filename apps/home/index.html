@@ -856,7 +856,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.1</span>
+      <span class="app-meta">v1.2</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -932,6 +932,11 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
               <div class="c-who"><div class="who-t" id="pl-name">—</div><div class="who-s" id="pl-sub">Tap the map to put it there</div></div>
               <button class="rm-b" id="pl-remove" hidden>Remove</button>
             </div>
+            <div class="row" id="pl-size" role="radiogroup" aria-label="Size" style="--n:3" hidden>
+              <button class="rm-b" role="radio" data-s="0.5">Small</button>
+              <button class="rm-b" role="radio" data-s="1">Medium</button>
+              <button class="rm-b" role="radio" data-s="1.6">Tall</button>
+            </div>
             <div class="row" id="pl-height" role="radiogroup" aria-label="Height" style="--n:3">
               <button class="rm-b" role="radio" data-h="2.3">Ceiling</button>
               <button class="rm-b" role="radio" data-h="1.3">Lamp</button>
@@ -958,7 +963,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">Floor plan</span>
           <div class="menu">
-            <a class="menu-item" href="#/place"><span class="mi-label">Place lights and TV</span><span class="mi-value" id="set-placed">—</span></a>
+            <a class="menu-item" href="#/place"><span class="mi-label">Place lights, TV and plants</span><span class="mi-value" id="set-placed">—</span></a>
             <a class="menu-item" href="#/settings/rooms"><span class="mi-label">Room names</span><span class="mi-value" id="set-rooms">—</span></a>
             <button class="menu-item" id="scan-load"><span class="mi-label">Load a new scan<small>Polycam room scan, exported as OBJ</small></span></button>
             <button class="menu-item" id="scan-reset" hidden><span class="mi-label">Use the original scan</span></button>
@@ -982,7 +987,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.1</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.2</span></a>
           </div>
         </div>
       </section>
@@ -1028,7 +1033,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="Home Map">
-          <div class="kv"><span>Version</span><span>1.1</span></div>
+          <div class="kv"><span>Version</span><span>1.2</span></div>
           <div class="kv"><span>Scan</span><span id="ab-scan">—</span></div>
           <div class="kv"><span>Rooms</span><span id="ab-rooms">—</span></div>
           <div class="kv"><span>Walls</span><span id="ab-walls">—</span></div>
@@ -1408,7 +1413,7 @@ const HomeScan = (() => {
 })();
 if (typeof module !== 'undefined') module.exports = HomeScan;
 
-const BUILT_PLAN = {"walls":[{"c":[-2.14,-0.88],"len":0.17,"wid":0.06,"a":2.356,"y":[0,2.56]},{"c":[-4.52,-1.88],"len":2.14,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[2.8,2.91],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.29,1.17],"len":0.5,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.42,-0.08],"len":1.44,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.24,0.83],"len":0.1,"wid":0.08,"a":-1.036,"y":[0,2.56]},{"c":[-1.62,-0.23],"len":0.98,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-2.1,-0.6],"len":0.64,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.69,1.37],"len":0.89,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.63,1.34],"len":3.24,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,-0.18],"len":0.19,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.2,-1.88],"len":1.94,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-0.86],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.14,2.91],"len":2.08,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.58,-0.08],"len":0.54,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-3.39,-0.23],"len":2.58,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,0.36],"len":0.9,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.3,-1.49],"len":2.72,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.93,2.91],"len":3.51,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,1.13],"len":0.48,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,2.11],"len":1.49,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,0.39],"len":0.95,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,-1.47],"len":2.77,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.95,-2.9],"len":2.5,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.6,-2.9],"len":0.59,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[2.8,-2.9],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.7,0.86],"len":0.84,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[4.64,0],"len":5.91,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,1.86],"len":2,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-2.9],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.28,0.86],"len":1.14,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.52,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[-2.1,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[0.3,-0.08],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.1,-0.23],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-4.63,-0.23],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56]},{"c":[-2.18,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56]},{"c":[0.32,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56]},{"c":[4.64,-2.9],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[-2.2,-0.86],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,2.91],"len":0.1,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.9,2.91],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.88,-0.07],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56]},{"c":[0.91,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56]},{"c":[0.88,0.88],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56]},{"c":[-0.28,0.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56]},{"c":[-1.18,0.84],"len":0.14,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.16,-0.07],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56]},{"c":[-1.18,-0.23],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[-1.16,1.38],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56]},{"c":[-4.52,-2.9],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56]},{"c":[-4.63,2.91],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[4.64,2.91],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56]},{"c":[-0.29,1.37],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56]},{"c":[-4.57,-0.545],"len":0.73,"wid":0.1,"a":1.571,"y":[0,2.56]}],"open":[{"c":[-4.52,-1.39],"len":0.75,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[-0.7,-0.08],"len":0.62,"wid":0.01,"a":0,"y":[0,2.08],"k":"door"},{"c":[-3.64,-0.23],"len":0.7,"wid":0.01,"a":0,"y":[0,2.15],"k":"door"},{"c":[-1.18,0.74],"len":0.04,"wid":0.01,"a":1.571,"y":[0,2.09],"k":"door"},{"c":[-1.18,0.34],"len":0.73,"wid":0.01,"a":1.571,"y":[0,2.13],"k":"door"},{"c":[0.9,-1.01],"len":1.65,"wid":0.01,"a":1.571,"y":[0,2.17],"k":"closed"},{"c":[4.64,-2.34],"len":0.91,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[0.13,0.86],"len":0.71,"wid":0.01,"a":0,"y":[0,2.09],"k":"door"},{"c":[-4.52,-2.45],"len":0.72,"wid":0.01,"a":1.571,"y":[0.73,2.21],"k":"window"},{"c":[2.8,2.91],"len":2.31,"wid":0.01,"a":0,"y":[0.62,2.23],"k":"window"},{"c":[-4.63,0.99],"len":0.82,"wid":0.01,"a":1.571,"y":[0.74,2.14],"k":"window"},{"c":[0,2.91],"len":0.68,"wid":0.01,"a":0,"y":[1.21,2.12],"k":"window"},{"c":[-2.06,2.91],"len":0.84,"wid":0.01,"a":0,"y":[0.79,2.15],"k":"window"},{"c":[4.64,-0.52],"len":1.21,"wid":0.01,"a":1.571,"y":[0.76,2.11],"k":"window"},{"c":[-2.2,-1.88],"len":1.5,"wid":0.1,"a":1.571,"y":[0,2.25],"k":"arch"}],"floors":[{"name":"Living room","pts":[[4.64,-2.9],[4.64,2.91],[0.9,2.91],[0.9,-2.9]]},{"name":"","pts":[[-2.2,-0.86],[-4.52,-0.86],[-4.52,-2.9],[-2.2,-2.9]]},{"name":"Kitchen","pts":[[-2.2,-0.86],[-2.2,-2.9],[0.3,-2.9],[0.3,-0.08],[-1.18,-0.08],[-1.18,-0.23],[-2.1,-0.23],[-2.1,-0.86]]},{"name":"Closet","pts":[[0.9,-2.9],[0.3,-2.9],[0.3,-0.08],[0.9,-0.08]]},{"name":"Bedroom","pts":[[-4.63,-0.23],[-4.63,2.91],[-1.18,2.91],[-1.18,-0.23]]},{"name":"Hallway","pts":[[-1.18,-0.08],[0.9,-0.08],[0.9,0.86],[-1.18,0.86]]},{"name":"","pts":[[-1.18,0.86],[-1.18,1.37],[-0.29,1.37],[-0.29,0.86]]},{"name":"Bathroom","pts":[[-0.29,0.86],[0.9,0.86],[0.9,2.91],[-1.18,2.91],[-1.18,1.37],[-0.29,1.37]]}],"items":[{"c":[-1.65,-0.62],"len":0.89,"wid":0.8,"a":1.571,"y":[0.04,1.73],"n":"refrigerator"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.04,0.92],"n":"oven"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.92,1.02],"n":"stove"},{"c":[0.53,1.89],"len":0.64,"wid":0.49,"a":1.571,"y":[0.04,0.84],"n":"storage_cabinet_mid1"},{"c":[-0.1,-1.44],"len":0.49,"wid":0.43,"a":1.571,"y":[0.76,0.98],"n":"sink"},{"c":[0.53,1.91],"len":0.53,"wid":0.41,"a":1.571,"y":[0.53,0.84],"n":"sink"},{"c":[0.44,2.53],"len":0.67,"wid":0.42,"a":0,"y":[0.06,0.84],"n":"toilet"},{"c":[0.04,-0.64],"len":0.77,"wid":0.44,"a":1.571,"y":[1.53,2.37],"n":"storage_cabinet_mid2"},{"c":[-0.66,-2.6],"len":1.12,"wid":0.42,"a":0,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-1.6,-2.58],"len":0.77,"wid":0.42,"a":0,"y":[1.97,2.47],"n":"storage_cabinet_low2"},{"c":[0.06,-1.38],"len":0.7,"wid":0.39,"a":1.571,"y":[2.01,2.37],"n":"storage_cabinet_low2"},{"c":[-0.68,2.12],"len":1.44,"wid":0.73,"a":1.571,"y":[0.06,0.49],"n":"bathtub"},{"c":[0.69,2.59],"len":0.63,"wid":0.39,"a":1.571,"y":[1.3,1.98],"n":"storage_cabinet_low1"},{"c":[0.09,-2.3],"len":1.13,"wid":0.35,"a":1.571,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-0.08,-1.47],"len":2.51,"wid":0.67,"a":1.571,"y":[0.04,0.98],"n":"storage_cabinet_mid5"},{"c":[-3.37,1.76],"len":2.26,"wid":1.59,"a":1.571,"y":[0.04,0.74],"n":"bed"},{"c":[1.4,1.66],"len":1.03,"wid":0.59,"a":1.571,"y":[0.04,0.43],"n":"table_other_rect"},{"c":[-3.3,-2.39],"len":0.81,"wid":0.8,"a":0.305,"y":[0.04,1.1],"n":"table_dining_elliptic"},{"c":[3.55,-2.63],"len":0.49,"wid":0.41,"a":0,"y":[0.04,0.72],"n":"table_other_rect"},{"c":[3.19,2.61],"len":0.85,"wid":0.5,"a":0,"y":[0.04,1.65],"n":"storage_shelf"},{"c":[-2.33,2.58],"len":0.6,"wid":0.47,"a":0,"y":[0.04,0.62],"n":"table_other_rect"},{"c":[3.26,1.46],"len":1.19,"wid":0.74,"a":1.571,"y":[0.04,0.54],"n":"table_dining_rect"},{"c":[2.32,2.59],"len":0.98,"wid":0.63,"a":0,"y":[0.04,0.82],"n":"storage_shelf"},{"c":[-2.61,-2.27],"len":0.4,"wid":0.36,"a":0,"y":[0.04,0.72],"n":"chair_stool_four_no_no"},{"c":[1.95,-2.04],"len":0.6,"wid":0.53,"a":0,"y":[0.06,0.85],"n":"chair_dining_four_back_no"},{"c":[4.14,0.68],"len":0.55,"wid":0.5,"a":0,"y":[0.06,0.46],"n":"table_dining_rect"},{"c":[1.98,-2.61],"len":0.7,"wid":0.39,"a":0,"y":[0.06,0.82],"n":"table_other_rect"},{"c":[3.97,1.24],"len":3.33,"wid":1.3,"a":1.571,"y":[0.04,0.79],"n":"sofa_rect"},{"c":[-1.69,2.22],"len":0.75,"wid":0.56,"a":0.797,"y":[0.07,0.9],"n":"chair_other_four_back_no"},{"c":[2.97,-2.1],"len":0.41,"wid":0.38,"a":1.571,"y":[0.06,0.55],"n":"chair_other_four_back_no"},{"c":[2.11,-2.08],"len":2.1,"wid":1.52,"a":0,"y":[0.04,0.82],"n":"table_other_rect"},{"c":[3.63,0.01],"len":1.92,"wid":1.87,"a":1.571,"y":[0.04,0.79],"n":"sofa_single"},{"c":[2.11,-1.4],"len":0.65,"wid":0.59,"a":1.571,"y":[0.04,0.89],"n":"chair_dining_four_back_no"},{"c":[1.26,-2.33],"len":0.92,"wid":0.75,"a":1.571,"y":[0.06,0.82],"n":"table_other_rect"}],"tv":{"c":[1.06,1.69],"len":1.06,"wid":0.1,"a":1.57,"y":[0.85,1.46]},"v":1,"at":"2026-10-27","edited":true};
+const BUILT_PLAN = {"walls":[{"c":[-2.14,-0.88],"len":0.17,"wid":0.06,"a":2.356,"y":[0,2.56]},{"c":[-4.52,-1.88],"len":2.14,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[2.8,2.91],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.29,1.17],"len":0.5,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.42,-0.08],"len":1.44,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.24,0.83],"len":0.1,"wid":0.08,"a":-1.036,"y":[0,2.56]},{"c":[-1.62,-0.23],"len":0.98,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-2.1,-0.6],"len":0.64,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.69,1.37],"len":0.89,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.63,1.34],"len":3.24,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,-0.18],"len":0.19,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.2,-1.88],"len":1.94,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-0.86],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.14,2.91],"len":2.08,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.58,-0.08],"len":0.54,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-3.39,-0.23],"len":2.58,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,0.36],"len":0.9,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.3,-1.49],"len":2.72,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.93,2.91],"len":3.51,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,1.13],"len":0.48,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,2.11],"len":1.49,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,0.39],"len":0.95,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,-1.47],"len":2.77,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.95,-2.9],"len":2.5,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.6,-2.9],"len":0.59,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[2.8,-2.9],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.7,0.86],"len":0.84,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[4.64,0],"len":5.91,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,1.86],"len":2,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-2.9],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.28,0.86],"len":1.14,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.52,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[-2.1,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[0.3,-0.08],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.1,-0.23],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-4.63,-0.23],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56]},{"c":[-2.18,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56]},{"c":[0.32,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56]},{"c":[4.64,-2.9],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[-2.2,-0.86],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,2.91],"len":0.1,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.9,2.91],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.88,-0.07],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56]},{"c":[0.91,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56]},{"c":[0.88,0.88],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56]},{"c":[-0.28,0.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56]},{"c":[-1.18,0.84],"len":0.14,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.16,-0.07],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56]},{"c":[-1.18,-0.23],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[-1.16,1.38],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56]},{"c":[-4.52,-2.9],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56]},{"c":[-4.63,2.91],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56]},{"c":[4.64,2.91],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56]},{"c":[-0.29,1.37],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56]},{"c":[-4.57,-0.545],"len":0.73,"wid":0.1,"a":1.571,"y":[0,2.56]}],"open":[{"c":[-4.52,-1.39],"len":0.75,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[-0.7,-0.08],"len":0.62,"wid":0.01,"a":0,"y":[0,2.08],"k":"door"},{"c":[-3.64,-0.23],"len":0.7,"wid":0.01,"a":0,"y":[0,2.15],"k":"door"},{"c":[-1.18,0.74],"len":0.04,"wid":0.01,"a":1.571,"y":[0,2.09],"k":"door"},{"c":[-1.18,0.34],"len":0.73,"wid":0.01,"a":1.571,"y":[0,2.13],"k":"door"},{"c":[0.9,-1.11],"len":1.65,"wid":0.01,"a":1.571,"y":[0,2.17],"k":"closed"},{"c":[4.64,-2.34],"len":0.91,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[0.13,0.86],"len":0.71,"wid":0.01,"a":0,"y":[0,2.09],"k":"door"},{"c":[-4.52,-2.45],"len":0.72,"wid":0.01,"a":1.571,"y":[0.73,2.21],"k":"window"},{"c":[2.8,2.91],"len":2.31,"wid":0.01,"a":0,"y":[0.62,2.23],"k":"window"},{"c":[-4.63,0.99],"len":0.82,"wid":0.01,"a":1.571,"y":[0.74,2.14],"k":"window"},{"c":[0,2.91],"len":0.68,"wid":0.01,"a":0,"y":[1.21,2.12],"k":"window"},{"c":[-2.06,2.91],"len":0.84,"wid":0.01,"a":0,"y":[0.79,2.15],"k":"window"},{"c":[4.64,-0.52],"len":1.21,"wid":0.01,"a":1.571,"y":[0.76,2.11],"k":"window"},{"c":[-2.2,-1.88],"len":1.5,"wid":0.1,"a":1.571,"y":[0,2.25],"k":"arch"}],"floors":[{"name":"Living room","pts":[[4.64,-2.9],[4.64,2.91],[0.9,2.91],[0.9,-2.9]]},{"name":"","pts":[[-2.2,-0.86],[-4.52,-0.86],[-4.52,-2.9],[-2.2,-2.9]]},{"name":"Kitchen","pts":[[-2.2,-0.86],[-2.2,-2.9],[0.3,-2.9],[0.3,-0.08],[-1.18,-0.08],[-1.18,-0.23],[-2.1,-0.23],[-2.1,-0.86]]},{"name":"Closet","pts":[[0.9,-2.9],[0.3,-2.9],[0.3,-0.08],[0.9,-0.08]]},{"name":"Bedroom","pts":[[-4.63,-0.23],[-4.63,2.91],[-1.18,2.91],[-1.18,-0.23]]},{"name":"Hallway","pts":[[-1.18,-0.08],[0.9,-0.08],[0.9,0.86],[-1.18,0.86]]},{"name":"","pts":[[-1.18,0.86],[-1.18,1.37],[-0.29,1.37],[-0.29,0.86]]},{"name":"Bathroom","pts":[[-0.29,0.86],[0.9,0.86],[0.9,2.91],[-1.18,2.91],[-1.18,1.37],[-0.29,1.37]]}],"items":[{"c":[-1.65,-0.62],"len":0.89,"wid":0.8,"a":1.571,"y":[0.04,1.73],"n":"refrigerator"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.04,0.92],"n":"oven"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.92,1.02],"n":"stove"},{"c":[0.53,1.89],"len":0.64,"wid":0.49,"a":1.571,"y":[0.04,0.84],"n":"storage_cabinet_mid1"},{"c":[-0.1,-1.44],"len":0.49,"wid":0.43,"a":1.571,"y":[0.76,0.98],"n":"sink"},{"c":[0.53,1.91],"len":0.53,"wid":0.41,"a":1.571,"y":[0.53,0.84],"n":"sink"},{"c":[0.44,2.53],"len":0.67,"wid":0.42,"a":0,"y":[0.06,0.84],"n":"toilet"},{"c":[0.04,-0.64],"len":0.77,"wid":0.44,"a":1.571,"y":[1.53,2.37],"n":"storage_cabinet_mid2"},{"c":[-0.66,-2.6],"len":1.12,"wid":0.42,"a":0,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-1.6,-2.58],"len":0.77,"wid":0.42,"a":0,"y":[1.97,2.47],"n":"storage_cabinet_low2"},{"c":[0.06,-1.38],"len":0.7,"wid":0.39,"a":1.571,"y":[2.01,2.37],"n":"storage_cabinet_low2"},{"c":[-0.68,2.12],"len":1.44,"wid":0.73,"a":1.571,"y":[0.06,0.49],"n":"bathtub"},{"c":[0.69,2.59],"len":0.63,"wid":0.39,"a":1.571,"y":[1.3,1.98],"n":"storage_cabinet_low1"},{"c":[0.09,-2.3],"len":1.13,"wid":0.35,"a":1.571,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-0.08,-1.47],"len":2.51,"wid":0.67,"a":1.571,"y":[0.04,0.98],"n":"storage_cabinet_mid5"},{"c":[-3.37,1.76],"len":2.26,"wid":1.59,"a":1.571,"y":[0.04,0.74],"n":"bed"},{"c":[1.4,1.66],"len":1.03,"wid":0.59,"a":1.571,"y":[0.04,0.43],"n":"table_other_rect"},{"c":[-3.3,-2.39],"len":0.81,"wid":0.8,"a":0.305,"y":[0.04,1.1],"n":"table_dining_elliptic"},{"c":[3.55,-2.63],"len":0.49,"wid":0.41,"a":0,"y":[0.04,0.72],"n":"table_other_rect"},{"c":[3.19,2.61],"len":0.85,"wid":0.5,"a":0,"y":[0.04,1.65],"n":"storage_shelf"},{"c":[-2.33,2.58],"len":0.6,"wid":0.47,"a":0,"y":[0.04,0.62],"n":"table_other_rect"},{"c":[3.26,1.46],"len":1.19,"wid":0.74,"a":1.571,"y":[0.04,0.54],"n":"table_dining_rect"},{"c":[2.32,2.59],"len":0.98,"wid":0.63,"a":0,"y":[0.04,0.82],"n":"storage_shelf"},{"c":[-2.61,-2.27],"len":0.4,"wid":0.36,"a":0,"y":[0.04,0.72],"n":"chair_stool_four_no_no"},{"c":[1.95,-2.04],"len":0.6,"wid":0.53,"a":0,"y":[0.06,0.85],"n":"chair_dining_four_back_no"},{"c":[4.14,0.68],"len":0.55,"wid":0.5,"a":0,"y":[0.06,0.46],"n":"table_dining_rect"},{"c":[1.98,-2.61],"len":0.7,"wid":0.39,"a":0,"y":[0.06,0.82],"n":"table_other_rect"},{"c":[3.97,1.24],"len":3.33,"wid":1.3,"a":1.571,"y":[0.04,0.79],"n":"sofa_rect"},{"c":[-1.69,2.22],"len":0.75,"wid":0.56,"a":0.797,"y":[0.07,0.9],"n":"chair_other_four_back_no"},{"c":[2.97,-2.1],"len":0.41,"wid":0.38,"a":1.571,"y":[0.06,0.55],"n":"chair_other_four_back_no"},{"c":[2.11,-2.08],"len":2.1,"wid":1.52,"a":0,"y":[0.04,0.82],"n":"table_other_rect"},{"c":[3.63,0.01],"len":1.92,"wid":1.87,"a":1.571,"y":[0.04,0.79],"n":"sofa_single"},{"c":[2.11,-1.4],"len":0.65,"wid":0.59,"a":1.571,"y":[0.04,0.89],"n":"chair_dining_four_back_no"},{"c":[1.26,-2.33],"len":0.92,"wid":0.75,"a":1.571,"y":[0.06,0.82],"n":"table_other_rect"}],"tv":{"c":[1.06,1.69],"len":1.06,"wid":0.1,"a":1.57,"y":[0.85,1.46]},"v":1,"at":"2026-10-27","edited":true};
 /* Home Map: a light 3D outline of Floyd's home, made from a Polycam room scan (src/scan.js),
    with the Kasa lights and the TV on it. Lights and TV go through the same home relay as
    Kasa Lights and Phosphor TV (kasa_bridge.py, Tailscale, the same link and key). */
@@ -1427,6 +1432,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   let pins = load('pins', {});     // light id -> { x, y, z, name }
   let tvBox = load('tv', null);    // the TV, if moved by hand; otherwise where the scan found it
   let rooms = load('rooms', {});   // floor index -> name Floyd gave it
+  let plants = load('plants', {});   // 'plant:N' -> { x, z, s: size in m }
+  const isPlant = id => typeof id === 'string' && id.startsWith('plant:');
   const tvOf = () => tvBox || plan.tv || null;
   const roomName = i => rooms[i] != null ? rooms[i] : plan.floors[i].name;
 
@@ -1553,7 +1560,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   // Furniture: none (Floyd's default), or only the big pieces he wants to see
   const furnMode = () => { const v = PH.store.get('furn'); return v === true || v === 'main' ? 'main' : 'off'; };
   const mainPiece = it => /^(sofa|bed|refrigerator|oven|stove)/.test(it.n) || (/^table/.test(it.n) && it.y[1] >= 0.7)
-    || (/^storage_cabinet/.test(it.n) && it.y[0] < 0.2 && it.y[1] >= 0.75 && it.y[1] <= 1.1);   // countertops
+    || (/^storage_cabinet/.test(it.n) && it.y[0] < 0.2 && it.y[1] >= 0.75 && it.y[1] <= 1.1)   // countertops
+    || /^storage_shelf/.test(it.n);   // the shelving units by the big living-room window
   let G = null;
   function boxFaces(b, out) {
     const dx = Math.cos(b.a), dz = Math.sin(b.a), nx = -dz, nz = dx, L = b.len / 2, Wd = b.wid / 2;
@@ -1565,6 +1573,78 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     f([P(-L, -Wd, b.y0), P(-L, Wd, b.y0), P(-L, Wd, b.y1), P(-L, -Wd, b.y1)], [-dx, 0, -dz], 'u-');
     f([P(L, -Wd, b.y0), P(L, Wd, b.y0), P(L, Wd, b.y1), P(L, -Wd, b.y1)], [dx, 0, dz], 'u+');
   }
+  /* All wall pieces as one solid: drawn on a 2 cm grid in height bands, so walls that touch or overlap become one
+     body with no seams or clipping. Faces are filled in chunks (for depth sorting) and only the real outline is stroked. */
+  function wallMesh(pieces) {
+    const S = 0.02, CH = 50, out = [];
+    if (!pieces.length) return out;
+    let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+    for (const b of pieces) { const r = Math.hypot(b.len, b.wid) / 2 + S; x0 = Math.min(x0, b.c[0] - r); x1 = Math.max(x1, b.c[0] + r); z0 = Math.min(z0, b.c[1] - r); z1 = Math.max(z1, b.c[1] + r); }
+    x0 -= S; z0 -= S;
+    const NX = Math.ceil((x1 - x0) / S) + 2, NZ = Math.ceil((z1 - z0) / S) + 2;
+    const ys = [...new Set(pieces.flatMap(b => [Math.round(b.y0 * 1000) / 1000, Math.round(b.y1 * 1000) / 1000]))].sort((a, b) => a - b), NB = ys.length - 1;
+    const F = [];
+    for (let k = 0; k < NB; k++) {
+      const g = new Uint8Array(NX * NZ), ya = ys[k], yb = ys[k + 1];
+      for (const b of pieces) {
+        if (b.y0 > ya + 1e-4 || b.y1 < yb - 1e-4) continue;
+        const dx = Math.cos(b.a), dz = Math.sin(b.a), L = b.len / 2 + S * 0.6, Wd = Math.max(b.wid / 2, S * 0.6) + S * 0.2, r = Math.hypot(L, Wd);
+        const i0 = Math.max(0, Math.floor((b.c[0] - r - x0) / S)), i1 = Math.min(NX - 1, Math.ceil((b.c[0] + r - x0) / S));
+        const j0 = Math.max(0, Math.floor((b.c[1] - r - z0) / S)), j1 = Math.min(NZ - 1, Math.ceil((b.c[1] + r - z0) / S));
+        for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+          const px = x0 + (i + 0.5) * S - b.c[0], pz = z0 + (j + 0.5) * S - b.c[1];
+          if (Math.abs(px * dx + pz * dz) <= L && Math.abs(-px * dz + pz * dx) <= Wd) g[j * NX + i] = 1;
+        }
+      }
+      F.push(g);
+    }
+    const f = (k, i, j) => k >= 0 && k < NB && i >= 0 && i < NX && j >= 0 && j < NZ && F[k][j * NX + i] === 1;
+    // One flat region on a (u, v) grid -> filled chunks, each with the region's real outline on its sides
+    function region(R, NU, NV, chunkV, toP, n, side) {
+      const open = new Map();
+      const emit = (u0, u1, v0, v1) => {
+        const pts = [toP(u0, v0), toP(u1, v0), toP(u1, v1), toP(u0, v1)], edges = [];
+        const runs = (len, outside, seg) => { let a = -1; for (let t = 0; t <= len; t++) { const o = t < len && outside(t); if (o && a < 0) a = t; if (!o && a >= 0) { edges.push(seg(a, t)); a = -1; } } };
+        runs(v1 - v0, t => !R(u0 - 1, v0 + t), (a, b) => [toP(u0, v0 + a), toP(u0, v0 + b)]);
+        runs(v1 - v0, t => !R(u1, v0 + t), (a, b) => [toP(u1, v0 + a), toP(u1, v0 + b)]);
+        runs(u1 - u0, t => !R(u0 + t, v0 - 1), (a, b) => [toP(u0 + a, v0), toP(u0 + b, v0)]);
+        runs(u1 - u0, t => !R(u0 + t, v1), (a, b) => [toP(u0 + a, v1), toP(u0 + b, v1)]);
+        const ctr = [0, 1, 2].map(c => pts.reduce((s2, q) => s2 + q[c], 0) / 4);
+        out.push({ pts, n, ctr, kind: 'wall', side, edges });
+      };
+      for (let v = 0; v <= NV; v++) {
+        const here = new Set();
+        if (v < NV) for (let u = 0; u < NU;) {
+          if (!R(u, v)) { u++; continue; }
+          let e = u + 1; while (e < NU && R(e, v) && e % CH) e++;
+          const key = u + ':' + e; here.add(key);
+          const o = open.get(key);
+          if (o && o.v1 === v && (!chunkV || v - o.v0 < CH)) o.v1 = v + 1; else { if (o) emit(o.u0, o.u1, o.v0, o.v1); open.set(key, { u0: u, u1: e, v0: v, v1: v + 1 }); }
+          u = e;
+        }
+        for (const [key, o] of open) if (!here.has(key) || o.v1 !== v + 1) { if (o.v1 <= v || !here.has(key)) { emit(o.u0, o.u1, o.v0, o.v1); open.delete(key); } }
+      }
+      for (const o of open.values()) emit(o.u0, o.u1, o.v0, o.v1);
+    }
+    const X = i => x0 + i * S, Z = j => z0 + j * S;
+    // tops and undersides, one level at a time
+    for (let k = 0; k < NB; k++) {
+      region((i, j) => f(k, i, j) && !f(k + 1, i, j), NX, NZ, true, (i, j) => [X(i), ys[k + 1], Z(j)], [0, 1, 0], 'top');
+      if (ys[k] > 0.01) region((i, j) => f(k, i, j) && !f(k - 1, i, j), NX, NZ, true, (i, j) => [X(i), ys[k], Z(j)], [0, -1, 0], 'bottom');
+    }
+    // sides facing ±x (one plane per grid column line) and ±z (per row line)
+    for (let i = 0; i <= NX; i++) for (const sg of [1, -1]) {
+      const R = (j, k) => sg > 0 ? f(k, i - 1, j) && !f(k, i, j) : !f(k, i - 1, j) && f(k, i, j);
+      let any = false; for (let k = 0; k < NB && !any; k++) for (let j = 0; j < NZ; j++) if (R(j, k)) { any = true; break; }
+      if (any) region(R, NZ, NB, false, (j, k) => [X(i), ys[k], Z(j)], [sg, 0, 0], 'side');
+    }
+    for (let j = 0; j <= NZ; j++) for (const sg of [1, -1]) {
+      const R = (i, k) => sg > 0 ? f(k, i, j - 1) && !f(k, i, j) : !f(k, i, j - 1) && f(k, i, j);
+      let any = false; for (let k = 0; k < NB && !any; k++) for (let i = 0; i < NX; i++) if (R(i, k)) { any = true; break; }
+      if (any) region(R, NX, NB, false, (i, k) => [X(i), ys[k], Z(j)], [0, 0, sg], 'side');
+    }
+    return out;
+  }
   function centroid(p) {
     let a = 0, x = 0, z = 0;
     for (let i = 0; i < p.length; i++) { const [x0, z0] = p[i], [x1, z1] = p[(i + 1) % p.length], c = x0 * z1 - x1 * z0; a += c; x += (x0 + x1) * c; z += (z0 + z1) * c; }
@@ -1573,7 +1653,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   const inPoly = (x, z, p) => { let k = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) k = !k; } return k; };
   function build() {
     const cut = CUT[PH.store.get('walls')] || 1.3;
-    const boxes = [], frames = [], doors = [], faces = [];
+    const boxes = [], frames = [], doors = [], faces = [], walls = [];
     const ops = (plan.open || []).filter(o => o.len > 0.15);
     const wallSegs = [];
     for (const w of plan.walls) {
@@ -1597,7 +1677,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
       }
       cuts.sort((a, b) => a.u0 - b.u0);
       const piece = (u0, u1, y0, y1) => { y1 = Math.min(y1, cut); if (u1 - u0 < 0.005 || y1 - y0 < 0.01) return; const um = (u0 + u1) / 2;
-        boxes.push({ c: [w.c[0] + dx * um, w.c[1] + dz * um], len: u1 - u0, wid: w.wid, a: w.a, y0, y1, kind: 'wall' }); };
+        walls.push({ c: [w.c[0] + dx * um, w.c[1] + dz * um], len: u1 - u0, wid: w.wid, a: w.a, y0, y1 }); };
       let at = -L;
       for (const k of cuts) {
         if (k.u0 > at) piece(at, k.u0, w.y[0], w.y[1]);
@@ -1621,6 +1701,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     }
     const fm = furnMode();
     if (fm !== 'off') for (const it of plan.items || []) { if (fm === 'main' && !mainPiece(it)) continue; const y1 = Math.min(it.y[1], Math.max(cut, 0.9)); if (y1 - it.y[0] > 0.02 && it.y[0] < Math.max(cut, 0.9)) boxes.push({ c: it.c, len: it.len, wid: it.wid, a: it.a, y0: it.y[0], y1, kind: 'item' }); }
+    for (const id in plants) { const q = plants[id], w = 0.16 + q.s * 0.08; boxes.push({ c: [q.x, q.z], len: w, wid: w, a: 0, y0: 0, y1: Math.min(0.12 + q.s * 0.15, 0.4), kind: 'pot' }); }
     const tv = tvOf();
     let tvG = null;
     if (tv) {
@@ -1639,6 +1720,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
       tvG = { c: [tv.c[0], (b.y0 + b.y1) / 2, tv.c[1]], side, n: [fx, 0, fz], quad: [Q(-L, b.y1), Q(L, b.y1), Q(L, b.y0), Q(-L, b.y0)] };
     }
     boxes.forEach(b => boxFaces(b, faces));
+    faces.push(...wallMesh(walls));
     const floors = plan.floors.map((f, i) => ({ i, pts: f.pts, p3: f.pts.map(p => [p[0], 0, p[1]]), c: centroid(f.pts) }));
     let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
     plan.floors.forEach(f => f.pts.forEach(([x, z]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }));
@@ -1762,7 +1844,16 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     for (const [, f] of vis) {
       const p = poly3(f.pts); if (p.length < 3) continue;
       path(p);
-      if (f.kind === 'wall') { ctx.fillStyle = f.side === 'top' ? C.strong : shade([19, 40, 25], f.n); ctx.fill(); ctx.strokeStyle = f.side === 'top' ? '#5FA06C' : '#2A5233'; ctx.lineWidth = 1; ctx.stroke(); }
+      if (f.kind === 'wall') {
+        const fill = f.side === 'top' ? C.strong : f.side === 'bottom' ? '#0B170E' : shade([19, 40, 25], f.n);
+        ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = fill; ctx.lineWidth = 0.6; ctx.stroke();   // same colour: no hairline between chunks
+        if (f.edges.length) {
+          ctx.beginPath();
+          for (const [a, b] of f.edges) { const l = line3(a, b); if (l) { ctx.moveTo(...l[0]); ctx.lineTo(...l[1]); } }
+          ctx.strokeStyle = f.side === 'top' ? '#5FA06C' : '#2A5233'; ctx.lineWidth = 1; ctx.stroke();
+        }
+      }
+      else if (f.kind === 'pot') { ctx.fillStyle = shade([58, 40, 26], f.n); ctx.fill(); ctx.strokeStyle = '#7A5A3A'; ctx.lineWidth = 0.75; ctx.stroke(); }
       else if (f.kind === 'item') { ctx.fillStyle = f.side === 'top' ? '#0F2014' : shade([10, 22, 13], f.n); ctx.fill(); ctx.strokeStyle = '#2A5233'; ctx.lineWidth = 0.75; ctx.stroke(); }
       else if (f.screen) {
         const on = tvn.mode === 'on', other = tvn.mode === 'other';
@@ -1796,8 +1887,18 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
         tvHit.center = [sx, sy - lift / 2];
       }
     }
-    // lights
+    // plants: leaves drawn over their pots
     hits = [];
+    const pl = Object.keys(plants).map(id => { const q = plants[id], pot = Math.min(0.12 + q.s * 0.15, 0.4); return { id, q, c: toCam([q.x, pot + q.s * 0.45, q.z]), pot }; }).filter(o => o.c[2] > NEAR).sort((a, b) => b.c[2] - a.c[2]);
+    for (const { id, q, c } of pl) {
+      const [sx, sy] = scr(c), r = Fo * q.s * 0.32 / c[2];
+      const leaf = (dx, dy, k) => { ctx.beginPath(); ctx.ellipse(sx + dx * r, sy + dy * r, r * 0.55 * k, r * 0.38 * k, dx * 0.9, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); };
+      ctx.fillStyle = '#0F4A20'; ctx.strokeStyle = '#2FB457'; ctx.lineWidth = 1;
+      [[-0.45, 0.25, 1], [0.45, 0.2, 1], [-0.2, -0.3, 1.05], [0.25, -0.35, 0.95], [0, 0.05, 1.1]].forEach(([dx, dy, k]) => leaf(dx, dy, k));
+      if (sel === id) { ctx.beginPath(); ctx.arc(sx, sy, r + 6, 0, Math.PI * 2); ctx.strokeStyle = C.accent; ctx.lineWidth = 2; ctx.stroke(); }
+      if (editing) hits.push({ id, x: sx, y: sy, r: Math.max(r, 10) });
+    }
+    // lights
     const list = Object.keys(pins).map(id => { const p = pins[id], c = toCam([p.x, p.y, p.z]); return { id, p, c }; }).filter(o => o.c[2] > NEAR).sort((a, b) => b.c[2] - a.c[2]);
     for (const { id, p, c } of list) {
       const l = lights.find(x => x.id === id), col = hsl(l);
@@ -1892,6 +1993,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   ['touchstart', 'touchmove', 'touchend'].forEach(t => canvas.addEventListener(t, e => { e.stopPropagation(); if (t === 'touchmove') e.preventDefault(); }, { passive: false }));
 
   function moveTo(id, p) {
+    if (isPlant(id)) { const q = plants[id]; if (!q) return; const h = ray(p[0], p[1], 0); if (!h) return; q.x = +h[0].toFixed(2); q.z = +h[1].toFixed(2); build(); return; }
     if (id === 'tv') { const t = tvOf(); const h = ray(p[0], p[1], (t.y[0] + t.y[1]) / 2); if (!h) return; tvBox = { ...t, c: [+h[0].toFixed(2), +h[1].toFixed(2)] }; build(); return; }
     const pin = pins[id]; if (!pin) return;
     const h = ray(p[0], p[1], pin.y); if (!h) return;
@@ -1906,6 +2008,9 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
         const t = tvOf() || { c: [0, 0], len: 1.0, wid: 0.08, a: 0, y: [0.8, 1.4] };
         const at = ray(p[0], p[1], (t.y[0] + t.y[1]) / 2); if (!at) return;
         tvBox = { ...t, c: [+at[0].toFixed(2), +at[1].toFixed(2)] }; build();
+      } else if (isPlant(sel)) {
+        const at = ray(p[0], p[1], 0); if (!at) return;
+        plants[sel] = { s: lastPlant, ...plants[sel], x: +at[0].toFixed(2), z: +at[1].toFixed(2) }; build();
       } else {
         const y = pins[sel] ? pins[sel].y : lastH;
         const at = ray(p[0], p[1], y); if (!at) return;
@@ -1924,7 +2029,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     }
     openCard(null);
   }
-  function savePins() { save('pins', pins); save('tv', tvBox); }
+  function savePins() { save('pins', pins); save('tv', tvBox); save('plants', plants); }
 
   /* ---------- Cards over the map ---------- */
   function openCard(id) { cardId = id; renderCard(); req(); requestAnimationFrame(placeMirror); }
@@ -2077,7 +2182,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   $('#sc-row').addEventListener('click', e => { const b = e.target.closest('[data-scene]'); if (b) runScene(b.dataset.scene); });
 
   /* ---------- Placing lights and the TV ---------- */
-  let lastH = 2.3;
+  let lastH = 2.3, lastPlant = 1.0;
+  const LEAF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M8 21h8l-1-5H9zM12 16V9M12 11c-4 0-6-2-6-6 4 0 6 2 6 6zM12 9c0-4 2-6 6-6 0 4-2 6-6 6z"/></svg>';
   const BULB = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>';
   const TVI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M8 3l4 4 4-4"/></svg>';
   function placeList() {
@@ -2096,6 +2202,9 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     };
     placeList().forEach(o => add(o.id, o.name, o.id in pins, BULB, o.gone ? 'gone' : ''));
     add('tv', 'TV', !!tvOf(), TVI, tvBox ? 'moved' : plan.tv ? 'from scan' : 'not placed');
+    Object.keys(plants).forEach((id, i) => add(id, 'Plant ' + (i + 1), true, LEAF));
+    if (isPlant(sel) && !plants[sel]) add(sel, 'New plant', false, LEAF);
+    add('plant:new', '+ Plant', false, LEAF, 'add one');
     if (!lights.length && !Object.keys(pins).length) {
       const p = document.createElement('span'); p.className = 'pl-hint'; p.style.alignSelf = 'center';
       p.textContent = ready() ? (failing ? failing : 'Loading lights from the relay…') : 'Set up the relay in Settings to list your lights.';
@@ -2103,13 +2212,15 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     }
     const s = $('#pl-sel'); s.hidden = sel === null;
     if (sel !== null) {
-      const isTV = sel === 'tv', l = lights.find(x => x.id === sel), pin = pins[sel];
-      $('#pl-name').textContent = isTV ? 'TV' : l ? l.name : (pin && pin.name) || 'Light';
-      const placed = isTV ? !!tvOf() : !!pin;
+      const isTV = sel === 'tv', isP = isPlant(sel), l = lights.find(x => x.id === sel), pin = pins[sel];
+      $('#pl-name').textContent = isTV ? 'TV' : isP ? 'Plant' : l ? l.name : (pin && pin.name) || 'Light';
+      const placed = isTV ? !!tvOf() : isP ? !!plants[sel] : !!pin;
       $('#pl-sub').textContent = placed ? 'Drag it, or tap the map to move it' : 'Tap the map where it is';
       $('#pl-dot').style.background = isTV ? '' : css(hsl(l) || [125, 0, 30]);
       $('#pl-remove').hidden = !placed; $('#pl-remove').textContent = isTV ? 'Turn' : 'Remove';
-      $('#pl-height').hidden = isTV;
+      $('#pl-height').hidden = isTV || isP; $('#pl-size').hidden = !isP;
+      const ps = plants[sel] ? plants[sel].s : lastPlant;
+      $$('#pl-size [data-s]').forEach(b => b.setAttribute('aria-checked', String(near(+b.dataset.s, ps, 0.05))));
       const h = pin ? pin.y : lastH;
       $$('#pl-height [data-h]').forEach(b => b.setAttribute('aria-checked', String(near(+b.dataset.h, h, 0.05))));
     }
@@ -2119,10 +2230,20 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     const el = $('#pl-hint'); el.textContent = '';
     if (sel === null) { el.append('Pick a light below, then tap where it is on the map.'); return; }
     const b = document.createElement('b');
-    b.textContent = sel === 'tv' ? 'the TV' : (lights.find(x => x.id === sel) || pins[sel] || { name: 'it' }).name;
+    b.textContent = sel === 'tv' ? 'the TV' : isPlant(sel) ? 'the plant' : (lights.find(x => x.id === sel) || pins[sel] || { name: 'it' }).name;
     el.append('Tap the map to put ', b, ' there, or drag it.');
   }
-  $('#pl-chips').addEventListener('click', e => { const c = e.target.closest('.chip'); if (!c) return; sel = sel === c.dataset.id ? null : c.dataset.id; renderPlace(); req(); });
+  $('#pl-chips').addEventListener('click', e => {
+    const c = e.target.closest('.chip'); if (!c) return;
+    let id = c.dataset.id;
+    if (id === 'plant:new') { let n = 1; while (plants['plant:' + n]) n++; id = 'plant:' + n; }
+    sel = sel === id ? null : id; renderPlace(); req();
+  });
+  $('#pl-size').addEventListener('click', e => {
+    const b = e.target.closest('[data-s]'); if (!b) return;
+    lastPlant = +b.dataset.s; if (plants[sel]) { plants[sel].s = lastPlant; savePins(); build(); }
+    renderPlace(); req();
+  });
   $('#pl-height').addEventListener('click', e => {
     const b = e.target.closest('[data-h]'); if (!b) return;
     lastH = +b.dataset.h; if (pins[sel]) { pins[sel].y = lastH; savePins(); }
@@ -2130,6 +2251,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   });
   $('#pl-remove').addEventListener('click', () => {
     if (sel === 'tv') { const t = tvOf(); if (!t) return; tvBox = { ...t, a: (t.a + Math.PI / 2) % (Math.PI * 2), face: undefined }; build(); savePins(); req(); return; }
+    if (isPlant(sel)) { delete plants[sel]; sel = null; savePins(); build(); renderPlace(); req(); return; }
     delete pins[sel]; savePins(); renderPlace(); req();
   });
 
@@ -2214,7 +2336,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     if (!await PH.confirm('Go back to the scan this app came with? Room names reset too.', { title: 'Original scan', ok: 'Use original' })) return;
     plan = BUILT_PLAN; save('plan', null); tvBox = null; rooms = {}; save('rooms', rooms); savePins(); build(); fit(); render();
   });
-  $('#export').addEventListener('click', () => PH.exportFile('home-map-layout.json', JSON.stringify({ app: 'home-map', pins, tv: tvBox, rooms, plan: load('plan', null) || undefined }, null, 2), 'application/json'));
+  $('#export').addEventListener('click', () => PH.exportFile('home-map-layout.json', JSON.stringify({ app: 'home-map', pins, plants, tv: tvBox, rooms, plan: load('plan', null) || undefined }, null, 2), 'application/json'));
   $('#erase').addEventListener('click', async () => {
     if (!await PH.confirm('Take every light off the map and put the TV back where the scan found it?', { title: 'Clear map', ok: 'Clear', danger: true })) return;
     pins = {}; tvBox = null; savePins(); build(); render(); PH.toast('Map cleared.', 'warn');
