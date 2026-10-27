@@ -858,7 +858,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.6</span>
+      <span class="app-meta">v1.7</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1035,7 +1035,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.6</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.7</span></a>
           </div>
         </div>
       </section>
@@ -1478,11 +1478,19 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   /* ---------- What's on the map ---------- */
   let plan = load('plan', null) || BUILT_PLAN;
   let pins = load('pins', {});     // light id -> { x, y, z, name }
-  let tvBox = load('tv', null);    // the TV, if moved by hand; otherwise where the scan found it
+  let tvBox = load('tv', null);    // the living-room TV, if moved by hand; otherwise where the scan found it
+  let crtBox = load('crt', null);  // the kitchen CRT, if moved by hand; otherwise on top of the fridge
   let rooms = load('rooms', {});   // floor index -> name Floyd gave it
   let plants = load('plants', {});   // 'plant:N' -> { x, z, s: size in m }
   const isPlant = id => typeof id === 'string' && id.startsWith('plant:');
-  const tvOf = () => tvBox || plan.tv || null;
+  // Two TVs: the living-room screen (a Phosphor TV on the PC, relay room 'pc') and the small CRT on the kitchen fridge
+  // (the Chromecast, relay room 'cast')
+  const TVS = { tv: { room: 'pc', name: 'Living room TV' }, crt: { room: 'cast', name: 'Kitchen TV' } };
+  const isTVid = id => id === 'tv' || id === 'crt';
+  const fridgeCRT = () => { const f = (plan.items || []).find(i => /^refrigerator/.test(i.n)); return f ? { c: [...f.c], len: 0.46, wid: 0.4, a: f.a, y: [f.y[1], f.y[1] + 0.35] } : null; };
+  const tvGet = id => id === 'crt' ? crtBox || fridgeCRT() : tvBox || plan.tv || null;
+  function tvPut(id, v) { if (id === 'crt') crtBox = v; else tvBox = v; buildTV(); }
+  const tvOf = () => tvGet('tv');
   const roomName = i => rooms[i] != null ? rooms[i] : plan.floors[i].name;
 
   /* ---------- Relay: same link as Kasa Lights, PC and Phosphor TV ---------- */
@@ -1577,13 +1585,19 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   const pct = l => !l ? 'Not found on the relay' : !l.online ? 'No reply' : !l.on ? 'Off' : l.brightness != null ? l.brightness + '%' : 'On';
 
   /* ---------- TV (Phosphor TV through the relay) ---------- */
-  let tvInfo = load('tv-info', null), tvState = 'idle', tvErr = '', tvBusy = false;
+  let tvInfo = load('tv-info', null), tvState = 'idle', tvErr = '', tvBusy = false;   // the kitchen Chromecast
+  let pcInfo = null, pcState = 'idle';   // the living-room screen: GET /tv?room=pc (relay tv_control 3.0 and later)
   async function refreshTV() {
-    if (!tvOf()) return;
+    if (!tvGet('tv') && !tvGet('crt')) return;
     try { tvInfo = await call('/tv'); save('tv-info', tvInfo); tvState = 'ok'; tvErr = ''; }
     catch (e) { tvState = e.missing ? 'none' : 'down'; tvErr = e.message; }
+    if (tvState !== 'none') {
+      try { const d = await call('/tv?room=pc'); if (d.room === 'pc') { pcInfo = d; pcState = 'ok'; } else { pcInfo = null; pcState = 'none'; } }   // an older relay ignores ?room
+      catch (e) { pcState = e.missing ? 'none' : 'down'; }
+    }
     render();
   }
+  const infoOf = id => id === 'tv' ? pcInfo : tvInfo;
   const SCREENS = { home: 'Home', today: 'Today', art: 'Art', clock: 'Clock', lights: 'Lights', board: 'Board', rain: 'Rain', dim: 'Dark screen', watch: 'Watch' };
   const ARTS = ['Solar system', 'Fireplace', 'Harmonograph', 'Flow field', 'Life', 'Warp', 'Outrun', 'Plasma', 'Tunnel', 'Matrix rain', '10 PRINT', 'Sunflower', 'Fireplace', 'Fireplace: roaring', 'Fireplace: firewood'];
   const MUSIC = { 'swiss-classic': 'Calm classical', 'romantic-jazz': 'Romantic jazz', 'sonic-universe': 'Japanese city pop', 'secret-agent': 'Japanese fusion', 'swiss-jazz': 'Classic jazz',
@@ -1591,11 +1605,12 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   const AMB = { rain: 'Rain', storm: 'Thunderstorm', fire: 'Fire sound', ocean: 'Ocean waves', wind: 'Wind', brown: 'Brown noise' };
   const SCENES = { morning: 'Morning', away: 'Away', home: 'Home', romantic: 'Romantic' };
   // What the real TV is showing right now: { mode: on|other|off|unknown, big, small, short }
-  function tvNow() {
+  function tvNow(id = 'crt') {
     if (!ready()) return { mode: 'unknown', big: 'Not set up', small: 'Needs the relay', short: '' };
     if (tvState === 'none') return { mode: 'unknown', big: 'No TV relay', small: 'Phosphor TV isn\'t on this relay', short: '' };
+    if (id === 'tv' && pcState !== 'ok') return { mode: 'unknown', big: 'Not linked yet', small: 'Needs the next TV relay update', short: '' };
     if (tvState === 'down' && !tvInfo) return { mode: 'unknown', big: 'Can\'t reach', small: tvErr, short: '' };
-    const i = tvInfo || {}, t = i.tv || {}, c = i.cast;
+    const i = infoOf(id) || {}, t = i.tv || {}, c = i.cast;
     if (t.on && t.linked) {
       let big = SCREENS[t.screen] || 'Phosphor TV';
       if (t.screen === 'art' && i.art && ARTS[i.art.i]) big = ARTS[i.art.i];
@@ -1858,22 +1873,27 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     G = { faces, frames, doors, floors, walls, wallSegs, blockers, wins: wins.slice(0, MAXW), bigN, bounds: [x0, x1, z0, z1], cut, ver: (G ? G.ver : 0) + 1 };
     buildTV(); glStatic();
   }
-  // The TV: drawn a bit bigger than the scan (Floyd), 16:9, at its own height, the screen facing away from the nearest wall
+  // The TVs: the living-room one drawn a bit bigger than the scan (Floyd), 16:9; the kitchen one a boxy 4:3 CRT with a
+  // bezel round its screen. Each faces away from the nearest wall unless turned by hand.
   function buildTV() {
-    const tv = tvOf(); G.tv = null;
-    if (!tv) return;
-    const len = Math.max(tv.len * TV_GROW, 0.8), hgt = len * 9 / 16;
-    const b = { c: tv.c, len, wid: Math.max(tv.wid, 0.06), a: tv.a, y0: tv.y[0], y1: tv.y[0] + hgt, kind: 'tv' };
-    const nx = -Math.sin(tv.a), nz = Math.cos(tv.a);
-    const near = (x, z) => Math.min(...G.wallSegs.map(([ax, az, bx, bz]) => { const vx = bx - ax, vz = bz - az, t = clamp(((x - ax) * vx + (z - az) * vz) / (vx * vx + vz * vz || 1), 0, 1); return Math.hypot(x - ax - vx * t, z - az - vz * t); }));
-    const side = tv.face || (near(tv.c[0] + nx * 0.3, tv.c[1] + nz * 0.3) >= near(tv.c[0] - nx * 0.3, tv.c[1] - nz * 0.3) ? 'v+' : 'v-');
-    const faces = []; boxFaces(b, faces);
-    faces.forEach(f => { if (f.side === side || f.side === 'top') f.screen = true; });
-    // the screen's corners as the viewer sees them: top left, top right, bottom right, bottom left
-    const sg = side === 'v+' ? 1 : -1, fx = nx * sg, fz = nz * sg, rx = fz, rz = -fx, L = len / 2, off = b.wid / 2 + 0.005;
-    const fc = [tv.c[0] + fx * off, tv.c[1] + fz * off], Q = (u, y) => [fc[0] + rx * u, y, fc[1] + rz * u];
-    G.tv = { c: [tv.c[0], (b.y0 + b.y1) / 2, tv.c[1]], side, n: [fx, 0, fz], faces, hgt, quad: [Q(-L, b.y1), Q(L, b.y1), Q(L, b.y0), Q(-L, b.y0)] };
+    G.tvs = {};
+    for (const id of ['tv', 'crt']) {
+      const tv = tvGet(id); if (!tv) continue;
+      const crt = id === 'crt', len = crt ? tv.len : Math.max(tv.len * TV_GROW, 0.8), hgt = crt ? len * 0.85 : len * 9 / 16;
+      const b = { c: tv.c, len, wid: crt ? tv.wid : Math.max(tv.wid, 0.06), a: tv.a, y0: tv.y[0], y1: tv.y[0] + hgt, kind: 'tv' };
+      const nx = -Math.sin(tv.a), nz = Math.cos(tv.a);
+      const near = (x, z) => Math.min(...G.wallSegs.map(([ax, az, bx, bz]) => { const vx = bx - ax, vz = bz - az, t = clamp(((x - ax) * vx + (z - az) * vz) / (vx * vx + vz * vz || 1), 0, 1); return Math.hypot(x - ax - vx * t, z - az - vz * t); }));
+      const side = tv.face || (near(tv.c[0] + nx * 0.3, tv.c[1] + nz * 0.3) >= near(tv.c[0] - nx * 0.3, tv.c[1] - nz * 0.3) ? 'v+' : 'v-');
+      const faces = []; boxFaces(b, faces);
+      if (!crt) faces.forEach(f => { if (f.side === side || f.side === 'top') f.screen = true; });
+      // the screen's corners as the viewer sees them: top left, top right, bottom right, bottom left
+      const sg = side === 'v+' ? 1 : -1, fx = nx * sg, fz = nz * sg, rx = fz, rz = -fx, m = crt ? len * 0.11 : 0, L = len / 2 - m, off = b.wid / 2 + (crt ? 0.004 : 0.005);
+      const fc = [tv.c[0] + fx * off, tv.c[1] + fz * off], Q = (u, y) => [fc[0] + rx * u, y, fc[1] + rz * u];
+      const quad = [Q(-L, b.y1 - m), Q(L, b.y1 - m), Q(L, b.y0 + m * 1.3), Q(-L, b.y0 + m * 1.3)];
+      G.tvs[id] = { id, c: [tv.c[0], (b.y0 + b.y1) / 2, tv.c[1]], side, n: [fx, 0, fz], faces, hgt, quad, crt, pw: crt ? 960 : 1280, ph: crt ? 720 : 720 };
+    }
   }
+
   const roomAt = (x, z) => { for (const f of G.floors) if (inPoly(x, z, f.pts)) return f.i; return -1; };
 
   /* ---------- Camera ---------- */
@@ -1917,7 +1937,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
      distances per bulb, worked out from the plan). Light pins, names and rings go on a flat canvas on top, and a pin
      a wall hides is left off. */
   const canvas = $('#map'), ctx = canvas.getContext('2d'), glc = $('#gl');
-  let raf = 0, hits = [], tvHit = null;
+  let raf = 0, hits = [], tvHits = [];
   const FONT = getComputedStyle(document.body).fontFamily;
   const C = { bg: '#030703', floor: '#07120A', line: '#1F3D26', strong: '#3F7A4B', accent: '#39FF6A', dim: '#86C295', faint: '#4F7F5B', text: '#C9F5D3', cyan: '#5CE1FF', amber: '#FFB13B', red: '#FF5C5C' };
   const SUN = (() => { const v = [0.45, 0.8, 0.35], m = Math.hypot(...v); return v.map(x => x / m); })();
@@ -2244,15 +2264,19 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       const p = pins[id], bri = (l.brightness ?? 100) / 100;
       lit.push({ x: p.x, y: p.y, z: p.z, c: hslRGB([col[0], col[1], Math.min(col[2], 60)]), k: 0.35 + 0.65 * bri });
     }
-    // the TV, coloured by what it's doing
-    const tvn = tvNow();
-    if (G.tv) {
-      const on = tvn.mode === 'on', other = tvn.mode === 'other';
-      const scr0 = rgb(on ? '#073514' : other ? '#2A1C05' : '#010201', 0), body = rgbOf([40, 36, 28]);
-      const edge = rgb(on ? C.accent : other ? C.amber : (editing || sel === 'tv' ? C.accent : C.strong)), bodyEdge = rgb('#6B6250');
-      for (const f of G.tv.faces) {
+    // the TVs, coloured by what each is doing
+    const tvns = {};
+    for (const id in G.tvs) {
+      const T = G.tvs[id], tvn = tvns[id] = tvNow(id), on = tvn.mode === 'on', other = tvn.mode === 'other';
+      const scr0 = rgb(on ? '#073514' : other ? '#2A1C05' : '#010201', 0), body = T.crt ? rgbOf([62, 58, 50]) : rgbOf([40, 36, 28]);
+      const edge = rgb(on ? C.accent : other ? C.amber : (editing || sel === id ? C.accent : C.strong)), bodyEdge = rgb('#6B6250');
+      for (const f of T.faces) {
         quad(dynM, f.pts, f.screen ? scr0 : body, f.n);
         f.pts.forEach((p, i) => seg(dynL, p, f.pts[(i + 1) % 4], f.screen ? edge : bodyEdge, f.screen && (on || other) ? 2 : 1.25));
+      }
+      if (T.crt) {   // the glass, set in the bezel
+        quad(dynM, T.quad, scr0, T.n);
+        T.quad.forEach((p, i) => seg(dynL, p, T.quad[(i + 1) % 4], edge, on || other ? 2 : 1.25));
       }
     }
     // plants
@@ -2270,17 +2294,17 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       const p = [f.c[0], 0.02, f.c[1]], c = toCam(p); if (c[2] < NEAR || hidden(p)) continue;
       const [sx, sy] = scr(c); label(n.toUpperCase(), sx, sy, C.faint, clamp(Fo * 0.16 / c[2], 8, 12), 700);
     }
-    tvHit = null;
-    if (G.tv) {
-      const c = toCam(G.tv.c);
-      if (c[2] > NEAR && !hidden(G.tv.c.map((v, k) => v + G.tv.n[k] * 0.08))) {
+    tvHits = [];
+    for (const id in G.tvs) {
+      const T = G.tvs[id], tvn = tvns[id], c = toCam(T.c);
+      if (c[2] > NEAR && !hidden(T.c.map((v, k) => v + T.n[k] * (T.crt ? 0.25 : 0.08)))) {
         const [sx, sy] = scr(c), lift = clamp(Fo * 0.45 / c[2], 18, 40);
         const word = tvn.mode === 'on' ? tvn.short : tvn.mode === 'other' ? tvn.short : 'TV';
         const w = (word || 'TV').toUpperCase();
         if (labelsOn) label('▣ ' + (w.length > 16 ? w.slice(0, 15) + '…' : w), sx, sy - lift, tvn.mode === 'on' ? C.accent : tvn.mode === 'other' ? C.amber : C.dim, 10);
-        const q = G.tv.quad.map(toCam);
-        tvHit = q.every(v => v[2] > NEAR) ? q.map(scr) : [[sx - 20, sy - 20], [sx + 20, sy - 20], [sx + 20, sy + 20], [sx - 20, sy + 20]];
-        tvHit.center = [sx, sy];
+        const q = T.quad.map(toCam);
+        const h = q.every(v => v[2] > NEAR) ? q.map(scr) : [[sx - 20, sy - 20], [sx + 20, sy - 20], [sx + 20, sy + 20], [sx - 20, sy + 20]];
+        h.center = [sx, sy]; h.id = id; tvHits.push(h);
       }
     }
     hits = [];
@@ -2302,14 +2326,12 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       if (labelsOn || editing) label(l ? l.name : (p.name || 'Light'), sx, sy + r + 10, col ? C.text : C.dim, 11);
       hits.push({ id, x: sx, y: sy, r });
     }
-    // where the live TV picture goes: only when the whole screen can be seen
-    tvQuadOnScreen = null;
-    if (G.tv && !top()) {
-      const t = G.tv, fc = t.quad[0].map((v, k) => (v + t.quad[2][k]) / 2);
-      if ((fc[0] - E[0]) * t.n[0] + (fc[2] - E[2]) * t.n[2] < 0) {
-        const cs = t.quad.map(toCam), inset = t.quad.map(q => q.map((v, k) => v + (fc[k] - v) * 0.08 + t.n[k] * 0.02));
-        if (cs.every(c => c[2] > NEAR) && !inset.some(hidden) && !hidden(fc.map((v, k) => v + t.n[k] * 0.02))) tvQuadOnScreen = cs.map(scr);
-      }
+    // where each live TV picture goes: only when the whole screen can be seen
+    for (const id in G.tvs) {
+      const t = G.tvs[id], fc = t.quad[0].map((v, k) => (v + t.quad[2][k]) / 2); t.qs = null;
+      if (top() || (fc[0] - E[0]) * t.n[0] + (fc[2] - E[2]) * t.n[2] >= 0) continue;
+      const cs = t.quad.map(toCam), inset = t.quad.map(q => q.map((v, k) => v + (fc[k] - v) * 0.08 + t.n[k] * 0.02));
+      if (cs.every(c => c[2] > NEAR) && !inset.some(hidden) && !hidden(fc.map((v, k) => v + t.n[k] * 0.02))) t.qs = cs.map(scr);
     }
     placeMirror();
   }
@@ -2322,9 +2344,9 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     let best = null, bd = 1e9;
     for (const h of hits) { const d = Math.hypot(h.x - x, h.y - y); if (d < Math.max(24, h.r + 10) && d < bd) { bd = d; best = h.id; } }
     if (best) return best;
-    if (tvHit) {
+    for (const tvHit of tvHits) {
       let k = false; for (let i = 0, j = tvHit.length - 1; i < tvHit.length; j = i++) { const [xi, yi] = tvHit[i], [xj, yj] = tvHit[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) k = !k; }
-      if (k || (tvHit.center && Math.hypot(tvHit.center[0] - x, tvHit.center[1] - y) < 30)) return 'tv';
+      if (k || Math.hypot(tvHit.center[0] - x, tvHit.center[1] - y) < 30) return tvHit.id;
     }
     return null;
   }
@@ -2345,18 +2367,24 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       if (h) { sel = h; renderPlace(); req(); }
       else if (mode() === 'map') {
         const g = gest, hit = hitAt(...p);
-        if (hit) g.hold = setTimeout(() => { if (gest !== g || g.moved || g.multi) return; g.held = true; openCard(hit); if (hit === 'tv') refreshTV(); }, 450);
+        if (hit) g.hold = setTimeout(() => { if (gest !== g || g.moved || g.multi) return; g.held = true; openCard(hit); if (isTVid(hit)) refreshTV(); }, 450);
       }
-    } else if (ptrs.size === 2) { gest.multi = true; gest.drag = null; gest.two = two(); clearTimeout(gest.hold); }
+    } else if (ptrs.size === 2) { gest.multi = true; gest.drag = null; gest.two = gest.two0 = two(); gest.kind = ''; clearTimeout(gest.hold); }
   });
   canvas.addEventListener('pointermove', e => {
     if (!ptrs.has(e.pointerId) || !gest) return;
     const p = pt(e); ptrs.set(e.pointerId, p);
     setupCam();
     if (ptrs.size >= 2) {
-      const t = two(), o = gest.two;
-      cam.dist *= o.span / Math.max(20, t.span);
-      cam.yaw -= t.ang - o.ang;
+      // Two fingers: a twist turns, a pinch zooms. Fingers never keep exactly the same spread while twisting, so the
+      // gesture locks to whichever clearly started first; until then it only moves the map.
+      const t = two(), o = gest.two, s0 = gest.two0;
+      if (!gest.kind) {
+        const tw = Math.abs(Math.atan2(Math.sin(t.ang - s0.ang), Math.cos(t.ang - s0.ang))), sc = Math.abs(Math.log(t.span / Math.max(20, s0.span)));
+        if (sc > 0.15) gest.kind = 'pinch'; else if (tw > 0.12) gest.kind = 'twist';
+      }
+      if (gest.kind === 'pinch') cam.dist *= o.span / Math.max(20, t.span);
+      if (gest.kind === 'twist') cam.yaw -= Math.atan2(Math.sin(t.ang - o.ang), Math.cos(t.ang - o.ang));
       setupCam(); panBy(o.mid, t.mid);
       gest.two = t; gest.moved = true; limit(); req(); return;
     }
@@ -2384,7 +2412,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
 
   function moveTo(id, p) {
     if (isPlant(id)) { const q = plants[id]; if (!q) return; const h = ray(p[0], p[1], q.y || 0); if (!h) return; q.x = +h[0].toFixed(2); q.z = +h[1].toFixed(2); return; }
-    if (id === 'tv') { const t = tvOf(); const h = ray(p[0], p[1], (t.y[0] + t.y[1]) / 2); if (!h) return; tvBox = { ...t, c: [+h[0].toFixed(2), +h[1].toFixed(2)] }; buildTV(); return; }
+    if (isTVid(id)) { const t = tvGet(id); if (!t) return; const h = ray(p[0], p[1], (t.y[0] + t.y[1]) / 2); if (!h) return; tvPut(id, { ...t, c: [+h[0].toFixed(2), +h[1].toFixed(2)] }); return; }
     const pin = pins[id]; if (!pin) return;
     const h = ray(p[0], p[1], pin.y); if (!h) return;
     pin.x = +h[0].toFixed(2); pin.z = +h[1].toFixed(2);
@@ -2394,10 +2422,10 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     if (mode() === 'place') {
       if (h) { sel = h; renderPlace(); req(); return; }
       if (sel === null) { PH.toast('Pick a light below first.'); return; }
-      if (sel === 'tv') {
-        const t = tvOf() || { c: [0, 0], len: 1.0, wid: 0.08, a: 0, y: [0.8, 1.4] };
+      if (isTVid(sel)) {
+        const t = tvGet(sel) || (sel === 'crt' ? { c: [0, 0], len: 0.46, wid: 0.4, a: 0, y: [0.8, 1.15] } : { c: [0, 0], len: 1.0, wid: 0.08, a: 0, y: [0.8, 1.4] });
         const at = ray(p[0], p[1], (t.y[0] + t.y[1]) / 2); if (!at) return;
-        tvBox = { ...t, c: [+at[0].toFixed(2), +at[1].toFixed(2)] }; buildTV();
+        tvPut(sel, { ...t, c: [+at[0].toFixed(2), +at[1].toFixed(2)] });
       } else if (isPlant(sel)) {
         const y = plants[sel] ? plants[sel].y || 0 : lastPlantY;
         const at = ray(p[0], p[1], y); if (!at) return;
@@ -2410,7 +2438,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       }
       savePins(); renderPlace(); req(); return;
     }
-    if (h === 'tv') { openCard('tv'); refreshTV(); return; }
+    if (isTVid(h)) { openCard(h); refreshTV(); return; }
     if (h) {
       const l = lights.find(x => x.id === h);
       if (!ready()) { PH.toast('Set up the relay first.', 'warn'); return; }
@@ -2421,7 +2449,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     }
     openCard(null);
   }
-  function savePins() { save('pins', pins); save('tv', tvBox); save('plants', plants); }
+  function savePins() { save('pins', pins); save('tv', tvBox); save('crt', crtBox); save('plants', plants); }
 
   /* ---------- Cards over the map ---------- */
   function openCard(id) { cardId = id; if (id && sun.on) { sun.on = false; sunPlay = ''; renderSun(); } if (id && partyOpen) { partyOpen = false; renderParty(); } renderCard(); req(); requestAnimationFrame(placeMirror); }
@@ -2429,7 +2457,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   const WHITES = [['Warm', 2700], ['Soft', 3500], ['Neutral', 4500], ['Day', 6500]];
   const near = (a, b, d) => Math.abs(a - b) < d;
   function renderCard() {
-    const isTV = cardId === 'tv', l = cardId && !isTV ? lights.find(x => x.id === cardId) : null;
+    const isTV = isTVid(cardId), l = cardId && !isTV ? lights.find(x => x.id === cardId) : null;
     $('#lc').hidden = !cardId || isTV; $('#tc').hidden = !isTV;
     if (cardId && !isTV && !dragging) {
       const pin = pins[cardId];
@@ -2448,16 +2476,16 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
         b.dataset.temp = kk; if (l.temp && near(l.temp, kk, 200) && l.on) b.classList.add('is-sel'); b.disabled = !l.online; wh.appendChild(b); });
     }
     if (isTV) {
-      const n = tvNow(), i = tvInfo || {}, dev = (i.devices || []).find(x => x.id === i.id);
-      $('#tc-name').textContent = dev ? dev.name : 'TV';
+      const id = cardId, kitchen = id === 'crt', n = tvNow(id), i = infoOf(id) || {}, dev = kitchen && (i.devices || []).find(x => x.id === i.id);
+      $('#tc-name').textContent = TVS[id].name + (dev ? ' · ' + dev.name : '');
       $('#tc-sub').textContent = tvBusy ? 'One moment…' : n.mode === 'on' ? 'Phosphor TV is on' : n.mode === 'off' ? 'Off' : n.mode === 'other' ? (i.cast && i.cast.app) || 'On' : n.big;
       $('#tc-led').className = 'led' + (tvBusy ? ' wait' : n.mode === 'on' ? ' on' : n.mode === 'other' ? ' wait' : tvState === 'down' ? ' err' : '');
-      const m = $('#tc-mini'); m.className = 'tv-mini ' + (n.mode === 'on' ? 'on' : n.mode === 'other' ? 'other' : 'off');
+      const m = $('#tc-mini'); m.className = 'tv-mini ' + (n.mode === 'on' ? 'on' : n.mode === 'other' ? 'other' : 'off'); m.style.aspectRatio = kitchen ? '4 / 3' : '16 / 9';
       $('#tc-big').textContent = n.big; $('#tc-small').textContent = n.small;
       $('#tc-clock').textContent = n.mode === 'on' && i.clock ? i.clock : '';
       const on = !!(i.tv && i.tv.on);
-      const pw = $('#tc-pow'); pw.setAttribute('aria-pressed', String(on)); pw.setAttribute('aria-label', on ? 'Turn TV off' : 'Turn TV on'); pw.disabled = tvBusy || tvState !== 'ok' || !i.id;
-      $('#tc-chans').hidden = !(on && i.tv.linked);
+      const pw = $('#tc-pow'); pw.setAttribute('aria-pressed', String(on)); pw.setAttribute('aria-label', on ? 'Turn TV off' : 'Turn TV on'); pw.disabled = tvBusy || tvState !== 'ok' || !i.id; pw.hidden = !kitchen;
+      $('#tc-chans').hidden = !(kitchen && on && i.tv.linked);
       $$('#tc-chans [data-screen]').forEach(b => b.classList.toggle('is-sel', i.tv && b.dataset.screen === i.tv.screen));
       const note = tvState === 'down' ? tvErr : tvState === 'none' ? 'Phosphor TV needs tv_control.py on the relay (see the TV app).' : '';
       $('#tc-note').textContent = note; $('#tc-note').hidden = !note;
@@ -2478,8 +2506,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
      board and lights the relay reports for the real TV, so it shows the same thing, animation and all.
      It gets no relay connection and no sound: a stand-in WebSocket only ever receives what this app hands it. */
   const TV_PAGE = (() => { try { if (/\/phosphor-os\/apps\/home\/$/.test(new URL('./', location.href).pathname)) return new URL('../../tv/', location.href).href; } catch {} return 'https://bgriffie.github.io/phosphor-os/tv/'; })();
-  const TV_W = 1280, TV_H = 720;
-  let mir = null, mirHTML = null;
+  let mirs = {}, mirHTML = null;   // one live frame per TV: 'tv' (living room) and 'crt' (kitchen)
   async function mirrorDoc() {
     if (mirHTML) return mirHTML;
     const r = await fetch(TV_PAGE, { cache: 'no-cache' });
@@ -2492,28 +2519,31 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       'window.WebSocket = M; })();<\/script>');
     return (mirHTML = h);
   }
-  const liveWanted = () => !!(PH.store.get('live') && route() === '/' && !document.hidden && G && G.tv && tvState === 'ok' && tvInfo && tvInfo.tv && tvInfo.tv.on && tvInfo.tv.linked);
-  function mirrorStop() { if (mir) { if (mir.frame) mir.frame.remove(); mir = null; } }
-  async function mirrorSync() {
-    if (!liveWanted()) { mirrorStop(); return; }
-    if (mir) { mirrorFeed(); return; }
-    const m = mir = { sent: {}, frame: null, ready: false };
+  const liveWanted = id => { const i = infoOf(id); return !!(PH.store.get('live') && route() === '/' && !document.hidden && G && G.tvs[id] && tvState === 'ok' && (id === 'crt' || pcState === 'ok') && i && i.tv && i.tv.on && i.tv.linked); };
+  function mirrorStop(id) { const m = mirs[id]; if (m) { if (m.frame) m.frame.remove(); delete mirs[id]; } }
+  function mirrorSync() { for (const id of ['tv', 'crt']) mirrorOne(id); }
+  async function mirrorOne(id) {
+    if (!liveWanted(id)) { mirrorStop(id); return; }
+    if (mirs[id]) { mirrorFeed(id); return; }
+    const m = mirs[id] = { sent: {}, frame: null, ready: false };
     try {
       const doc = await mirrorDoc();
-      if (mir !== m) return;
-      const f = document.createElement('iframe');
+      if (mirs[id] !== m) return;
+      const f = document.createElement('iframe'), T = G.tvs[id];
       f.className = 'tv-live'; f.title = 'What the TV is showing'; f.tabIndex = -1; f.setAttribute('aria-hidden', 'true');
-      f.addEventListener('load', () => { if (mir !== m) return; m.ready = true; mirrorFeed(); placeMirror(); });
+      f.style.width = T.pw + 'px'; f.style.height = T.ph + 'px';
+      f.addEventListener('load', () => { if (mirs[id] !== m) return; m.ready = true; mirrorFeed(id); placeMirror(); });
       f.srcdoc = doc; m.frame = f; $('#tv-layer').appendChild(f); placeMirror();
-    } catch { if (mir === m) mir = { failed: true, sent: {} }; }
+    } catch { if (mirs[id] === m) mirs[id] = { failed: true, sent: {} }; }
   }
   // Hand the frame whatever changed since last time, in the same messages the relay sends the real TV
-  function mirrorFeed() {
-    if (!mir || !mir.ready) return;
-    const w = mir.frame.contentWindow, sock = w && w.__mirror;
+  function mirrorFeed(id) {
+    const m = mirs[id]; if (!m || !m.ready) return;
+    const w = m.frame.contentWindow, sock = w && w.__mirror;
     if (!sock || !sock.onmessage) return;
     const send = d => { try { sock.onmessage({ data: JSON.stringify(d) }); } catch {} };
-    const i = tvInfo, t = i.tv, k = mir.sent, art = i.art || {};
+    const i = infoOf(id), t = i.tv, k = m.sent, art = i.art || {};
+    if (i.shape && k.shape !== i.shape) { send({ shape: i.shape }); k.shape = i.shape; }
     const pj = JSON.stringify(lights);
     if (k.lights !== pj) { send({ lights }); k.lights = pj; }
     const bj = JSON.stringify(i.board || []);
@@ -2529,27 +2559,28 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   const mm = (a, b) => { const c = []; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) c[3 * i + j] = a[3 * i] * b[j] + a[3 * i + 1] * b[3 + j] + a[3 * i + 2] * b[6 + j]; return c; };
   const mv = (m, v) => [m[0] * v[0] + m[1] * v[1] + m[2] * v[2], m[3] * v[0] + m[4] * v[1] + m[5] * v[2], m[6] * v[0] + m[7] * v[1] + m[8] * v[2]];
   const basis = p => { const m = [p[0][0], p[1][0], p[2][0], p[0][1], p[1][1], p[2][1], 1, 1, 1], v = mv(adj(m), [p[3][0], p[3][1], 1]); return mm(m, [v[0], 0, 0, 0, v[1], 0, 0, 0, v[2]]); };
-  function matrixTo(dst) {   // dst: top left, top right, bottom left, bottom right
-    const t = mm(basis(dst), adj(basis([[0, 0], [TV_W, 0], [0, TV_H], [TV_W, TV_H]]))).map((v, _, a) => v / a[8]);
+  function matrixTo(dst, pw, ph) {   // dst: top left, top right, bottom left, bottom right
+    const t = mm(basis(dst), adj(basis([[0, 0], [pw, 0], [0, ph], [pw, ph]]))).map((v, _, a) => v / a[8]);
     return `matrix3d(${t[0]},${t[3]},0,${t[6]},${t[1]},${t[4]},0,${t[7]},0,0,1,0,${t[2]},${t[5]},0,${t[8]})`;
   }
-  let tvQuadOnScreen = null;   // set by draw(): the TV screen's corners on the map, or null when it can't be seen
   function placeMirror() {
-    const f = mir && mir.frame; if (!f) return;
     const view = $('#tv-layer').getBoundingClientRect();
-    if (cardId === 'tv') {
-      const r = $('#tc-mini').getBoundingClientRect();
-      const x = r.left - view.left + 6, y = r.top - view.top + 6, w = r.width - 12, h = r.height - 12;
-      f.style.transform = `translate(${x}px, ${y}px) scale(${w / TV_W}, ${h / TV_H})`; f.hidden = false; f.classList.add('in-card'); return;
+    for (const id in mirs) {
+      const f = mirs[id].frame, T = G.tvs[id]; if (!f || !T) continue;
+      if (cardId === id) {   // in the TV card
+        const r = $('#tc-mini').getBoundingClientRect();
+        const x = r.left - view.left + 6, y = r.top - view.top + 6, w = r.width - 12, h = r.height - 12;
+        f.style.transform = `translate(${x}px, ${y}px) scale(${w / T.pw}, ${h / T.ph})`; f.hidden = false; f.classList.add('in-card'); continue;
+      }
+      f.classList.remove('in-card');
+      const q = T.qs;
+      const area = q ? Math.abs((q[1][0] - q[0][0]) * (q[3][1] - q[0][1]) - (q[3][0] - q[0][0]) * (q[1][1] - q[0][1])) : 0;
+      if (area < 150) { f.hidden = true; continue; }
+      const r = canvas.getBoundingClientRect(), ox = r.left - view.left, oy = r.top - view.top;
+      f.style.transform = matrixTo([q[0], q[1], q[3], q[2]].map(([x, y]) => [x + ox, y + oy]), T.pw, T.ph); f.hidden = false;
     }
-    f.classList.remove('in-card');
-    const q = tvQuadOnScreen;
-    if (!q) { f.hidden = true; return; }
-    const area = Math.abs((q[1][0] - q[0][0]) * (q[3][1] - q[0][1]) - (q[3][0] - q[0][0]) * (q[1][1] - q[0][1]));
-    if (area < 150) { f.hidden = true; return; }
-    const r = canvas.getBoundingClientRect(), ox = r.left - view.left, oy = r.top - view.top;
-    f.style.transform = matrixTo([q[0], q[1], q[3], q[2]].map(([x, y]) => [x + ox, y + oy])); f.hidden = false;
   }
+
 
   /* ---------- Sunlight: where the sun comes in, any day and time of the year ----------
      The home is 501 Wilson Ave, Reno NV, and the big living-room window faces 170° (just east of due south), per Floyd.
@@ -2696,7 +2727,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       box.appendChild(b);
     };
     placeList().forEach(o => add(o.id, o.name, o.id in pins, BULB, o.gone ? 'gone' : ''));
-    add('tv', 'TV', !!tvOf(), TVI, tvBox ? 'moved' : plan.tv ? 'from scan' : 'not placed');
+    add('tv', 'Living room TV', !!tvOf(), TVI, tvBox ? 'moved' : plan.tv ? 'from scan' : 'not placed');
+    add('crt', 'Kitchen TV', !!tvGet('crt'), TVI, crtBox ? 'moved' : fridgeCRT() ? 'on the fridge' : 'not placed');
     Object.keys(plants).forEach((id, i) => add(id, 'Plant ' + (i + 1), true, LEAF));
     if (isPlant(sel) && !plants[sel]) add(sel, 'New plant', false, LEAF);
     add('plant:new', '+ Plant', false, LEAF, 'add one');
@@ -2707,9 +2739,9 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     }
     const s = $('#pl-sel'); s.hidden = sel === null;
     if (sel !== null) {
-      const isTV = sel === 'tv', isP = isPlant(sel), l = lights.find(x => x.id === sel), pin = pins[sel];
-      $('#pl-name').textContent = isTV ? 'TV' : isP ? 'Plant' : l ? l.name : (pin && pin.name) || 'Light';
-      const placed = isTV ? !!tvOf() : isP ? !!plants[sel] : !!pin;
+      const isTV = isTVid(sel), isP = isPlant(sel), l = lights.find(x => x.id === sel), pin = pins[sel];
+      $('#pl-name').textContent = isTV ? TVS[sel].name : isP ? 'Plant' : l ? l.name : (pin && pin.name) || 'Light';
+      const placed = isTV ? !!tvGet(sel) : isP ? !!plants[sel] : !!pin;
       $('#pl-sub').textContent = placed ? 'Drag it, or tap the map to move it' : 'Tap the map where it is';
       $('#pl-dot').style.background = isTV ? '' : css(hsl(l) || [125, 0, 30]);
       $('#pl-remove').hidden = !placed; $('#pl-remove').textContent = isTV ? 'Turn' : 'Remove';
@@ -2718,7 +2750,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       $$('#pl-size [data-s]').forEach(b => b.setAttribute('aria-checked', String(near(+b.dataset.s, ps, 0.05))));
       $$('#pl-kind [data-t]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.t === pk)));
       // height above the floor, floor to ceiling: a light's bulb, a plant's pot, the TV's bottom edge
-      const t = isTV ? tvOf() : null, max = isTV ? CEIL - (G.tv ? G.tv.hgt : 0.6) : CEIL;
+      const t = isTV ? tvGet(sel) : null, max = isTV ? CEIL - (G.tvs[sel] ? G.tvs[sel].hgt : 0.6) : CEIL;
       const y = isTV ? (t ? t.y[0] : 0.8) : isP ? (q ? q.y || 0 : lastPlantY) : pin ? pin.y : lastH;
       const r = $('#pl-y'); r.max = max.toFixed(2); if (!heightDrag) r.value = y; $('#pl-yv').textContent = heightLabel(+r.value, max);
     }
@@ -2728,7 +2760,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     const el = $('#pl-hint'); el.textContent = '';
     if (sel === null) { el.append('Pick a light below, then tap where it is on the map.'); return; }
     const b = document.createElement('b');
-    b.textContent = sel === 'tv' ? 'the TV' : isPlant(sel) ? 'the plant' : (lights.find(x => x.id === sel) || pins[sel] || { name: 'it' }).name;
+    b.textContent = isTVid(sel) ? 'the ' + TVS[sel].name.replace(' TV', ' TV').toLowerCase().replace('tv', 'TV') : isPlant(sel) ? 'the plant' : (lights.find(x => x.id === sel) || pins[sel] || { name: 'it' }).name;
     el.append('Tap the map to put ', b, ' there, or drag it.');
   }
   $('#pl-chips').addEventListener('click', e => {
@@ -2750,7 +2782,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   let heightDrag = false;
   const heightLabel = (y, max) => y < 0.01 ? 'Floor' : y > max - 0.01 ? 'Ceiling' : ftin(y);
   function setHeight(y) {
-    if (sel === 'tv') { const t = tvOf(); if (!t) return; tvBox = { ...t, y: [+y.toFixed(2), +(y + t.y[1] - t.y[0]).toFixed(2)] }; buildTV(); }
+    if (isTVid(sel)) { const t = tvGet(sel); if (!t) return; tvPut(sel, { ...t, y: [+y.toFixed(2), +(y + t.y[1] - t.y[0]).toFixed(2)] }); }
     else if (isPlant(sel)) { lastPlantY = y; if (plants[sel]) plants[sel].y = +y.toFixed(2); }
     else { lastH = y; if (pins[sel]) pins[sel].y = +y.toFixed(2); }
     $('#pl-yv').textContent = heightLabel(y, +$('#pl-y').max); req();
@@ -2758,7 +2790,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   $('#pl-y').addEventListener('input', e => { heightDrag = true; setHeight(+e.target.value); });
   $('#pl-y').addEventListener('change', e => { heightDrag = false; setHeight(+e.target.value); savePins(); renderPlace(); });
   $('#pl-remove').addEventListener('click', () => {
-    if (sel === 'tv') { const t = tvOf(); if (!t) return; tvBox = { ...t, a: (t.a + Math.PI / 2) % (Math.PI * 2), face: undefined }; buildTV(); savePins(); req(); return; }
+    if (isTVid(sel)) { const t = tvGet(sel); if (!t) return; tvPut(sel, { ...t, a: (t.a + Math.PI / 2) % (Math.PI * 2), face: undefined }); savePins(); req(); return; }
     if (isPlant(sel)) { delete plants[sel]; plantCache.delete(sel); sel = null; savePins(); renderPlace(); req(); return; }
     delete pins[sel]; savePins(); renderPlace(); req();
   });
@@ -2836,18 +2868,18 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     try {
       const p = HomeScan.parse(await f.text());
       if (!await PH.confirm(`Found ${p.floors.length} rooms, ${p.walls.length} wall pieces and ${(p.open || []).length} doors and windows. Use this scan? Lights you placed may need moving.`, { title: 'New scan', ok: 'Use it' })) return;
-      plan = p; save('plan', p); tvBox = null; rooms = {}; save('rooms', rooms); savePins(); build(); fit(); save('cam', cam); render();
+      plan = p; save('plan', p); tvBox = crtBox = null; rooms = {}; save('rooms', rooms); savePins(); build(); fit(); save('cam', cam); render();
       PH.toast('New scan loaded.'); PH.go('/');
     } catch (err) { PH.toast(err.message || 'That file isn\'t a room scan.', 'error'); }
   });
   $('#scan-reset').addEventListener('click', async () => {
     if (!await PH.confirm('Go back to the scan this app came with? Room names reset too.', { title: 'Original scan', ok: 'Use original' })) return;
-    plan = BUILT_PLAN; save('plan', null); tvBox = null; rooms = {}; save('rooms', rooms); savePins(); build(); fit(); render();
+    plan = BUILT_PLAN; save('plan', null); tvBox = crtBox = null; rooms = {}; save('rooms', rooms); savePins(); build(); fit(); render();
   });
-  $('#export').addEventListener('click', () => PH.exportFile('home-map-layout.json', JSON.stringify({ app: 'home-map', pins, plants, tv: tvBox, rooms, plan: load('plan', null) || undefined }, null, 2), 'application/json'));
+  $('#export').addEventListener('click', () => PH.exportFile('home-map-layout.json', JSON.stringify({ app: 'home-map', pins, plants, tv: tvBox, crt: crtBox, rooms, plan: load('plan', null) || undefined }, null, 2), 'application/json'));
   $('#erase').addEventListener('click', async () => {
-    if (!await PH.confirm('Take every light off the map and put the TV back where the scan found it?', { title: 'Clear map', ok: 'Clear', danger: true })) return;
-    pins = {}; tvBox = null; savePins(); build(); render(); PH.toast('Map cleared.', 'warn');
+    if (!await PH.confirm('Take every light off the map and put both TVs back where they started?', { title: 'Clear map', ok: 'Clear', danger: true })) return;
+    pins = {}; tvBox = crtBox = null; savePins(); build(); render(); PH.toast('Map cleared.', 'warn');
   });
 
   /* ---------- Page changes, polling ---------- */
@@ -2864,12 +2896,12 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     partyTick();
     const live = ['/', '/place'].includes(route());
     if (document.hidden || !ready() || !live) { render(); return; }
-    refreshLights(); refreshParty(); if (tvOf()) refreshTV();
+    refreshLights(); refreshParty(); if (tvOf() || tvGet('crt')) refreshTV();
     pollT = setInterval(() => {
       if (dragging || gest) return;
       refreshLights(); if (partyHas !== false || ++tick % 12 === 0) refreshParty();
       // the TV every other time, or every time while its card is open
-      if (tvOf() && tvState !== 'none' && (cardId === 'tv' || mir || ++tick % 2 === 0)) refreshTV();
+      if ((tvOf() || tvGet('crt')) && tvState !== 'none' && (isTVid(cardId) || Object.keys(mirs).length || ++tick % 2 === 0)) refreshTV();
     }, 5000);
   }
   PH.on('route', () => { place(); sync(); });
