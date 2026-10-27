@@ -749,7 +749,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     /* The map fills the screen; cards float over its bottom edge */
     .map-view { padding: 0; }
     .map-wrap { position: absolute; inset: 0; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-    .map-wrap canvas { display: block; width: 100%; height: 100%; }
+    .map-stack, .map-stack canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
     .over { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: var(--sp-2); pointer-events: none; }
     .over > * { pointer-events: auto; }
     .over-top { position: absolute; left: 0; right: 0; top: 0; display: flex; flex-direction: column; gap: var(--sp-2); pointer-events: none; }
@@ -856,7 +856,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.3</span>
+      <span class="app-meta">v1.4</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -865,7 +865,10 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view fill map-view" data-route="/" data-title="Home">
         <div class="map-wrap" id="map-wrap">
-          <canvas id="map" role="img" aria-label="3D map of your home. Drag to turn, pinch to zoom, tap a light to switch it."></canvas>
+          <div class="map-stack" id="map-stack">
+            <canvas id="gl" aria-hidden="true"></canvas>
+            <canvas id="map" role="img" aria-label="3D map of your home. Drag to turn, pinch to zoom, tap a light to switch it."></canvas>
+          </div>
         </div>
         <div class="over-top">
           <p class="strip warn" id="map-note" hidden></p>
@@ -932,15 +935,19 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
               <div class="c-who"><div class="who-t" id="pl-name">—</div><div class="who-s" id="pl-sub">Tap the map to put it there</div></div>
               <button class="rm-b" id="pl-remove" hidden>Remove</button>
             </div>
+            <div class="row" id="pl-kind" role="radiogroup" aria-label="Kind of plant" style="--n:3" hidden>
+              <button class="rm-b" role="radio" data-t="snake">Snake</button>
+              <button class="rm-b" role="radio" data-t="monstera">Monstera</button>
+              <button class="rm-b" role="radio" data-t="palm">Palm</button>
+            </div>
             <div class="row" id="pl-size" role="radiogroup" aria-label="Size" style="--n:3" hidden>
               <button class="rm-b" role="radio" data-s="0.5">Small</button>
               <button class="rm-b" role="radio" data-s="1">Medium</button>
               <button class="rm-b" role="radio" data-s="1.6">Tall</button>
             </div>
-            <div class="row" id="pl-height" role="radiogroup" aria-label="Height" style="--n:3">
-              <button class="rm-b" role="radio" data-h="2.3">Ceiling</button>
-              <button class="rm-b" role="radio" data-h="1.3">Lamp</button>
-              <button class="rm-b" role="radio" data-h="0.4">Low</button>
+            <div class="dim" id="pl-height">
+              <input type="range" class="li-range" id="pl-y" min="0" max="2.5" step="0.02" aria-label="Height from the floor">
+              <span class="readout" id="pl-yv">0′</span>
             </div>
           </section>
           <div class="card" style="padding:var(--sp-2)">
@@ -987,7 +994,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.3</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.4</span></a>
           </div>
         </div>
       </section>
@@ -1413,7 +1420,7 @@ const HomeScan = (() => {
 })();
 if (typeof module !== 'undefined') module.exports = HomeScan;
 
-const BUILT_PLAN = {"walls":[{"c":[-2.14,-0.88],"len":0.17,"wid":0.06,"a":2.356,"y":[0,2.56]},{"c":[-4.52,-1.88],"len":2.14,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[2.8,2.91],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.29,1.17],"len":0.5,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.42,-0.08],"len":1.44,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.24,0.83],"len":0.1,"wid":0.08,"a":-1.036,"y":[0,2.56]},{"c":[-1.62,-0.23],"len":0.98,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-2.1,-0.6],"len":0.64,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.69,1.37],"len":0.89,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.63,1.34],"len":3.24,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,-0.18],"len":0.19,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.2,-1.88],"len":1.94,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-0.86],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.14,2.91],"len":2.08,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.58,-0.08],"len":0.54,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-3.39,-0.23],"len":2.58,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,0.36],"len":0.9,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.3,-1.49],"len":2.72,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.93,2.91],"len":3.51,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,1.13],"len":0.48,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,2.11],"len":1.49,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,0.39],"len":0.95,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,-1.47],"len":2.77,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.95,-2.9],"len":2.5,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.6,-2.9],"len":0.59,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[2.8,-2.9],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.7,0.86],"len":0.84,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[4.64,0],"len":5.91,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,1.86],"len":2,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-2.9],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.28,0.86],"len":1.14,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.52,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-2.1,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[0.3,-0.08],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-2.1,-0.23],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-4.63,-0.23],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-2.18,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[0.32,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[4.64,-2.9],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-2.2,-0.86],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-1.18,2.91],"len":0.1,"wid":0.1,"a":0,"y":[0,2.56],"j":1},{"c":[0.9,2.91],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[0.88,-0.07],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56],"j":1},{"c":[0.91,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[0.88,0.88],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56],"j":1},{"c":[-0.28,0.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[-1.18,0.84],"len":0.14,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-1.16,-0.07],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56],"j":1},{"c":[-1.18,-0.23],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-1.16,1.38],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56],"j":1},{"c":[-4.52,-2.9],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-4.63,2.91],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[4.64,2.91],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-0.29,1.37],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-4.63,-0.545],"len":0.73,"wid":0.1,"a":1.571,"y":[0,2.56]}],"open":[{"c":[-4.52,-1.39],"len":0.75,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[-0.7,-0.08],"len":0.62,"wid":0.01,"a":0,"y":[0,2.08],"k":"door"},{"c":[-3.64,-0.23],"len":0.7,"wid":0.01,"a":0,"y":[0,2.15],"k":"door"},{"c":[-1.18,0.74],"len":0.04,"wid":0.01,"a":1.571,"y":[0,2.09],"k":"door"},{"c":[-1.18,0.34],"len":0.73,"wid":0.01,"a":1.571,"y":[0,2.13],"k":"door"},{"c":[0.9,-1.11],"len":1.65,"wid":0.01,"a":1.571,"y":[0,2.17],"k":"closed"},{"c":[4.64,-2.34],"len":0.91,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[0.13,0.86],"len":0.71,"wid":0.01,"a":0,"y":[0,2.09],"k":"door"},{"c":[-4.52,-2.45],"len":0.72,"wid":0.01,"a":1.571,"y":[0.73,2.21],"k":"window"},{"c":[2.8,2.91],"len":2.31,"wid":0.01,"a":0,"y":[0.62,2.23],"k":"window"},{"c":[-4.63,0.99],"len":0.82,"wid":0.01,"a":1.571,"y":[0.74,2.14],"k":"window"},{"c":[0,2.91],"len":0.68,"wid":0.01,"a":0,"y":[1.21,2.12],"k":"window"},{"c":[-2.06,2.91],"len":0.84,"wid":0.01,"a":0,"y":[0.79,2.15],"k":"window"},{"c":[4.64,-0.52],"len":1.21,"wid":0.01,"a":1.571,"y":[0.76,2.11],"k":"window"},{"c":[-2.2,-1.88],"len":1.5,"wid":0.1,"a":1.571,"y":[0,2.25],"k":"arch"}],"floors":[{"name":"Living room","pts":[[4.64,-2.9],[4.64,2.91],[0.9,2.91],[0.9,-2.9]]},{"name":"","pts":[[-2.2,-0.86],[-4.52,-0.86],[-4.52,-2.9],[-2.2,-2.9]]},{"name":"Kitchen","pts":[[-2.2,-0.86],[-2.2,-2.9],[0.3,-2.9],[0.3,-0.08],[-1.18,-0.08],[-1.18,-0.23],[-2.1,-0.23],[-2.1,-0.86]]},{"name":"Closet","pts":[[0.9,-2.9],[0.3,-2.9],[0.3,-0.08],[0.9,-0.08]]},{"name":"Bedroom","pts":[[-4.63,-0.23],[-4.63,2.91],[-1.18,2.91],[-1.18,-0.23]]},{"name":"Hallway","pts":[[-1.18,-0.08],[0.9,-0.08],[0.9,0.86],[-1.18,0.86]]},{"name":"","pts":[[-1.18,0.86],[-1.18,1.37],[-0.29,1.37],[-0.29,0.86]]},{"name":"Bathroom","pts":[[-0.29,0.86],[0.9,0.86],[0.9,2.91],[-1.18,2.91],[-1.18,1.37],[-0.29,1.37]]}],"items":[{"c":[-1.65,-0.62],"len":0.89,"wid":0.8,"a":1.571,"y":[0.04,1.73],"n":"refrigerator"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.04,0.92],"n":"oven"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.92,1.02],"n":"stove"},{"c":[0.53,1.89],"len":0.64,"wid":0.49,"a":1.571,"y":[0.04,0.84],"n":"storage_cabinet_mid1"},{"c":[-0.1,-1.44],"len":0.49,"wid":0.43,"a":1.571,"y":[0.76,0.98],"n":"sink"},{"c":[0.53,1.91],"len":0.53,"wid":0.41,"a":1.571,"y":[0.53,0.84],"n":"sink"},{"c":[0.44,2.53],"len":0.67,"wid":0.42,"a":0,"y":[0.06,0.84],"n":"toilet"},{"c":[0.04,-0.64],"len":0.77,"wid":0.44,"a":1.571,"y":[1.53,2.37],"n":"storage_cabinet_mid2"},{"c":[-0.66,-2.6],"len":1.12,"wid":0.42,"a":0,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-1.6,-2.58],"len":0.77,"wid":0.42,"a":0,"y":[1.97,2.47],"n":"storage_cabinet_low2"},{"c":[0.06,-1.38],"len":0.7,"wid":0.39,"a":1.571,"y":[2.01,2.37],"n":"storage_cabinet_low2"},{"c":[-0.68,2.12],"len":1.44,"wid":0.73,"a":1.571,"y":[0.06,0.49],"n":"bathtub"},{"c":[0.69,2.59],"len":0.63,"wid":0.39,"a":1.571,"y":[1.3,1.98],"n":"storage_cabinet_low1"},{"c":[0.09,-2.3],"len":1.13,"wid":0.35,"a":1.571,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-0.08,-1.47],"len":2.51,"wid":0.67,"a":1.571,"y":[0.04,0.98],"n":"storage_cabinet_mid5"},{"c":[-3.37,1.76],"len":2.26,"wid":1.59,"a":1.571,"y":[0.04,0.74],"n":"bed"},{"c":[1.4,1.66],"len":1.03,"wid":0.59,"a":1.571,"y":[0.04,0.43],"n":"table_other_rect"},{"c":[-3.3,-2.39],"len":0.81,"wid":0.8,"a":0.305,"y":[0.04,1.1],"n":"table_dining_elliptic"},{"c":[3.55,-2.63],"len":0.49,"wid":0.41,"a":0,"y":[0.04,0.72],"n":"table_other_rect"},{"c":[3.19,2.61],"len":0.85,"wid":0.5,"a":0,"y":[0.04,1.65],"n":"storage_shelf"},{"c":[-2.33,2.58],"len":0.6,"wid":0.47,"a":0,"y":[0.04,0.62],"n":"table_other_rect"},{"c":[3.26,1.46],"len":1.19,"wid":0.74,"a":1.571,"y":[0.04,0.54],"n":"table_dining_rect"},{"c":[2.32,2.59],"len":0.98,"wid":0.63,"a":0,"y":[0.04,0.82],"n":"storage_shelf"},{"c":[-2.61,-2.27],"len":0.4,"wid":0.36,"a":0,"y":[0.04,0.72],"n":"chair_stool_four_no_no"},{"c":[1.95,-2.04],"len":0.6,"wid":0.53,"a":0,"y":[0.06,0.85],"n":"chair_dining_four_back_no"},{"c":[4.14,0.68],"len":0.55,"wid":0.5,"a":0,"y":[0.06,0.46],"n":"table_dining_rect"},{"c":[1.98,-2.61],"len":0.7,"wid":0.39,"a":0,"y":[0.06,0.82],"n":"table_other_rect"},{"c":[3.97,1.24],"len":3.33,"wid":1.3,"a":1.571,"y":[0.04,0.79],"n":"sofa_rect"},{"c":[-1.69,2.22],"len":0.75,"wid":0.56,"a":0.797,"y":[0.07,0.9],"n":"chair_other_four_back_no"},{"c":[2.97,-2.1],"len":0.41,"wid":0.38,"a":1.571,"y":[0.06,0.55],"n":"chair_other_four_back_no"},{"c":[2.11,-2.08],"len":2.1,"wid":1.52,"a":0,"y":[0.04,0.82],"n":"table_other_rect"},{"c":[3.63,0.01],"len":1.92,"wid":1.87,"a":1.571,"y":[0.04,0.79],"n":"sofa_single"},{"c":[2.11,-1.4],"len":0.65,"wid":0.59,"a":1.571,"y":[0.04,0.89],"n":"chair_dining_four_back_no"},{"c":[1.26,-2.33],"len":0.92,"wid":0.75,"a":1.571,"y":[0.06,0.82],"n":"table_other_rect"}],"tv":{"c":[1.06,1.69],"len":1.06,"wid":0.1,"a":1.57,"y":[0.85,1.46]},"v":1,"at":"2026-10-27","edited":true};
+const BUILT_PLAN = {"walls":[{"c":[-2.14,-0.88],"len":0.17,"wid":0.06,"a":2.356,"y":[0,2.56]},{"c":[-4.52,-1.88],"len":2.14,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[2.8,2.91],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.29,1.17],"len":0.5,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.42,-0.08],"len":1.44,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.24,0.83],"len":0.1,"wid":0.08,"a":-1.036,"y":[0,2.56]},{"c":[-1.62,-0.23],"len":0.98,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-2.1,-0.6],"len":0.64,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.69,1.37],"len":0.89,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.63,1.34],"len":3.24,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,-0.18],"len":0.19,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.2,-1.88],"len":1.94,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-0.86],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.14,2.91],"len":2.08,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.58,-0.08],"len":0.54,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-3.39,-0.23],"len":2.58,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,0.36],"len":0.9,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.3,-1.49],"len":2.72,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.93,2.91],"len":3.51,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,1.13],"len":0.48,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,2.11],"len":1.49,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,0.39],"len":0.95,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,-1.47],"len":2.77,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.95,-2.9],"len":2.5,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.6,-2.9],"len":0.59,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[2.8,-2.9],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.7,0.86],"len":0.84,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[4.64,0],"len":5.91,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,1.86],"len":2,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-2.9],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.28,0.86],"len":1.14,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.52,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-2.1,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[0.3,-0.08],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-2.1,-0.23],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-4.63,-0.23],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-2.18,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[0.32,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[4.64,-2.9],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-2.2,-0.86],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-1.18,2.91],"len":0.1,"wid":0.1,"a":0,"y":[0,2.56],"j":1},{"c":[0.9,2.91],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[0.88,-0.07],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56],"j":1},{"c":[0.91,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[0.88,0.88],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56],"j":1},{"c":[-0.28,0.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[-1.18,0.84],"len":0.14,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-1.16,-0.07],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56],"j":1},{"c":[-1.18,-0.23],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-1.16,1.38],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56],"j":1},{"c":[-4.52,-2.9],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-4.63,2.91],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[4.64,2.91],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-0.29,1.37],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-4.63,-0.545],"len":0.73,"wid":0.1,"a":1.571,"y":[0,2.56]}],"open":[{"c":[-4.52,-1.39],"len":0.75,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[-0.7,-0.08],"len":0.62,"wid":0.01,"a":0,"y":[0,2.08],"k":"door"},{"c":[-3.64,-0.23],"len":0.7,"wid":0.01,"a":0,"y":[0,2.15],"k":"door"},{"c":[-1.18,0.74],"len":0.04,"wid":0.01,"a":1.571,"y":[0,2.09],"k":"door"},{"c":[-1.18,0.34],"len":0.73,"wid":0.01,"a":1.571,"y":[0,2.13],"k":"door"},{"c":[0.9,-1.11],"len":1.65,"wid":0.01,"a":1.571,"y":[0,2.17],"k":"closed"},{"c":[4.64,-2.34],"len":0.91,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[0.13,0.86],"len":0.71,"wid":0.01,"a":0,"y":[0,2.09],"k":"door"},{"c":[-4.52,-2.45],"len":0.72,"wid":0.01,"a":1.571,"y":[0.73,2.21],"k":"window"},{"c":[2.8,2.91],"len":2.31,"wid":0.01,"a":0,"y":[0.62,2.23],"k":"window"},{"c":[-4.63,0.99],"len":0.82,"wid":0.01,"a":1.571,"y":[0.74,2.14],"k":"window"},{"c":[0,2.91],"len":0.68,"wid":0.01,"a":0,"y":[1.21,2.12],"k":"window"},{"c":[-2.06,2.91],"len":0.84,"wid":0.01,"a":0,"y":[0.79,2.15],"k":"window"},{"c":[4.64,-0.52],"len":1.21,"wid":0.01,"a":1.571,"y":[0.76,2.11],"k":"window"},{"c":[-2.2,-1.88],"len":1.5,"wid":0.1,"a":1.571,"y":[0,2.25],"k":"arch"}],"floors":[{"name":"Living room","pts":[[4.64,-2.9],[4.64,2.91],[0.9,2.91],[0.9,-2.9]]},{"name":"","pts":[[-2.2,-0.86],[-4.52,-0.86],[-4.52,-2.9],[-2.2,-2.9]]},{"name":"Kitchen","pts":[[-2.2,-0.86],[-2.2,-2.9],[0.3,-2.9],[0.3,-0.08],[-1.18,-0.08],[-1.18,-0.23],[-2.1,-0.23],[-2.1,-0.86]]},{"name":"Closet","pts":[[0.9,-2.9],[0.3,-2.9],[0.3,-0.08],[0.9,-0.08]]},{"name":"Bedroom","pts":[[-4.63,-0.23],[-4.63,2.91],[-1.18,2.91],[-1.18,-0.23]]},{"name":"Hallway","pts":[[-1.18,-0.08],[0.9,-0.08],[0.9,0.86],[-1.18,0.86]]},{"name":"","pts":[[-1.18,0.86],[-1.18,1.37],[-0.29,1.37],[-0.29,0.86]]},{"name":"Bathroom","pts":[[-0.29,0.86],[0.9,0.86],[0.9,2.91],[-1.18,2.91],[-1.18,1.37],[-0.29,1.37]]}],"items":[{"c":[-1.65,-0.62],"len":0.89,"wid":0.8,"a":1.571,"y":[0.04,1.73],"n":"refrigerator"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.04,0.92],"n":"oven"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.92,1.02],"n":"stove"},{"c":[0.53,1.89],"len":0.64,"wid":0.49,"a":1.571,"y":[0.04,0.84],"n":"storage_cabinet_mid1"},{"c":[-0.1,-1.44],"len":0.49,"wid":0.43,"a":1.571,"y":[0.76,0.98],"n":"sink"},{"c":[0.53,1.91],"len":0.53,"wid":0.41,"a":1.571,"y":[0.53,0.84],"n":"sink"},{"c":[0.44,2.53],"len":0.67,"wid":0.42,"a":0,"y":[0.06,0.84],"n":"toilet"},{"c":[0.04,-0.64],"len":0.77,"wid":0.44,"a":1.571,"y":[1.53,2.37],"n":"storage_cabinet_mid2"},{"c":[-0.66,-2.6],"len":1.12,"wid":0.42,"a":0,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-1.6,-2.58],"len":0.77,"wid":0.42,"a":0,"y":[1.97,2.47],"n":"storage_cabinet_low2"},{"c":[0.06,-1.38],"len":0.7,"wid":0.39,"a":1.571,"y":[2.01,2.37],"n":"storage_cabinet_low2"},{"c":[-0.68,2.12],"len":1.44,"wid":0.73,"a":1.571,"y":[0.06,0.49],"n":"bathtub"},{"c":[0.69,2.59],"len":0.63,"wid":0.39,"a":1.571,"y":[1.3,1.98],"n":"storage_cabinet_low1"},{"c":[0.09,-2.3],"len":1.13,"wid":0.35,"a":1.571,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-0.08,-1.47],"len":2.51,"wid":0.67,"a":1.571,"y":[0.04,0.98],"n":"storage_cabinet_mid5"},{"c":[-3.37,1.76],"len":2.26,"wid":1.59,"a":1.571,"y":[0.04,0.74],"n":"bed"},{"c":[1.4,1.66],"len":1.03,"wid":0.59,"a":1.571,"y":[0.04,0.43],"n":"table_other_rect"},{"c":[-3.3,-2.39],"len":0.81,"wid":0.8,"a":0.305,"y":[0.04,1.1],"n":"table_dining_elliptic"},{"c":[3.55,-2.63],"len":0.49,"wid":0.41,"a":0,"y":[0.04,0.72],"n":"table_other_rect"},{"c":[3.19,2.61],"len":0.85,"wid":0.5,"a":0,"y":[0.04,1.65],"n":"storage_shelf"},{"c":[-2.33,2.58],"len":0.6,"wid":0.47,"a":0,"y":[0.04,0.62],"n":"table_other_rect"},{"c":[3.26,1.46],"len":1.19,"wid":0.74,"a":1.571,"y":[0.04,0.54],"n":"table_dining_rect"},{"c":[2.32,2.59],"len":0.98,"wid":0.63,"a":0,"y":[0.04,0.82],"n":"storage_shelf"},{"c":[-2.61,-2.27],"len":0.4,"wid":0.36,"a":0,"y":[0.04,0.72],"n":"chair_stool_four_no_no"},{"c":[1.95,-2.04],"len":0.6,"wid":0.53,"a":0,"y":[0.06,0.85],"n":"chair_dining_four_back_no"},{"c":[4.14,0.68],"len":0.55,"wid":0.5,"a":0,"y":[0.06,0.46],"n":"table_dining_rect"},{"c":[1.98,-2.61],"len":0.7,"wid":0.39,"a":0,"y":[0.06,0.82],"n":"table_other_rect"},{"c":[4.16,1.24],"len":3.33,"wid":0.92,"a":1.571,"y":[0.04,0.79],"n":"sofa_rect"},{"c":[-1.69,2.22],"len":0.75,"wid":0.56,"a":0.797,"y":[0.07,0.9],"n":"chair_other_four_back_no"},{"c":[2.97,-2.1],"len":0.41,"wid":0.38,"a":1.571,"y":[0.06,0.55],"n":"chair_other_four_back_no"},{"c":[2.11,-2.08],"len":2.1,"wid":1.52,"a":0,"y":[0.04,0.82],"n":"table_other_rect"},{"c":[2.36,-0.5],"len":1.92,"wid":0.9,"a":0,"y":[0.04,0.79],"n":"sofa_single"},{"c":[2.11,-1.4],"len":0.65,"wid":0.59,"a":1.571,"y":[0.04,0.89],"n":"chair_dining_four_back_no"},{"c":[1.26,-2.33],"len":0.92,"wid":0.75,"a":1.571,"y":[0.06,0.82],"n":"table_other_rect"}],"tv":{"c":[1.06,1.69],"len":1.06,"wid":0.1,"a":1.57,"y":[0.85,1.46]},"v":1,"at":"2026-10-27","edited":true};
 /* Home Map: a light 3D outline of Floyd's home, made from a Polycam room scan (src/scan.js),
    with the Kasa lights and the TV on it. Lights and TV go through the same home relay as
    Kasa Lights and Phosphor TV (kasa_bridge.py, Tailscale, the same link and key). */
@@ -1574,9 +1581,9 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     f([P(L, -Wd, b.y0), P(L, Wd, b.y0), P(L, Wd, b.y1), P(L, -Wd, b.y1)], [dx, 0, dz], 'u+');
   }
   /* All wall pieces as one solid: drawn on a 2 cm grid in height bands, so walls that touch or overlap become one
-     body with no seams or clipping. Faces are filled in chunks (for depth sorting) and only the real outline is stroked. */
+     body with no seams or clipping. Each flat face becomes a few rectangles, and only the real outline gets edges. */
   function wallMesh(pieces) {
-    const S = 0.02, CH = 50, out = [];
+    const S = 0.02, CH = 4096, out = [];
     if (!pieces.length) return out;
     let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
     for (const b of pieces) { const r = Math.hypot(b.len, b.wid) / 2 + S; x0 = Math.min(x0, b.c[0] - r); x1 = Math.max(x1, b.c[0] + r); z0 = Math.min(z0, b.c[1] - r); z1 = Math.max(z1, b.c[1] + r); }
@@ -1708,7 +1715,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   const inPoly = (x, z, p) => { let k = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) k = !k; } return k; };
   function build() {
     const cut = CUT[PH.store.get('walls')] || 1.3;
-    const boxes = [], frames = [], doors = [], faces = [], walls = [];
+    const boxes = [], frames = [], doors = [], faces = [], walls = [], blockers = [];
     const ops = (plan.open || []).filter(o => o.len > 0.15);
     const wallSegs = [];
     for (const w of solidWalls()) {
@@ -1731,7 +1738,10 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
         cuts.push({ u0, u1, o });
       }
       cuts.sort((a, b) => a.u0 - b.u0);
-      const piece = (u0, u1, y0, y1) => { y1 = Math.min(y1, cut); if (u1 - u0 < 0.005 || y1 - y0 < 0.01) return; const um = (u0 + u1) / 2;
+      const piece = (u0, u1, y0, y1) => {
+        // wall that stands on the floor stops the bulbs' light, whatever height the walls are drawn at
+        if (y0 < 0.3 && y1 > 1 && u1 - u0 > 0.02) blockers.push([w.c[0] + dx * u0, w.c[1] + dz * u0, w.c[0] + dx * u1, w.c[1] + dz * u1]);
+        y1 = Math.min(y1, cut); if (u1 - u0 < 0.005 || y1 - y0 < 0.01) return; const um = (u0 + u1) / 2;
         walls.push({ c: [w.c[0] + dx * um, w.c[1] + dz * um], len: u1 - u0, wid: w.wid, a: w.a, y0, y1 }); };
       let at = -L;
       for (const k of cuts) {
@@ -1756,37 +1766,36 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     }
     const fm = furnMode();
     if (fm !== 'off') for (const it of plan.items || []) { if (fm === 'main' && !mainPiece(it)) continue; const y1 = Math.min(it.y[1], Math.max(cut, 0.9)); if (y1 - it.y[0] > 0.02 && it.y[0] < Math.max(cut, 0.9)) boxes.push({ c: it.c, len: it.len, wid: it.wid, a: it.a, y0: it.y[0], y1, kind: 'item' }); }
-    for (const id in plants) { const q = plants[id], w = 0.16 + q.s * 0.08; boxes.push({ c: [q.x, q.z], len: w, wid: w, a: 0, y0: 0, y1: Math.min(0.12 + q.s * 0.15, 0.4), kind: 'pot' }); }
-    const tv = tvOf();
-    let tvG = null;
-    if (tv) {
-      // drawn a bit bigger than the scan (Floyd), 16:9, standing on the same spot
-      const len = Math.max(tv.len * TV_GROW, 0.8), hgt = len * 9 / 16;
-      const b = { c: tv.c, len, wid: Math.max(tv.wid, 0.06), a: tv.a, y0: tv.y[0], y1: tv.y[0] + hgt, kind: 'tv' };
-      // the screen faces away from the nearest wall
-      const nx = -Math.sin(tv.a), nz = Math.cos(tv.a);
-      const near = (x, z) => Math.min(...wallSegs.map(([ax, az, bx, bz]) => { const vx = bx - ax, vz = bz - az, t = clamp(((x - ax) * vx + (z - az) * vz) / (vx * vx + vz * vz || 1), 0, 1); return Math.hypot(x - ax - vx * t, z - az - vz * t); }));
-      const side = tv.face || (near(tv.c[0] + nx * 0.3, tv.c[1] + nz * 0.3) >= near(tv.c[0] - nx * 0.3, tv.c[1] - nz * 0.3) ? 'v+' : 'v-');
-      const n0 = faces.length; boxFaces(b, faces);
-      faces.slice(n0).forEach(f => { if (f.side === side || f.side === 'top') f.screen = true; });
-      // the screen's corners as the viewer sees them: top left, top right, bottom right, bottom left
-      const sg = side === 'v+' ? 1 : -1, fx = nx * sg, fz = nz * sg, rx = fz, rz = -fx, L = len / 2, off = b.wid / 2 + 0.005;
-      const fc = [tv.c[0] + fx * off, tv.c[1] + fz * off], Q = (u, y) => [fc[0] + rx * u, y, fc[1] + rz * u];
-      tvG = { c: [tv.c[0], (b.y0 + b.y1) / 2, tv.c[1]], side, n: [fx, 0, fz], quad: [Q(-L, b.y1), Q(L, b.y1), Q(L, b.y0), Q(-L, b.y0)] };
-    }
     boxes.forEach(b => boxFaces(b, faces));
     faces.push(...wallMesh(walls));
-    const floors = plan.floors.map((f, i) => ({ i, pts: f.pts, p3: f.pts.map(p => [p[0], 0, p[1]]), c: centroid(f.pts) }));
+    const floors = plan.floors.map((f, i) => ({ i, pts: f.pts, c: centroid(f.pts) }));
     let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
     plan.floors.forEach(f => f.pts.forEach(([x, z]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }));
     if (x0 > x1) { x0 = z0 = -3; x1 = z1 = 3; }
-    G = { faces, frames, doors, floors, tv: tvG, bounds: [x0, x1, z0, z1], cut };
+    G = { faces, frames, doors, floors, walls, wallSegs, blockers, bounds: [x0, x1, z0, z1], cut, ver: (G ? G.ver : 0) + 1 };
+    buildTV(); glStatic();
+  }
+  // The TV: drawn a bit bigger than the scan (Floyd), 16:9, at its own height, the screen facing away from the nearest wall
+  function buildTV() {
+    const tv = tvOf(); G.tv = null;
+    if (!tv) return;
+    const len = Math.max(tv.len * TV_GROW, 0.8), hgt = len * 9 / 16;
+    const b = { c: tv.c, len, wid: Math.max(tv.wid, 0.06), a: tv.a, y0: tv.y[0], y1: tv.y[0] + hgt, kind: 'tv' };
+    const nx = -Math.sin(tv.a), nz = Math.cos(tv.a);
+    const near = (x, z) => Math.min(...G.wallSegs.map(([ax, az, bx, bz]) => { const vx = bx - ax, vz = bz - az, t = clamp(((x - ax) * vx + (z - az) * vz) / (vx * vx + vz * vz || 1), 0, 1); return Math.hypot(x - ax - vx * t, z - az - vz * t); }));
+    const side = tv.face || (near(tv.c[0] + nx * 0.3, tv.c[1] + nz * 0.3) >= near(tv.c[0] - nx * 0.3, tv.c[1] - nz * 0.3) ? 'v+' : 'v-');
+    const faces = []; boxFaces(b, faces);
+    faces.forEach(f => { if (f.side === side || f.side === 'top') f.screen = true; });
+    // the screen's corners as the viewer sees them: top left, top right, bottom right, bottom left
+    const sg = side === 'v+' ? 1 : -1, fx = nx * sg, fz = nz * sg, rx = fz, rz = -fx, L = len / 2, off = b.wid / 2 + 0.005;
+    const fc = [tv.c[0] + fx * off, tv.c[1] + fz * off], Q = (u, y) => [fc[0] + rx * u, y, fc[1] + rz * u];
+    G.tv = { c: [tv.c[0], (b.y0 + b.y1) / 2, tv.c[1]], side, n: [fx, 0, fz], faces, hgt, quad: [Q(-L, b.y1), Q(L, b.y1), Q(L, b.y0), Q(-L, b.y0)] };
   }
   const roomAt = (x, z) => { for (const f of G.floors) if (inPoly(x, z, f.pts)) return f.i; return -1; };
 
   /* ---------- Camera ---------- */
   const FOV = 0.8, NEAR = 0.15;
-  let cam = null, W = 0, H = 0, DPR = 1, Fo = 1, E = [0, 0, 0], R = [1, 0, 0], U = [0, 1, 0], Fw = [0, 0, -1];
+  let cam = null, W = 0, H = 0, DPR = 1, GDPR = 1, Fo = 1, E = [0, 0, 0], R = [1, 0, 0], U = [0, 1, 0], Fw = [0, 0, -1];
   const top = () => PH.store.get('view') === 'top';
   function setupCam() {
     const p = top() ? Math.PI / 2 : cam.pitch, cp = Math.cos(p), sp = Math.sin(p), sy = Math.sin(cam.yaw), cy = Math.cos(cam.yaw);
@@ -1819,40 +1828,297 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
     cam.dist = hi;
   }
 
-  /* ---------- Drawing ---------- */
-  const canvas = $('#map'), ctx = canvas.getContext('2d');
+  /* ---------- Drawing ----------
+     Walls, floors, furniture, plants and the TV are drawn with WebGL, so the depth buffer decides what is in front and
+     nothing shows through a wall. Each lit bulb lights every surface near it, and walls stop that light (a ring of
+     distances per bulb, worked out from the plan). Light pins, names and rings go on a flat canvas on top, and a pin
+     a wall hides is left off. */
+  const canvas = $('#map'), ctx = canvas.getContext('2d'), glc = $('#gl');
   let raf = 0, hits = [], tvHit = null;
   const FONT = getComputedStyle(document.body).fontFamily;
-  const C = { bg: '#030703', floor: '#07120A', floorHi: '#0C1E11', line: '#1F3D26', strong: '#3F7A4B', accent: '#39FF6A', dim: '#86C295', faint: '#4F7F5B', text: '#C9F5D3', cyan: '#5CE1FF', amber: '#FFB13B', red: '#FF5C5C' };
-  const LIGHT = (() => { const v = [0.45, 0.8, 0.35], m = Math.hypot(...v); return v.map(x => x / m); })();
-  const shade = (rgb, n) => { const k = 0.55 + 0.45 * Math.abs(n[0] * LIGHT[0] + n[1] * LIGHT[1] + n[2] * LIGHT[2]); return `rgb(${rgb.map(c => Math.round(c * k)).join(',')})`; };
+  const C = { bg: '#030703', floor: '#07120A', line: '#1F3D26', strong: '#3F7A4B', accent: '#39FF6A', dim: '#86C295', faint: '#4F7F5B', text: '#C9F5D3', cyan: '#5CE1FF', amber: '#FFB13B', red: '#FF5C5C' };
+  const SUN = (() => { const v = [0.45, 0.8, 0.35], m = Math.hypot(...v); return v.map(x => x / m); })();
+  const rgb = (h, a = 1) => { const n = parseInt(h.slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255, a]; };
+  const rgbOf = (c, a = 1) => [c[0] / 255, c[1] / 255, c[2] / 255, a];   // a = 1: shaded by the room light, 0: flat colour
+  function hslRGB([h, s, l]) {
+    s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+    return [0, 8, 4].map(n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)));
+  }
   const req = () => { if (!raf) raf = requestAnimationFrame(draw); };
-  function poly3(pts) {
-    const c = pts.map(toCam), out = [];
-    for (let i = 0; i < c.length; i++) {
-      const a = c[i], b = c[(i + 1) % c.length], ia = a[2] > NEAR, ib = b[2] > NEAR;
-      if (ia) out.push(scr(a));
-      if (ia !== ib) { const t = (NEAR - a[2]) / (b[2] - a[2]); out.push(scr([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, NEAR])); }
-    }
-    return out;
-  }
-  function path(p) { ctx.beginPath(); p.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); }
-  function line3(a, b) {
-    let ca = toCam(a), cb = toCam(b);
-    if (ca[2] < NEAR && cb[2] < NEAR) return null;
-    if (ca[2] < NEAR) { const t = (NEAR - ca[2]) / (cb[2] - ca[2]); ca = ca.map((v, k) => v + (cb[k] - v) * t); }
-    if (cb[2] < NEAR) { const t = (NEAR - cb[2]) / (ca[2] - cb[2]); cb = cb.map((v, k) => v + (ca[k] - v) * t); }
-    return [scr(ca), scr(cb)];
-  }
   function label(text, x, y, color, size = 11, weight = 700) {
     ctx.font = `${weight} ${size}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.lineWidth = 3; ctx.strokeStyle = C.bg; ctx.lineJoin = 'round'; ctx.strokeText(text, x, y);
     ctx.fillStyle = color; ctx.fillText(text, x, y);
   }
+
+  /* Geometry for WebGL. Triangles: position, normal, colour (alpha: 1 = shaded, 0 = flat). Lines: both ends, which end and
+     side this corner is, colour and width in px; the vertex shader turns each into a thin quad of that width on screen. */
+  const tri = (M, a, b, c, col, n) => {
+    if (!n) { const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]]; n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]]; const m = Math.hypot(...n) || 1; n = n.map(x => x / m); }
+    M.push(...a, ...n, ...col, ...b, ...n, ...col, ...c, ...n, ...col);
+  };
+  const quad = (M, p, col, n) => { tri(M, p[0], p[1], p[2], col, n); tri(M, p[0], p[2], p[3], col, n); };
+  const CORNERS = [[0, -1], [0, 1], [1, 1], [0, -1], [1, 1], [1, -1]];
+  const seg = (Ls, a, b, col, w = 1) => { for (const [e, sd] of CORNERS) Ls.push(...a, ...b, e, sd, ...col, w); };
+  // A floor outline as triangles (ear clipping; rooms are small, simple polygons)
+  function earcut(pts) {
+    let idx = pts.map((_, i) => i), out = [];
+    const area = pts.reduce((s2, p, i) => { const q = pts[(i + 1) % pts.length]; return s2 + p[0] * q[1] - q[0] * p[1]; }, 0), sg = area > 0 ? 1 : -1;
+    const cr = (a, b, c) => ((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])) * sg;
+    const inside = (p, a, b, c) => cr(a, b, p) >= 0 && cr(b, c, p) >= 0 && cr(c, a, p) >= 0;
+    let guard = 0;
+    while (idx.length > 3 && guard++ < 500) {
+      let cut = false;
+      for (let k = 0; k < idx.length; k++) {
+        const ia = idx[(k + idx.length - 1) % idx.length], ib = idx[k], ic = idx[(k + 1) % idx.length], a = pts[ia], b = pts[ib], c = pts[ic];
+        if (cr(a, b, c) <= 1e-9) continue;
+        if (idx.some(j => j !== ia && j !== ib && j !== ic && inside(pts[j], a, b, c))) continue;
+        out.push([a, b, c]); idx.splice(k, 1); cut = true; break;
+      }
+      if (!cut) break;
+    }
+    if (idx.length === 3) out.push(idx.map(i => pts[i]));
+    return out;
+  }
+
+  /* ---------- Plants: three kinds, built from leaves ---------- */
+  const PLANTS = { snake: 'Snake plant', monstera: 'Monstera', palm: 'Palm' };
+  const plantKind = q => PLANTS[q.t] ? q.t : 'monstera';
+  const potH = q => Math.min(0.12 + q.s * 0.15, 0.4);
+  const plantCache = new Map();
+  function plantMesh(id, q) {
+    const key = [id, q.x, q.z, q.y || 0, q.s, plantKind(q)].join('|');
+    let hit = plantCache.get(id); if (hit && hit.key === key) return hit;
+    const M = [], Ls = [], s = q.s || 1, y0 = q.y || 0, ph = potH(q), r1 = 0.07 + s * 0.045, r0 = r1 * 0.75;
+    let seed = 7; for (const ch of id) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+    const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+    const X = q.x, Z = q.z, top = y0 + ph;
+    // the pot: tapered, with a rim and soil
+    const NS = 12, pot = rgbOf([92, 62, 40]), rim = rgbOf([112, 78, 52]), soil = rgbOf([34, 24, 16]);
+    for (let i = 0; i < NS; i++) {
+      const a = i / NS * Math.PI * 2, b = (i + 1) / NS * Math.PI * 2, P = (r, y, t) => [X + Math.cos(t) * r, y, Z + Math.sin(t) * r];
+      const m = (a + b) / 2, n = [Math.cos(m) * 0.96, 0.27, Math.sin(m) * 0.96];
+      quad(M, [P(r0, y0, a), P(r0, y0, b), P(r1, top - 0.03, b), P(r1, top - 0.03, a)], pot, n);
+      quad(M, [P(r1, top - 0.03, a), P(r1, top - 0.03, b), P(r1 * 1.08, top, b), P(r1 * 1.08, top, a)], rim, n);
+      tri(M, [X, top - 0.015, Z], P(r1, top - 0.015, a), P(r1, top - 0.015, b), soil, [0, 1, 0]);
+    }
+    const base = [X, top - 0.01, Z];
+    const green = (k = 0) => { const v = 0.82 + rnd() * 0.3; return [(0.09 + k * 0.05) * v, (0.33 + k * 0.08) * v, (0.13 + k * 0.03) * v, 1]; };
+    const kind = plantKind(q);
+    if (kind === 'snake') {
+      // upright sword leaves, banded, tapering to a point
+      const n = 8 + Math.round(s * 2);
+      for (let i = 0; i < n; i++) {
+        const th = rnd() * Math.PI * 2, rr = rnd() * r1 * 0.55, h = s * (0.4 + rnd() * 0.4), w = 0.03 + 0.018 * s, lean = (0.04 + rnd() * 0.1) * h;
+        const bx = X + Math.cos(th) * rr, bz = Z + Math.sin(th) * rr, ld = [Math.cos(th), Math.sin(th)], tw = th + Math.PI / 2 + (rnd() - 0.5) * 0.9;
+        const wd = [Math.cos(tw), Math.sin(tw)], col = green(), band = [col[0] * 1.5 + 0.05, col[1] * 1.25 + 0.04, col[2] * 1.2, 1];
+        const pt = (f, side) => { const hw = w * (f < 0.12 ? 0.6 + f * 3.3 : Math.pow(1 - f, 0.7)) * side; return [bx + ld[0] * lean * f * f + wd[0] * hw, top + f * h, bz + ld[1] * lean * f * f + wd[1] * hw]; };
+        const K = 6;
+        for (let k = 0; k < K; k++) { const f0 = k / K, f1 = (k + 1) / K; quad(M, [pt(f0, -1), pt(f0, 1), pt(f1, 1), pt(f1, -1)], k % 2 ? band : col); }
+      }
+    } else if (kind === 'monstera') {
+      // stems out of the pot, each with a broad split leaf that droops a little
+      const n = 5 + Math.round(s * 2);
+      for (let i = 0; i < n; i++) {
+        const th = (i / n) * Math.PI * 2 + rnd() * 0.6, el = 0.9 + rnd() * 0.5, L = s * (0.25 + rnd() * 0.3);
+        const dh = [Math.cos(th), Math.sin(th)], end = [X + dh[0] * Math.cos(el) * L, top + Math.sin(el) * L, Z + dh[1] * Math.cos(el) * L];
+        seg(Ls, base, end, [0.16, 0.36, 0.17, 1], 1.5);
+        const lw = s * (0.13 + rnd() * 0.07), tilt = -0.35 - rnd() * 0.35;
+        const fw = [dh[0] * Math.cos(tilt), Math.sin(tilt), dh[1] * Math.cos(tilt)], sd = [-dh[1], 0, dh[0]];
+        const col = green(0.4), at = (fx, fy) => { const d = fx * fx * lw * 0.35; return [end[0] + fw[0] * fx * lw + sd[0] * fy * lw, end[1] + fw[1] * fx * lw - d, end[2] + fw[2] * fx * lw + sd[2] * fy * lw]; };
+        const NL = 18, ctr = at(0.55, 0);
+        for (let k = 0; k < NL; k++) {
+          const a = k / NL * Math.PI * 2, b = (k + 1) / NL * Math.PI * 2;
+          const rim = t => { const r = 0.55 * (1 - 0.18 * Math.pow(Math.cos(t / 2), 8)); return [0.55 + Math.cos(t) * r, Math.sin(t) * r * 0.82]; };   // a heart: notched where the stem meets it
+          const A = rim(a), B = rim(b), mid = t => [0.55 + (rim(t)[0] - 0.55) * 0.55, rim(t)[1] * 0.55];
+          tri(M, ctr, at(...mid(a)), at(...mid(b)), col);
+          if (k % 3 !== 1 || Math.abs(Math.sin(a)) < 0.3) quad(M, [at(...mid(a)), at(...A), at(...B), at(...mid(b))], col);   // gaps: the leaf's splits
+        }
+      }
+    } else {
+      // a palm: arching fronds with narrow leaflets down both sides
+      const n = 6 + Math.round(s * 2);
+      for (let i = 0; i < n; i++) {
+        const th = (i / n) * Math.PI * 2 + rnd() * 0.5, L = s * (0.5 + rnd() * 0.3), up = 0.75 + rnd() * 0.5;
+        const dh = [Math.cos(th), Math.sin(th)], sd = [-dh[1], dh[0]], col = green(0.7);
+        const at = t => [X + dh[0] * L * 0.6 * t, top + L * (up * t - 0.55 * t * t), Z + dh[1] * L * 0.6 * t];
+        let prev = base;
+        for (let k = 1; k <= 8; k++) {
+          const t = k / 8, p = at(t); seg(Ls, prev, p, [0.18, 0.4, 0.18, 1], 1.2); prev = p;
+          if (t < 0.2) continue;
+          const ll = s * 0.13 * (1 - Math.abs(t - 0.55) * 0.9), q0 = at(t - 0.05);
+          for (const sg2 of [-1, 1]) {
+            const tip = [p[0] + sd[0] * ll * sg2 + dh[0] * ll * 0.35, p[1] - ll * 0.35, p[2] + sd[1] * ll * sg2 + dh[1] * ll * 0.35];
+            tri(M, q0, p, tip, col);
+          }
+        }
+      }
+    }
+    hit = { key, M, Ls, c: [X, top + s * 0.3, Z], r: Math.max(r1, s * 0.25) };
+    plantCache.set(id, hit); return hit;
+  }
+
+  /* ---------- WebGL ---------- */
+  const MAXL = 8, SH_N = 512;
+  let gl = null, PM = null, PL = null, buf = {}, shTex = null, shKey = '', shData = new Uint8Array(SH_N * MAXL * 4), staticCount = 0, staticLines = 0;
+  const VS_CAM = `uniform vec3 uE, uR, uU, uF; uniform vec2 uS; uniform float uN, uFar;
+    vec3 cam(vec3 w) { vec3 d = w - uE; return vec3(dot(d, uR), dot(d, uU), dot(d, uF)); }
+    vec4 clip(vec3 c) { return vec4(c.x * uS.x, c.y * uS.y, (c.z * (uFar + uN) - 2.0 * uFar * uN) / (uFar - uN), c.z); }`;
+  const VS_MESH = `attribute vec3 aP, aN; attribute vec4 aC; varying vec3 vP, vN; varying vec4 vC; ${VS_CAM}
+    void main() { vP = aP; vN = aN; vC = aC; gl_Position = clip(cam(aP)); }`;
+  const FS_MESH = `precision highp float; varying vec3 vP, vN; varying vec4 vC;
+    uniform vec3 uE, uSun; uniform int uNL; uniform vec4 uLP[${MAXL}]; uniform vec3 uLC[${MAXL}]; uniform sampler2D uSh;
+    void main() {
+      vec3 n = normalize(vN); if (dot(n, uE - vP) < 0.0) n = -n;
+      vec3 base = vC.rgb * mix(1.0, 0.55 + 0.45 * abs(dot(n, uSun)), vC.a), light = vec3(0.0);
+      for (int i = 0; i < ${MAXL}; i++) {
+        if (i >= uNL) break;
+        vec3 L = uLP[i].xyz - vP; float d = length(L);
+        float ndl = max(dot(n, L / max(d, 0.001)), 0.0);
+        vec2 r = vP.xz - uLP[i].xz;
+        vec4 t = texture2D(uSh, vec2(atan(r.y, r.x) / 6.2831853 + 0.5, (float(i) + 0.5) / ${MAXL}.0));
+        float wall = (t.r * 65280.0 + t.g * 255.0) / 100.0;
+        float lit = 1.0 - smoothstep(wall - 0.005, wall + 0.03, length(r));
+        light += uLC[i] * min(uLP[i].w * 1.8 / (1.0 + 0.55 * d * d) * ndl * lit, 1.3);
+      }
+      gl_FragColor = vec4(base + light * (0.34 + base * 2.2), 1.0);
+    }`;
+  const VS_LINE = `attribute vec3 aA, aB; attribute vec2 aS; attribute vec4 aC; attribute float aW; uniform vec2 uPx; varying vec4 vC; ${VS_CAM}
+    void main() {
+      vC = aC; vec3 A = cam(aA), B = cam(aB);
+      if (A.z < uN && B.z < uN) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
+      if (A.z < uN) A = mix(A, B, (uN - A.z) / (B.z - A.z));
+      if (B.z < uN) B = mix(B, A, (uN - B.z) / (A.z - B.z));
+      vec4 pa = clip(A), pb = clip(B), p = aS.x < 0.5 ? pa : pb;
+      vec2 d = (pb.xy / pb.w - pa.xy / pa.w) / uPx; float m = length(d);
+      vec2 nrm = m > 1e-5 ? vec2(-d.y, d.x) / m : vec2(0.0, 1.0);
+      p.xy += nrm * aS.y * aW * 0.5 * uPx * p.w;
+      gl_Position = p;
+    }`;
+  const FS_LINE = `precision mediump float; varying vec4 vC; void main() { gl_FragColor = vC; }`;
+  function program(vs, fs) {
+    const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
+    const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    const a = {}, u = {};
+    for (let i = 0; i < gl.getProgramParameter(p, gl.ACTIVE_ATTRIBUTES); i++) { const n = gl.getActiveAttrib(p, i).name; a[n] = gl.getAttribLocation(p, n); }
+    for (let i = 0; i < gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS); i++) { const n = gl.getActiveUniform(p, i).name.replace(/\[0\]$/, ''); u[n] = gl.getUniformLocation(p, n); }
+    return { p, a, u };
+  }
+  function glInit() {
+    gl = glc.getContext('webgl', { antialias: true, alpha: false, preserveDrawingBuffer: false });
+    if (!gl) return false;
+    try { PM = program(VS_MESH, FS_MESH); PL = program(VS_LINE, FS_LINE); } catch (e) { console.error(e); gl = null; return false; }
+    for (const k of ['mesh', 'lines', 'dmesh', 'dlines']) buf[k] = gl.createBuffer();
+    shTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, shTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, SH_N, MAXL, 0, gl.RGBA, gl.UNSIGNED_BYTE, shData);
+    for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.NEAREST], [gl.TEXTURE_MAG_FILTER, gl.NEAREST], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
+    shKey = '';
+    return true;
+  }
+  glc.addEventListener('webglcontextlost', e => { e.preventDefault(); gl = null; });
+  glc.addEventListener('webglcontextrestored', () => { if (glInit() && G) { glStatic(); req(); } });
+  // Everything that only changes with the plan or the settings
+  function glStatic() {
+    if (!gl || !G) return;
+    const M = [], Ls = [];
+    const floor = rgb(C.floor, 0), wallTop = rgb(C.strong, 0), under = rgb('#0B170E', 0), wallSide = rgbOf([19, 40, 25]);
+    const itemTop = rgb('#0F2014', 0), itemSide = rgbOf([10, 22, 13]);
+    const eTop = rgb('#5FA06C'), eSide = rgb('#2A5233'), eFloor = rgb(C.line), eItem = rgb('#2A5233');
+    for (const f of G.floors) {
+      for (const [a, b, c] of earcut(f.pts)) tri(M, [a[0], 0, a[1]], [b[0], 0, b[1]], [c[0], 0, c[1]], floor, [0, 1, 0]);
+      f.pts.forEach((p, i) => { const q = f.pts[(i + 1) % f.pts.length]; seg(Ls, [p[0], 0.002, p[1]], [q[0], 0.002, q[1]], eFloor, 1); });
+    }
+    for (const f of G.faces) {
+      if (f.kind === 'wall') {
+        quad(M, f.pts, f.side === 'top' ? wallTop : f.side === 'bottom' ? under : wallSide, f.n);
+        for (const [a, b] of f.edges) seg(Ls, a, b, f.side === 'top' ? eTop : eSide, 1);
+      } else {
+        quad(M, f.pts, f.side === 'top' ? itemTop : itemSide, f.n);
+        f.pts.forEach((p, i) => seg(Ls, p, f.pts[(i + 1) % 4], eItem, 0.75));
+      }
+    }
+    for (const [a, b] of G.frames) seg(Ls, a, b, [0.36, 0.88, 1, 0.7], 1.5);
+    for (const [a, b] of G.doors) seg(Ls, a, b, [0.53, 0.76, 0.58, 0.75], 1.5);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf.mesh); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(M), gl.STATIC_DRAW); staticCount = M.length / 10;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf.lines); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(Ls), gl.STATIC_DRAW); staticLines = Ls.length / 13;
+    shKey = '';
+  }
+  // For each lit bulb: how far its light gets in every direction before a wall stops it
+  function shadowRing(ls) {
+    const key = G.ver + '|' + ls.map(l => l.x + ',' + l.z).join(';');
+    if (key === shKey) return; shKey = key;
+    ls.forEach((l, i) => {
+      for (let k = 0; k < SH_N; k++) {
+        const t0 = (k + 0.5) / SH_N * Math.PI * 2 - Math.PI, dx = Math.cos(t0), dz = Math.sin(t0);
+        let best = 99;
+        for (const [ax, az, bx, bz] of G.blockers) {
+          const ex = bx - ax, ez = bz - az, den = dx * ez - dz * ex; if (Math.abs(den) < 1e-9) continue;
+          const qx = ax - l.x, qz = az - l.z, t = (qx * ez - qz * ex) / den, s2 = (qx * dz - qz * dx) / den;
+          if (t > 0 && s2 >= 0 && s2 <= 1 && t < best) best = t;
+        }
+        const cm = Math.min(65535, Math.round(best * 100)), o = (i * SH_N + k) * 4;
+        shData[o] = cm >> 8; shData[o + 1] = cm & 255;
+      }
+    });
+    gl.bindTexture(gl.TEXTURE_2D, shTex); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, SH_N, MAXL, gl.RGBA, gl.UNSIGNED_BYTE, shData);
+  }
+  function setCam(P) {
+    gl.uniform3fv(P.u.uE, E); gl.uniform3fv(P.u.uR, R); gl.uniform3fv(P.u.uU, U); gl.uniform3fv(P.u.uF, Fw);
+    gl.uniform2f(P.u.uS, 2 * Fo / W, 2 * Fo / H); gl.uniform1f(P.u.uN, NEAR); gl.uniform1f(P.u.uFar, 200);
+  }
+  function attribs(P, layout, stride) {
+    let off = 0;
+    for (const [name, n] of layout) { const loc = P.a[name]; if (loc != null && loc >= 0) { gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, n, gl.FLOAT, false, stride * 4, off * 4); } off += n; }
+  }
+  const MESH = [['aP', 3], ['aN', 3], ['aC', 4]], LINE = [['aA', 3], ['aB', 3], ['aS', 2], ['aC', 4], ['aW', 1]];
+  function glDraw(dynM, dynL, lit) {
+    const w = Math.round(W * GDPR), h = Math.round(H * GDPR);
+    if (glc.width !== w || glc.height !== h) { glc.width = w; glc.height = h; }
+    gl.viewport(0, 0, w, h);
+    const bg = rgb(C.bg); gl.clearColor(bg[0], bg[1], bg[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.disable(gl.CULL_FACE);
+    // surfaces, pushed back a hair so their outlines win
+    shadowRing(lit);
+    gl.useProgram(PM.p); setCam(PM);
+    gl.uniform3fv(PM.u.uSun, SUN); gl.uniform1i(PM.u.uNL, lit.length);
+    const lp = new Float32Array(MAXL * 4), lc = new Float32Array(MAXL * 3);
+    lit.forEach((l, i) => { lp.set([l.x, l.y, l.z, l.k], i * 4); lc.set(l.c, i * 3); });
+    gl.uniform4fv(PM.u.uLP, lp); gl.uniform3fv(PM.u.uLC, lc);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, shTex); gl.uniform1i(PM.u.uSh, 0);
+    gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(1, 2); gl.disable(gl.BLEND); gl.depthMask(true);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf.mesh); attribs(PM, MESH, 10); if (staticCount) gl.drawArrays(gl.TRIANGLES, 0, staticCount);
+    if (dynM.length) { gl.bindBuffer(gl.ARRAY_BUFFER, buf.dmesh); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(dynM), gl.DYNAMIC_DRAW); attribs(PM, MESH, 10); gl.drawArrays(gl.TRIANGLES, 0, dynM.length / 10); }
+    for (const loc of Object.values(PM.a)) gl.disableVertexAttribArray(loc);
+    // outlines
+    gl.disable(gl.POLYGON_OFFSET_FILL); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+    gl.useProgram(PL.p); setCam(PL); gl.uniform2f(PL.u.uPx, 2 / W, 2 / H);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf.lines); attribs(PL, LINE, 13); if (staticLines) gl.drawArrays(gl.TRIANGLES, 0, staticLines);
+    if (dynL.length) { gl.bindBuffer(gl.ARRAY_BUFFER, buf.dlines); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(dynL), gl.DYNAMIC_DRAW); attribs(PL, LINE, 13); gl.drawArrays(gl.TRIANGLES, 0, dynL.length / 13); }
+    for (const loc of Object.values(PL.a)) gl.disableVertexAttribArray(loc);
+    gl.depthMask(true);
+  }
+  // Is the straight line from the eye to p blocked by a wall (as drawn now)? Used for pins, names and the TV picture.
+  function hidden(p) {
+    const d = [p[0] - E[0], p[1] - E[1], p[2] - E[2]], len = Math.hypot(...d), tEnd = 1 - 0.04 / Math.max(len, 0.05);
+    for (const b of G.walls) {
+      const dx = Math.cos(b.a), dz = Math.sin(b.a), ox = E[0] - b.c[0], oz = E[2] - b.c[1];
+      const o = [ox * dx + oz * dz, E[1], -ox * dz + oz * dx], v = [d[0] * dx + d[2] * dz, d[1], -d[0] * dz + d[2] * dx];
+      const lo = [-b.len / 2, b.y0, -b.wid / 2], hi = [b.len / 2, b.y1, b.wid / 2];
+      let t0 = 0, t1 = tEnd, ok = true;
+      for (let k = 0; k < 3 && ok; k++) {
+        if (Math.abs(v[k]) < 1e-9) { if (o[k] < lo[k] || o[k] > hi[k]) ok = false; continue; }
+        let a = (lo[k] - o[k]) / v[k], c = (hi[k] - o[k]) / v[k]; if (a > c) [a, c] = [c, a];
+        t0 = Math.max(t0, a); t1 = Math.min(t1, c); if (t0 > t1) ok = false;
+      }
+      if (ok) return true;
+    }
+    return false;
+  }
   function resize() {
     const r = canvas.getBoundingClientRect();
     if (!r.width || !r.height) return false;
-    DPR = Math.min(3, window.devicePixelRatio || 1);
+    DPR = Math.min(3, window.devicePixelRatio || 1); GDPR = Math.min(2, DPR);
     const w = Math.round(r.width * DPR), h = Math.round(r.height * DPR);
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
     W = r.width; H = r.height;
@@ -1864,102 +2130,67 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   function draw() {
     raf = 0;
     if (!resize()) return;
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
     setupCam();
     const editing = mode() === 'place', labelsOn = !!PH.store.get('labels');
-    // floors
-    ctx.lineWidth = 1;
-    for (const f of G.floors) {
-      const p = poly3(f.p3); if (p.length < 3) continue;
-      path(p); ctx.fillStyle = editing && sel !== null && hoverRoom === f.i ? C.floorHi : C.floor; ctx.fill(); ctx.strokeStyle = C.line; ctx.stroke();
-    }
-    // pools of light on the floor under lit bulbs
-    ctx.globalCompositeOperation = 'lighter';
+    const dynM = [], dynL = [];
+    // the bulbs that are on light the room
+    const lit = [];
     for (const id in pins) {
-      const col = hsl(lights.find(x => x.id === id)); if (!col) continue;
-      const p = pins[id], c = toCam([p.x, 0, p.z]); if (c[2] < NEAR) continue;
-      const [sx, sy] = scr(c), r = Fo * (0.9 + p.y * 0.35) / c[2], k = top() ? 1 : Math.max(0.25, Math.sin(cam.pitch));
-      const bri = (lights.find(x => x.id === id).brightness ?? 100) / 100;
-      ctx.save(); ctx.translate(sx, sy); ctx.scale(1, k);
-      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r); g.addColorStop(0, css(col, 0.28 + 0.2 * bri)); g.addColorStop(1, css(col, 0));
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      const l = lights.find(x => x.id === id), col = hsl(l); if (!col || lit.length >= MAXL) continue;
+      const p = pins[id], bri = (l.brightness ?? 100) / 100;
+      lit.push({ x: p.x, y: p.y, z: p.z, c: hslRGB([col[0], col[1], Math.min(col[2], 60)]), k: 0.35 + 0.65 * bri });
     }
-    ctx.globalCompositeOperation = 'source-over';
-    // walls, furniture and the TV, far to near
+    // the TV, coloured by what it's doing
     const tvn = tvNow();
-    const vis = [];
-    for (const f of G.faces) {
-      const vx = f.ctr[0] - E[0], vy = f.ctr[1] - E[1], vz = f.ctr[2] - E[2];
-      if (vx * f.n[0] + vy * f.n[1] + vz * f.n[2] >= 0) continue;
-      vis.push([vx * vx + vy * vy + vz * vz, f]);
-    }
-    vis.sort((a, b) => b[0] - a[0]);
-    tvHit = null;
-    for (const [, f] of vis) {
-      const p = poly3(f.pts); if (p.length < 3) continue;
-      path(p);
-      if (f.kind === 'wall') {
-        const fill = f.side === 'top' ? C.strong : f.side === 'bottom' ? '#0B170E' : shade([19, 40, 25], f.n);
-        ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = fill; ctx.lineWidth = 0.6; ctx.stroke();   // same colour: no hairline between chunks
-        if (f.edges.length) {
-          ctx.beginPath();
-          for (const [a, b] of f.edges) { const l = line3(a, b); if (l) { ctx.moveTo(...l[0]); ctx.lineTo(...l[1]); } }
-          ctx.strokeStyle = f.side === 'top' ? '#5FA06C' : '#2A5233'; ctx.lineWidth = 1; ctx.stroke();
-        }
+    if (G.tv) {
+      const on = tvn.mode === 'on', other = tvn.mode === 'other';
+      const scr0 = rgb(on ? '#073514' : other ? '#2A1C05' : '#010201', 0), body = rgbOf([40, 36, 28]);
+      const edge = rgb(on ? C.accent : other ? C.amber : (editing || sel === 'tv' ? C.accent : C.strong)), bodyEdge = rgb('#6B6250');
+      for (const f of G.tv.faces) {
+        quad(dynM, f.pts, f.screen ? scr0 : body, f.n);
+        f.pts.forEach((p, i) => seg(dynL, p, f.pts[(i + 1) % 4], f.screen ? edge : bodyEdge, f.screen && (on || other) ? 2 : 1.25));
       }
-      else if (f.kind === 'pot') { ctx.fillStyle = shade([58, 40, 26], f.n); ctx.fill(); ctx.strokeStyle = '#7A5A3A'; ctx.lineWidth = 0.75; ctx.stroke(); }
-      else if (f.kind === 'item') { ctx.fillStyle = f.side === 'top' ? '#0F2014' : shade([10, 22, 13], f.n); ctx.fill(); ctx.strokeStyle = '#2A5233'; ctx.lineWidth = 0.75; ctx.stroke(); }
-      else if (f.screen) {
-        const on = tvn.mode === 'on', other = tvn.mode === 'other';
-        ctx.fillStyle = on ? '#073514' : other ? '#2A1C05' : '#010201'; ctx.fill();
-        ctx.strokeStyle = on ? C.accent : other ? C.amber : (editing || sel === 'tv' ? C.accent : C.strong); ctx.lineWidth = on || other ? 2 : 1.5;
-        if (on) { ctx.shadowColor = C.accent; ctx.shadowBlur = 10; }
-        ctx.stroke(); ctx.shadowBlur = 0;
-        if (f.side !== 'top') tvHit = p;
-      } else { ctx.fillStyle = shade([40, 36, 28], f.n); ctx.fill(); ctx.strokeStyle = '#6B6250'; ctx.lineWidth = 1; ctx.stroke(); }
     }
-    // windows
-    ctx.strokeStyle = 'rgba(92, 225, 255, .7)'; ctx.lineWidth = 1.5;
-    for (const [a, b] of G.frames) { const l = line3(a, b); if (!l) continue; ctx.beginPath(); ctx.moveTo(...l[0]); ctx.lineTo(...l[1]); ctx.stroke(); }
-    ctx.strokeStyle = 'rgba(134, 194, 149, .75)'; ctx.lineWidth = 1.5;
-    for (const [a, b] of G.doors) { const l = line3(a, b); if (!l) continue; ctx.beginPath(); ctx.moveTo(...l[0]); ctx.lineTo(...l[1]); ctx.stroke(); }
-    // room names
+    // plants
+    const pl = [];
+    for (const id in plants) { const m = plantMesh(id, plants[id]); dynM.push(...m.M); dynL.push(...m.Ls); pl.push([id, m]); }
+    // light pins: a thin stem down to the floor
+    for (const id in pins) { const p = pins[id]; if (p.y > 0.05) seg(dynL, [p.x, 0, p.z], [p.x, p.y, p.z], [0.31, 0.5, 0.36, 0.7], 1); }
+    if (gl) glDraw(dynM, dynL, lit);
+
+    // the flat layer on top: names, pins, rings
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, W, H);
+    if (!gl) { label('3D needs WebGL, which is off here.', W / 2, H / 2, C.amber, 12); }
     if (labelsOn) for (const f of G.floors) {
       const n = roomName(f.i); if (!n) continue;
-      const c = toCam([f.c[0], 0.02, f.c[1]]); if (c[2] < NEAR) continue;
+      const p = [f.c[0], 0.02, f.c[1]], c = toCam(p); if (c[2] < NEAR || hidden(p)) continue;
       const [sx, sy] = scr(c); label(n.toUpperCase(), sx, sy, C.faint, clamp(Fo * 0.16 / c[2], 8, 12), 700);
     }
-    // the TV's screen: what's on it
+    tvHit = null;
     if (G.tv) {
       const c = toCam(G.tv.c);
-      if (c[2] > NEAR) {
+      if (c[2] > NEAR && !hidden(G.tv.c.map((v, k) => v + G.tv.n[k] * 0.08))) {
         const [sx, sy] = scr(c), lift = clamp(Fo * 0.45 / c[2], 18, 40);
         const word = tvn.mode === 'on' ? tvn.short : tvn.mode === 'other' ? tvn.short : 'TV';
         const w = (word || 'TV').toUpperCase();
         if (labelsOn) label('▣ ' + (w.length > 16 ? w.slice(0, 15) + '…' : w), sx, sy - lift, tvn.mode === 'on' ? C.accent : tvn.mode === 'other' ? C.amber : C.dim, 10);
-        if (!tvHit) tvHit = [[sx - 20, sy - 20], [sx + 20, sy - 20], [sx + 20, sy + 20], [sx - 20, sy + 20]];
-        tvHit.center = [sx, sy - lift / 2];
+        const q = G.tv.quad.map(toCam);
+        tvHit = q.every(v => v[2] > NEAR) ? q.map(scr) : [[sx - 20, sy - 20], [sx + 20, sy - 20], [sx + 20, sy + 20], [sx - 20, sy + 20]];
+        tvHit.center = [sx, sy];
       }
     }
-    // plants: leaves drawn over their pots
     hits = [];
-    const pl = Object.keys(plants).map(id => { const q = plants[id], pot = Math.min(0.12 + q.s * 0.15, 0.4); return { id, q, c: toCam([q.x, pot + q.s * 0.45, q.z]), pot }; }).filter(o => o.c[2] > NEAR).sort((a, b) => b.c[2] - a.c[2]);
-    for (const { id, q, c } of pl) {
-      const [sx, sy] = scr(c), r = Fo * q.s * 0.32 / c[2];
-      const leaf = (dx, dy, k) => { ctx.beginPath(); ctx.ellipse(sx + dx * r, sy + dy * r, r * 0.55 * k, r * 0.38 * k, dx * 0.9, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); };
-      ctx.fillStyle = '#0F4A20'; ctx.strokeStyle = '#2FB457'; ctx.lineWidth = 1;
-      [[-0.45, 0.25, 1], [0.45, 0.2, 1], [-0.2, -0.3, 1.05], [0.25, -0.35, 0.95], [0, 0.05, 1.1]].forEach(([dx, dy, k]) => leaf(dx, dy, k));
+    for (const [id, m] of pl) {
+      const c = toCam(m.c); if (c[2] < NEAR || hidden(m.c)) continue;
+      const [sx, sy] = scr(c), r = Fo * m.r / c[2];
       if (sel === id) { ctx.beginPath(); ctx.arc(sx, sy, r + 6, 0, Math.PI * 2); ctx.strokeStyle = C.accent; ctx.lineWidth = 2; ctx.stroke(); }
       if (editing) hits.push({ id, x: sx, y: sy, r: Math.max(r, 10) });
     }
-    // lights
-    const list = Object.keys(pins).map(id => { const p = pins[id], c = toCam([p.x, p.y, p.z]); return { id, p, c }; }).filter(o => o.c[2] > NEAR).sort((a, b) => b.c[2] - a.c[2]);
+    const list = Object.keys(pins).map(id => { const p = pins[id]; return { id, p, c: toCam([p.x, p.y, p.z]) }; })
+      .filter(o => o.c[2] > NEAR && !hidden([o.p.x, o.p.y, o.p.z])).sort((a, b) => b.c[2] - a.c[2]);
     for (const { id, p, c } of list) {
       const l = lights.find(x => x.id === id), col = hsl(l);
       const [sx, sy] = scr(c), r = clamp(Fo * 0.1 / c[2], 7, 15);
-      const fl = line3([p.x, 0, p.z], [p.x, p.y, p.z]);
-      if (fl) { ctx.setLineDash([2, 3]); ctx.strokeStyle = C.faint; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(...fl[0]); ctx.lineTo(...fl[1]); ctx.stroke(); ctx.setLineDash([]); }
       ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2);
       if (col) { ctx.fillStyle = css(col); ctx.shadowColor = css(col); ctx.shadowBlur = 16; ctx.fill(); ctx.shadowBlur = 0; ctx.strokeStyle = css([col[0], col[1], Math.min(92, col[2] + 25)]); ctx.lineWidth = 1.5; ctx.stroke(); }
       else { ctx.fillStyle = C.bg; ctx.fill(); ctx.strokeStyle = !l || !l.online ? C.red : C.dim; ctx.lineWidth = 2; if (!l || !l.online) ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]); }
@@ -1967,13 +2198,13 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
       if (labelsOn || editing) label(l ? l.name : (p.name || 'Light'), sx, sy + r + 10, col ? C.text : C.dim, 11);
       hits.push({ id, x: sx, y: sy, r });
     }
-    // where the live TV picture goes
+    // where the live TV picture goes: only when the whole screen can be seen
     tvQuadOnScreen = null;
     if (G.tv && !top()) {
       const t = G.tv, fc = t.quad[0].map((v, k) => (v + t.quad[2][k]) / 2);
       if ((fc[0] - E[0]) * t.n[0] + (fc[2] - E[2]) * t.n[2] < 0) {
-        const cs = t.quad.map(toCam);
-        if (cs.every(c => c[2] > NEAR)) tvQuadOnScreen = cs.map(scr);
+        const cs = t.quad.map(toCam), inset = t.quad.map(q => q.map((v, k) => v + (fc[k] - v) * 0.08 + t.n[k] * 0.02));
+        if (cs.every(c => c[2] > NEAR) && !inset.some(hidden) && !hidden(fc.map((v, k) => v + t.n[k] * 0.02))) tvQuadOnScreen = cs.map(scr);
       }
     }
     placeMirror();
@@ -1981,7 +2212,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
 
   /* ---------- Touch: drag to turn, pinch to zoom, two fingers to move; tap a light ---------- */
   const ptrs = new Map();
-  let gest = null, sel = null, hoverRoom = -1, cardId = null;
+  let gest = null, sel = null, cardId = null;
   const pt = e => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   function hitAt(x, y) {
     let best = null, bd = 1e9;
@@ -2048,8 +2279,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   ['touchstart', 'touchmove', 'touchend'].forEach(t => canvas.addEventListener(t, e => { e.stopPropagation(); if (t === 'touchmove') e.preventDefault(); }, { passive: false }));
 
   function moveTo(id, p) {
-    if (isPlant(id)) { const q = plants[id]; if (!q) return; const h = ray(p[0], p[1], 0); if (!h) return; q.x = +h[0].toFixed(2); q.z = +h[1].toFixed(2); build(); return; }
-    if (id === 'tv') { const t = tvOf(); const h = ray(p[0], p[1], (t.y[0] + t.y[1]) / 2); if (!h) return; tvBox = { ...t, c: [+h[0].toFixed(2), +h[1].toFixed(2)] }; build(); return; }
+    if (isPlant(id)) { const q = plants[id]; if (!q) return; const h = ray(p[0], p[1], q.y || 0); if (!h) return; q.x = +h[0].toFixed(2); q.z = +h[1].toFixed(2); return; }
+    if (id === 'tv') { const t = tvOf(); const h = ray(p[0], p[1], (t.y[0] + t.y[1]) / 2); if (!h) return; tvBox = { ...t, c: [+h[0].toFixed(2), +h[1].toFixed(2)] }; buildTV(); return; }
     const pin = pins[id]; if (!pin) return;
     const h = ray(p[0], p[1], pin.y); if (!h) return;
     pin.x = +h[0].toFixed(2); pin.z = +h[1].toFixed(2);
@@ -2062,10 +2293,11 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
       if (sel === 'tv') {
         const t = tvOf() || { c: [0, 0], len: 1.0, wid: 0.08, a: 0, y: [0.8, 1.4] };
         const at = ray(p[0], p[1], (t.y[0] + t.y[1]) / 2); if (!at) return;
-        tvBox = { ...t, c: [+at[0].toFixed(2), +at[1].toFixed(2)] }; build();
+        tvBox = { ...t, c: [+at[0].toFixed(2), +at[1].toFixed(2)] }; buildTV();
       } else if (isPlant(sel)) {
-        const at = ray(p[0], p[1], 0); if (!at) return;
-        plants[sel] = { s: lastPlant, ...plants[sel], x: +at[0].toFixed(2), z: +at[1].toFixed(2) }; build();
+        const y = plants[sel] ? plants[sel].y || 0 : lastPlantY;
+        const at = ray(p[0], p[1], y); if (!at) return;
+        plants[sel] = { s: lastPlant, t: lastKind, y, ...plants[sel], x: +at[0].toFixed(2), z: +at[1].toFixed(2) };
       } else {
         const y = pins[sel] ? pins[sel].y : lastH;
         const at = ray(p[0], p[1], y); if (!at) return;
@@ -2237,7 +2469,9 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   $('#sc-row').addEventListener('click', e => { const b = e.target.closest('[data-scene]'); if (b) runScene(b.dataset.scene); });
 
   /* ---------- Placing lights and the TV ---------- */
-  let lastH = 2.3, lastPlant = 1.0;
+  let lastH = 2.3, lastPlant = 1.0, lastKind = 'monstera', lastPlantY = 0;
+  const CEIL = Math.max(2.2, ...plan.walls.map(w => w.y[1]));
+  const ftin = m => { const i = Math.round(m / 0.0254); return Math.floor(i / 12) + '′ ' + (i % 12) + '″'; };
   const LEAF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M8 21h8l-1-5H9zM12 16V9M12 11c-4 0-6-2-6-6 4 0 6 2 6 6zM12 9c0-4 2-6 6-6 0 4-2 6-6 6z"/></svg>';
   const BULB = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>';
   const TVI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M8 3l4 4 4-4"/></svg>';
@@ -2273,11 +2507,14 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
       $('#pl-sub').textContent = placed ? 'Drag it, or tap the map to move it' : 'Tap the map where it is';
       $('#pl-dot').style.background = isTV ? '' : css(hsl(l) || [125, 0, 30]);
       $('#pl-remove').hidden = !placed; $('#pl-remove').textContent = isTV ? 'Turn' : 'Remove';
-      $('#pl-height').hidden = isTV || isP; $('#pl-size').hidden = !isP;
-      const ps = plants[sel] ? plants[sel].s : lastPlant;
+      $('#pl-size').hidden = $('#pl-kind').hidden = !isP;
+      const q = plants[sel], ps = q ? q.s : lastPlant, pk = q ? plantKind(q) : lastKind;
       $$('#pl-size [data-s]').forEach(b => b.setAttribute('aria-checked', String(near(+b.dataset.s, ps, 0.05))));
-      const h = pin ? pin.y : lastH;
-      $$('#pl-height [data-h]').forEach(b => b.setAttribute('aria-checked', String(near(+b.dataset.h, h, 0.05))));
+      $$('#pl-kind [data-t]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.t === pk)));
+      // height above the floor, floor to ceiling: a light's bulb, a plant's pot, the TV's bottom edge
+      const t = isTV ? tvOf() : null, max = isTV ? CEIL - (G.tv ? G.tv.hgt : 0.6) : CEIL;
+      const y = isTV ? (t ? t.y[0] : 0.8) : isP ? (q ? q.y || 0 : lastPlantY) : pin ? pin.y : lastH;
+      const r = $('#pl-y'); r.max = max.toFixed(2); if (!heightDrag) r.value = y; $('#pl-yv').textContent = heightLabel(+r.value, max);
     }
     renderHint();
   }
@@ -2296,17 +2533,27 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   });
   $('#pl-size').addEventListener('click', e => {
     const b = e.target.closest('[data-s]'); if (!b) return;
-    lastPlant = +b.dataset.s; if (plants[sel]) { plants[sel].s = lastPlant; savePins(); build(); }
+    lastPlant = +b.dataset.s; if (plants[sel]) { plants[sel].s = lastPlant; savePins(); }
     renderPlace(); req();
   });
-  $('#pl-height').addEventListener('click', e => {
-    const b = e.target.closest('[data-h]'); if (!b) return;
-    lastH = +b.dataset.h; if (pins[sel]) { pins[sel].y = lastH; savePins(); }
+  $('#pl-kind').addEventListener('click', e => {
+    const b = e.target.closest('[data-t]'); if (!b) return;
+    lastKind = b.dataset.t; if (plants[sel]) { plants[sel].t = lastKind; savePins(); }
     renderPlace(); req();
   });
+  let heightDrag = false;
+  const heightLabel = (y, max) => y < 0.01 ? 'Floor' : y > max - 0.01 ? 'Ceiling' : ftin(y);
+  function setHeight(y) {
+    if (sel === 'tv') { const t = tvOf(); if (!t) return; tvBox = { ...t, y: [+y.toFixed(2), +(y + t.y[1] - t.y[0]).toFixed(2)] }; buildTV(); }
+    else if (isPlant(sel)) { lastPlantY = y; if (plants[sel]) plants[sel].y = +y.toFixed(2); }
+    else { lastH = y; if (pins[sel]) pins[sel].y = +y.toFixed(2); }
+    $('#pl-yv').textContent = heightLabel(y, +$('#pl-y').max); req();
+  }
+  $('#pl-y').addEventListener('input', e => { heightDrag = true; setHeight(+e.target.value); });
+  $('#pl-y').addEventListener('change', e => { heightDrag = false; setHeight(+e.target.value); savePins(); renderPlace(); });
   $('#pl-remove').addEventListener('click', () => {
-    if (sel === 'tv') { const t = tvOf(); if (!t) return; tvBox = { ...t, a: (t.a + Math.PI / 2) % (Math.PI * 2), face: undefined }; build(); savePins(); req(); return; }
-    if (isPlant(sel)) { delete plants[sel]; sel = null; savePins(); build(); renderPlace(); req(); return; }
+    if (sel === 'tv') { const t = tvOf(); if (!t) return; tvBox = { ...t, a: (t.a + Math.PI / 2) % (Math.PI * 2), face: undefined }; buildTV(); savePins(); req(); return; }
+    if (isPlant(sel)) { delete plants[sel]; plantCache.delete(sel); sel = null; savePins(); renderPlace(); req(); return; }
     delete pins[sel]; savePins(); renderPlace(); req();
   });
 
@@ -2399,8 +2646,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
 
   /* ---------- Page changes, polling ---------- */
   function place() {
-    const r = route(), wrap = r === '/place' ? $('#place-wrap') : $('#map-wrap');
-    if (canvas.parentNode !== wrap) wrap.appendChild(canvas);
+    const r = route(), wrap = r === '/place' ? $('#place-wrap') : $('#map-wrap'), stack = $('#map-stack');
+    if (stack.parentNode !== wrap) wrap.appendChild(stack);
     if (r !== '/place') sel = null;
     if (r !== '/') { cardId = null; }
     render(); requestAnimationFrame(() => { W = W || 0; req(); });
@@ -2425,6 +2672,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true });
   if ('ResizeObserver' in window) new ResizeObserver(() => req()).observe(canvas);
   addEventListener('resize', req);
 
+  glInit();
   build();
   cam = load('cam', null);
   if (cam && !(cam.dist > 0)) cam = null;
