@@ -809,6 +809,9 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .wh-row .rm-b { font-size: 10px; letter-spacing: .04em; min-height: 36px; }
 
     /* The TV: a little copy of what Phosphor TV is showing */
+    .mc-mini { position: relative; display: grid; place-items: center; padding: 0; border: 6px solid #2A2D2A; border-radius: 8px; background: #000; width: 100%; max-width: 360px; align-self: center; overflow: hidden; cursor: pointer; }
+    .mc-mini canvas { width: 100%; height: 100%; display: block; max-width: none; }
+    .mc-mini .tv-small { position: absolute; }
     .tv-mini { position: relative; border: 6px solid #BFB193; border-radius: 10px; background: var(--bg); aspect-ratio: 16 / 9; width: 100%; max-width: 360px; align-self: center;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; padding: var(--sp-2); overflow: hidden; }
     .tv-mini::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,.35) 0 1px, transparent 1px 3px); pointer-events: none; }
@@ -818,14 +821,25 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .tv-mini.off .tv-big { color: var(--text-faint); text-shadow: none; }
     .tv-mini.other .tv-big { color: var(--amber); text-shadow: none; }
     /* The live TV picture: the real TV page, drawn onto the TV on the map (or into the TV card) */
-    .tv-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 3; }
+    /* Layers: live pictures (1) under the 3D map (2), which leaves their screens clear, so walls in front cover them;
+       then pins and names (3), the top strip (4), the cards (5), and a TV picture shown inside its card (6). */
+    .tv-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .tv-live { z-index: 1; }
+    .tv-live.in-card { z-index: 6; }
+    #gl { z-index: 2; }
+    #map { z-index: 3; }
+    .over-top { z-index: 4; }
+    .over { z-index: 5; }
     .tv-live { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; border: 0; transform-origin: 0 0; pointer-events: none; background: #000; max-width: none; max-height: none; }
     .tv-live[hidden] { display: none; }
-    .sc-wrap { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-2); }
+    .sc-wrap { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-2); pointer-events: none; }
+    .sc-wrap > * { pointer-events: auto; }
     .sc-chips { flex: 1; min-width: 0; border: 1px solid var(--line-strong); border-radius: 24px; background: rgba(8, 17, 10, .94); padding: 4px; }
     .sc-chips[hidden] { display: none; }
     .sc-chips .chip { min-height: 36px; }
     .sc-chips .chip:disabled { opacity: .5; }
+    .sc-chips .chip.warn { color: var(--red, #FF5C5C); border-color: rgba(255, 92, 92, .5); }
+    .sc-chips .chip.warn.is-sel { background: rgba(255, 92, 92, .18); border-color: var(--red, #FF5C5C); box-shadow: 0 0 12px rgba(255, 92, 92, .5); }
     .sc-btn { background: rgba(8, 17, 10, .94); }
     .dim .readout.sun-r { font-size: var(--fs-sm); min-width: 5.6em; }
     #sun-year[aria-pressed="true"], #sun-dayplay[aria-pressed="true"], #sun-live[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
@@ -866,7 +880,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.8</span>
+      <span class="app-meta">v1.9</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -887,14 +901,21 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="over">
           <div class="sc-wrap">
             <div class="chips sc-chips" id="sc-row" hidden role="group" aria-label="Scenes">
+              <button class="chip warn" data-scene="intruder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3 2 20h20zM12 10v4M12 17v.5"/></svg><span>Intruder</span></button>
               <button class="chip" data-scene="morning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="14" r="4"/><path d="M12 4v3M4.9 8.9l2.1 2.1M19.1 8.9 17 11M2 20h20"/></svg><span>Morning</span></button>
-              <button class="chip" data-scene="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/></svg><span>Home</span></button>
+              <button class="chip" data-scene="dinner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M7 3v8M5 3v4a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-2 6 0 8v10"/></svg><span>Dinner</span></button>
+              <button class="chip" data-scene="movie"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="6" width="18" height="13"/><path d="M3 10h18M7 6l2 4M12 6l2 4M17 6l2 4"/></svg><span>Movie</span></button>
+              <button class="chip" data-scene="focus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg><span>Focus</span></button>
+              <button class="chip" data-scene="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/></svg><span>Fireplace</span></button>
               <button class="chip" data-scene="romantic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg><span>Romantic</span></button>
+              <button class="chip" data-scene="bedtime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 18V9M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5M7 12h.5"/></svg><span>Bedtime</span></button>
               <button class="chip" data-scene="away"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 21c-4-3-7-6-7-10a7 7 0 0 1 14 0c0 4-3 7-7 10zM12 21V9M12 13l-3-2M12 11l3-2"/></svg><span>Away</span></button>
-              <button class="chip" data-scene="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M8 3l4 4 4-4"/></svg><span>TV off</span></button>
               <button class="chip" data-scene="party"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span>Party</span></button>
+              <button class="chip" data-scene="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M8 3l4 4 4-4"/></svg><span>TVs off</span></button>
               <button class="chip" data-scene="lights-off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><span>Lights off</span></button>
+              <button class="chip" data-scene="all-off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg><span>All off</span></button>
             </div>
+            <button class="rm-b pow sc-btn" id="walk-btn" aria-label="Walk through" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="13" cy="4" r="1.6"/><path d="M9 21l2.5-6.5L14 17v4M11.5 14.5 12 9l-3.5 2V14M12 9l3 3h3"/></svg></button>
             <button class="rm-b pow sc-btn" id="sun-btn" aria-label="Sunlight" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
             <button class="rm-b pow sc-btn" id="sc-btn" aria-label="Scenes" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/></svg></button>
           </div>
@@ -967,6 +988,18 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
               <button class="rm-b tv-ch" data-screen="watch">Watch</button>
             </div>
             <button class="rm-b" id="tc-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M8 3l4 4 4-4"/></svg>Open TV remote</button>
+          </section>
+          <section class="card" id="mc" hidden aria-label="PC monitor">
+            <div class="c-top">
+              <span class="led" id="mc-led" aria-hidden="true"></span>
+              <div class="c-who"><div class="who-t" id="mc-name">PC monitor</div><div class="who-s" id="mc-sub">—</div></div>
+              <button class="rm-b ic" data-close-card aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            </div>
+            <button class="mc-mini" id="mc-mini" aria-label="Open the live view in the PC app"><canvas id="mc-cv" width="640" height="360"></canvas><span class="tv-small" id="mc-wait">Connecting to the PC…</span></button>
+            <div class="row" style="--n:2">
+              <button class="rm-b" id="mc-live">Live view</button>
+              <button class="rm-b" id="mc-app">Open PC app</button>
+            </div>
           </section>
         </div>
       </section>
@@ -1064,7 +1097,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.8</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.9</span></a>
           </div>
         </div>
       </section>
@@ -1492,7 +1525,7 @@ const HomeScan = (() => {
 })();
 if (typeof module !== 'undefined') module.exports = HomeScan;
 
-const BUILT_PLAN = {"walls":[{"c":[-2.14,-0.88],"len":0.17,"wid":0.06,"a":2.356,"y":[0,2.56]},{"c":[-4.52,-1.88],"len":2.14,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[2.8,2.91],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.29,1.17],"len":0.5,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.42,-0.08],"len":1.44,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.24,0.83],"len":0.1,"wid":0.08,"a":-1.036,"y":[0,2.56]},{"c":[-1.62,-0.23],"len":0.98,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-2.1,-0.6],"len":0.64,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.69,1.37],"len":0.89,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.63,1.34],"len":3.24,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,-0.18],"len":0.19,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.2,-1.88],"len":1.94,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-0.86],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.14,2.91],"len":2.08,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.58,-0.08],"len":0.54,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-3.39,-0.23],"len":2.58,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,0.36],"len":0.9,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.3,-1.49],"len":2.72,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.93,2.91],"len":3.51,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,1.13],"len":0.48,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,2.11],"len":1.49,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,0.39],"len":0.95,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,-1.47],"len":2.77,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.95,-2.9],"len":2.5,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.6,-2.9],"len":0.59,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[2.8,-2.9],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.7,0.86],"len":0.84,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[4.64,0],"len":5.91,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,1.86],"len":2,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-2.9],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.28,0.86],"len":1.14,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.52,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-2.1,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[0.3,-0.08],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-2.1,-0.23],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-4.63,-0.23],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-2.18,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[0.32,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[4.64,-2.9],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-2.2,-0.86],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-1.18,2.91],"len":0.1,"wid":0.1,"a":0,"y":[0,2.56],"j":1},{"c":[0.9,2.91],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[0.88,-0.07],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56],"j":1},{"c":[0.91,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[0.88,0.88],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56],"j":1},{"c":[-0.28,0.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[-1.18,0.84],"len":0.14,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-1.16,-0.07],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56],"j":1},{"c":[-1.18,-0.23],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-1.16,1.38],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56],"j":1},{"c":[-4.52,-2.9],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-4.63,2.91],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[4.64,2.91],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-0.29,1.37],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-4.63,-0.545],"len":0.73,"wid":0.1,"a":1.571,"y":[0,2.56]}],"open":[{"c":[-4.52,-1.39],"len":0.75,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[-0.7,-0.08],"len":0.62,"wid":0.01,"a":0,"y":[0,2.08],"k":"door"},{"c":[-3.64,-0.23],"len":0.7,"wid":0.01,"a":0,"y":[0,2.15],"k":"door"},{"c":[-1.18,0.74],"len":0.04,"wid":0.01,"a":1.571,"y":[0,2.09],"k":"door"},{"c":[-1.18,0.34],"len":0.73,"wid":0.01,"a":1.571,"y":[0,2.13],"k":"door"},{"c":[0.9,-1.11],"len":1.65,"wid":0.01,"a":1.571,"y":[0,2.17],"k":"closed"},{"c":[4.64,-2.34],"len":0.91,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[0.13,0.86],"len":0.71,"wid":0.01,"a":0,"y":[0,2.09],"k":"door"},{"c":[-4.52,-2.45],"len":0.72,"wid":0.01,"a":1.571,"y":[0.73,2.21],"k":"window"},{"c":[2.8,2.91],"len":2.31,"wid":0.01,"a":0,"y":[0.62,2.23],"k":"window"},{"c":[-4.63,0.99],"len":0.82,"wid":0.01,"a":1.571,"y":[0.74,2.14],"k":"window"},{"c":[0,2.91],"len":0.68,"wid":0.01,"a":0,"y":[1.21,2.12],"k":"window"},{"c":[-2.06,2.91],"len":0.84,"wid":0.01,"a":0,"y":[0.79,2.15],"k":"window"},{"c":[4.64,-0.52],"len":1.21,"wid":0.01,"a":1.571,"y":[0.76,2.11],"k":"window"},{"c":[-2.2,-1.88],"len":1.5,"wid":0.1,"a":1.571,"y":[0,2.25],"k":"arch"}],"floors":[{"name":"Living room","pts":[[4.64,-2.9],[4.64,2.91],[0.9,2.91],[0.9,-2.9]]},{"name":"","pts":[[-2.2,-0.86],[-4.52,-0.86],[-4.52,-2.9],[-2.2,-2.9]]},{"name":"Kitchen","pts":[[-2.2,-0.86],[-2.2,-2.9],[0.3,-2.9],[0.3,-0.08],[-1.18,-0.08],[-1.18,-0.23],[-2.1,-0.23],[-2.1,-0.86]]},{"name":"Closet","pts":[[0.9,-2.9],[0.3,-2.9],[0.3,-0.08],[0.9,-0.08]]},{"name":"Bedroom","pts":[[-4.63,-0.23],[-4.63,2.91],[-1.18,2.91],[-1.18,-0.23]]},{"name":"Hallway","pts":[[-1.18,-0.08],[0.9,-0.08],[0.9,0.86],[-1.18,0.86]]},{"name":"","pts":[[-1.18,0.86],[-1.18,1.37],[-0.29,1.37],[-0.29,0.86]]},{"name":"Bathroom","pts":[[-0.29,0.86],[0.9,0.86],[0.9,2.91],[-1.18,2.91],[-1.18,1.37],[-0.29,1.37]]}],"items":[{"c":[-1.65,-0.62],"len":0.89,"wid":0.8,"a":1.571,"y":[0.04,1.73],"n":"refrigerator"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.04,0.92],"n":"oven"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.92,1.02],"n":"stove"},{"c":[0.53,1.89],"len":0.64,"wid":0.49,"a":1.571,"y":[0.04,0.84],"n":"storage_cabinet_mid1"},{"c":[-0.1,-1.44],"len":0.49,"wid":0.43,"a":1.571,"y":[0.76,0.98],"n":"sink"},{"c":[0.53,1.91],"len":0.53,"wid":0.41,"a":1.571,"y":[0.53,0.84],"n":"sink"},{"c":[0.44,2.53],"len":0.67,"wid":0.42,"a":0,"y":[0.06,0.84],"n":"toilet"},{"c":[0.04,-0.64],"len":0.77,"wid":0.44,"a":1.571,"y":[1.53,2.37],"n":"storage_cabinet_mid2"},{"c":[-0.66,-2.6],"len":1.12,"wid":0.42,"a":0,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-1.6,-2.58],"len":0.77,"wid":0.42,"a":0,"y":[1.97,2.47],"n":"storage_cabinet_low2"},{"c":[0.06,-1.38],"len":0.7,"wid":0.39,"a":1.571,"y":[2.01,2.37],"n":"storage_cabinet_low2"},{"c":[-0.68,2.12],"len":1.44,"wid":0.73,"a":1.571,"y":[0.06,0.49],"n":"bathtub"},{"c":[0.69,2.59],"len":0.63,"wid":0.39,"a":1.571,"y":[1.3,1.98],"n":"storage_cabinet_low1"},{"c":[0.09,-2.3],"len":1.13,"wid":0.35,"a":1.571,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-0.08,-1.47],"len":2.51,"wid":0.67,"a":1.571,"y":[0.04,0.98],"n":"storage_cabinet_mid5"},{"c":[-3.37,1.76],"len":2.26,"wid":1.59,"a":1.571,"y":[0.04,0.74],"n":"bed"},{"c":[1.4,1.66],"len":1.03,"wid":0.59,"a":1.571,"y":[0.04,0.43],"n":"table_other_rect"},{"c":[-3.3,-2.39],"len":0.81,"wid":0.8,"a":0.305,"y":[0.04,1.1],"n":"table_dining_elliptic"},{"c":[3.55,-2.63],"len":0.49,"wid":0.41,"a":0,"y":[0.04,0.72],"n":"table_other_rect"},{"c":[3.19,2.61],"len":0.85,"wid":0.5,"a":0,"y":[0.04,1.65],"n":"storage_shelf"},{"c":[-2.33,2.58],"len":0.6,"wid":0.47,"a":0,"y":[0.04,0.62],"n":"table_other_rect"},{"c":[3.26,1.46],"len":1.19,"wid":0.74,"a":1.571,"y":[0.04,0.54],"n":"table_dining_rect"},{"c":[2.32,2.59],"len":0.98,"wid":0.63,"a":0,"y":[0.04,0.82],"n":"storage_shelf"},{"c":[-2.61,-2.27],"len":0.4,"wid":0.36,"a":0,"y":[0.04,0.72],"n":"chair_stool_four_no_no"},{"c":[1.95,-2.04],"len":0.6,"wid":0.53,"a":0,"y":[0.06,0.85],"n":"chair_dining_four_back_no"},{"c":[4.14,0.68],"len":0.55,"wid":0.5,"a":0,"y":[0.06,0.46],"n":"table_dining_rect"},{"c":[1.98,-2.61],"len":0.7,"wid":0.39,"a":0,"y":[0.06,0.82],"n":"table_other_rect"},{"c":[4.16,1.24],"len":3.33,"wid":0.92,"a":1.571,"y":[0.04,0.79],"n":"sofa_rect"},{"c":[-1.69,2.22],"len":0.75,"wid":0.56,"a":0.797,"y":[0.07,0.9],"n":"chair_other_four_back_no"},{"c":[2.97,-2.1],"len":0.41,"wid":0.38,"a":1.571,"y":[0.06,0.55],"n":"chair_other_four_back_no"},{"c":[2.11,-2.08],"len":2.1,"wid":1.52,"a":0,"y":[0.04,0.82],"n":"table_other_rect"},{"c":[2.955,-1.27],"len":3.33,"wid":0.92,"a":0,"y":[0.04,0.79],"n":"sofa_single"},{"c":[2.11,-1.4],"len":0.65,"wid":0.59,"a":1.571,"y":[0.04,0.89],"n":"chair_dining_four_back_no"},{"c":[1.26,-2.33],"len":0.92,"wid":0.75,"a":1.571,"y":[0.06,0.82],"n":"table_other_rect"}],"tv":{"c":[1.06,1.69],"len":1.06,"wid":0.1,"a":1.57,"y":[0.85,1.46]},"v":1,"at":"2026-10-27","edited":true};
+const BUILT_PLAN = {"walls":[{"c":[-2.14,-0.88],"len":0.17,"wid":0.06,"a":2.356,"y":[0,2.56]},{"c":[-4.52,-1.88],"len":2.14,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[2.8,2.91],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.29,1.17],"len":0.5,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.42,-0.08],"len":1.44,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.24,0.83],"len":0.1,"wid":0.08,"a":-1.036,"y":[0,2.56]},{"c":[-1.62,-0.23],"len":0.98,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-2.1,-0.6],"len":0.64,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.69,1.37],"len":0.89,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.63,1.34],"len":3.24,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,-0.18],"len":0.19,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.2,-1.88],"len":1.94,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-0.86],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.14,2.91],"len":2.08,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.58,-0.08],"len":0.54,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-3.39,-0.23],"len":2.58,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,0.36],"len":0.9,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.3,-1.49],"len":2.72,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-2.93,2.91],"len":3.51,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-1.18,1.13],"len":0.48,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-1.18,2.11],"len":1.49,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,0.39],"len":0.95,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,-1.47],"len":2.77,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-0.95,-2.9],"len":2.5,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.6,-2.9],"len":0.59,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[2.8,-2.9],"len":3.78,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-0.7,0.86],"len":0.84,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[4.64,0],"len":5.91,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[0.9,1.86],"len":2,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-3.38,-2.9],"len":2.38,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[0.28,0.86],"len":1.14,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-4.52,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-2.1,-0.86],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[0.3,-0.08],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-2.1,-0.23],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-4.63,-0.23],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-2.18,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[0.32,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[4.64,-2.9],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-2.2,-0.86],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-1.18,2.91],"len":0.1,"wid":0.1,"a":0,"y":[0,2.56],"j":1},{"c":[0.9,2.91],"len":0.1,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[0.88,-0.07],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56],"j":1},{"c":[0.91,-2.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[0.88,0.88],"len":0.11,"wid":0.09,"a":0.464,"y":[0,2.56],"j":1},{"c":[-0.28,0.88],"len":0.11,"wid":0.09,"a":-1.107,"y":[0,2.56],"j":1},{"c":[-1.18,0.84],"len":0.14,"wid":0.1,"a":1.571,"y":[0,2.56],"j":1},{"c":[-1.16,-0.07],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56],"j":1},{"c":[-1.18,-0.23],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[-1.16,1.38],"len":0.11,"wid":0.09,"a":-0.464,"y":[0,2.56],"j":1},{"c":[-4.52,-2.9],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-4.63,2.91],"len":0.14,"wid":0.01,"a":-0.785,"y":[0,2.56],"j":1},{"c":[4.64,2.91],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-0.29,1.37],"len":0.14,"wid":0.01,"a":0.785,"y":[0,2.56],"j":1},{"c":[-4.63,-0.545],"len":0.73,"wid":0.1,"a":1.571,"y":[0,2.56]},{"c":[-5.96,-0.18],"len":2.66,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-5.905,-2.9],"len":2.77,"wid":0.1,"a":0,"y":[0,2.56]},{"c":[-7.29,-1.54],"len":2.82,"wid":0.1,"a":1.571,"y":[0,2.56]}],"open":[{"c":[-4.52,-1.39],"len":0.75,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[-0.7,-0.08],"len":0.62,"wid":0.01,"a":0,"y":[0,2.08],"k":"door"},{"c":[-3.64,-0.23],"len":0.7,"wid":0.01,"a":0,"y":[0,2.15],"k":"door"},{"c":[-1.18,0.74],"len":0.04,"wid":0.01,"a":1.571,"y":[0,2.09],"k":"door"},{"c":[-1.18,0.34],"len":0.73,"wid":0.01,"a":1.571,"y":[0,2.13],"k":"door"},{"c":[0.9,-1.11],"len":1.65,"wid":0.01,"a":1.571,"y":[0,2.17],"k":"closed"},{"c":[4.64,-2.34],"len":0.91,"wid":0.01,"a":1.571,"y":[0,2.14],"k":"door"},{"c":[0.13,0.86],"len":0.71,"wid":0.01,"a":0,"y":[0,2.09],"k":"door"},{"c":[-4.52,-2.45],"len":0.72,"wid":0.01,"a":1.571,"y":[0.73,2.21],"k":"window"},{"c":[2.8,2.91],"len":2.31,"wid":0.01,"a":0,"y":[0.62,2.23],"k":"window"},{"c":[-4.63,0.99],"len":0.82,"wid":0.01,"a":1.571,"y":[0.74,2.14],"k":"window"},{"c":[0,2.91],"len":0.68,"wid":0.01,"a":0,"y":[1.21,2.12],"k":"window"},{"c":[-2.06,2.91],"len":0.84,"wid":0.01,"a":0,"y":[0.79,2.15],"k":"window"},{"c":[4.64,-0.52],"len":1.21,"wid":0.01,"a":1.571,"y":[0.76,2.11],"k":"window"},{"c":[-2.2,-1.88],"len":1.5,"wid":0.1,"a":1.571,"y":[0,2.25],"k":"arch"},{"c":[0.9,0.39],"len":0.85,"wid":0.01,"a":1.571,"y":[0,2.1],"k":"door"}],"floors":[{"name":"Living room","pts":[[4.64,-2.9],[4.64,2.91],[0.9,2.91],[0.9,-2.9]]},{"name":"","pts":[[-2.2,-0.86],[-4.52,-0.86],[-4.52,-2.9],[-2.2,-2.9]]},{"name":"Kitchen","pts":[[-2.2,-0.86],[-2.2,-2.9],[0.3,-2.9],[0.3,-0.08],[-1.18,-0.08],[-1.18,-0.23],[-2.1,-0.23],[-2.1,-0.86]]},{"name":"Closet","pts":[[0.9,-2.9],[0.3,-2.9],[0.3,-0.08],[0.9,-0.08]]},{"name":"Bedroom","pts":[[-4.63,-0.23],[-4.63,2.91],[-1.18,2.91],[-1.18,-0.23]]},{"name":"Hallway","pts":[[-1.18,-0.08],[0.9,-0.08],[0.9,0.86],[-1.18,0.86]]},{"name":"","pts":[[-1.18,0.86],[-1.18,1.37],[-0.29,1.37],[-0.29,0.86]]},{"name":"Bathroom","pts":[[-0.29,0.86],[0.9,0.86],[0.9,2.91],[-1.18,2.91],[-1.18,1.37],[-0.29,1.37]]},{"name":"Laundry","pts":[[-7.29,-2.9],[-4.57,-2.9],[-4.57,-0.18],[-7.29,-0.18]]}],"items":[{"c":[-1.65,-0.62],"len":0.89,"wid":0.8,"a":1.571,"y":[0.04,1.73],"n":"refrigerator"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.04,0.92],"n":"oven"},{"c":[-1.57,-2.49],"len":0.75,"wid":0.68,"a":0,"y":[0.92,1.02],"n":"stove"},{"c":[0.53,1.89],"len":0.64,"wid":0.49,"a":1.571,"y":[0.04,0.84],"n":"storage_cabinet_mid1"},{"c":[-0.1,-1.44],"len":0.49,"wid":0.43,"a":1.571,"y":[0.76,0.98],"n":"sink"},{"c":[0.53,1.91],"len":0.53,"wid":0.41,"a":1.571,"y":[0.53,0.84],"n":"sink"},{"c":[0.44,2.53],"len":0.67,"wid":0.42,"a":0,"y":[0.06,0.84],"n":"toilet"},{"c":[0.04,-0.64],"len":0.77,"wid":0.44,"a":1.571,"y":[1.53,2.37],"n":"storage_cabinet_mid2"},{"c":[-0.66,-2.6],"len":1.12,"wid":0.42,"a":0,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-1.6,-2.58],"len":0.77,"wid":0.42,"a":0,"y":[1.97,2.47],"n":"storage_cabinet_low2"},{"c":[0.06,-1.38],"len":0.7,"wid":0.39,"a":1.571,"y":[2.01,2.37],"n":"storage_cabinet_low2"},{"c":[-0.68,2.12],"len":1.44,"wid":0.73,"a":1.571,"y":[0.06,0.49],"n":"bathtub"},{"c":[0.69,2.59],"len":0.63,"wid":0.39,"a":1.571,"y":[1.3,1.98],"n":"storage_cabinet_low1"},{"c":[0.09,-2.3],"len":1.13,"wid":0.35,"a":1.571,"y":[1.53,2.47],"n":"storage_cabinet_mid2"},{"c":[-0.08,-1.47],"len":2.51,"wid":0.67,"a":1.571,"y":[0.04,0.98],"n":"storage_cabinet_mid5"},{"c":[-3.37,1.76],"len":2.26,"wid":1.59,"a":1.571,"y":[0.04,0.74],"n":"bed"},{"c":[1.4,1.66],"len":1.03,"wid":0.59,"a":1.571,"y":[0.04,0.43],"n":"table_other_rect"},{"c":[-3.3,-2.39],"len":0.81,"wid":0.8,"a":0.305,"y":[0.04,1.1],"n":"table_dining_elliptic"},{"c":[3.55,-2.63],"len":0.49,"wid":0.41,"a":0,"y":[0.04,0.72],"n":"table_other_rect"},{"c":[3.19,2.61],"len":0.85,"wid":0.5,"a":0,"y":[0.04,1.65],"n":"storage_shelf"},{"c":[-2.33,2.58],"len":0.6,"wid":0.47,"a":0,"y":[0.04,0.62],"n":"table_other_rect"},{"c":[3.26,1.46],"len":1.19,"wid":0.74,"a":1.571,"y":[0.04,0.54],"n":"table_dining_rect"},{"c":[2.32,2.59],"len":0.98,"wid":0.63,"a":0,"y":[0.04,0.82],"n":"storage_shelf"},{"c":[-2.61,-2.27],"len":0.4,"wid":0.36,"a":0,"y":[0.04,0.72],"n":"chair_stool_four_no_no"},{"c":[1.95,-2.04],"len":0.6,"wid":0.53,"a":0,"y":[0.06,0.85],"n":"chair_dining_four_back_no"},{"c":[4.14,0.68],"len":0.55,"wid":0.5,"a":0,"y":[0.06,0.46],"n":"table_dining_rect"},{"c":[1.98,-2.61],"len":0.7,"wid":0.39,"a":0,"y":[0.06,0.82],"n":"table_other_rect"},{"c":[4.16,1.24],"len":3.33,"wid":0.92,"a":1.571,"y":[0.04,0.79],"n":"sofa_rect"},{"c":[-1.69,2.22],"len":0.75,"wid":0.56,"a":0.797,"y":[0.07,0.9],"n":"chair_other_four_back_no"},{"c":[2.97,-2.1],"len":0.41,"wid":0.38,"a":1.571,"y":[0.06,0.55],"n":"chair_other_four_back_no"},{"c":[2.11,-2.08],"len":2.1,"wid":1.52,"a":0,"y":[0.04,0.82],"n":"table_other_rect"},{"c":[2.955,-1.27],"len":3.33,"wid":0.92,"a":0,"y":[0.04,0.79],"n":"sofa_single"},{"c":[2.11,-1.4],"len":0.65,"wid":0.59,"a":1.571,"y":[0.04,0.89],"n":"chair_dining_four_back_no"},{"c":[1.26,-2.33],"len":0.92,"wid":0.75,"a":1.571,"y":[0.06,0.82],"n":"table_other_rect"},{"n":"dryer","c":[-4.945,-2.575],"len":0.55,"wid":0.65,"a":1.571,"y":[0.02,0.9]},{"n":"washer","c":[-4.945,-2.025],"len":0.55,"wid":0.65,"a":1.571,"y":[0.02,0.9]}],"tv":{"c":[1.06,1.69],"len":1.06,"wid":0.1,"a":1.57,"y":[0.85,1.46]},"v":1,"at":"2026-10-27","edited":true};
 /* Home Map: a light 3D outline of Floyd's home, made from a Polycam room scan (src/scan.js),
    with the Kasa lights and the TV on it. Lights and TV go through the same home relay as
    Kasa Lights and Phosphor TV (kasa_bridge.py, Tailscale, the same link and key). */
@@ -1591,10 +1624,10 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     try { party = await call('/party'); partyHas = true; } catch (e) { if (e.missing) { partyHas = false; party = null; } }
     renderParty(); partyTick();
   }
-  async function setParty(body) {
+  async function setParty(body, quiet) {
     if (!ready()) { PH.go('/settings/relay'); return; }
     partyBusy = true; renderParty();
-    try { party = await call('/party', body, 20000); partyHas = true; if ('on' in body) PH.toast(body.on ? 'Party on. It keeps going until you stop it.' : 'Party over. Lights restored.'); }
+    try { party = await call('/party', body, 20000); partyHas = true; if ('on' in body && !quiet) PH.toast(body.on ? 'Party on. It keeps going until you stop it.' : 'Party over. Lights restored.'); }
     catch (e) { if (e.missing) partyHas = false; PH.toast(e.missing ? 'Party needs the relay update (party.py). See Kasa Lights.' : /409/.test(e.message) ? 'No lights are responding right now.' : e.message, 'warn'); }
     partyBusy = false; renderParty(); partyTick(); if (body.on === false) refreshLights();
   }
@@ -1640,7 +1673,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   const MUSIC = { 'swiss-classic': 'Calm classical', 'romantic-jazz': 'Romantic jazz', 'sonic-universe': 'Japanese city pop', 'secret-agent': 'Japanese fusion', 'swiss-jazz': 'Classic jazz',
     bossa: 'Bossa nova', lounge: 'Cocktail lounge', fluid: 'Lo-fi beats', 'groove-salad': 'Space ambient', 'drone-zone': 'Sleep' };
   const AMB = { rain: 'Rain', storm: 'Thunderstorm', fire: 'Fire sound', ocean: 'Ocean waves', wind: 'Wind', brown: 'Brown noise' };
-  const SCENES = { morning: 'Morning', away: 'Away', home: 'Home', romantic: 'Romantic' };
+  const SCENES = { morning: 'Morning', away: 'Away', home: 'Home', romantic: 'Romantic', bedtime: 'Bedtime' };
   // What the real TV is showing right now: { mode: on|other|off|unknown, big, small, short }
   function tvNow(id = 'crt') {
     if (!ready()) return { mode: 'unknown', big: 'Not set up', small: 'Needs the relay', short: '' };
@@ -1678,17 +1711,25 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     catch (e) { PH.toast(e.message, 'warn'); }
   }
   // Inside phosphor.os, the TV remote is the OS's own TV app
-  function openTVApp() {
-    try { if (window.parent !== window && window.parent.PhosphorOS) { window.parent.location.hash = '#/app/tv'; return; } } catch {}
-    location.href = 'https://bgriffie.github.io/phosphor-os/#/app/tv';
+  // Open a phosphor.os app, at one of its pages if the OS can (older versions open its first page)
+  function openOSApp(id, page) {
+    const hash = '#/app/' + id + (page || '');
+    try { if (window.parent !== window && window.parent.PhosphorOS) { window.parent.location.hash = hash; return; } } catch {}
+    location.href = 'https://bgriffie.github.io/phosphor-os/' + hash;
   }
+  // The PC app, on the given monitor; live: straight into its live view
+  function openPCApp(mon, live) {
+    try { localStorage.setItem('pc-remote:data:live', JSON.stringify(mon)); } catch {}
+    openOSApp('pc', live ? '/windows/live' : '');
+  }
+  function openTVApp() { openOSApp('tv'); }
 
   /* ---------- Geometry: the plan as boxes and faces ---------- */
   const CUT = { full: 99, half: 1.3, low: 0.12 };
   const TV_GROW = 1.3;
   // Furniture: none (Floyd's default), or only the big pieces he wants to see
   const furnMode = () => { const v = PH.store.get('furn'); return v === true || v === 'main' ? 'main' : 'off'; };
-  const mainPiece = it => /^(sofa|bed|refrigerator|oven|stove)/.test(it.n) || (/^table/.test(it.n) && it.y[1] >= 0.7)
+  const mainPiece = it => /^(sofa|bed|refrigerator|oven|stove|washer|dryer)/.test(it.n) || (/^table/.test(it.n) && it.y[1] >= 0.7)
     || (/^storage_cabinet/.test(it.n) && it.y[0] < 0.2 && it.y[1] >= 0.75 && it.y[1] <= 1.1)   // countertops
     || /^storage_shelf/.test(it.n);   // the shelving units by the big living-room window
   let G = null;
@@ -1836,7 +1877,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   }
   const inPoly = (x, z, p) => { let k = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) k = !k; } return k; };
   function build() {
-    const cut = CUT[PH.store.get('walls')] || 1.3;
+    const cut = walk ? 99 : CUT[PH.store.get('walls')] || 1.3;   // walking through: walls full height
     const frames = [], doors = [], faces = [], walls = [], blockers = [];
     const ops = (plan.open || []).filter(o => o.len > 0.15);
     const wallSegs = [];
@@ -1935,7 +1976,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   const FURN = { sofa: ['Couch', 2.0, 0.9, 0.8], chair: ['Chair', 0.55, 0.55, 0.9], table: ['Table', 1.2, 0.8, 0.75], desk: ['Desk', 1.4, 0.7, 0.75],
     bed: ['Bed', 2.0, 1.5, 0.6], shelf: ['Shelf', 0.9, 0.4, 1.8], cabinet: ['Cabinet', 0.8, 0.5, 0.9], box: ['Box', 0.5, 0.5, 0.5] };
   const SCAN_NAMES = [[/^sofa/, 'Couch'], [/^chair/, 'Chair'], [/^table/, 'Table'], [/^bed/, 'Bed'], [/^storage_shelf/, 'Shelf'], [/^storage_cabinet/, 'Cabinet'],
-    [/^refrigerator/, 'Fridge'], [/^oven/, 'Oven'], [/^stove/, 'Stove'], [/^sink/, 'Sink'], [/^toilet/, 'Toilet'], [/^bathtub/, 'Bathtub']];
+    [/^refrigerator/, 'Fridge'], [/^oven/, 'Oven'], [/^stove/, 'Stove'], [/^sink/, 'Sink'], [/^toilet/, 'Toilet'], [/^bathtub/, 'Bathtub'], [/^washer/, 'Washer'], [/^dryer/, 'Dryer']];
   const furnName = it => FURN[it.n] ? FURN[it.n][0] : (SCAN_NAMES.find(([r]) => r.test(it.n || '')) || [0, 'Furniture'])[1];
   function furnGet(id) {
     if (isMon(id)) return furn[id] || null;
@@ -1977,10 +2018,61 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   const roomAt = (x, z) => { for (const f of G.floors) if (inPoly(x, z, f.pts)) return f.i; return -1; };
 
   /* ---------- Camera ---------- */
-  const FOV = 0.8, NEAR = 0.15;
+  const NEAR = 0.15;
+  let FOV = 0.8;
+  /* Walk-through: a person's eye view at 1.6 m. One finger: side to side turns, up and down walks; two fingers up and
+     down look up and down; tap the floor to walk there. Walls stop you (doors don't), and show full height. */
+  const EYE = 1.6;
+  let walk = null;   // { x, z, yaw, pitch } while walking
+  function walkBlocked(x, z) {
+    const [x0, x1, z0, z1] = G.bounds; if (x < x0 + 0.1 || x > x1 - 0.1 || z < z0 + 0.1 || z > z1 - 0.1) return true;
+    return G.blockers.some(([ax, az, bx, bz]) => { const vx = bx - ax, vz = bz - az, t = clamp(((x - ax) * vx + (z - az) * vz) / (vx * vx + vz * vz || 1), 0, 1); return Math.hypot(x - ax - vx * t, z - az - vz * t) < 0.22; });
+  }
+  // Move by (dx, dz), sliding along a wall rather than stopping dead
+  function walkBy(dx, dz) {
+    const steps = Math.ceil(Math.hypot(dx, dz) / 0.05) || 1;
+    for (let i = 0; i < steps; i++) {
+      const sx = dx / steps, sz = dz / steps;
+      if (!walkBlocked(walk.x + sx, walk.z + sz)) { walk.x += sx; walk.z += sz; }
+      else if (!walkBlocked(walk.x + sx, walk.z)) walk.x += sx;
+      else if (!walkBlocked(walk.x, walk.z + sz)) walk.z += sz;
+      else break;
+    }
+  }
+  let walkAnim = 0;
+  function walkTo(x, z) {
+    cancelAnimationFrame(walkAnim);
+    const step = () => {
+      const dx = x - walk.x, dz = z - walk.z, d = Math.hypot(dx, dz); if (d < 0.05) return;
+      const k = Math.min(1, 0.06 / d), bx = walk.x, bz = walk.z;   // ~3.5 m/s
+      walkBy(dx * k, dz * k); req();
+      if (walk.x !== bx || walk.z !== bz) walkAnim = requestAnimationFrame(step);
+    };
+    // face where you're going, then go
+    walk.yaw = Math.atan2(-(x - walk.x), -(z - walk.z)); step();
+  }
+  function walkToggle(on = !walk) {
+    if (on) {
+      // start at the middle of the room the view is centred on, facing the way the map faces
+      const r = roomAt(cam.tx, cam.tz), f = r >= 0 ? G.floors.find(q => q.i === r) : G.floors.reduce((a, b) => polyArea(b.pts) > polyArea(a.pts) ? b : a);
+      walk = { x: f.c[0], z: f.c[1], yaw: cam.yaw, pitch: 0.12 };
+      if (walkBlocked(walk.x, walk.z)) { walk.x = cam.tx; walk.z = cam.tz; }
+    } else { cancelAnimationFrame(walkAnim); walk = null; }
+    FOV = walk ? 1.15 : 0.8;
+    $('#walk-btn').classList.toggle('is-sel', !!walk); $('#walk-btn').setAttribute('aria-pressed', String(!!walk));
+    if (walk) { scenesOpen = false; renderScenes(); }
+    build(); render();
+  }
+  const polyArea = pts => Math.abs(pts.reduce((s, p, i) => { const q = pts[(i + 1) % pts.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
   let cam = null, W = 0, H = 0, DPR = 1, GDPR = 1, Fo = 1, E = [0, 0, 0], R = [1, 0, 0], U = [0, 1, 0], Fw = [0, 0, -1];
-  const top = () => PH.store.get('view') === 'top';
+  const top = () => !walk && PH.store.get('view') === 'top';
   function setupCam() {
+    if (walk) {
+      const cp = Math.cos(walk.pitch), sp = Math.sin(walk.pitch), sy = Math.sin(walk.yaw), cy = Math.cos(walk.yaw);
+      E = [walk.x, EYE, walk.z]; Fw = [-cp * sy, -sp, -cp * cy]; R = [cy, 0, -sy];
+      U = [R[1] * Fw[2] - R[2] * Fw[1], R[2] * Fw[0] - R[0] * Fw[2], R[0] * Fw[1] - R[1] * Fw[0]];
+      Fo = Math.min(W, H) / 2 / Math.tan(FOV / 2); return;
+    }
     const p = top() ? Math.PI / 2 : cam.pitch, cp = Math.cos(p), sp = Math.sin(p), sy = Math.sin(cam.yaw), cy = Math.cos(cam.yaw);
     E = [cam.tx + cam.dist * cp * sy, cam.dist * sp, cam.tz + cam.dist * cp * cy];
     Fw = [-cp * sy, -sp, -cp * cy]; R = [cy, 0, -sy];
@@ -2153,6 +2245,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     uniform vec3 uE, uSun; uniform int uNL; uniform vec4 uLP[${MAXL}]; uniform vec3 uLC[${MAXL}]; uniform sampler2D uSh;
     uniform vec3 uSunD; uniform float uSunK; uniform int uNW; uniform vec4 uWC[${MAXW}], uWU[${MAXW}], uWN[${MAXW}], uWB[${MAXW}], uHouse;
     void main() {
+      if (vC.a < -0.5) { gl_FragColor = vec4(0.0); return; }   // a live screen: left clear for the picture underneath
       vec3 n = normalize(vN); if (dot(n, uE - vP) < 0.0) n = -n;
       vec3 base = vC.rgb * mix(1.0, 0.55 + 0.45 * abs(dot(n, uSun)), vC.a), light = vec3(0.0);
       for (int i = 0; i < ${MAXL}; i++) {
@@ -2203,7 +2296,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     return { p, a, u };
   }
   function glInit() {
-    gl = glc.getContext('webgl', { antialias: true, alpha: false, preserveDrawingBuffer: false });
+    // alpha: the live TV and monitor pictures sit under this canvas and show through the screens it leaves clear
+    gl = glc.getContext('webgl', { antialias: true, alpha: true, premultipliedAlpha: true, preserveDrawingBuffer: false });
     if (!gl) return false;
     try { PM = program(VS_MESH, FS_MESH); PL = program(VS_LINE, FS_LINE); } catch (e) { console.error(e); gl = null; return false; }
     for (const k of ['mesh', 'lines', 'dmesh', 'dlines']) buf[k] = gl.createBuffer();
@@ -2322,20 +2416,22 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   }
   // The piece of furniture or monitor under the finger, nearest first, unless a wall is in the way
   const furnBox = it => ({ c: it.c, len: it.len, wid: it.wid, a: it.a, y0: it.y[0], y1: sel === it.id ? it.y[1] : Math.min(it.y[1], Math.max(G.cut, 0.9)) });
-  function pickBox(sx, sy) {
+  function pickBox(sx, sy, monsOnly) {
     const xn = (sx - W / 2) / Fo, yn = -(sy - H / 2) / Fo, d = [0, 1, 2].map(k => R[k] * xn + U[k] * yn + Fw[k]);
     let best = null, bt = 1e9;
     const test = (id, b) => { const t = rayBox(E, d, b, 1e4); if (t >= 0 && t < bt) { bt = t; best = id; } };
-    for (const it of furnShown()) test(it.id, furnBox(it));
+    if (!monsOnly) for (const it of furnShown()) test(it.id, furnBox(it));
     for (const id in furn) if (isMon(id)) test(id, monGeom(id).box);
     return best && !G.walls.some(b => rayBox(E, d, b, bt) >= 0) ? best : null;
   }
-  // The screen's corners on the phone, if the whole screen can be seen; else null
-  function screenOnPhone(quad, n) {
+  // The screen's corners on the phone when it faces this way and is in front of the eye, big enough to show a picture;
+  // else null. Walls in front of it are drawn over the picture by the depth buffer, so they don't matter here.
+  function screenOnPhone(quad, n, min = 80) {
     const fc = quad[0].map((v, k) => (v + quad[2][k]) / 2);
     if (top() || (fc[0] - E[0]) * n[0] + (fc[2] - E[2]) * n[2] >= 0) return null;
-    const cs = quad.map(toCam), inset = quad.map(q => q.map((v, k) => v + (fc[k] - v) * 0.08 + n[k] * 0.02));
-    return cs.every(c => c[2] > NEAR) && !inset.some(hidden) && !hidden(fc.map((v, k) => v + n[k] * 0.02)) ? cs.map(scr) : null;
+    const cs = quad.map(toCam); if (!cs.every(c => c[2] > NEAR)) return null;
+    const q = cs.map(scr), area = Math.abs((q[1][0] - q[0][0]) * (q[3][1] - q[0][1]) - (q[3][0] - q[0][0]) * (q[1][1] - q[0][1]));
+    return area >= min ? q : null;
   }
   function resize() {
     const r = canvas.getBoundingClientRect();
@@ -2362,6 +2458,11 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       const p = pins[id], bri = (l.brightness ?? 100) / 100;
       lit.push({ x: p.x, y: p.y, z: p.z, c: hslRGB([col[0], col[1], Math.min(col[2], 60)]), k: 0.35 + 0.65 * bri });
     }
+    // where each live picture goes; those screens are left clear in the 3D picture so the live picture under it shows
+    for (const id in G.tvs) { const t = G.tvs[id], m = mirs[id]; t.qs = screenOnPhone(t.quad, t.n, 150); t.live = !!(t.qs && m && m.ready && cardId !== id); }
+    monQs = {};
+    for (const id in furn) if (isMon(id)) { const g = monGeom(id); monQs[id] = screenOnPhone(g.quad, g.n); }
+    const HOLE = [0, 0, 0, -1];
     // the TVs, coloured by what each is doing
     const tvns = {};
     for (const id in G.tvs) {
@@ -2372,9 +2473,9 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
         quad(dynM, f.pts, f.screen ? scr0 : body, f.n);
         f.pts.forEach((p, i) => seg(dynL, p, f.pts[(i + 1) % 4], f.screen ? edge : bodyEdge, f.screen && (on || other) ? 2 : 1.25));
       }
-      if (T.crt) {   // the glass, set in the bezel
-        quad(dynM, T.quad, scr0, T.n);
-        T.quad.forEach((p, i) => seg(dynL, p, T.quad[(i + 1) % 4], edge, on || other ? 2 : 1.25));
+      if (T.crt || T.live) {   // the glass, set in the bezel (the CRT), or the live picture
+        quad(dynM, T.quad, T.live ? HOLE : scr0, T.n);
+        if (T.crt) T.quad.forEach((p, i) => seg(dynL, p, T.quad[(i + 1) % 4], edge, on || other ? 2 : 1.25));
       }
     }
     // furniture, and the monitors with the PC's pictures
@@ -2386,9 +2487,9 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     }
     const mBody = rgbOf([30, 33, 30]), mEdge = rgb('#5A6A5C');
     for (const id in furn) if (isMon(id)) {
-      const g = monGeom(id), s = sel === id, live = pcLive[id] && pcLive[id].got;
+      const g = monGeom(id), s = sel === id, live = !!(pcLive[id] && pcLive[id].got && monQs[id]);
       boxDraw(g.faces, mBody, mBody, s ? on : mEdge, s ? 1.5 : 1); boxDraw(g.stand, mBody, mBody, mEdge, 0.75);
-      quad(dynM, g.quad, rgb(live ? '#000000' : '#04140A', 0), g.n);
+      quad(dynM, g.quad, live ? HOLE : rgb('#04140A', 0), g.n);
       g.quad.forEach((p, i) => seg(dynL, p, g.quad[(i + 1) % 4], s ? on : rgb(C.strong), 1.25));
     }
     // plants
@@ -2438,10 +2539,6 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       if (labelsOn || editing) label(l ? l.name : (p.name || 'Light'), sx, sy + r + 10, col ? C.text : C.dim, 11);
       hits.push({ id, x: sx, y: sy, r });
     }
-    // where each live TV picture goes: only when the whole screen can be seen
-    for (const id in G.tvs) { const t = G.tvs[id]; t.qs = screenOnPhone(t.quad, t.n); }
-    monQs = {};
-    for (const id in furn) if (isMon(id)) { const g = monGeom(id); monQs[id] = screenOnPhone(g.quad, g.n); }
     placeMirror(); placeScreens();
   }
 
@@ -2459,6 +2556,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     }
     // furniture and monitors can be picked while placing, unless something else is picked to put down
     if (mode() === 'place' && (sel === null || (isBox(sel) && furnGet(sel)))) return pickBox(x, y);
+    if (mode() === 'map') return pickBox(x, y, true);   // on the map, a monitor opens its card
     return null;
   }
   const two = () => { const [a, b] = [...ptrs.values()]; return { mid: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], span: Math.hypot(a[0] - b[0], a[1] - b[1]), ang: Math.atan2(b[1] - a[1], b[0] - a[0]) }; };
@@ -2488,6 +2586,15 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     if (!ptrs.has(e.pointerId) || !gest) return;
     const p = pt(e); ptrs.set(e.pointerId, p);
     setupCam();
+    if (walk) {   // walking: turn, walk, look up and down
+      if (ptrs.size >= 2) { const t = two(), o = gest.two; walk.pitch = clamp(walk.pitch + (t.mid[1] - o.mid[1]) * 0.005, -0.9, 0.9); gest.two = t; gest.moved = true; req(); return; }
+      if (!gest.moved && Math.hypot(p[0] - gest.s[0], p[1] - gest.s[1]) < 8) return;
+      gest.moved = true; cancelAnimationFrame(walkAnim);
+      walk.yaw -= (p[0] - gest.last[0]) * 0.006;
+      const m = (p[1] - gest.last[1]) * 0.012;   // finger up: forward
+      walkBy(Math.sin(walk.yaw) * m, Math.cos(walk.yaw) * m);
+      gest.last = p; req(); return;
+    }
     if (ptrs.size >= 2) {
       // Two fingers: a twist turns, a pinch zooms. Fingers never keep exactly the same spread while twisting, so the
       // gesture locks to whichever clearly started first; until then it only moves the map.
@@ -2519,7 +2626,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     save('cam', cam);
   }
   canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
-  canvas.addEventListener('wheel', e => { e.preventDefault(); cam.dist *= Math.exp(e.deltaY * 0.0015); limit(); req(); }, { passive: false });
+  canvas.addEventListener('wheel', e => { e.preventDefault(); if (walk) { walkBy(Math.sin(walk.yaw) * e.deltaY * 0.004, Math.cos(walk.yaw) * e.deltaY * 0.004); req(); return; } cam.dist *= Math.exp(e.deltaY * 0.0015); limit(); req(); }, { passive: false });
   // keep the OS's and PH's edge swipe from firing mid-drag
   ['touchstart', 'touchmove', 'touchend'].forEach(t => canvas.addEventListener(t, e => { e.stopPropagation(); if (t === 'touchmove') e.preventDefault(); }, { passive: false }));
 
@@ -2565,6 +2672,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       savePins(); renderPlace(); req(); return;
     }
     if (isTVid(h)) { openCard(h); refreshTV(); return; }
+    if (isMon(h)) { openCard(h); if (!pcMons) refreshPCMons(); return; }
+    if (!h && walk) { const at = ray(p[0], p[1], 0); if (at && !cardId) { walkTo(at[0], at[1]); return; } }
     if (h) {
       const l = lights.find(x => x.id === h);
       if (!ready()) { PH.toast('Set up the relay first.', 'warn'); return; }
@@ -2583,9 +2692,10 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   const WHITES = [['Warm', 2700], ['Soft', 3500], ['Neutral', 4500], ['Day', 6500]];
   const near = (a, b, d) => Math.abs(a - b) < d;
   function renderCard() {
-    const isTV = isTVid(cardId), l = cardId && !isTV ? lights.find(x => x.id === cardId) : null;
-    $('#lc').hidden = !cardId || isTV; $('#tc').hidden = !isTV;
-    if (cardId && !isTV && !dragging) {
+    const isTV = isTVid(cardId), isM = isMon(cardId), l = cardId && !isTV && !isM ? lights.find(x => x.id === cardId) : null;
+    $('#lc').hidden = !cardId || isTV || isM; $('#tc').hidden = !isTV; $('#mc').hidden = !isM;
+    if (isM) renderMonCard();
+    if (cardId && !isTV && !isM && !dragging) {
       const pin = pins[cardId];
       $('#lc-name').textContent = l ? l.name : (pin && pin.name) || 'Light';
       const rn = pin ? roomName(roomAt(pin.x, pin.z)) : '';
@@ -2623,6 +2733,26 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   $('#lc-sw').addEventListener('click', e => { const b = e.target.closest('[data-hsv]'); if (!b) return; const [h, s] = b.dataset.hsv.split(',').map(Number); const l = lights.find(x => x.id === cardId); setLight(cardId, { hsv: [h, s, (l && l.brightness) || 80] }); });
   $('#lc-wh').addEventListener('click', e => { const b = e.target.closest('[data-temp]'); if (b) setLight(cardId, { temp: +b.dataset.temp }); });
   $$('[data-close-card]').forEach(b => b.addEventListener('click', () => openCard(null)));
+  // A monitor's card: its PC screen, live, and the way into the PC app
+  function renderMonCard() {
+    const m = furn[cardId]; if (!m) { openCard(null); return; }
+    const s = pcLive[cardId], live = !!(s && s.got), asp = monAspect(m.mon);
+    $('#mc-name').textContent = 'PC monitor · Screen ' + m.mon;
+    $('#mc-sub').textContent = live ? 'Live' : !ready() ? 'Set up the relay first' : pcMons && !pcMons.length ? 'The relay has no PC control' : !PH.store.get('live') ? 'Live pictures are off in Settings' : 'Connecting…';
+    $('#mc-led').className = 'led' + (live ? ' on' : ' wait');
+    $('#mc-mini').style.aspectRatio = asp.toFixed(4); $('#mc-wait').hidden = live;
+    const cv = $('#mc-cv'); if (!live) cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+  }
+  function monCardFrame(id) {
+    if (cardId !== id) return;
+    const s = pcLive[id], cv = $('#mc-cv');
+    if (cv.width !== s.cv.width || cv.height !== s.cv.height) { cv.width = s.cv.width; cv.height = s.cv.height; }
+    cv.getContext('2d').drawImage(s.cv, 0, 0);
+    if (!$('#mc-wait').hidden) renderMonCard();
+  }
+  $('#mc-mini').addEventListener('click', () => { const m = furn[cardId]; if (m) openPCApp(m.mon, true); });
+  $('#mc-live').addEventListener('click', () => { const m = furn[cardId]; if (m) openPCApp(m.mon, true); });
+  $('#mc-app').addEventListener('click', () => { const m = furn[cardId]; if (m) openPCApp(m.mon, false); });
   $('#tc-pow').addEventListener('click', tvPower);
   $('#tc-open').addEventListener('click', openTVApp);
   $('#tc-chans').addEventListener('click', e => { const b = e.target.closest('[data-screen]'); if (b) tvOpen(b.dataset.screen); });
@@ -2658,7 +2788,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       const f = document.createElement('iframe'), T = G.tvs[id];
       f.className = 'tv-live'; f.title = 'What the TV is showing'; f.tabIndex = -1; f.setAttribute('aria-hidden', 'true');
       f.style.width = T.pw + 'px'; f.style.height = T.ph + 'px';
-      f.addEventListener('load', () => { if (mirs[id] !== m) return; m.ready = true; mirrorFeed(id); placeMirror(); });
+      f.addEventListener('load', () => { if (mirs[id] !== m) return; m.ready = true; mirrorFeed(id); placeMirror(); req(); });
       f.srcdoc = doc; m.frame = f; $('#tv-layer').appendChild(f); placeMirror();
     } catch { if (mirs[id] === m) mirs[id] = { failed: true, sent: {} }; }
   }
@@ -2700,8 +2830,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       }
       f.classList.remove('in-card');
       const q = T.qs;
-      const area = q ? Math.abs((q[1][0] - q[0][0]) * (q[3][1] - q[0][1]) - (q[3][0] - q[0][0]) * (q[1][1] - q[0][1])) : 0;
-      if (area < 150) { f.hidden = true; continue; }
+      if (!T.live) { f.hidden = true; continue; }
       const r = canvas.getBoundingClientRect(), ox = r.left - view.left, oy = r.top - view.top;
       f.style.transform = matrixTo([q[0], q[1], q[3], q[2]].map(([x, y]) => [x + ox, y + oy]), T.pw, T.ph); f.hidden = false;
     }
@@ -2747,7 +2876,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       if (pcLive[id] !== s) { bmp.close && bmp.close(); return; }
       s.cx.drawImage(bmp, 0, 0, s.cv.width, s.cv.height); bmp.close && bmp.close();
       if (!s.got) { s.got = true; req(); }
-      placeScreens();
+      placeScreens(); monCardFrame(id);
     };
     // the relay has no PC control, or the link dropped: wait a bit before trying again
     ws.onclose = () => { if (pcLive[id] !== s) return; pcBack = Date.now() + (s.got ? 5000 : 30000); screenStop(id); setTimeout(screenSync, (s.got ? 5000 : 30000) + 100); };
@@ -2756,8 +2885,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     const view = $('#tv-layer').getBoundingClientRect(), r = canvas.getBoundingClientRect(), ox = r.left - view.left, oy = r.top - view.top;
     for (const id in pcLive) {
       const s = pcLive[id], q = monQs[id];
-      const area = q ? Math.abs((q[1][0] - q[0][0]) * (q[3][1] - q[0][1]) - (q[3][0] - q[0][0]) * (q[1][1] - q[0][1])) : 0;
-      if (!s.got || area < 80) { s.cv.hidden = true; continue; }
+      if (!s.got || !q) { s.cv.hidden = true; continue; }
       s.cv.style.transform = matrixTo([q[0], q[1], q[3], q[2]].map(([x, y]) => [x + ox, y + oy]), s.cv.width, s.cv.height); s.cv.hidden = false;
     }
   }
@@ -2826,6 +2954,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     renderSun(); req(); requestAnimationFrame(sunStep);
   }
   function sunToggle(play) { sunPlay = sunPlay === play ? '' : play; sunT = 0; renderSun(); if (sunPlay) requestAnimationFrame(sunStep); }
+  $('#walk-btn').addEventListener('click', () => walkToggle());
   $('#sun-btn').addEventListener('click', () => {
     sun.on = !sun.on; sunPlay = '';
     if (sun.on) { if (!sun.set) Object.assign(sun, renoNow(), { set: true }); cardId = null; renderCard(); partyOpen = false; renderParty(); }
@@ -2862,24 +2991,103 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   $('#pc-speed').addEventListener('click', e => { const b = e.target.closest('[data-speed]'); if (!b) return; PH.store.set('partySpeed', b.dataset.speed); if (partyOn()) setParty({ speed: b.dataset.speed }); else renderParty(); });
   $('#pc-close').addEventListener('click', () => { partyOpen = false; renderParty(); });
 
-  /* ---------- Scenes: the Phosphor TV scenes (TV, music and lights together) ---------- */
-  let scenesOpen = false, sceneBusy = '';
+  /* ---------- Scenes: the whole home at once ----------
+     Each scene sets every light by the room its pin is in (or by its name if it isn't on the map), and runs a Phosphor
+     TV scene on both TVs (relay tv_control: POST /tv/scene {scene, room}, which turns that TV on first), then opens a
+     page if the scene wants one. The living room TV joins in once the relay has rooms (pcState 'ok'). */
+  const WARM = b => ({ brightness: b, temp: 2700 });
+  const HOME_SCENES = {
+    morning: { name: 'Morning', lights: { all: { brightness: 100, temp: 4000 } }, tv: { scene: 'morning' } },
+    dinner: { name: 'Dinner', lights: { kitchen: WARM(80), other: WARM(25) }, tv: { cast: { scene: 'home' }, pc: { scene: 'away', open: 'art' } } },
+    movie: { name: 'Movie', lights: { living: { brightness: 8, temp: 2200 }, other: { on: false } }, tv: { cast: { scene: 'off' }, pc: { scene: 'away', open: 'watch' } } },
+    focus: { name: 'Focus', lights: { all: { brightness: 100, temp: 5000 } }, tv: { scene: 'away', open: 'clock' } },
+    home: { name: 'Fireplace', lights: { all: WARM(40) }, tv: { scene: 'home' } },
+    romantic: { name: 'Romantic', lights: { living: { hsv: [0, 100, 10] }, other: { on: false } }, tv: { scene: 'romantic' } },
+    bedtime: { name: 'Bedtime', lights: { all: { on: false } }, tv: { scene: 'bedtime' } },
+    away: { name: 'Away', lights: { all: { on: false } }, tv: { scene: 'away' } },
+    off: { name: 'TVs off', tv: { scene: 'off' } },
+    'all-off': { name: 'All off', lights: { all: { on: false } }, tv: { scene: 'off' } },
+  };
+  // Which group a light is in: the room its pin stands in, else its own name
+  function lightGroup(l) {
+    const p = pins[l.id], rn = p ? roomName(roomAt(p.x, p.z)) || '' : l.name || '';
+    return /living/i.test(rn) ? 'living' : /kitchen|dining|laundry/i.test(rn) || (p && rn === '') ? 'kitchen' : 'other';
+  }
+  async function sceneLights(L) {
+    if (!L) return;
+    if (partyOn()) await setParty({ on: false }, true);
+    await Promise.all(lights.filter(l => l.online).map(l => {
+      let b = L[lightGroup(l)] || L.other || L.all; if (!b) return null;
+      if (b.hsv && !l.hsv) b = { brightness: Math.max(5, b.hsv[2]), temp: 2200 };   // a white bulb: as dim and warm as it goes
+      return setLight(l.id, b);
+    }));
+  }
+  // Run a TV scene (and page) in each room that can take it
+  async function sceneTVs(T) {
+    if (!T) return;
+    const jobs = [];
+    for (const room of ['cast', 'pc']) {
+      const t = T[room] || T; if (!t.scene) continue;
+      if (room === 'pc' ? pcState !== 'ok' : !(tvInfo && tvInfo.id)) continue;
+      jobs.push((async () => {
+        await call('/tv/scene', { scene: t.scene, room }, 70000);
+        if (t.open) await call('/tv/open', { screen: t.open, room }, 10000);
+      })());
+    }
+    const r = await Promise.allSettled(jobs), bad = r.find(x => x.status === 'rejected');
+    if (bad) PH.toast(bad.reason.message, 'warn');
+  }
+  let scenesOpen = false, sceneBusy = '', lastScene = '';
   async function runScene(name) {
     if (!ready()) { PH.go('/settings/relay'); return; }
     if (name === 'lights-off') { allOff(); return; }
     if (name === 'party') { partyOpen = !partyOpen; if (partyOpen) { cardId = null; renderCard(); if (sun.on) { sun.on = false; sunPlay = ''; renderSun(); } refreshParty(); } renderParty(); return; }
-    if (name !== 'off' && tvInfo && !tvInfo.id) { PH.toast('Pick your Chromecast in the TV app first.', 'warn'); return; }
+    if (name === 'intruder') { intruderToggle(); return; }
+    const sc = HOME_SCENES[name]; if (!sc) return;
+    if (intruder) await intruderToggle(false);
     sceneBusy = name; renderScenes();
-    PH.toast(name === 'off' ? 'Turning Phosphor TV off…' : (SCENES[name] || name) + ' scene…');
-    try { await call('/tv/scene', { scene: name }, 70000); await refreshTV(); refreshLights(); }
-    catch (e) { PH.toast(e.message, 'warn'); }
-    sceneBusy = ''; renderScenes();
+    PH.toast(sc.name + '…');
+    await Promise.all([sceneLights(sc.lights), sceneTVs(sc.tv)]);
+    lastScene = name; sceneBusy = ''; renderScenes();
+    await refreshTV(); refreshLights();
+  }
+
+  /* ---------- Intruder mode: try to scare someone off ----------
+     Every light strobes (the relay's party, so it keeps going whatever the phone does), both TVs come on with a warning
+     and a storm at full volume (or the TV's 'alarm' screen, once it has one). Stays on until turned off here. */
+  let intruder = !!load('intruder', false);
+  const ALERT = 'INTRUDER ALERT · The police have been called · You are being recorded';
+  async function intruderToggle(on = !intruder) {
+    if (!ready()) { PH.go('/settings/relay'); return; }
+    intruder = on; save('intruder', on); sceneBusy = 'intruder'; renderScenes();
+    if (on) PH.toast('Intruder mode on.', 'warn');
+    const rooms = ['cast', 'pc'].filter(r => r === 'pc' ? pcState === 'ok' : !!(tvInfo && tvInfo.id));
+    const jobs = [];
+    if (on) {
+      jobs.push(setParty({ on: true, mode: 'strobe', speed: 'fast' }, true));
+      jobs.push(call('/tv/say', { text: ALERT }).catch(() => {}));
+      for (const room of rooms) jobs.push((async () => {
+        const info = room === 'pc' ? pcInfo : tvInfo;
+        if (!(info && info.tv && info.tv.linked)) { await call('/tv/start', room === 'cast' ? { id: tvInfo.id, room } : { room }, 25000); await new Promise(r => setTimeout(r, 6000)); }
+        try { await call('/tv/open', { screen: 'alarm', room }, 10000); }
+        catch { await call('/tv/open', { screen: 'board', room }, 10000).catch(() => {}); }
+        await call('/tv/sound', { music: '', amb: 'storm', av: 100, room }).catch(() => {});
+      })());
+    } else {
+      PH.toast('Intruder mode off.');
+      if (partyOn()) jobs.push(setParty({ on: false }, true));
+      jobs.push(call('/tv/board/clear', {}).catch(() => {}));
+      for (const room of rooms) jobs.push(call('/tv/sound', { amb: '', room }).then(() => call('/tv/open', { screen: 'home', room })).catch(() => {}));
+    }
+    const r = await Promise.allSettled(jobs), bad = r.find(x => x.status === 'rejected');
+    if (bad) PH.toast(bad.reason.message, 'warn');
+    sceneBusy = ''; renderScenes(); refreshTV();
   }
   function renderScenes() {
     $('#sc-row').hidden = !scenesOpen;
     $('#sc-btn').setAttribute('aria-expanded', String(scenesOpen));
-    const on = tvInfo && tvInfo.tv && tvInfo.tv.on, cur = on ? tvInfo.scene : '';
-    $$('#sc-row [data-scene]').forEach(b => { b.classList.toggle('is-sel', b.dataset.scene === cur || (b.dataset.scene === sceneBusy)); b.disabled = !!sceneBusy; });
+    const on = tvInfo && tvInfo.tv && tvInfo.tv.on, cur = intruder ? 'intruder' : on && tvInfo.scene ? tvInfo.scene : lastScene;
+    $$('#sc-row [data-scene]').forEach(b => { b.classList.toggle('is-sel', b.dataset.scene === cur || b.dataset.scene === sceneBusy); b.disabled = !!sceneBusy && b.dataset.scene !== 'intruder'; });
     $('#sc-btn').classList.toggle('is-sel', !!cur);
   }
   $('#sc-btn').addEventListener('click', () => { scenesOpen = !scenesOpen; renderScenes(); });
@@ -3147,7 +3355,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     const r = route(), wrap = r === '/place' ? $('#place-wrap') : $('#map-wrap'), stack = $('#map-stack');
     if (stack.parentNode !== wrap) wrap.appendChild(stack);
     if (r !== '/place') sel = null;
-    if (r !== '/') { cardId = null; }
+    if (r !== '/') { cardId = null; if (walk) walkToggle(false); }
     render(); requestAnimationFrame(() => { W = W || 0; req(); });
   }
   let pollT = null, tick = 0;

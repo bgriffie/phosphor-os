@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.71';
+  const VERSION = '1.72';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -654,13 +654,15 @@
   const routeKey = id => 'route:' + id;
   const home = () => location.href.split('#')[0] + '#/';   // absolute: a relative URL would resolve against a calling app's page
   function openApp(id) { location.replace('#/app/' + id); }   // replace: the frame's own pages fill the history
-  function showFrame(id) {
-    if (frameId === id) return;
+  // #/app/<id>/<route> opens the app at that page, e.g. #/app/pc/windows/live from Home Map (v1.72)
+  function showFrame(id, route) {
+    if (route) location.replace('#/app/' + id);   // the OS keeps just #/app/<id>; the page lives in the frame
+    if (frameId === id) { if (route) try { frame.contentWindow.location.hash = route; } catch {} return; }
     hideFrame();
     const a = APPS[id]; if (!a || !a[2]) { location.replace('#/'); return; }
     frame = document.createElement('iframe');
     frame.className = 'app-frame'; frame.title = a[0]; frame.allow = 'web-share; clipboard-write';
-    const last = a[3] === false ? '/' : load(routeKey(id), '/');   // some apps always open on their first page
+    const last = route || (a[3] === false ? '/' : load(routeKey(id), '/'));   // some apps always open on their first page
     frame.src = a[2] + '#' + (typeof last === 'string' && last.startsWith('/') ? last : '/');
     $('.screen').appendChild(frame); $('.screen').classList.add('has-frame'); frameId = id;
     frame.addEventListener('load', () => { frame.classList.add('is-ready'); try { frame.contentWindow.focus(); } catch {} renderKeys(); });
@@ -687,7 +689,7 @@
   };
   // v1.8: Lights is the bundled Kasa Lights app now; old #/lights links open it
   if (/^#\/lights(\/|$)/.test(location.hash)) location.replace('#/app/lights');
-  const syncFrame = () => { const m = /^#\/app\/([\w-]+)/.exec(location.hash); if (m) showFrame(m[1]); else hideFrame(); };
+  const syncFrame = () => { const m = /^#\/app\/([\w-]+)(\/[^#]*)?/.exec(location.hash); if (m) showFrame(m[1], m[2] && m[2] !== '/' ? m[2] : null); else hideFrame(); };
   addEventListener('hashchange', syncFrame);
 
   /* ---------- Keys under the screen: Back, Home, and the turn key ---------- */
