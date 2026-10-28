@@ -73,7 +73,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '3.4'           # the phone app compares this to know which features the relay has
+VERSION = '3.5'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -81,7 +81,7 @@ WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 SCENES = ('morning', 'away', 'home', 'romantic', 'bedtime', 'off')
 SCENE_PAGES = ('today', 'fire', 'dim', 'night', 'art', 'clock', 'board', 'watch', 'lights')   # 'fire' = the fireplace, full screen
 SCENE_DEFAULTS = {
-    'morning': {'page': 'today', 'music': 'swiss-classic', 'amb': '', 'glow': '', 'lights': []},
+    'morning': {'page': 'fire', 'music': 'swiss-classic', 'amb': 'fire', 'glow': '', 'lights': []},   # Floyd 2026-10-28
     'away': {'page': 'dim', 'music': 'swiss-classic', 'amb': '', 'glow': '', 'lights': []},
     'home': {'page': 'fire', 'music': 'swiss-jazz', 'amb': 'fire', 'glow': '', 'lights': []},
     'romantic': {'page': 'fire', 'music': 'romantic-jazz', 'amb': 'fire', 'glow': 'red', 'lights': None},   # None = lights named "living"
@@ -97,7 +97,7 @@ SHAPES = ('wide', 'squeeze', 'box')
 FIT_RANGE = {'w': (60, 140), 'h': (60, 140), 'x': (-20, 20), 'y': (-20, 20)}
 FIT_DEFAULT = {'w': 100, 'h': 100, 'x': 0, 'y': 0}
 LIGHT_ID = re.compile(r'^[A-Za-z0-9_.:-]{1,64}$')
-DEFAULT_SCHEDULE = [{'scene': 'morning', 'at': '07:00', 'days': [0, 1, 2, 3, 4, 5, 6]},
+DEFAULT_SCHEDULE = [{'scene': 'morning', 'at': '07:30', 'days': [0, 1, 2, 3, 4, 5, 6]},
                     {'scene': 'away', 'at': '08:30', 'days': [0, 1, 2, 3, 4]},
                     {'scene': 'home', 'at': '17:30', 'days': [0, 1, 2, 3, 4]}]
 WATCH_KEY = re.compile(r'^(movie|tv)-[0-9]{1,9}$')
@@ -570,6 +570,18 @@ def setup(app, demo=False, lights=None, cast=False):
         except ImportError:
             problem = 'pychromecast isn\'t installed on the PC. Run:  py -m pip install pychromecast'
     kiosk = FakeKiosk() if demo else Kiosk() if os.name == 'nt' else None
+    # Once (Floyd, 2026-10-28): both TVs wake at 7:30 every day to the fireplace, its crackle and classical music.
+    # His own saved schedule and Morning scene are updated, the rest of what he set is kept.
+    if cfg.get('routine') != 1:
+        cfg['routine'] = 1
+        sc = cfg.setdefault('scenes', {})
+        sc['morning'] = {**(sc.get('morning') if isinstance(sc.get('morning'), dict) else {}), 'page': 'fire', 'music': 'swiss-classic', 'amb': 'fire'}
+        rows = [r for r in cfg.get('schedule', [dict(r, room='cast') for r in DEFAULT_SCHEDULE]) if r['scene'] != 'morning']
+        every = [0, 1, 2, 3, 4, 5, 6]
+        cfg['schedule'] = [{'scene': 'morning', 'at': '07:30', 'days': every, 'room': 'cast'}] + \
+            ([{'scene': 'morning', 'at': '07:30', 'days': every, 'room': 'pc'}] if kiosk is not None else []) + rows
+        save_config(cfg)
+        print('TV: both TVs now wake at 7:30 to the fireplace and classical music (change it on the phone under Schedule).')
 
     def need():
         if casts is None:
@@ -1070,6 +1082,11 @@ def setup(app, demo=False, lights=None, cast=False):
         if name not in SCENES:
             raise web.HTTPBadRequest(text='Unknown scene.')
         need()
+        if name == 'bedtime':   # Bedtime puts every TV to sleep, not just the one the remote is on
+            more = [r for r in rooms.values() if r is not room and (r['socks'] or r['want'])]
+            for r, res in zip(more, await asyncio.gather(*(run_scene(r, name, 'bedtime everywhere') for r in more), return_exceptions=True)):
+                if isinstance(res, Exception):
+                    print(f'  Bedtime ({ROOM_NAMES[r["id"]]}):', getattr(res, 'text', '') or str(res) or type(res).__name__)
         shown = await run_scene(room, name, 'asked from the phone')
         return web.json_response({'ok': True, 'shown': shown})
 
@@ -1148,6 +1165,7 @@ def setup(app, demo=False, lights=None, cast=False):
                 continue
             t = time.localtime(now)
             hhmm, today = time.strftime('%H:%M', t), time.strftime('%Y-%m-%d', t)
+            due = []
             for i, r in enumerate(schedule()):
                 tag = f'{i}:{r["scene"]}:{r["at"]}:{r.get("room")}'
                 if r['at'] == hhmm and t.tm_wday in r['days'] and hub['ran'].get(tag) != today:
@@ -1155,12 +1173,10 @@ def setup(app, demo=False, lights=None, cast=False):
                     room = rooms.get(r.get('room')) or rooms['cast']
                     if room['id'] == 'pc' and kiosk is None:
                         continue
-                    try:
-                        await run_scene(room, r['scene'], 'scheduled for ' + r['at'])
-                    except web.HTTPException as e:
-                        print('  Schedule:', e.text)
-                    except Exception as e:
-                        print('  Schedule:', str(e) or type(e).__name__)
+                    due.append(run_scene(room, r['scene'], 'scheduled for ' + r['at']))
+            for res in await asyncio.gather(*due, return_exceptions=True):   # together, so both TVs wake at once
+                if isinstance(res, Exception):
+                    print('  Schedule:', getattr(res, 'text', '') or str(res) or type(res).__name__)
 
     async def watch(request):
         """What to Watch rows for the TV, sent by the phone (which holds the TMDB key; it never comes here).
