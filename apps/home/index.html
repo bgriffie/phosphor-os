@@ -3055,7 +3055,9 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   /* ---------- Intruder mode: try to scare someone off ----------
      Every light strobes (the relay's party, so it keeps going whatever the phone does), both TVs come on with a warning
      and a storm at full volume (or the TV's 'alarm' screen, once it has one). Stays on until turned off here. */
-  let intruder = !!load('intruder', false);
+  let intruder = !!load('intruder', false), alarmRooms = new Set();
+  // The TV's alarm stops by itself after 5 minutes: start it again while intruder mode is on and this app is open
+  setInterval(() => { if (intruder && ready() && !document.hidden) for (const room of alarmRooms) call('/tv/open', { screen: 'alarm', room }, 10000).catch(() => {}); }, 270000);
   const ALERT = 'INTRUDER ALERT · The police have been called · You are being recorded';
   async function intruderToggle(on = !intruder) {
     if (!ready()) { PH.go('/settings/relay'); return; }
@@ -3069,12 +3071,15 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       for (const room of rooms) jobs.push((async () => {
         const info = room === 'pc' ? pcInfo : tvInfo;
         if (!(info && info.tv && info.tv.linked)) { await call('/tv/start', room === 'cast' ? { id: tvInfo.id, room } : { room }, 25000); await new Promise(r => setTimeout(r, 6000)); }
-        try { await call('/tv/open', { screen: 'alarm', room }, 10000); }
-        catch { await call('/tv/open', { screen: 'board', room }, 10000).catch(() => {}); }
-        await call('/tv/sound', { music: '', amb: 'storm', av: 100, room }).catch(() => {});
+        // the TV's alarm screen (relay 3.4: flashing red and a siren); older relays: the warning board and a storm
+        try { await call('/tv/open', { screen: 'alarm', room }, 10000); alarmRooms.add(room); }
+        catch {
+          await call('/tv/open', { screen: 'board', room }, 10000).catch(() => {});
+          await call('/tv/sound', { music: '', amb: 'storm', av: 100, room }).catch(() => {});
+        }
       })());
     } else {
-      PH.toast('Intruder mode off.');
+      PH.toast('Intruder mode off.'); alarmRooms.clear();
       if (partyOn()) jobs.push(setParty({ on: false }, true));
       jobs.push(call('/tv/board/clear', {}).catch(() => {}));
       for (const room of rooms) jobs.push(call('/tv/sound', { amb: '', room }).then(() => call('/tv/open', { screen: 'home', room })).catch(() => {}));
