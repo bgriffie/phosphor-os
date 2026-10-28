@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.70';
+  const VERSION = '1.71';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -38,6 +38,7 @@
     bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5V16h8v-2.5A6 6 0 0 0 12 3z"/>',
     monitor: '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20h8M12 16v4"/>',
     tv: '<rect x="3" y="8" width="18" height="12" rx="1"/><path d="M9 22h6M8 3l4 4 4-4"/>',
+    chores: '<rect x="4" y="4" width="4" height="4"/><rect x="4" y="10" width="4" height="4"/><rect x="4" y="16" width="4" height="4"/><path d="M11 6h9M11 12h9M11 18h9"/>',
     house: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
     film: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/>',
@@ -47,7 +48,7 @@
 
   /* ---------- Tiles ---------- */
   // Built-in apps: OS pages, or Floyd's other tools bundled under apps/<id>/ and run in a full-screen frame
-  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'], lights: ['Lights', null, 'apps/lights/', false], pc: ['PC', null, 'apps/pc/', false], tv: ['TV', null, 'apps/tv/', false], watch: ['What to Watch', null, 'apps/watch/'], home: ['Home Map', null, 'apps/home/', false],
+  const APPS = { phone: ['Phone', '/phone'], notes: ['Notes', '/notes'], calc: ['Calculator', '/calc'], settings: ['Settings', '/settings'], music: ['Spotify', '/music'], lights: ['Lights', null, 'apps/lights/', false], pc: ['PC', null, 'apps/pc/', false], tv: ['TV', null, 'apps/tv/', false], watch: ['What to Watch', null, 'apps/watch/'], home: ['Home Map', null, 'apps/home/', false], chores: ['Chores', null, 'apps/chores/'],
     arcade: ['Arcade', null, 'apps/arcade/'], workout: ['Workout Log', null, 'apps/workout/'], kitchen: ['Kitchen Log', null, 'apps/kitchen/'] };
   const DEFAULT_TILES = () => [
     ['Phone', 'phone', 'app', 'phone'],
@@ -62,6 +63,7 @@
     ['TV', 'tv', 'app', 'tv'],
     ['Watch', 'film', 'app', 'watch'],
     ['Map', 'house', 'app', 'home'],
+    ['Chores', 'chores', 'app', 'chores'],
     ['Notes', 'note', 'app', 'notes'],
     ['Arcade', 'game', 'app', 'arcade'],
     ['Workout', 'dumbbell', 'app', 'workout'],
@@ -125,6 +127,14 @@
     }
     save('mig-home', true);
   }
+  // v1.71: a Chores tile (reminders, starting with Sunday laundry), once, after Map
+  if (!load('mig-chores', false)) {
+    if (!tiles.some(t => t.kind === 'app' && t.target === 'chores')) {
+      const i = tiles.findIndex(t => t.kind === 'app' && t.target === 'home');
+      tiles.splice(i < 0 ? tiles.length : i + 1, 0, { id: uid(), label: 'Chores', glyph: 'chores', kind: 'app', target: 'chores' });
+    }
+    save('mig-chores', true);
+  }
   save('tiles', tiles);
   const saveTiles = () => { save('tiles', tiles); renderGrid(); renderTileList(); };
 
@@ -158,6 +168,7 @@
     grid.appendChild(add);
     $('#tile-count').textContent = tiles.length;
     sphere.build();
+    renderDue();
   }
 
   // Tap launches; hold (550ms) opens the tile editor
@@ -517,6 +528,27 @@
     renderNotes();
   }
 
+  /* ---------- Chores: what's due shows on the home screen and goes to the TV board (v1.71) ----------
+     iOS web apps can't schedule notifications, so the OS home is where a chore reminder shows.
+     ChoresDue comes from tools/chores/src/due.js, inlined by build.py; it reads the Chores app's data directly. */
+  function renderDue() {
+    let due = [];
+    try { due = ChoresDue.summary().due; } catch { /* no chores data yet */ }
+    const line = $('#home-due');
+    if (line) { line.hidden = !due.length; line.textContent = !due.length ? '' : due.length === 1 ? due[0].c.name + ' due' : due[0].c.name + ' + ' + (due.length - 1) + ' more due'; }
+    document.querySelectorAll('[data-tile]').forEach(el => {
+      const t = tiles.find(x => x.id === el.dataset.tile), ico = el.querySelector('.ico');
+      if (!t || !ico || t.kind !== 'app' || t.target !== 'chores') return;
+      let n = ico.querySelector('.due-n');
+      if (!due.length) { if (n) n.remove(); return; }
+      if (!n) { n = document.createElement('span'); n.className = 'due-n'; ico.appendChild(n); }
+      n.textContent = due.length;
+    });
+  }
+  const choresTick = () => { renderDue(); try { ChoresDue.tick(); } catch { /* relay unreachable: tried again next minute */ } };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) choresTick(); });
+  addEventListener('hashchange', () => { if ((location.hash.replace(/^#/, '') || '/') === '/') renderDue(); });
+
   /* ---------- Clock ---------- */
   function tick() {
     const d = new Date(), h12 = PH.store.get('clock') === '12';
@@ -524,6 +556,7 @@
     const mm = String(d.getMinutes()).padStart(2, '0');
     $('#clock').innerHTML = `${hh}:${mm}${h12 ? `<small>${d.getHours() < 12 ? 'AM' : 'PM'}</small>` : ''}`;
     $('#date').textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).replace(/,/g, '');
+    choresTick();
   }
   const startClock = () => { tick(); setTimeout(() => { tick(); setInterval(tick, 60000); }, 60000 - Date.now() % 60000 + 50); };
 
@@ -549,6 +582,7 @@
     'add-tile': () => editTile(null),
     'edit-tiles': () => PH.go('/tiles'),
     'save-tile': saveTile,
+    'open-chores': () => { const t = tiles.find(x => x.kind === 'app' && x.target === 'chores'); if (t) launch(t); else openApp('chores'); },
     'test-tile': () => { const t = readForm(); if (validate({ ...t, label: t.label || 'x' })) launch(t); },
     'delete-tile': async () => {
       if (!editing?.id) return;

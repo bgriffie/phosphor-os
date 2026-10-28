@@ -84,6 +84,9 @@
     .tile:active .ico, .tile.is-held .ico { background: var(--surface-3); box-shadow: var(--glow-box); }
     .tile .lbl { max-width: 100%; font-size: var(--fs-xs); color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .tile.add .ico { border-style: dashed; color: var(--text-faint); background: none; }
+    .home-due { appearance: none; -webkit-appearance: none; background: none; border: 1px solid var(--amber); border-radius: var(--radius); margin-top: var(--sp-2); padding: 4px var(--sp-3); color: var(--amber); font: inherit; font-size: var(--fs-sm); letter-spacing: var(--tracking-label); text-transform: uppercase; cursor: pointer; }
+    .tile .ico, .orb .ico { position: relative; }
+    .due-n { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--amber); color: var(--bg); font-size: 12px; font-weight: 700; line-height: 20px; text-align: center; }
     .home-hint { margin-top: var(--sp-5); text-align: center; color: var(--text-faint); font-size: var(--fs-xs); }
 
     /* Sphere home */
@@ -347,7 +350,7 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>phosphor.os</h1>
-      <span class="app-meta">v1.70</span>
+      <span class="app-meta">v1.71</span>
     </header>
     <div class="screen-slot">
     <div class="screen">
@@ -371,6 +374,7 @@
         <div class="home-clock" aria-live="off">
           <div class="readout" id="clock">--:--</div>
           <div class="date" id="date"></div>
+          <button class="home-due" id="home-due" data-act="open-chores" hidden></button>
         </div>
         <div class="sphere" id="sphere" hidden><canvas id="sphere-lines" aria-hidden="true"></canvas></div>
         <div class="grid" id="grid"></div>
@@ -628,7 +632,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.70</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.71</span></a>
           </div>
         </div>
       </section>
@@ -672,7 +676,7 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="phosphor.os">
-          <div class="kv"><span>Version</span><span>1.70</span></div>
+          <div class="kv"><span>Version</span><span>1.71</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
