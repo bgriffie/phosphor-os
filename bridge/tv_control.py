@@ -73,18 +73,19 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '3.2'           # the phone app compares this to know which features the relay has
+VERSION = '3.3'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
 # all of it is Floyd's to change. off = Phosphor TV off.
-SCENES = ('morning', 'away', 'home', 'romantic', 'off')
-SCENE_PAGES = ('today', 'fire', 'dim', 'art', 'clock', 'board', 'watch', 'lights')   # 'fire' = the fireplace, full screen
+SCENES = ('morning', 'away', 'home', 'romantic', 'bedtime', 'off')
+SCENE_PAGES = ('today', 'fire', 'dim', 'night', 'art', 'clock', 'board', 'watch', 'lights')   # 'fire' = the fireplace, full screen
 SCENE_DEFAULTS = {
     'morning': {'page': 'today', 'music': 'swiss-classic', 'amb': '', 'glow': '', 'lights': []},
     'away': {'page': 'dim', 'music': 'swiss-classic', 'amb': '', 'glow': '', 'lights': []},
     'home': {'page': 'fire', 'music': 'swiss-jazz', 'amb': 'fire', 'glow': '', 'lights': []},
     'romantic': {'page': 'fire', 'music': 'romantic-jazz', 'amb': 'fire', 'glow': 'red', 'lights': None},   # None = lights named "living"
+    'bedtime': {'page': 'night', 'music': '', 'amb': '', 'glow': 'off', 'lights': 'all'},   # 'night' = black with the faintest clock
 }
 GLOW = {'red': {'on': True, 'hsv': [0, 100, 10]}, 'warm': {'on': True, 'temp': 2700, 'brightness': 30},
         'on': {'on': True}, 'off': {'on': False}}   # '' leaves the lights as they are
@@ -1003,7 +1004,7 @@ def setup(app, demo=False, lights=None, cast=False):
 
     def scene_screen(name):
         page = scenes().get(name, {}).get('page', '')
-        return 'art' if page == 'fire' else page
+        return 'art' if page == 'fire' else 'dim' if page == 'night' else page
 
     def schedule():
         return cfg['schedule'] if isinstance(cfg.get('schedule'), list) else [dict(r, room='cast') for r in DEFAULT_SCHEDULE]
@@ -1025,7 +1026,9 @@ def setup(app, demo=False, lights=None, cast=False):
         try:
             found = await asyncio.wait_for(lights.list(), 30)   # also finds the lights if the relay just started
             ids = sc.get('lights')
-            if not isinstance(ids, list):
+            if ids == 'all':
+                ids = [d['id'] for d in found]
+            elif not isinstance(ids, list):
                 ids = [d['id'] for d in found if 'living' in d['name'].lower()]
             for i in ids:
                 try:
@@ -1102,7 +1105,9 @@ def setup(app, demo=False, lights=None, cast=False):
                         one['amb'] = v['amb']
                     if v.get('glow', None) in tuple(GLOW) + ('',):
                         one['glow'] = v['glow']
-                    if isinstance(v.get('lights'), list) and len(v['lights']) <= 30 and all(isinstance(i, str) and LIGHT_ID.match(i) for i in v['lights']):
+                    if v.get('lights') == 'all':
+                        one['lights'] = 'all'
+                    elif isinstance(v.get('lights'), list) and len(v['lights']) <= 30 and all(isinstance(i, str) and LIGHT_ID.match(i) for i in v['lights']):
                         one['lights'] = v['lights']
             cfg['scenes'] = saved
         save_config(cfg)

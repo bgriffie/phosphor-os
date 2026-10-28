@@ -857,7 +857,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .msg-list time { color: var(--text-dim); font-size: var(--fs-xs); flex: none; margin-left: auto; padding-left: var(--sp-3); }
     .msg-list li { display: flex; align-items: center; }
     /* Schedule: scenes, the sleep timer and set times */
-    .scene-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .scene-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
     .scene-row .rm-b { flex-direction: column; min-height: 64px; gap: 4px; padding: 0 2px; font-size: 11px; letter-spacing: 0; }
     .scene-set + .scene-set { margin-top: var(--sp-3); }
     .glow-ids { display: flex; flex-wrap: wrap; gap: 6px; padding: var(--sp-2); }
@@ -891,7 +891,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.24</span>
+      <span class="app-meta">v1.25</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1061,6 +1061,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
             <button class="rm-b" data-scene="away"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 21c-4-3-7-6-7-10a7 7 0 0 1 14 0c0 4-3 7-7 10zM12 21V9M12 13l-3-2M12 11l3-2"/></svg><span>Away</span></button>
             <button class="rm-b" data-scene="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/></svg><span>Home</span></button>
             <button class="rm-b" data-scene="romantic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg><span>Romantic</span></button>
+            <button class="rm-b" data-scene="bedtime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span>Bedtime</span></button>
             <button class="rm-b" data-scene="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg><span>TV off</span></button>
           </div>
           <p class="menu-note">Each scene opens a page, plays its music and background sound, and can set some lights. Change any of it under Scenes below.</p>
@@ -1114,7 +1115,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.24</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.25</span></a>
           </div>
         </div>
       </section>
@@ -1499,7 +1500,7 @@ PH.init({});
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
   let lastErr = '', pollT = 0, busyPower = false, sleepAt = 0;
   const ready = () => !!(link && link.url && link.key);
-  const RELAY_WANTS = '3.2';   // tv_control.py version this app expects
+  const RELAY_WANTS = '3.3';   // tv_control.py version this app expects
   const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
   // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
   const toast = PH.toast;
@@ -1697,8 +1698,8 @@ PH.init({});
   }
 
   /* ---------- Schedule, scenes and the sleep timer (run by the relay, on the PC's clock) ---------- */
-  const SCENES = { morning: 'Morning', away: 'Away', home: 'Home', romantic: 'Romantic', off: 'TV off' };
-  const PAGES = [['today', 'Today summary'], ['fire', 'Fireplace'], ['dim', 'Dark screen'], ['art', 'Art, changing'], ['clock', 'Clock'], ['board', 'Board'], ['watch', 'Watch'], ['lights', 'Lights']];
+  const SCENES = { morning: 'Morning', away: 'Away', home: 'Home', romantic: 'Romantic', bedtime: 'Bedtime', off: 'TV off' };
+  const PAGES = [['today', 'Today summary'], ['fire', 'Fireplace'], ['dim', 'Dark screen'], ['night', 'Darkest screen'], ['art', 'Art, changing'], ['clock', 'Clock'], ['board', 'Board'], ['watch', 'Watch'], ['lights', 'Lights']];
   const GLOWS = [['', 'Unchanged'], ['red', 'Dim red'], ['warm', 'Warm and low'], ['on', 'On'], ['off', 'Off']];
   let lightList = null;   // the relay's lights, for picking which ones a scene sets
   const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];   // Monday first, like the relay
@@ -1777,7 +1778,7 @@ PH.init({});
     box.textContent = '';
     const fields = [['page', PAGES, 'Shows', false], ['music', MUSIC, 'Music', true], ['amb', AMB, 'Background', true]];
     if (info && info.lights) fields.push(['glow', GLOWS, 'Lights', false]);
-    ['morning', 'away', 'home', 'romantic'].forEach(id => {
+    ['morning', 'away', 'home', 'romantic', 'bedtime'].forEach(id => {
       const one = sc[id] || {}, set = (ch) => planSave({ scenes: { ...sc, [id]: { ...one, ...ch } } });
       const wrap = el('div', 'scene-set'), menu = el('div', 'menu');
       wrap.appendChild(el('span', 'label', SCENES[id]));
@@ -1789,13 +1790,14 @@ PH.init({});
         row.appendChild(el('span', 'mi-label', word)); row.appendChild(sel); menu.appendChild(row);
       });
       if (one.glow && info.lights) {   // which lights: tap to include; until picked, lights with "living" in the name
-        const ids = el('div', 'glow-ids'), auto = !Array.isArray(one.lights);
+        const ids = el('div', 'glow-ids'), every = one.lights === 'all', auto = !every && !Array.isArray(one.lights);   // 'all' = every light (Bedtime)
+        const picked = x => every || (auto ? /living/i.test(x.name) : one.lights.includes(x.id));
         if (!lightList) { ids.appendChild(el('span', 'menu-note', 'Finding your lights…')); loadLights(); }
         else if (!lightList.length) ids.appendChild(el('span', 'menu-note', 'No lights found on the relay.'));
         else lightList.forEach(l => {
-          const on = auto ? /living/i.test(l.name) : one.lights.includes(l.id), b = el('button', 'rm-b', l.name);
+          const on = picked(l), b = el('button', 'rm-b', l.name);
           b.setAttribute('aria-pressed', String(on));
-          b.addEventListener('click', () => { b.blur(); const cur = lightList.filter(x => auto ? /living/i.test(x.name) : one.lights.includes(x.id)).map(x => x.id); set({ lights: on ? cur.filter(x => x !== l.id) : cur.concat(l.id) }); });
+          b.addEventListener('click', () => { b.blur(); const cur = lightList.filter(picked).map(x => x.id); set({ lights: on ? cur.filter(x => x !== l.id) : cur.concat(l.id) }); });
           ids.appendChild(b);
         });
         menu.appendChild(ids);

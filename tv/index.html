@@ -232,6 +232,7 @@
     body.dim .screen::before, body.dim .screen::after, body.dim .path { display: none; }
     #v-dim { display: none; }
     #v-dim.on { display: grid; place-items: center; background: #000; }
+    body.night .dim-time { opacity: .07; font-size: calc(3 * var(--u)); }
     .dim-time { color: var(--accent); opacity: .22; font-size: calc(4 * var(--u)); letter-spacing: .1em; text-shadow: none; transition: transform 2s steps(8); }
     /* Watch: poster rows from What to Watch. The phone sends them; the arrows move the green frame. */
     #v-watch { padding-bottom: 0; }
@@ -384,7 +385,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.24</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.25</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -1270,7 +1271,7 @@ const Sound = (() => {
    Everything shown that came from outside goes in with textContent, never as HTML. */
 (() => {
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-  const SCREENS = ['home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim', 'watch'];
+  const SCREENS = ['home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim', 'night', 'watch'];
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let watch = [], wRow = 0, wCol = [], screen = 'home', weather = null, tileAt = 0, lightAt = 0, lights = null, lightsErr = '', hasLights = true, board = [], linked = false, idleT = 0;
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -1415,6 +1416,8 @@ const Sound = (() => {
   function go(name, art = null) {
     if (!SCREENS.includes(name)) return;
     if (name === 'rain') { name = 'art'; art = Art.pieces().indexOf('Matrix rain'); }   // Rain is one of the art pieces now
+    const night = name === 'night'; if (night) name = 'dim';   // Night (Bedtime) = the dark screen with an even fainter clock
+    document.body.classList.toggle('night', night);
     if (screen === 'art' && name !== 'art') Art.stop();
     screen = name;
     $$('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + name));
