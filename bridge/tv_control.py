@@ -74,7 +74,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '3.7'           # the phone app compares this to know which features the relay has
+VERSION = '3.8'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -577,18 +577,15 @@ class PcAudio(Station):
             import numpy
             sp = next((x for x in soundcard.all_speakers() if x.name == self.out_name), None) or soundcard.default_speaker()
             mic = soundcard.get_microphone(id=str(sp.name), include_loopback=True)
-            last = time.time()
-            with mic.recorder(samplerate=self.RATE, channels=self.CH, blocksize=1024) as rec:
+            import warnings
+            warnings.filterwarnings('ignore', message='data discontinuity')   # a dropped packet now and then; don't flood the window
+            # Big buffer, read in steady 50 ms blocks with no pauses: reading too little too often made Windows drop
+            # audio ("data discontinuity") and the kitchen heard it garbled. soundcard itself returns silence while
+            # nothing plays, so the stream keeps going.
+            with mic.recorder(samplerate=self.RATE, channels=self.CH, blocksize=self.RATE // 5) as rec:
                 while not stop.is_set():
-                    data = rec.record(numframes=None)   # whatever has arrived (nothing while the PC is silent)
-                    now = time.time()
-                    if len(data):   # sound: pass it on untouched
-                        ff.stdin.write((numpy.clip(data, -1, 1) * 32767).astype('<i2').tobytes()); ff.stdin.flush()
-                        last = now
-                    elif now - last > .3:   # real silence (Windows sends nothing): fill it so the stream keeps going
-                        ff.stdin.write(bytes(int((now - last) * self.RATE) * 2 * self.CH)); ff.stdin.flush()
-                        last = now
-                    time.sleep(.01)
+                    data = rec.record(numframes=self.RATE // 20)
+                    ff.stdin.write((numpy.clip(data, -1, 1) * 32767).astype('<i2').tobytes()); ff.stdin.flush()
         except ImportError:
             self.error = 'PC audio needs:  py -m pip install soundcard numpy'
         except Exception as e:
