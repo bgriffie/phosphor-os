@@ -880,7 +880,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.11</span>
+      <span class="app-meta">v1.12</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1097,7 +1097,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.11</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.12</span></a>
           </div>
         </div>
       </section>
@@ -3037,7 +3037,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     const r = await Promise.allSettled(jobs), bad = r.find(x => x.status === 'rejected');
     if (bad) PH.toast(bad.reason.message, 'warn');
   }
-  let scenesOpen = false, sceneBusy = '', lastScene = '';
+  let scenesOpen = false, sceneBusy = '', lastScene = '', sceneGen = 0;
   async function runScene(name) {
     if (!ready()) { PH.go('/settings/relay'); return; }
     if (name === 'lights-off') { allOff(); return; }
@@ -3045,10 +3045,13 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     if (name === 'intruder') { intruderToggle(); return; }
     const sc = HOME_SCENES[name]; if (!sc) return;
     if (intruder) await intruderToggle(false);
-    sceneBusy = name; renderScenes();
+    // A TV scene can take most of a minute (the TV turning on); another scene can be picked meanwhile and wins
+    const gen = ++sceneGen;
+    sceneBusy = name; lastScene = name; renderScenes();
     PH.toast(sc.name + '…');
     await Promise.all([sceneLights(sc.lights), sceneTVs(sc.tv)]);
-    lastScene = name; sceneBusy = ''; renderScenes();
+    if (gen !== sceneGen) return;
+    sceneBusy = ''; renderScenes();
     await refreshTV(); refreshLights();
   }
 
@@ -3061,7 +3064,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   const ALERT = 'INTRUDER ALERT · The police have been called · You are being recorded';
   async function intruderToggle(on = !intruder) {
     if (!ready()) { PH.go('/settings/relay'); return; }
-    intruder = on; save('intruder', on); sceneBusy = 'intruder'; renderScenes();
+    const gen = ++sceneGen;
+    intruder = on; save('intruder', on); sceneBusy = on ? 'intruder' : ''; if (!on) lastScene = ''; renderScenes();
     if (on) PH.toast('Intruder mode on.', 'warn');
     const rooms = ['cast', 'pc'].filter(r => r === 'pc' ? pcState === 'ok' : !!(tvInfo && tvInfo.id));
     const jobs = [];
@@ -3086,13 +3090,15 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     }
     const r = await Promise.allSettled(jobs), bad = r.find(x => x.status === 'rejected');
     if (bad) PH.toast(bad.reason.message, 'warn');
-    sceneBusy = ''; renderScenes(); refreshTV();
+    if (gen === sceneGen) { sceneBusy = ''; renderScenes(); }
+    refreshTV();
   }
   function renderScenes() {
     $('#sc-row').hidden = !scenesOpen;
     $('#sc-btn').setAttribute('aria-expanded', String(scenesOpen));
-    const on = tvInfo && tvInfo.tv && tvInfo.tv.on, cur = intruder ? 'intruder' : on && tvInfo.scene ? tvInfo.scene : lastScene;
-    $$('#sc-row [data-scene]').forEach(b => { b.classList.toggle('is-sel', b.dataset.scene === cur || b.dataset.scene === sceneBusy); b.disabled = !!sceneBusy && b.dataset.scene !== 'intruder'; });
+    // the scene picked last (the TV's own scene name can't tell Dinner from Fireplace); nothing is ever locked
+    const cur = intruder ? 'intruder' : sceneBusy || lastScene;
+    $$('#sc-row [data-scene]').forEach(b => { b.classList.toggle('is-sel', b.dataset.scene === cur); b.disabled = false; });
     $('#sc-btn').classList.toggle('is-sel', !!cur);
   }
   $('#sc-btn').addEventListener('click', () => { scenesOpen = !scenesOpen; renderScenes(); });
