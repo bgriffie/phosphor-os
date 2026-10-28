@@ -880,7 +880,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.10</span>
+      <span class="app-meta">v1.11</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1097,7 +1097,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.10</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.11</span></a>
           </div>
         </div>
       </section>
@@ -1602,7 +1602,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     if ('on' in body) l.on = body.on;
     if ('brightness' in body) { l.brightness = body.brightness; l.on = true; }
     if (body.hsv) { l.hsv = body.hsv; l.temp = 0; l.on = true; }
-    if (body.temp) { l.temp = body.temp; l.on = true; }
+    if (body.temp) { body = { ...body, temp: clamp(body.temp, 2500, 6500) }; l.temp = body.temp; l.on = true; }   // Kasa bulbs take 2500-6500 K
     render();
     try { merge(await call('/lights/' + encodeURIComponent(id), 'on' in body ? body : { ...body, on: true })); failing = ''; }
     catch (e) { PH.toast(e.message, 'warn'); refreshLights(); return; }
@@ -2999,7 +2999,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   const HOME_SCENES = {
     morning: { name: 'Morning', lights: { all: { brightness: 100, temp: 4000 } }, tv: { scene: 'morning' } },
     dinner: { name: 'Dinner', lights: { kitchen: WARM(80), other: WARM(25) }, tv: { cast: { scene: 'home' }, pc: { scene: 'away', open: 'art' } } },
-    movie: { name: 'Movie', lights: { living: { brightness: 8, temp: 2200 }, other: { on: false } }, tv: { cast: { scene: 'off' }, pc: { scene: 'away', open: 'watch' } } },
+    movie: { name: 'Movie', lights: { living: { brightness: 8, temp: 2500 }, other: { on: false } }, tv: { cast: { scene: 'off' }, pc: { scene: 'away', open: 'watch' } } },
     focus: { name: 'Focus', lights: { all: { brightness: 100, temp: 5000 } }, tv: { scene: 'away', open: 'clock' } },
     home: { name: 'Fireplace', lights: { all: WARM(40) }, tv: { scene: 'home' } },
     romantic: { name: 'Romantic', lights: { living: { hsv: [0, 100, 10] }, other: { on: false } }, tv: { scene: 'romantic' } },
@@ -3018,7 +3018,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     if (partyOn()) await setParty({ on: false }, true);
     await Promise.all(lights.filter(l => l.online).map(l => {
       let b = L[lightGroup(l)] || L.other || L.all; if (!b) return null;
-      if (b.hsv && !l.hsv) b = { brightness: Math.max(5, b.hsv[2]), temp: 2200 };   // a white bulb: as dim and warm as it goes
+      if (b.hsv && !l.hsv) b = { brightness: Math.max(5, b.hsv[2]), temp: 2500 };   // a white bulb: as dim and warm as it goes
       return setLight(l.id, b);
     }));
   }
