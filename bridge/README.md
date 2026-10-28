@@ -40,6 +40,16 @@ private, secure address that only your own devices can reach, so the OS can call
 3. If Windows asks whether Python may use the network, allow **Private networks** only.
 4. Open the TV app in Phosphor OS and turn the TV on from there.
 
+## Chore alerts (lock-screen reminders from Chores)
+
+The relay buzzes your iPhone when a chore is due, even when phosphor.os is closed. It needs iOS 16.4 or later and phosphor.os added to the home screen.
+
+1. In the relay folder, run  `py -m pip install pywebpush`
+2. Download `chores.py` and the new `kasa_bridge.py` into the relay folder, then restart the relay. It should print "Chore alerts: on".
+3. In phosphor.os, open Chores › Settings, turn on Lock-screen alerts, allow notifications, and tap Send a test alert.
+
+The relay keeps its alert keys in `chores.json` and `chores_vapid.pem` next to it. Don't share those files.
+
 ## Mac or Raspberry Pi
 Same steps, but save [start-lights.sh](https://raw.githubusercontent.com/bgriffie/phosphor-os/main/bridge/start-lights.sh)
 instead of the .bat file and run `./start-lights.sh` in Terminal. On a Pi, install Tailscale with

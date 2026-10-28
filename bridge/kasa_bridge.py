@@ -257,11 +257,11 @@ def make_app(lights, key, cast=False):
                     web.post('/lights/all', set_all), web.post('/lights/{id}', set_light),
                     web.route('OPTIONS', '/{tail:.*}', lambda r: web.Response())])
     # Add-ons next to this file, if they're there: pc_control.py (trackpad, keyboard, monitors)
-    # tv_control.py (Phosphor TV on a Chromecast) and party.py (Party mode that keeps going). Each adds its routes behind the key check above.
+    # tv_control.py (Phosphor TV on a Chromecast), party.py (Party mode that keeps going) and chores.py (chore alerts). Each adds its routes behind the key check above.
     import importlib, inspect
     extras = {'lights': lights,   # for add-ons that show the lights, like the TV
               'cast': cast}       # --cast: let tv_control.py open its home-network port for the Chromecast
-    for name in ('pc_control', 'tv_control', 'party'):
+    for name in ('pc_control', 'tv_control', 'party', 'chores'):
         try:
             mod = importlib.import_module(name)
         except ImportError as e:
