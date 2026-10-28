@@ -73,7 +73,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '3.1'           # the phone app compares this to know which features the relay has
+VERSION = '3.2'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -258,6 +258,22 @@ class RealCasts:
     def stop(self, cid):
         self.get(cid).quit_app()
 
+    def release(self, cid):
+        """Pause what's casting (so the service saves the spot), note it, then close the app on the Chromecast."""
+        cc = self.get(cid)
+        st, d = cc.status, {'app': cc.status.display_name or '', 'title': '', 'video': '', 'at': 0}
+        m = cc.media_controller.status if not cc.is_idle else None
+        if m and m.player_state not in ('UNKNOWN', 'IDLE'):
+            d.update(title=m.title or '', video=m.content_id or '', at=int(m.adjusted_current_time or m.current_time or 0))
+            if m.player_state == 'PLAYING':
+                try:
+                    cc.media_controller.pause(); time.sleep(1.5)
+                except Exception:
+                    pass
+        if st.app_id and st.app_id != DASHCAST:
+            cc.quit_app()
+        return d
+
     def volume(self, cid, body):
         cc = self.get(cid)
         if 'mute' in body:
@@ -279,6 +295,15 @@ class FakeCasts:
 
     def __init__(self):
         self.st = {'app': '', 'appId': '', 'idle': True, 'volume': 30, 'muted': False, 'media': None}
+        if os.environ.get('PHOSPHOR_TV_DEMO_APP'):   # pretend something like Hulu is casting, to try "Move to living room"
+            self.st.update(app=os.environ['PHOSPHOR_TV_DEMO_APP'], appId='demo-app', idle=False,
+                           media={'title': 'Demo show', 'sub': 'S1 E2', 'state': 'PLAYING'})
+
+    def release(self, cid):
+        self.check(cid)
+        d = {'app': self.st['app'], 'title': (self.st['media'] or {}).get('title', ''), 'video': '', 'at': 0}
+        self.st.update(app='', appId='', idle=True, media=None)
+        return d
 
     def devices(self):
         return [{'id': 'demo-tv', 'name': 'Living Room TV', 'model': 'Chromecast (demo)', 'video': True},
@@ -322,6 +347,18 @@ KIOSK_BROWSERS = (('chrome.exe', (r'%ProgramFiles%\Google\Chrome\Application', r
                                   r'%LocalAppData%\Google\Chrome\Application')),
                   ('msedge.exe', (r'%ProgramFiles(x86)%\Microsoft\Edge\Application', r'%ProgramFiles%\Microsoft\Edge\Application')))
 KIOSK_PROFILE = HERE / 'tv_kiosk_profile'
+# "Move to living room": what the Chromecast is casting -> where that service's own site continues it on the PC TV.
+# Keys are matched against the Chromecast's app name (lower case). The cast can't tell us more than the app and,
+# for YouTube, the video, so for the others Floyd picks the show from the service's Continue Watching row.
+MOVE_SITES = {'hulu': 'https://www.hulu.com/hub/home', 'prime video': 'https://www.amazon.com/gp/video/storefront',
+              'peacock': 'https://www.peacocktv.com/watch/home', 'netflix': 'https://www.netflix.com/browse',
+              'disney': 'https://www.disneyplus.com/home', 'max': 'https://play.max.com/', 'youtube': 'https://www.youtube.com/'}
+YT_ID = re.compile(r'^[A-Za-z0-9_-]{11}$')
+
+
+def move_site(app):
+    a = (app or '').lower()
+    return next(((k, u) for k, u in MOVE_SITES.items() if k in a), (None, None))
 
 
 def win_monitors():
@@ -376,7 +413,7 @@ class Kiosk:
     def running(self):
         return bool(self.proc and self.proc.poll() is None)
 
-    def open(self, url, n):
+    def open(self, url, n, tv=True):
         mon = next((m for m in win_monitors() if m['n'] == n), None)
         if mon is None:
             raise web.HTTPBadRequest(text=f'There is no monitor {n} right now. Is the TV on?')
@@ -390,9 +427,9 @@ class Kiosk:
             exe, f'--user-data-dir={KIOSK_PROFILE}', '--kiosk', f'--app={url}', '--new-window',
             f'--window-position={x},{y}', '--autoplay-policy=no-user-gesture-required',
             '--no-first-run', '--no-default-browser-check', '--disable-session-crashed-bubble', '--noerrdialogs',
-            '--disable-translate', '--disable-features=Translate,HardwareMediaKeyHandling', '--overscroll-history-navigation=0',
+            '--disable-translate', '--disable-features=Translate,HardwareMediaKeyHandling', '--overscroll-history-navigation=0']
             # lets the page list the sound outputs by name, so its sound can go to the TV instead of the PC speakers
-            '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+            + (['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] if tv else []),
             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def close(self):
@@ -415,7 +452,7 @@ class FakeKiosk(Kiosk):
     def running(self):
         return bool(self.proc)
 
-    def open(self, url, n):
+    def open(self, url, n, tv=True):
         if n not in (1, 2):
             raise web.HTTPBadRequest(text=f'There is no monitor {n} right now. Is the TV on?')
         self.proc = {'url': url, 'n': n}
@@ -518,7 +555,7 @@ def setup(app, demo=False, lights=None, cast=False):
     hub = {'board': cfg.get('board', [])[-12:], 'weather': None, 'weather_at': 0.0, 'ran': {}, 'stations': {}}
 
     def new_room(r):
-        return {'id': r, 'socks': set(), 'screen': '', 'focus': '', 'want': None, 'started': 0.0, 'art': None, 'heard': None,
+        return {'id': r, 'socks': set(), 'screen': '', 'focus': '', 'want': None, 'app': '', 'started': 0.0, 'art': None, 'heard': None,
                 'scene': '', 'scene_t': 0.0, 'watch': [], 'sleep_at': 0.0, 'fading': False, 'outs': [],
                 'sound': {'music': '', 'amb': '', 'mv': 70, 'av': 60, **rcfg[r].get('sound', {})}}
     rooms = {r: new_room(r) for r in ROOMS}
@@ -624,6 +661,7 @@ def setup(app, demo=False, lights=None, cast=False):
         """Open Phosphor TV on that TV: the Chromecast casts the page; the PC opens its full-screen window."""
         room['started'] = time.time()
         if room['id'] == 'pc':
+            room['app'] = ''
             n = rcfg['pc'].get('monitor')
             if not isinstance(n, int):
                 raise web.HTTPBadRequest(text='Pick which monitor is the living room TV first (Settings › Living room TV).')
@@ -639,6 +677,7 @@ def setup(app, demo=False, lights=None, cast=False):
     async def tv_off(room):
         room['want'], room['scene'], room['sleep_at'], room['fading'] = None, '', 0.0, False
         if room['id'] == 'pc':
+            room['app'] = ''
             await asyncio.to_thread(kiosk.close)
         elif cfg.get('cast'):
             await asyncio.wait_for(asyncio.to_thread(need().stop, cfg['cast']), 15)
@@ -667,11 +706,13 @@ def setup(app, demo=False, lights=None, cast=False):
         on = linked(room)
         since = time.time() - room['started']
         r = room['id']
+        app = ''
         if r == 'pc':
             power = on or (bool(room['want']) and kiosk.running())
+            app = room['app'] if room['app'] and not on and kiosk.running() else ''
         else:
             power = None   # worked out from the Chromecast's status below
-        return {'on': power, 'linked': on, 'screen': room['screen'] if on else '',
+        return {'on': power, 'linked': on, 'app': app, 'screen': room['screen'] if on else '',
                 'waiting': bool(room['want']) and not on and since < 30, 'stuck': bool(room['want']) and not on and since >= 30}
 
     async def info(request):
@@ -823,6 +864,36 @@ def setup(app, demo=False, lights=None, cast=False):
             pick(body)
         await tv_off(room)
         return web.json_response({'ok': True})
+
+    async def move(request):
+        """Move to living room: whatever the kitchen Chromecast is casting (Hulu, Prime Video…) stops there and that
+        service's site opens full screen on the living room TV, where Floyd picks it up from Continue Watching."""
+        c, room = need(), rooms['pc']
+        cid = cfg.get('cast')
+        if kiosk is None:
+            raise web.HTTPBadRequest(text='The living room TV needs the relay on Windows.')
+        n = rcfg['pc'].get('monitor')
+        if not isinstance(n, int):
+            raise web.HTTPBadRequest(text='Pick which monitor is the living room TV first (Settings › Living room TV).')
+        if not cid:
+            raise web.HTTPBadRequest(text='Pick your Chromecast first.')
+        st = await asyncio.wait_for(asyncio.to_thread(c.status, cid), 15)
+        name, url = move_site(st['app'])
+        if not url:
+            if st['idle'] or st['appId'] == DASHCAST:
+                raise web.HTTPBadRequest(text='Nothing is casting to the kitchen TV right now.')
+            raise web.HTTPBadRequest(text=f'{st["app"] or "That app"} can\'t move yet. Works with Hulu, Prime Video, Peacock, Netflix, Disney+, Max and YouTube.')
+        got = await asyncio.wait_for(asyncio.to_thread(c.release, cid), 20)
+        if name == 'youtube' and YT_ID.match(got['video'] or ''):
+            url = f'https://www.youtube.com/watch?v={got["video"]}&t={max(0, got["at"] - 3)}s'   # YouTube says which video and where
+        if room['socks']:
+            for s in list(room['socks']):
+                await s.close()
+        room['want'], room['scene'], room['sleep_at'] = None, '', 0.0
+        await asyncio.to_thread(kiosk.open, url, n, False)
+        room['app'] = got['app'] or st['app']
+        print(f'TV: moved {room["app"]} from the kitchen to the living room.')
+        return web.json_response({'ok': True, 'app': room['app'], 'title': got['title'], 'exact': url.startswith('https://www.youtube.com/watch')})
 
     async def volume(request):
         body = await body_of(request)
@@ -1122,7 +1193,7 @@ def setup(app, demo=False, lights=None, cast=False):
         await send_all({'board': []})
         return web.json_response({'ok': True, 'board': []})
 
-    app.add_routes([web.get('/tv', info), web.post('/tv/choose', choose), web.post('/tv/start', start), web.post('/tv/stop', stop),
+    app.add_routes([web.get('/tv', info), web.post('/tv/choose', choose), web.post('/tv/start', start), web.post('/tv/stop', stop), web.post('/tv/move', move),
                     web.post('/tv/volume', volume), web.post('/tv/media', media), web.post('/tv/key', key),
                     web.post('/tv/open', open_), web.post('/tv/say', say), web.post('/tv/board/clear', clear), web.post('/tv/place', place),
                     web.post('/tv/shape', screen_shape), web.post('/tv/pc', pc_setup),

@@ -833,6 +833,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     }
 
     .rm-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+    #np-move { grid-column: 1 / -1; }
     .rm-b { min-height: 48px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text);
       display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: inherit; font-size: var(--fs-xs); font-weight: 700;
       text-transform: uppercase; letter-spacing: var(--tracking-label); cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; padding: 0 var(--sp-2); }
@@ -890,7 +891,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.23</span>
+      <span class="app-meta">v1.24</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -933,6 +934,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
                 <button class="rm-b" data-media="pause" id="np-pp" aria-label="Pause"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg><span>Pause</span></button>
                 <button class="rm-b" data-media="stop" aria-label="Stop"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 5h14v14H5z"/></svg><span>Stop</span></button>
                 <button class="rm-b" id="np-switch"><span>Phosphor</span></button>
+                <button class="rm-b" id="np-move" hidden aria-label="Move to the living room TV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 12h14M13 6l6 6-6 6"/></svg><span>Move to living room</span></button>
               </div>
             </section>
             <div class="vol-row" id="vol-off" hidden>
@@ -1112,7 +1114,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.23</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.24</span></a>
           </div>
         </div>
       </section>
@@ -1497,7 +1499,7 @@ PH.init({});
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
   let lastErr = '', pollT = 0, busyPower = false, sleepAt = 0;
   const ready = () => !!(link && link.url && link.key);
-  const RELAY_WANTS = '3.1';   // tv_control.py version this app expects
+  const RELAY_WANTS = '3.2';   // tv_control.py version this app expects
   const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
   // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
   const toast = PH.toast;
@@ -2007,7 +2009,7 @@ PH.init({});
     busyPower = true; render();
     try {
       await call(on ? '/tv/start' : '/tv/stop', { id: info && info.id }, 25000);
-      PH.toast(on ? 'Starting Phosphor TV…' : 'Phosphor TV is off');
+      PH.toast(on ? 'Starting Phosphor TV…' : tv().app ? tv().app + ' is closed' : 'Phosphor TV is off');
       if (info && info.tv) info.tv.on = on;
       await check();
       if (on) { [2000, 4000, 7000, 12000].forEach(ms => setTimeout(check, ms)); }
@@ -2016,6 +2018,18 @@ PH.init({});
   }
   $('#tv-on').addEventListener('click', () => power(true));
   $('#np-switch').addEventListener('click', () => power(true));
+  // Move to living room: the kitchen Chromecast stops what it's casting and that service opens on the living room TV
+  let busyMove = false;
+  $('#np-move').addEventListener('click', async () => {
+    if (busyMove) return;
+    busyMove = true; render();
+    try {
+      const d = await call('/tv/move', {}, 40000);
+      room = 'pc'; save('room', room); if (info) { info.tv = {}; info.art = info.heard = null; }
+      PH.toast(d.exact ? d.app + ' carries on in the living room.' : d.app + ' is open in the living room. Pick ' + (d.title ? d.title : 'your show') + ' from Continue Watching.');
+    } catch (e) { PH.toast(e.message, 'warn'); }
+    busyMove = false; check();
+  });
   $('#k-power').addEventListener('click', () => power(!isOn()));
   $('#tv-power').addEventListener('click', () => power(!isOn()));
   $('#tv-note').addEventListener('click', e => e.currentTarget.classList.toggle('open'));
@@ -2040,6 +2054,7 @@ PH.init({});
     try { await call('/tv/volume', { id: info.id, mute: c.muted }); } catch (e) { PH.toast(e.message, 'warn'); }
   }));
   $$('[data-media]').forEach(b => b.addEventListener('click', async () => {
+    if (onPc()) { power(false); return; }   // a site moved to the living room: Stop closes its window
     const cmd = b.dataset.media === 'pause' && cast()?.media?.state === 'PAUSED' ? 'play' : b.dataset.media;
     try { await call('/tv/media', { id: info.id, cmd }); setTimeout(check, 600); } catch (e) { PH.toast(e.message, 'warn'); }
   }));
@@ -2208,12 +2223,14 @@ PH.init({});
     else if (state === 'down') { $('#tv-setup-title').textContent = 'Can\'t reach the relay'; $('#tv-setup-text').textContent = lastErr; $('#tv-setup-go').textContent = 'Relay settings'; }
 
     const c = cast(), t = tv(), on = !!t.on;
-    const media = c && c.media && !on ? c.media : null;
     const pcRoom = onPc();
+    // On the living room TV, "media" is a streaming site moved there from the kitchen (Move to living room)
+    const media = pcRoom ? (t.app && !on ? { title: t.app, app: true } : null) : c && c.media && !on ? c.media : null;
     $('#tv-name').textContent = hasPc() ? roomName(room) + ' TV' : castName() || (info && info.id ? 'Chromecast' : 'No Chromecast picked');
     $('#tv-swap').hidden = !hasPc(); $('#tv-swap').setAttribute('aria-label', 'Switch to the ' + roomName(room === 'pc' ? 'cast' : 'pc').toLowerCase() + ' TV');
     let sub, led = '', note = '', noteErr = false;
     if (pcRoom && !pcReady()) { sub = 'Pick its monitor in Settings'; }
+    else if (pcRoom && media) { sub = t.app + ' is on'; led = 'on'; }
     else if (pcRoom && on && t.linked) { sub = 'Phosphor TV' + (t.screen ? ' · ' + t.screen[0].toUpperCase() + t.screen.slice(1) : ''); led = 'on'; }
     else if (pcRoom && (on || t.stuck)) { sub = t.stuck ? 'The window didn\'t connect' : 'Starting Phosphor TV…'; led = 'wait'; if (t.stuck) note = 'Phosphor TV opened on the PC but can\'t reach the relay. Turn it off and on again.'; }
     else if (pcRoom) { sub = 'Off'; }
@@ -2234,13 +2251,15 @@ PH.init({});
     $('#remote').hidden = !on;
     $('#np').hidden = !media;
     if (media) {
-      $('#np-title').textContent = media.title || c.app || 'Playing';
-      $('#np-sub').textContent = [c.app, media.sub].filter(Boolean).join(' · ');
+      $('#np-title').textContent = media.title || (c && c.app) || 'Playing';
+      $('#np-sub').textContent = media.app ? 'Full screen on the living room TV' : [c.app, media.sub].filter(Boolean).join(' · ');
+      $('#np-pp').hidden = !!media.app;
+      $('#np-move').hidden = pcRoom || !hasPc() || !pcReady() || busyMove;
       const paused = media.state === 'PAUSED';
       $('#np-pp').lastElementChild.textContent = paused ? 'Play' : 'Pause';
       $('#np-pp').firstElementChild.innerHTML = paused ? '<path d="M7 4l13 8-13 8z"/>' : '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>';
     }
-    $('#rc-off').hidden = on; $('#vol-off').hidden = !c && !pcRoom;
+    $('#rc-off').hidden = on; $('#vol-off').hidden = (!c && !pcRoom) || (pcRoom && !!media);
     renderVol();
     $$('#shortcuts [data-screen]').forEach(b => b.classList.toggle('cur', b.dataset.screen === t.screen));
     $('#ch-watch').classList.toggle('cur', t.screen === 'watch');
