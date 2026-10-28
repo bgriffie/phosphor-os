@@ -61,7 +61,8 @@ RADIO = {
     'sonic-universe': ['https://boxradio-edge-00.streamafrica.net/jpopchill', 'https://stream.zeno.fm/ricmeoweux2uv'],
     'secret-agent': ['https://nonstopcasiopea.radioca.st/', 'https://nonstopcasiopea.radioca.st/stream'],
 }
-MUSIC = tuple(RADIO)
+MUSIC = tuple(RADIO) + ('pc',)   # 'pc' = PC audio: whatever this PC plays on one output (Floyd's Spotify), sent to the kitchen
+PC_AUDIO_LAG = 1.0                # seconds behind live for PC audio (radio uses RADIO_LAG); the living room hears it directly
 RADIO_LAG = 4.0            # seconds behind the live edge every listener starts, so all TVs line up
 RADIO_KEEP = 10.0          # seconds of each station kept, for the lag plus the sync offset
 RADIO_MAX_OFFSET = 3000    # ms the living room can be shifted against the kitchen, either way
@@ -73,7 +74,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '3.5'           # the phone app compares this to know which features the relay has
+VERSION = '3.6'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -473,8 +474,21 @@ class Station:
         self.sid, self.on_idle = sid, on_idle
         self.buf, self.base, self.rate = bytearray(), 0, 16000   # bytes kept, stream position of buf[0], bytes a second
         self.ctype, self.listeners, self.ready = 'audio/mpeg', set(), asyncio.Event()
-        self.failed, self.idle_t = False, None
+        self.failed, self.idle_t, self.lag = False, None, RADIO_LAG
         self.task = asyncio.create_task(self.pull())
+
+    def feed(self, chunk):
+        self.buf += chunk
+        extra = len(self.buf) - int(RADIO_KEEP * self.rate)
+        if extra > 0:
+            del self.buf[:extra]; self.base += extra
+        if not self.ready.is_set() and self.base + len(self.buf) >= self.lag * self.rate:
+            self.ready.set()
+        for q in list(self.listeners):
+            if q.qsize() > 400:   # a listener that stopped reading
+                self.listeners.discard(q); q.put_nowait(None)
+            else:
+                q.put_nowait(chunk)
 
     async def pull(self):
         fails = 0
@@ -492,17 +506,7 @@ class Station:
                             br = r.headers.get('icy-br', '').split(',')[0].strip()
                             self.rate = int(br) * 125 if br.isdigit() and 32 <= int(br) <= 320 else 16000
                             async for chunk in r.content.iter_chunked(4096):
-                                self.buf += chunk
-                                extra = len(self.buf) - int(RADIO_KEEP * self.rate)
-                                if extra > 0:
-                                    del self.buf[:extra]; self.base += extra
-                                if not self.ready.is_set() and self.base + len(self.buf) >= RADIO_LAG * self.rate:
-                                    self.ready.set()
-                                for q in list(self.listeners):
-                                    if q.qsize() > 400:   # a listener that stopped reading
-                                        self.listeners.discard(q); q.put_nowait(None)
-                                    else:
-                                        q.put_nowait(chunk)
+                                self.feed(chunk)
                 except asyncio.CancelledError:
                     raise
                 except Exception as e:
@@ -522,7 +526,7 @@ class Station:
         """A new listener: (backlog to send first, queue of live chunks)."""
         q = asyncio.Queue()
         end = self.base + len(self.buf)
-        start = max(self.base, end - int((RADIO_LAG + delay_ms / 1000) * self.rate))
+        start = max(self.base, end - int((self.lag + delay_ms / 1000) * self.rate))
         self.listeners.add(q)
         if self.idle_t:
             self.idle_t.cancel(); self.idle_t = None
@@ -535,6 +539,102 @@ class Station:
 
     def stop(self):
         self.task.cancel()
+
+
+class PcAudio(Station):
+    """PC audio: records one of this PC's sound outputs (WASAPI loopback, the 'soundcard' package), turns it into an
+    MP3 stream with ffmpeg (imageio-ffmpeg, as for the fire copies) and hands it out like a radio station.
+    Floyd sets Spotify's output to the living room TV in Windows' Volume mixer and picks that output here."""
+    RATE, CH = 48000, 2
+
+    def __init__(self, on_idle, out_name, demo=False):
+        self.out_name, self.demo, self.error = out_name, demo, ''
+        super().__init__('pc', on_idle)
+        self.lag, self.rate = PC_AUDIO_LAG, 16000   # 128 kbit/s
+
+    @staticmethod
+    def outputs():
+        """Names of this PC's sound outputs (for the phone), or [] if 'soundcard' is missing."""
+        try:
+            import soundcard
+            return [sp.name for sp in soundcard.all_speakers()][:16]
+        except Exception:
+            return []
+
+    def capture(self, ff, stop):
+        """Thread: PCM from the chosen output into ffmpeg. Silence (nothing playing) is padded so the stream never stalls."""
+        try:
+            if self.demo:   # a quiet 440 Hz tone instead of a real output
+                import math, struct
+                block = b''.join(struct.pack('<hh', v, v) for v in (int(3000 * math.sin(2 * math.pi * 440 * i / self.RATE)) for i in range(4800)))
+                while not stop.is_set():
+                    ff.stdin.write(block); ff.stdin.flush(); time.sleep(.1)
+                return
+            if os.name == 'nt':
+                import ctypes
+                ctypes.windll.ole32.CoInitializeEx(None, 0)   # soundcard needs COM in this thread
+            import soundcard
+            import numpy
+            sp = next((x for x in soundcard.all_speakers() if x.name == self.out_name), None) or soundcard.default_speaker()
+            mic = soundcard.get_microphone(id=str(sp.name), include_loopback=True)
+            t0, sent = time.time(), 0
+            with mic.recorder(samplerate=self.RATE, channels=self.CH) as rec:
+                while not stop.is_set():
+                    data = rec.record(numframes=None)   # whatever has arrived (nothing while the PC is silent)
+                    pcm = (numpy.clip(data, -1, 1) * 32767).astype('<i2').tobytes() if len(data) else b''
+                    behind = int((time.time() - t0) * self.RATE) - sent - len(data) - self.RATE // 10
+                    if behind > 0:
+                        pcm = bytes(behind * 2 * self.CH) + pcm
+                    sent += len(pcm) // (2 * self.CH)
+                    if pcm:
+                        ff.stdin.write(pcm); ff.stdin.flush()
+                    time.sleep(.03)
+        except ImportError:
+            self.error = 'PC audio needs:  py -m pip install soundcard numpy'
+        except Exception as e:
+            if not stop.is_set():
+                self.error = 'PC audio: ' + (str(e) or type(e).__name__)
+        finally:
+            try:
+                ff.stdin.close()
+            except Exception:
+                pass
+
+    async def pull(self):
+        import threading
+        loop, stop = asyncio.get_running_loop(), threading.Event()
+        try:
+            import imageio_ffmpeg
+            exe = imageio_ffmpeg.get_ffmpeg_exe()
+        except Exception:
+            self.error = 'PC audio needs:  py -m pip install imageio-ffmpeg'
+            exe = None
+        ff = None
+        try:
+            if exe:
+                ff = subprocess.Popen([exe, '-loglevel', 'error', '-f', 's16le', '-ar', str(self.RATE), '-ac', str(self.CH), '-i', 'pipe:0',
+                                       '-c:a', 'libmp3lame', '-b:a', '128k', '-f', 'mp3', '-flush_packets', '1', 'pipe:1'],
+                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+                threading.Thread(target=self.capture, args=(ff, stop), daemon=True).start()
+                while True:
+                    chunk = await asyncio.to_thread(ff.stdout.read1, 4096)
+                    if not chunk:
+                        break
+                    self.feed(chunk)
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            self.error = self.error or 'PC audio: ' + (str(e) or type(e).__name__)
+        finally:
+            stop.set()
+            if ff and ff.poll() is None:
+                ff.kill()
+            if self.error:
+                print(' ', self.error)
+            self.failed = True
+            for q in list(self.listeners):
+                q.put_nowait(None)
+            loop.call_soon(self.on_idle, self)
 
 
 def setup(app, demo=False, lights=None, cast=False):
@@ -753,7 +853,9 @@ def setup(app, demo=False, lights=None, cast=False):
             'ok': True, 'version': VERSION, 'demo': c.fake, 'devices': devs, 'id': cid, 'cast': st, 'error': err,
             'room': r, 'rooms': [{'id': x, 'name': ROOM_NAMES[x], 'on': bool(rooms[x]['socks'])} for x in ROOMS if x == 'cast' or kiosk is not None],
             'pc': {'monitor': rcfg['pc'].get('monitor'), 'monitors': kiosk.monitors() if kiosk else [], 'outs': rooms['pc']['outs'],
-                   'sink': rcfg['pc'].get('sink', '')} if kiosk else None,
+                   'sink': rcfg['pc'].get('sink', ''), 'loop': rcfg['pc'].get('loop', ''),
+                   'loops': ['Demo TV (HDMI)', 'Speakers'] if kiosk.fake else await asyncio.to_thread(PcAudio.outputs),
+                   'audioErr': hub.get('pc_audio_err', '')} if kiosk else None,
             'sync': sync_on(), 'offset': offset(),
             'tv': tv, 'board': hub['board'], 'lights': lights is not None,
             'place': (cfg.get('place') or {}).get('name', ''), 'units': cfg.get('units') or '', 'unitsNow': units() if cfg.get('place') else '',
@@ -839,6 +941,16 @@ def setup(app, demo=False, lights=None, cast=False):
                 raise web.HTTPBadRequest(text='Unknown sound output.')
             rcfg['pc']['sink'] = s
             await send_tv(pc, {'sink': s})
+        if 'loop' in body:   # which output PC audio records for the kitchen ('' = the PC's default output)
+            n = body['loop']
+            if not isinstance(n, str) or len(n) > 200:
+                raise web.HTTPBadRequest(text='Unknown sound output.')
+            rcfg['pc']['loop'] = n
+            hub['pc_audio_err'] = ''
+            old = hub['stations'].get('pc')
+            if old:
+                old.stop()
+                await send_all({'resync': True})   # whoever plays PC audio rejoins on the new output
         resync = False
         if isinstance(body.get('sync'), bool):
             cfg['sync'] = body['sync']
@@ -855,7 +967,7 @@ def setup(app, demo=False, lights=None, cast=False):
         if resync and sync_on():
             await send_all({'resync': True})   # both TVs rejoin the station at their new places
         return web.json_response({'ok': True, 'sync': sync_on(), 'offset': offset(), 'monitor': rcfg['pc'].get('monitor'),
-                                  'sink': rcfg['pc'].get('sink', '')})
+                                  'sink': rcfg['pc'].get('sink', ''), 'loop': rcfg['pc'].get('loop', '')})
 
     async def start(request):
         body = await body_of(request)
@@ -984,6 +1096,8 @@ def setup(app, demo=False, lights=None, cast=False):
         shown = await send_tv(room, {'sound': snd})
         if sync_on():
             shared = {k: change[k] for k in ('music', 'amb') if k in change}
+            if shared.get('music') == 'pc':   # PC audio already plays in the living room itself
+                shared['music'] = ''
             if shared:
                 other = rooms['pc' if room['id'] == 'cast' else 'cast']
                 other['sound'].update(shared); rcfg[other['id']]['sound'] = other['sound']
@@ -1336,17 +1450,19 @@ def setup(app, demo=False, lights=None, cast=False):
     async def tv_radio(request):
         """A station from RADIO's fixed list, fetched once by the relay and shared by both TVs."""
         sid = request.match_info['sid']
-        if sid not in RADIO:
+        if sid not in MUSIC or (sid == 'pc' and kiosk is None):
             raise web.HTTPNotFound()
         r = 'pc' if request.query.get('room') == 'pc' else 'cast'
         st = hub['stations'].get(sid)
         if st is None or st.failed:
-            st = hub['stations'][sid] = Station(sid, station_idle)
+            st = hub['stations'][sid] = PcAudio(station_idle, rcfg['pc'].get('loop', ''), kiosk.fake) if sid == 'pc' else Station(sid, station_idle)
         try:
             await asyncio.wait_for(st.ready.wait(), 15)
         except asyncio.TimeoutError:
             if not st.listeners:
                 station_idle(st)
+            if isinstance(st, PcAudio) and st.error:
+                hub['pc_audio_err'] = st.error
             raise web.HTTPBadGateway(text='The station didn\'t answer.')
         backlog, q = st.join(delay_of(r) if sync_on() else 0)
         resp = web.StreamResponse(headers={'Content-Type': st.ctype, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})

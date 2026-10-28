@@ -891,7 +891,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.26</span>
+      <span class="app-meta">v1.27</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1115,7 +1115,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.26</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.27</span></a>
           </div>
         </div>
       </section>
@@ -1136,6 +1136,11 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <span class="label">Sound comes out of</span>
           <div class="menu" role="radiogroup" aria-label="Sound output" id="pc-outs"></div>
           <p class="menu-note" id="pc-outs-note">Pick the TV (it's usually named after the TV or "HDMI"). The list shows up once Phosphor TV is on in the living room.</p>
+        </div>
+        <div class="menu-group">
+          <span class="label">PC audio for the kitchen comes from</span>
+          <div class="menu" role="radiogroup" aria-label="PC audio output" id="pc-loops"></div>
+          <p class="menu-note" id="pc-loops-note"></p>
         </div>
         <div class="menu-group">
           <span class="label">Sync with the kitchen</span>
@@ -1500,7 +1505,7 @@ PH.init({});
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
   let lastErr = '', pollT = 0, busyPower = false, sleepAt = 0;
   const ready = () => !!(link && link.url && link.key);
-  const RELAY_WANTS = '3.3';   // tv_control.py version this app expects
+  const RELAY_WANTS = '3.6';   // tv_control.py version this app expects
   const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
   // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
   const toast = PH.toast;
@@ -1658,7 +1663,7 @@ PH.init({});
 
   /* ---------- Sound ---------- */
   // Ids match MUSIC / AMBIENCE in tv_control.py and src/sound.js on the TV
-  const MUSIC = [['swiss-classic', 'Calm classical', 'Radio Swiss Classic: gentle, mostly slow pieces'], ['romantic-jazz', 'Romantic jazz', 'RelaxingJazz.com: slow, mellow smooth jazz'],
+  const MUSIC = [['pc', 'PC audio (Spotify)', 'Whatever the PC plays on the output picked in Settings › Living room TV'], ['swiss-classic', 'Calm classical', 'Radio Swiss Classic: gentle, mostly slow pieces'], ['romantic-jazz', 'Romantic jazz', 'RelaxingJazz.com: slow, mellow smooth jazz'],
     ['sonic-universe', 'Japanese city pop', 'Smooth 70s and 80s Japanese city pop, chill'], ['secret-agent', 'Japanese fusion', '70s Japanese jazz fusion like Takanaka and Casiopea, a bit livelier'],
     ['swiss-jazz', 'Classic jazz', 'Radio Swiss Jazz: relaxed standards and swing'], ['bossa', 'Bossa nova', 'SomaFM Bossa Beyond'], ['lounge', 'Cocktail lounge', 'SomaFM Illinois Street Lounge'],
     ['fluid', 'Lo-fi beats', 'SomaFM Fluid: chill instrumental hip-hop'], ['groove-salad', 'Space ambient', 'SomaFM Deep Space One: slow and spacey'], ['drone-zone', 'Sleep', 'SomaFM Drone Zone: very quiet, for sleep']];
@@ -1684,7 +1689,7 @@ PH.init({});
   function renderSound() {
     const s = snd(), h = info && info.heard, name = soundName(s);
     const lvl = v => v <= 45 ? 35 : v <= 80 ? 65 : 100;
-    $$('#music-list [data-id]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.id === (s.music || ''))));
+    $$('#music-list [data-id]').forEach(b => { b.setAttribute('aria-checked', String(b.dataset.id === (s.music || ''))); if (b.dataset.id === 'pc') b.hidden = !hasPc() || onPc(); });
     $$('#amb-list [data-id]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.id === (s.amb || ''))));
     $$('#music-lvl [data-v]').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.v === lvl(s.mv))));
     $$('#amb-lvl [data-v]').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.v === lvl(s.av))));
@@ -2153,7 +2158,7 @@ PH.init({});
   $$('#wx-units [data-u]').forEach(b => b.addEventListener('click', () => savePlace({ units: b.dataset.u })));
   /* ---------- Living room TV: its monitor, its speakers, and syncing its music with the kitchen ---------- */
   async function pcSave(body, done) {
-    try { const d = await call('/tv/pc', body, 20000); if (info && info.pc) Object.assign(info.pc, { monitor: d.monitor, sink: d.sink }); if (info) Object.assign(info, { sync: d.sync, offset: d.offset }); if (done) done(); }
+    try { const d = await call('/tv/pc', body, 20000); if (info && info.pc) Object.assign(info.pc, { monitor: d.monitor, sink: d.sink, loop: d.loop }); if (info) Object.assign(info, { sync: d.sync, offset: d.offset }); if (done) done(); }
     catch (e) { PH.toast(e.message, 'warn'); }
     render();
   }
@@ -2187,6 +2192,15 @@ PH.init({});
       });
     }
     $('#pc-outs-note').hidden = outs.length > 0;
+    if (!$('#pc-loops').contains(document.activeElement)) {   // which output PC audio records for the kitchen
+      $('#pc-loops').textContent = '';
+      [''].concat(p.loops || []).forEach(n => {
+        const b = el('button', 'menu-item', n || 'The PC\'s default'); b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String((p.loop || '') === n));
+        b.addEventListener('click', () => { b.blur(); pcSave({ loop: n }, () => PH.toast('PC audio now comes from ' + (n || 'the PC\'s default output') + '.')); });
+        $('#pc-loops').appendChild(b);
+      });
+    }
+    $('#pc-loops-note').textContent = p.audioErr || 'In Windows, set Spotify\'s output to the living room TV (Settings › System › Sound › Volume mixer), then pick that same output here. Kitchen › Sound › PC audio plays it on the kitchen TV.';
     $('#pc-sync').checked = !!info.sync;
     const off = info.offset || 0;
     $('#pc-off').textContent = (off > 0 ? '+' : off < 0 ? '−' : '') + (Math.abs(off) / 1000).toFixed(2) + ' s';
