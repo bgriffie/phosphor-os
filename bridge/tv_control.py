@@ -48,7 +48,7 @@ FIRE_DIR = HERE / 'tv_fire'
 FIRE_VF = 'fps=24,scale=192:108:flags=area,scale=1920:1080:flags=neighbor'   # 108 rows of chunky pixels, sharp edges at 1080p
 FIRE_MAX = 300 * 2**20     # largest download accepted, in bytes
 PAGE_MAX_AGE = 600         # seconds before the TV page is fetched again
-SCREENS = ('home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim', 'watch')
+SCREENS = ('home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim', 'watch', 'alarm')   # alarm = Home Map's Intruder mode
 # Background sound. The TV page makes the rain/fire/ocean sounds itself. Music is internet radio: the relay fetches
 # each station once and passes the same stream to every TV (7790 /radio/<id>), so two TVs playing the same station
 # stay in step; the TV page falls back to the station's own address if that doesn't work. Same list as sound.js.
@@ -73,7 +73,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '3.3'           # the phone app compares this to know which features the relay has
+VERSION = '3.4'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
