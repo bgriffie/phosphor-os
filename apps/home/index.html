@@ -841,6 +841,26 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .sc-chips .chip.warn { color: var(--red, #FF5C5C); border-color: rgba(255, 92, 92, .5); }
     .sc-chips .chip.warn.is-sel { background: rgba(255, 92, 92, .18); border-color: var(--red, #FF5C5C); box-shadow: 0 0 12px rgba(255, 92, 92, .5); }
     .sc-btn { background: rgba(8, 17, 10, .94); }
+    .sc-wrap { flex-wrap: wrap; }
+    .scroll-card { max-height: 62vh; overflow-y: auto; overscroll-behavior: contain; }
+    .lp-list { display: flex; flex-direction: column; gap: var(--sp-1); }
+    .lp-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto; align-items: center; gap: var(--sp-2); }
+    .lp-name { display: flex; align-items: center; gap: var(--sp-2); background: none; border: 0; color: var(--text); font: inherit; text-align: left; padding: 0; min-height: 40px; cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .lp-name .dot { flex: none; }
+    .lp-row .li-range:disabled { opacity: .35; }
+    .tc-on { display: flex; flex-direction: column; gap: var(--sp-2); }
+    .tc-on[hidden], .over .row[hidden] { display: none; }
+    .tc-l { display: grid; grid-template-columns: 4.5em minmax(0, 1fr); align-items: center; gap: var(--sp-2); }
+    .tc-sel, .tc-msg input { width: 100%; min-height: 40px; background: var(--bg); color: var(--text); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); font: inherit; padding: 0 var(--sp-2); }
+    .tc-msg { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-2); }
+    .pcv-view { background: #000; display: flex; flex-direction: column; }
+    .pcv-wrap { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; display: grid; place-items: center; }
+    .pcv-wrap canvas { display: block; max-width: none; }
+    .pcv-wrap .strip { position: absolute; left: var(--sp-2); right: var(--sp-2); top: var(--sp-2); }
+    .pcv-wrap .strip[hidden] { display: none; }
+    .pcv-bar { display: flex; gap: var(--sp-2); align-items: center; padding: var(--sp-2); }
+    .pcv-bar .chips { flex: 1; min-width: 0; }
+    .pcv-in { position: absolute; left: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; font-size: 16px; }
     .dim .readout.sun-r { font-size: var(--fs-sm); min-width: 5.6em; }
     #sun-year[aria-pressed="true"], #sun-dayplay[aria-pressed="true"], #sun-live[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
     .sc-btn[aria-expanded="true"], .sc-btn.is-sel { color: var(--accent); border-color: var(--accent); box-shadow: var(--glow-box); }
@@ -880,7 +900,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.12</span>
+      <span class="app-meta">v1.13</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -915,6 +935,9 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
               <button class="chip" data-scene="lights-off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><span>Lights off</span></button>
               <button class="chip" data-scene="all-off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg><span>All off</span></button>
             </div>
+            <button class="rm-b pow sc-btn" id="lp-btn" aria-label="Lights" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg></button>
+            <button class="rm-b pow sc-btn" id="rc-btn" aria-label="TV remote" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M8 3l4 4 4-4"/></svg></button>
+            <button class="rm-b pow sc-btn" id="pcv-btn" aria-label="PC screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="4" width="18" height="12"/><path d="M9 20h6M12 16v4"/></svg></button>
             <button class="rm-b pow sc-btn" id="walk-btn" aria-label="Walk through" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="13" cy="4" r="1.6"/><path d="M9 21l2.5-6.5L14 17v4M11.5 14.5 12 9l-3.5 2V14M12 9l3 3h3"/></svg></button>
             <button class="rm-b pow sc-btn" id="sun-btn" aria-label="Sunlight" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
             <button class="rm-b pow sc-btn" id="sc-btn" aria-label="Scenes" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/></svg></button>
@@ -934,6 +957,20 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
             </div>
             <div class="sw-row" id="lc-sw"></div>
             <div class="row wh-row" id="lc-wh"></div>
+          </section>
+
+          <section class="card scroll-card" id="lp" hidden aria-label="Lights">
+            <div class="c-top">
+              <span class="dot is-on" style="background:var(--accent);color:var(--accent)" aria-hidden="true"></span>
+              <div class="c-who"><div class="who-t">Lights</div><div class="who-s" id="lp-sub">—</div></div>
+              <button class="rm-b ic" id="lp-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            </div>
+            <div class="row" style="--n:3">
+              <button class="rm-b" data-lp="on">All on</button>
+              <button class="rm-b" data-lp="warm">All warm</button>
+              <button class="rm-b" data-lp="off">All off</button>
+            </div>
+            <div class="lp-list" id="lp-list"></div>
           </section>
 
           <section class="card" id="pc" hidden aria-label="Party">
@@ -972,22 +1009,40 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
             <button class="rm-b" id="sun-live" aria-pressed="false">Live sun: off</button>
           </section>
 
-          <section class="card" id="tc" hidden aria-label="TV">
+          <section class="card scroll-card" id="tc" hidden aria-label="TV">
             <div class="c-top">
               <span class="led" id="tc-led" aria-hidden="true"></span>
               <div class="c-who"><div class="who-t" id="tc-name">TV</div><div class="who-s" id="tc-sub">—</div></div>
               <button class="rm-b pow" id="tc-pow" aria-pressed="false" aria-label="Turn TV on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg></button>
               <button class="rm-b ic" data-close-card aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
             </div>
+            <div class="row tabs" id="tc-rooms" role="tablist" style="--n:2"><button class="rm-b" role="tab" data-tv="tv">Living room</button><button class="rm-b" role="tab" data-tv="crt">Kitchen</button></div>
             <div class="tv-mini" id="tc-mini"><span class="tv-clock" id="tc-clock"></span><span class="tv-big" id="tc-big">Off</span><span class="tv-small" id="tc-small"></span></div>
             <p class="note" id="tc-note" hidden></p>
-            <div class="row" id="tc-chans" style="--n:4">
-              <button class="rm-b tv-ch" data-screen="today">Today</button>
-              <button class="rm-b tv-ch" data-screen="art">Art</button>
-              <button class="rm-b tv-ch" data-screen="clock">Clock</button>
-              <button class="rm-b tv-ch" data-screen="watch">Watch</button>
+            <div class="tc-on" id="tc-on">
+              <div class="row" id="tc-chans" style="--n:3">
+                <button class="rm-b tv-ch" data-screen="today">Today</button>
+                <button class="rm-b tv-ch" data-screen="art">Art</button>
+                <button class="rm-b tv-ch" data-screen="clock">Clock</button>
+                <button class="rm-b tv-ch" data-screen="watch">Watch</button>
+                <button class="rm-b tv-ch" data-screen="rain">Rain</button>
+                <button class="rm-b tv-ch" data-screen="dim">Dark</button>
+              </div>
+              <div class="row" id="tc-art" style="--n:3">
+                <button class="rm-b" data-art="-1" aria-label="Previous art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
+                <button class="rm-b" data-art="fire">Fireplace</button>
+                <button class="rm-b" data-art="1" aria-label="Next art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 4l8 8-8 8"/></svg></button>
+              </div>
+              <label class="tc-l"><span class="label">Music</span><select class="tc-sel" id="tc-music"></select></label>
+              <label class="tc-l"><span class="label">Sound</span><select class="tc-sel" id="tc-amb"></select></label>
+              <div class="tc-msg"><input type="text" id="tc-say" maxlength="140" placeholder="Message on the TV" autocomplete="off" enterkeyhint="send"><button class="rm-b" id="tc-send">Send</button></div>
             </div>
-            <button class="rm-b" id="tc-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M8 3l4 4 4-4"/></svg>Open TV remote</button>
+            <div class="row" id="tc-vol" style="--n:4">
+              <button class="rm-b" data-vol="-5" aria-label="Volume down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+              <button class="rm-b" data-vol="mute" id="tc-mute">Mute</button>
+              <button class="rm-b" data-vol="5" aria-label="Volume up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+              <button class="rm-b" data-vol="play" id="tc-play">Pause</button>
+            </div>
           </section>
           <section class="card" id="mc" hidden aria-label="PC monitor">
             <div class="c-top">
@@ -1002,6 +1057,16 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
             </div>
           </section>
         </div>
+      </section>
+
+      <section class="view fill pcv-view" data-route="/pc" data-title="PC screen">
+        <div class="pcv-wrap" id="pcv-wrap"><canvas id="pcv-cv" width="16" height="9"></canvas><p class="strip" id="pcv-msg">Connecting to the PC…</p></div>
+        <div class="pcv-bar">
+          <div class="chips" id="pcv-mons" role="radiogroup" aria-label="Monitor"></div>
+          <button class="rm-b" id="pcv-esc">Esc</button>
+          <button class="rm-b" id="pcv-kb">Keys</button>
+        </div>
+        <input type="text" id="pcv-in" class="pcv-in" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Type on the PC">
       </section>
 
       <section class="view fill map-view" data-route="/place" data-title="Place">
@@ -1060,31 +1125,31 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/settings" data-title="Settings">
         <div class="menu-group">
-          <span class="label">General</span>
+          <span class="label">Connection</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/relay"><span class="mi-label">Relay</span><span class="mi-value" id="set-relay">—</span></a>
-            <a class="menu-item" href="#/settings/walls"><span class="mi-label">Walls</span><span class="mi-value" data-setting-value="walls"></span></a>
-            <a class="menu-item" href="#/settings/furniture"><span class="mi-label">Furniture</span><span class="mi-value" data-setting-value="furn"></span></a>
-            <label class="menu-item"><span class="mi-label">Labels<small>Room, light and TV names on the map</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="labels"></label>
-            <label class="menu-item"><span class="mi-label">Live sun<small>Today's real sunlight stays on the map</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="sunlive"></label>
-            <label class="menu-item"><span class="mi-label">Live pictures<small>TVs and PC monitors on the map show what's on them</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="live"></label>
+            <a class="menu-item" href="#/settings/relay"><span class="mi-label">Home relay<small>Links the map to your lights, TVs and PC</small></span><span class="mi-value" id="set-relay">—</span></a>
           </div>
         </div>
         <div class="menu-group">
-          <span class="label">Floor plan</span>
+          <span class="label">On the map</span>
           <div class="menu">
-            <a class="menu-item" href="#/place"><span class="mi-label">Place lights, TVs, plants and furniture</span><span class="mi-value" id="set-placed">—</span></a>
+            <label class="menu-item"><span class="mi-label">Live pictures<small>TVs and PC monitors show what's on them</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="live"></label>
+            <label class="menu-item"><span class="mi-label">Names<small>Room, light and TV names</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="labels"></label>
+            <label class="menu-item"><span class="mi-label">Live sun<small>Today's real sunlight</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="sunlive"></label>
+            <a class="menu-item" href="#/settings/display"><span class="mi-label">Screen effect</span><span class="mi-value">CRT <span data-setting-value="crt"></span></span></a>
+          </div>
+        </div>
+        <div class="menu-group">
+          <span class="label">Your home</span>
+          <div class="menu">
+            <a class="menu-item" href="#/place"><span class="mi-label">Move things<small>Lights, TVs, plants, furniture</small></span><span class="mi-value" id="set-placed">—</span></a>
             <a class="menu-item" href="#/settings/rooms"><span class="mi-label">Room names</span><span class="mi-value" id="set-rooms">—</span></a>
+            <a class="menu-item" href="#/settings/walls"><span class="mi-label">Wall height</span><span class="mi-value" data-setting-value="walls"></span></a>
+            <a class="menu-item" href="#/settings/furniture"><span class="mi-label">Furniture</span><span class="mi-value" data-setting-value="furn"></span></a>
             <button class="menu-item" id="scan-load"><span class="mi-label">Load a new scan<small>Polycam room scan, exported as OBJ</small></span></button>
             <button class="menu-item" id="scan-reset" hidden><span class="mi-label">Use the original scan</span></button>
           </div>
           <input type="file" id="scan-file" accept=".obj,text/plain,application/octet-stream" tabindex="-1" aria-hidden="true">
-        </div>
-        <div class="menu-group">
-          <span class="label">Appearance</span>
-          <div class="menu">
-            <a class="menu-item" href="#/settings/display"><span class="mi-label">Display</span><span class="mi-value">CRT <span data-setting-value="crt"></span></span></a>
-          </div>
         </div>
         <div class="menu-group">
           <span class="label">Data</span>
@@ -1097,7 +1162,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.12</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.13</span></a>
           </div>
         </div>
       </section>
@@ -1164,16 +1229,14 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   </main>
 
   <dialog class="sheet dropdown" id="menu" aria-label="Menu">
-    <div class="sheet-title">Go to</div>
-    <div class="menu" data-sections>
-      <button class="menu-item" data-route="/"><span class="mi-glyph" aria-hidden="true">■</span><span class="mi-label">Map</span></button>
-      <button class="menu-item" data-route="/place"><span class="mi-glyph" aria-hidden="true">+</span><span class="mi-label">Place lights</span></button>
-      <button class="menu-item" data-route="/settings"><span class="mi-glyph" aria-hidden="true">⚙</span><span class="mi-label">Settings</span></button>
-    </div>
-    <div class="sheet-title">Actions</div>
     <div class="menu">
-      <button class="menu-item" data-act="view"><span class="mi-label" id="m-view">Top view</span></button>
-      <button class="menu-item" data-act="fit"><span class="mi-label">Reset view</span></button>
+      <button class="menu-item" data-route="/"><span class="mi-label">Home map</span></button>
+      <button class="menu-item" data-act="lights"><span class="mi-label">Lights</span></button>
+      <button class="menu-item" data-act="remote"><span class="mi-label">TV remote</span></button>
+      <button class="menu-item" data-route="/pc"><span class="mi-label">PC screen</span></button>
+      <button class="menu-item" data-act="scenes"><span class="mi-label">Scenes</span></button>
+      <button class="menu-item" data-route="/place"><span class="mi-label">Move things</span></button>
+      <button class="menu-item" data-route="/settings"><span class="mi-label">Settings</span></button>
       <button class="menu-item" data-act="off"><span class="mi-label">All lights off</span></button>
     </div>
   </dialog>
@@ -1697,17 +1760,25 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     if (i.error) return { mode: 'unknown', big: 'Not answering', small: i.error, short: '' };
     return { mode: 'off', big: 'Off', small: '', short: '' };
   }
-  async function tvPower() {
-    if (!tvInfo || !tvInfo.id) { openTVApp(); return; }
-    const on = !!(tvInfo.tv && tvInfo.tv.on);
+  // body for a TV call: the kitchen Chromecast by its id, the living room by its room
+  const tvBody = (id, more) => ({ ...(id === 'tv' ? { room: 'pc' } : { id: tvInfo && tvInfo.id, room: 'cast' }), ...more });
+  async function tvPower(id = 'crt') {
+    const i = infoOf(id);
+    if (!i || (id === 'crt' && !i.id)) { PH.toast('Can\'t reach this TV yet.', 'warn'); return; }
+    const on = !!(i.tv && i.tv.on);
     tvBusy = true; render();
-    try { await call(on ? '/tv/stop' : '/tv/start', { id: tvInfo.id }, 25000); if (!on) PH.toast('Turning the TV on…'); }
+    try { await call(on ? '/tv/stop' : '/tv/start', tvBody(id), 25000); if (!on) PH.toast('Turning the TV on…'); }
     catch (e) { PH.toast(e.message, 'warn'); }
     tvBusy = false; await refreshTV();
     if (!on) setTimeout(refreshTV, 4000);
   }
-  async function tvOpen(screen) {
-    try { await call('/tv/open', { screen }, 10000); if (tvInfo && tvInfo.tv) tvInfo.tv.screen = screen; render(); setTimeout(refreshTV, 600); }
+  async function tvOpen(screen, id = 'crt') {
+    const i = infoOf(id);
+    try { await call('/tv/open', { screen, room: TVS[id].room }, 10000); if (i && i.tv) i.tv.screen = screen; render(); setTimeout(refreshTV, 600); }
+    catch (e) { PH.toast(e.message, 'warn'); }
+  }
+  async function tvDo(path, id, body, quick) {
+    try { await call(path, tvBody(id, body), 10000); setTimeout(refreshTV, quick ? 300 : 800); }
     catch (e) { PH.toast(e.message, 'warn'); }
   }
   // Inside phosphor.os, the TV remote is the OS's own TV app
@@ -2687,7 +2758,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   function savePins() { save('pins', pins); save('tv', tvBox); save('crt', crtBox); save('plants', plants); save('furniture', furn); }
 
   /* ---------- Cards over the map ---------- */
-  function openCard(id) { cardId = id; if (id && sun.on) { sun.on = false; sunPlay = ''; renderSun(); } if (id && partyOpen) { partyOpen = false; renderParty(); } renderCard(); req(); requestAnimationFrame(placeMirror); }
+  function openCard(id) { cardId = id; if (id && isTVid(id)) save('rc', id); if (id && lpOpen) { lpOpen = false; renderLP(); } if (id && sun.on) { sun.on = false; sunPlay = ''; renderSun(); } if (id && partyOpen) { partyOpen = false; renderParty(); } renderCard(); req(); requestAnimationFrame(placeMirror); }
   const SWATCH = [['Green', 125, 85], ['Cyan', 185, 90], ['Blue', 225, 95], ['Purple', 275, 85], ['Pink', 320, 75], ['Red', 0, 95], ['Orange', 28, 95], ['Gold', 45, 85]];
   const WHITES = [['Warm', 2700], ['Soft', 3500], ['Neutral', 4500], ['Day', 6500]];
   const near = (a, b, d) => Math.abs(a - b) < d;
@@ -2720,9 +2791,18 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       $('#tc-big').textContent = n.big; $('#tc-small').textContent = n.small;
       $('#tc-clock').textContent = n.mode === 'on' && i.clock ? i.clock : '';
       const on = !!(i.tv && i.tv.on);
-      const pw = $('#tc-pow'); pw.setAttribute('aria-pressed', String(on)); pw.setAttribute('aria-label', on ? 'Turn TV off' : 'Turn TV on'); pw.disabled = tvBusy || tvState !== 'ok' || !i.id; pw.hidden = !kitchen;
-      $('#tc-chans').hidden = !(kitchen && on && i.tv.linked);
-      $$('#tc-chans [data-screen]').forEach(b => b.classList.toggle('is-sel', i.tv && b.dataset.screen === i.tv.screen));
+      const pw = $('#tc-pow'); pw.setAttribute('aria-pressed', String(on)); pw.setAttribute('aria-label', on ? 'Turn TV off' : 'Turn TV on'); pw.disabled = tvBusy || tvState !== 'ok' || (kitchen ? !i.id : pcState !== 'ok');
+      $$('#tc-rooms [data-tv]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tv === id)));
+      const linked = !!(on && i.tv.linked), scr = linked ? i.tv.screen : '';
+      $('#tc-on').hidden = !linked;
+      $$('#tc-chans [data-screen]').forEach(b => b.classList.toggle('is-sel', b.dataset.screen === scr));
+      $('#tc-art').hidden = scr !== 'art';
+      const snd = i.sound || {};
+      fillSel($('#tc-music'), MUSIC, snd.music || '', 'No music'); fillSel($('#tc-amb'), AMB, snd.amb || '', 'None');
+      const c = i.cast || {};
+      $('#tc-vol').hidden = !(kitchen && i.id && n.mode !== 'off' && n.mode !== 'unknown');
+      $('#tc-mute').textContent = c.muted ? 'Unmute' : 'Mute'; $('#tc-mute').classList.toggle('is-sel', !!c.muted);
+      $('#tc-play').hidden = !c.media; $('#tc-play').textContent = c.media && c.media.state === 'PAUSED' ? 'Play' : 'Pause';
       const note = tvState === 'down' ? tvErr : tvState === 'none' ? 'Phosphor TV needs tv_control.py on the relay (see the TV app).' : '';
       $('#tc-note').textContent = note; $('#tc-note').hidden = !note;
     }
@@ -2750,12 +2830,72 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     cv.getContext('2d').drawImage(s.cv, 0, 0);
     if (!$('#mc-wait').hidden) renderMonCard();
   }
-  $('#mc-mini').addEventListener('click', () => { const m = furn[cardId]; if (m) openPCApp(m.mon, true); });
-  $('#mc-live').addEventListener('click', () => { const m = furn[cardId]; if (m) openPCApp(m.mon, true); });
+  $('#mc-mini').addEventListener('click', () => { const m = furn[cardId]; if (m) pcvOpen(m.mon); });
+  $('#mc-live').addEventListener('click', () => { const m = furn[cardId]; if (m) pcvOpen(m.mon); });
   $('#mc-app').addEventListener('click', () => { const m = furn[cardId]; if (m) openPCApp(m.mon, false); });
-  $('#tc-pow').addEventListener('click', tvPower);
-  $('#tc-open').addEventListener('click', openTVApp);
-  $('#tc-chans').addEventListener('click', e => { const b = e.target.closest('[data-screen]'); if (b) tvOpen(b.dataset.screen); });
+  /* ---------- The TV remote, for both TVs, right on the map ---------- */
+  function fillSel(sel, map, cur, none) {
+    if (document.activeElement === sel) return;
+    if (!sel.options.length) { sel.add(new Option(none, '')); for (const k in map) sel.add(new Option(map[k], k)); }
+    sel.value = cur;
+  }
+  function openRemote() { const last = load('rc', null); openCard(last || (G && !G.tvs.tv && G.tvs.crt ? 'crt' : 'tv')); refreshTV(); }
+  $('#tc-pow').addEventListener('click', () => tvPower(cardId));
+  $('#tc-rooms').addEventListener('click', e => { const b = e.target.closest('[data-tv]'); if (b) openCard(b.dataset.tv); });
+  $('#tc-chans').addEventListener('click', e => { const b = e.target.closest('[data-screen]'); if (b) tvOpen(b.dataset.screen, cardId); });
+  $('#tc-art').addEventListener('click', e => { const b = e.target.closest('[data-art]'); if (!b) return;
+    tvDo('/tv/art', cardId, b.dataset.art === 'fire' ? { piece: ARTS.indexOf('Fireplace'), hold: true } : { step: +b.dataset.art, hold: true }, true); });
+  $('#tc-music').addEventListener('change', e => tvDo('/tv/sound', cardId, { music: e.target.value }));
+  $('#tc-amb').addEventListener('change', e => tvDo('/tv/sound', cardId, { amb: e.target.value }));
+  function tvSay() { const t = $('#tc-say').value.trim(); if (!t) return; $('#tc-say').value = ''; $('#tc-say').blur();
+    tvDo('/tv/say', cardId, { text: t }).then(() => { const i = infoOf(cardId); if (i && i.tv && i.tv.screen !== 'board') tvOpen('board', cardId); }); }
+  $('#tc-send').addEventListener('click', tvSay);
+  $('#tc-say').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); tvSay(); } });
+  $('#tc-vol').addEventListener('click', e => { const b = e.target.closest('[data-vol]'); if (!b) return; const v = b.dataset.vol, c = (tvInfo && tvInfo.cast) || {};
+    if (v === 'play') tvDo('/tv/media', 'crt', { cmd: c.media && c.media.state === 'PAUSED' ? 'play' : 'pause' });
+    else if (v === 'mute') { c.muted = !c.muted; renderCard(); tvDo('/tv/volume', 'crt', { mute: c.muted }, true); }
+    else tvDo('/tv/volume', 'crt', { delta: +v }, true); });
+  $('#rc-btn').addEventListener('click', () => { if (isTVid(cardId)) openCard(null); else openRemote(); });
+
+  /* ---------- Every light in one list ---------- */
+  let lpOpen = false;
+  function openLP(on = !lpOpen) {
+    lpOpen = on;
+    if (on) { openCard(null); if (partyOpen) { partyOpen = false; renderParty(); } if (sun.on) { sun.on = false; sunPlay = ''; renderSun(); } if (scenesOpen) { scenesOpen = false; renderScenes(); } refreshLights(); }
+    renderLP();
+  }
+  function renderLP() {
+    $('#lp').hidden = !lpOpen; $('#lp-btn').setAttribute('aria-expanded', String(lpOpen));
+    $('#rc-btn').setAttribute('aria-expanded', String(isTVid(cardId)));
+    if (!lpOpen || dragging) return;
+    const n = lights.filter(l => l.on && l.online).length;
+    $('#lp-sub').textContent = !ready() ? 'Set up the relay first' : !lights.length ? (failing || 'No lights found yet') : n ? n + ' of ' + lights.length + ' on' : 'All off';
+    const box = $('#lp-list'); box.textContent = '';
+    [...lights].sort((a, b) => a.name.localeCompare(b.name)).forEach(l => {
+      const row = document.createElement('div'); row.className = 'lp-row';
+      const nm = document.createElement('button'); nm.className = 'lp-name'; nm.dataset.open = l.id;
+      const col = hsl(l), d = document.createElement('span'); d.className = 'dot' + (col ? ' is-on' : ''); if (col) { d.style.background = css(col); d.style.color = css(col); }
+      nm.append(d, document.createTextNode(l.name));
+      const r = document.createElement('input'); r.type = 'range'; r.className = 'li-range'; r.min = 1; r.max = 100; r.dataset.id = l.id; r.setAttribute('aria-label', l.name + ' brightness');
+      r.value = l.brightness || 0; r.disabled = !l.online || l.brightness == null;
+      const pw = document.createElement('button'); pw.className = 'rm-b pow'; pw.dataset.pow = l.id; pw.disabled = !l.online;
+      pw.setAttribute('aria-pressed', String(!!l.on)); pw.setAttribute('aria-label', (l.on ? 'Turn off ' : 'Turn on ') + l.name);
+      pw.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>';
+      row.append(nm, r, pw); box.appendChild(row);
+    });
+  }
+  $('#lp-btn').addEventListener('click', () => openLP());
+  $('#lp-close').addEventListener('click', () => openLP(false));
+  $('#lp-list').addEventListener('click', e => {
+    const p = e.target.closest('[data-pow]'), o = e.target.closest('[data-open]');
+    if (p) { const l = lights.find(x => x.id === p.dataset.pow); if (l) setLight(l.id, { on: !l.on }); }
+    else if (o) { if (pins[o.dataset.open]) openCard(o.dataset.open); else PH.toast('Place this light on the map to see it there.'); }
+  });
+  $('#lp-list').addEventListener('input', e => { if (e.target.dataset.id) dragging = true; });
+  $('#lp-list').addEventListener('change', e => { const id = e.target.dataset.id; if (!id) return; dragging = false; setLight(id, { brightness: +e.target.value }); });
+  $('#lp').addEventListener('click', e => { const b = e.target.closest('[data-lp]'); if (!b) return;
+    if (b.dataset.lp === 'off') allOff();
+    else lights.filter(l => l.online).forEach(l => setLight(l.id, b.dataset.lp === 'warm' && l.tempRange ? { temp: 2700, brightness: 70 } : { on: true })); });
 
   /* ---------- Live TV picture ----------
      The real Phosphor TV page (published at phosphor-os/tv/) runs here in a frame, fed the same screen, art piece,
@@ -2888,6 +3028,105 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       if (!s.got || !q) { s.cv.hidden = true; continue; }
       s.cv.style.transform = matrixTo([q[0], q[1], q[3], q[2]].map(([x, y]) => [x + ox, y + oy]), s.cv.width, s.cv.height); s.cv.hidden = false;
     }
+  }
+
+  /* ---------- PC screen: the PC app's live view, inside the map ----------
+     One monitor full size over /pc/ws. Tap = click, hold = right-click, one finger drag = scroll, two fingers = zoom and pan,
+     Keys = the phone keyboard types on the PC. */
+  let pcv = { mon: load('pcv-mon', 1), ws: null, meta: null, got: false, z: 1, x: 0, y: 0, back: 0 };
+  function pcvOpen(mon) { if (mon) { pcv.mon = mon; save('pcv-mon', mon); } if (route() === '/pc') pcvRestart(); else PH.go('/pc'); }
+  function pcvSync() {
+    const want = route() === '/pc' && !document.hidden;
+    if (!want) { pcvStop(); return; }
+    if (!pcMons) refreshPCMons().then(pcvRender); pcvRender(); requestAnimationFrame(pcvFit);
+    if (!pcv.ws) pcvStart();
+  }
+  function pcvStop() { const ws = pcv.ws; pcv.ws = null; pcv.got = false; if (ws) { ws.onclose = null; try { ws.send(JSON.stringify([{ stream: null }])); ws.close(); } catch {} } }
+  function pcvRestart() { pcvStop(); pcv.z = 1; pcv.x = pcv.y = 0; pcvZoom(); pcvRender(); pcvSync(); }
+  function pcvMsg(t) { $('#pcv-msg').textContent = t; $('#pcv-msg').hidden = !t; }
+  function pcvStart() {
+    if (!ready()) { pcvMsg('Set up the relay in Settings first.'); return; }
+    if (Date.now() < pcv.back) return;
+    pcvMsg('Connecting to the PC…');
+    let ws; try { ws = pcv.ws = new WebSocket(link.url.replace(/^http/, 'ws') + '/pc/ws?key=' + encodeURIComponent(link.key)); } catch { pcvMsg('Can\'t reach the PC.'); return; }
+    ws.binaryType = 'blob';
+    const w = Math.min(1600, Math.round($('#pcv-wrap').clientWidth * Math.min(2, devicePixelRatio || 1)) || 1280);
+    ws.onopen = () => ws.send(JSON.stringify([{ stream: { mon: pcv.mon, w, q: 60 } }]));
+    ws.onmessage = async e => {
+      if (typeof e.data === 'string') { try { const d = JSON.parse(e.data); if (d.frame) pcv.meta = d.frame; if (d.error) pcvMsg(d.error); } catch {} return; }
+      try { ws.send('[{"ack":1}]'); } catch {}
+      const meta = pcv.meta || {}; pcv.meta = null;
+      if (!!meta.locked !== pcv.locked || !pcv.got) { pcv.locked = !!meta.locked; pcvMsg(pcv.locked ? 'The PC is locked. Unlock it at the PC.' : ''); }
+      let bmp; try { bmp = await toBmp(e.data.type ? e.data : new Blob([e.data], { type: meta.type || 'image/jpeg' })); } catch { return; }
+      if (pcv.ws !== ws) { bmp.close && bmp.close(); return; }
+      const cv = $('#pcv-cv'); if (cv.width !== bmp.width || cv.height !== bmp.height) { cv.width = bmp.width; cv.height = bmp.height; pcvFit(); }
+      cv.getContext('2d').drawImage(bmp, 0, 0); bmp.close && bmp.close();
+      pcv.got = true;
+    };
+    ws.onclose = () => { if (pcv.ws !== ws) return; const had = pcv.got; pcv.ws = null; pcv.got = false;
+      pcvMsg(had ? 'Lost the PC. Reconnecting…' : 'Can\'t reach the PC. Is the relay running with PC control?');
+      pcv.back = Date.now() + (had ? 2000 : 15000); setTimeout(pcvSync, (had ? 2000 : 15000) + 100); };
+  }
+  function pcvRender() {
+    const box = $('#pcv-mons'), mons = pcMons || []; box.textContent = '';
+    if (mons.length < 2) return;
+    mons.forEach(m => { const b = document.createElement('button'); b.className = 'chip'; b.setAttribute('role', 'radio'); b.dataset.mon = m.n;
+      b.setAttribute('aria-checked', String(m.n === pcv.mon)); b.classList.toggle('is-sel', m.n === pcv.mon); b.textContent = 'Screen ' + m.n; box.appendChild(b); });
+  }
+  $('#pcv-mons').addEventListener('click', e => { const b = e.target.closest('[data-mon]'); if (b) pcvOpen(+b.dataset.mon); });
+  $('#pcv-btn').addEventListener('click', () => pcvOpen());
+  // send input: over the open stream, else as one HTTP batch
+  function pcvSend(evs) {
+    if (pcv.ws && pcv.ws.readyState === 1) { try { pcv.ws.send(JSON.stringify(evs)); return; } catch {} }
+    call('/pc/input', { events: evs }, 6000).catch(e => PH.toast(e.message, 'warn'));
+  }
+  function pcvAt(x, y) { const r = $('#pcv-cv').getBoundingClientRect(); return [pcv.mon, +clamp((x - r.left) / r.width, 0, 1).toFixed(4), +clamp((y - r.top) / r.height, 0, 1).toFixed(4)]; }
+  // the picture as large as fits, whole
+  function pcvFit() {
+    const cv = $('#pcv-cv'), w = $('#pcv-wrap'), k = Math.min(w.clientWidth / cv.width, w.clientHeight / cv.height) || 1;
+    cv.style.width = Math.floor(cv.width * k) + 'px'; cv.style.height = Math.floor(cv.height * k) + 'px';
+  }
+  addEventListener('resize', () => { if (route() === '/pc') pcvFit(); });
+  function pcvZoom() { pcv.z = clamp(pcv.z, 1, 6); if (pcv.z === 1) pcv.x = pcv.y = 0; $('#pcv-cv').style.transform = pcv.z === 1 ? '' : `translate(${pcv.x}px, ${pcv.y}px) scale(${pcv.z})`; $('#pcv-cv').style.transformOrigin = '50% 50%'; }
+  {
+    const wrap = $('#pcv-wrap'), pts = new Map(); let t0 = null, holdT = 0, held = false, moved = false, sy = 0, sx = 0, pin = null;
+    wrap.addEventListener('pointerdown', e => {
+      wrap.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+      if (pts.size === 1) { t0 = [e.clientX, e.clientY]; moved = held = false; clearTimeout(holdT);
+        holdT = setTimeout(() => { if (!moved && pts.size === 1) { held = true; pcvSend([{ at: pcvAt(...t0) }, { c: 'right' }]); navigator.vibrate && navigator.vibrate(15); } }, 550); }
+      else { clearTimeout(holdT); moved = true; const [a, b] = [...pts.values()]; pin = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), c: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], z: pcv.z, x: pcv.x, y: pcv.y }; }
+    });
+    wrap.addEventListener('pointermove', e => {
+      if (!pts.has(e.pointerId)) return; const was = pts.get(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+      if (pts.size >= 2 && pin) { const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), c = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+        pcv.z = pin.z * d / (pin.d || 1); pcv.x = pin.x + c[0] - pin.c[0]; pcv.y = pin.y + c[1] - pin.c[1]; pcvZoom(); return; }
+      if (!t0 || held) return;
+      if (!moved && Math.hypot(e.clientX - t0[0], e.clientY - t0[1]) > 8) { moved = true; clearTimeout(holdT); }
+      if (!moved) return;
+      const r = $('#pcv-cv').getBoundingClientRect(), m = (pcMons || []).find(x => x.n === pcv.mon), s = r.width / ((m && m.w) || 1920);
+      sy += (e.clientY - was[1]) / s * 1.2; sx += -(e.clientX - was[0]) / s * 1.2;
+      const wy = Math.trunc(sy), wx = Math.trunc(sx); if (wx || wy) { sy -= wy; sx -= wx; pcvSend([{ s: [wx, wy] }]); }
+    });
+    const up = e => {
+      if (!pts.has(e.pointerId)) return; pts.delete(e.pointerId); clearTimeout(holdT);
+      if (pts.size) return;
+      if (t0 && !moved && !held && e.type === 'pointerup') pcvSend([{ at: pcvAt(...t0) }, { c: 'left' }]);
+      t0 = null; pin = null; sx = sy = 0;
+    };
+    wrap.addEventListener('pointerup', up); wrap.addEventListener('pointercancel', up);
+    wrap.addEventListener('dblclick', e => e.preventDefault());
+    // typing: the hidden field takes the phone keyboard; each change goes to the PC
+    const inp = $('#pcv-in');
+    $('#pcv-kb').addEventListener('click', () => { inp.value = ''; inp.focus(); });
+    $('#pcv-esc').addEventListener('click', () => pcvSend([{ k: ['esc'] }]));
+    inp.addEventListener('beforeinput', e => {
+      e.preventDefault();
+      if (e.inputType === 'insertText' || e.inputType === 'insertReplacementText') { if (e.data) pcvSend([{ t: e.data }]); }
+      else if (e.inputType === 'deleteContentBackward') pcvSend([{ k: ['backspace'] }]);
+      else if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') pcvSend([{ k: ['enter'] }]);
+    });
+    inp.addEventListener('keydown', e => { const k = { Enter: 'enter', Tab: 'tab', Escape: 'esc', ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[e.key];
+      if (k) { e.preventDefault(); pcvSend([{ k: [k] }]); } });
   }
 
   /* ---------- Sunlight: where the sun comes in, any day and time of the year ----------
@@ -3101,7 +3340,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     $$('#sc-row [data-scene]').forEach(b => { b.classList.toggle('is-sel', b.dataset.scene === cur); b.disabled = false; });
     $('#sc-btn').classList.toggle('is-sel', !!cur);
   }
-  $('#sc-btn').addEventListener('click', () => { scenesOpen = !scenesOpen; renderScenes(); });
+  $('#sc-btn').addEventListener('click', () => { scenesOpen = !scenesOpen; if (scenesOpen && lpOpen) { lpOpen = false; renderLP(); } renderScenes(); });
   $('#sc-row').addEventListener('click', e => { const b = e.target.closest('[data-scene]'); if (b) runScene(b.dataset.scene); });
 
   /* ---------- Placing lights and the TV ---------- */
@@ -3273,7 +3512,6 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   function render() {
     const t = top();
     $('#k-view').innerHTML = t ? VIEW_3D : VIEW_TOP; $('#k-view').setAttribute('aria-label', t ? '3D view' : 'Top view');
-    $('#m-view').textContent = t ? '3D view' : 'Top view';
     const note = !ready() ? 'Lights need the relay. Set it up in Settings › Relay.' : failing;
     $('#map-note').textContent = note; $('#map-note').hidden = !note;
     $('#first-hint').hidden = Object.keys(pins).length > 0 || !!cardId || sun.on;
@@ -3286,7 +3524,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     $('#ab-walls').textContent = plan.walls.length + ' pieces, ' + (plan.open || []).length + ' doors and windows';
     $('#relay-shared').textContent = ready() ? 'Connected to ' + link.url.replace(/^https?:\/\//, '') + '.' : sharedLink() ? '' : 'Not set up yet.';
     if (route() === '/place') renderPlace();
-    renderCard(); renderRooms(); renderScenes(); mirrorSync(); screenSync(); req();
+    renderCard(); renderLP(); renderRooms(); renderScenes(); mirrorSync(); screenSync(); req();
   }
   function renderRooms() {
     const box = $('#rooms-list'); if (route() !== '/settings/rooms') return; box.textContent = '';
@@ -3316,6 +3554,9 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     if (a.dataset.act === 'fit') { fit(); save('cam', cam); req(); }
     if (a.dataset.act === 'off') allOff();
     if (route() !== '/' && route() !== '/place') PH.go('/');
+    if (a.dataset.act === 'lights') openLP(true);
+    if (a.dataset.act === 'remote') openRemote();
+    if (a.dataset.act === 'scenes' && !scenesOpen) { lpOpen = false; renderLP(); scenesOpen = true; renderScenes(); }
   });
   PH.on('view', () => { render(); });
   ['walls', 'furn'].forEach(k => PH.on(k, () => { build(); req(); }));
@@ -3384,8 +3625,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       if ((tvOf() || tvGet('crt')) && tvState !== 'none' && (isTVid(cardId) || Object.keys(mirs).length || ++tick % 2 === 0)) refreshTV();
     }, 5000);
   }
-  PH.on('route', () => { place(); sync(); });
-  document.addEventListener('visibilitychange', sync);
+  PH.on('route', () => { place(); sync(); pcvSync(); });
+  document.addEventListener('visibilitychange', () => { sync(); pcvSync(); });
   addEventListener('online', sync);
   addEventListener('pageshow', e => { if (e.persisted) sync(); });
   if ('ResizeObserver' in window) new ResizeObserver(() => req()).observe(canvas);
