@@ -74,7 +74,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '4.0'           # the phone app compares this to know which features the relay has
+VERSION = '4.1'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -553,6 +553,21 @@ class PcAudio(Station):
         self.lag, self.rate = PC_AUDIO_LAG, 16000   # 128 kbit/s
 
     @staticmethod
+    def clash(loop, sink):
+        """A warning if the living room page would play into the very output PC audio records (silent TV, echo)."""
+        if sink:
+            return ''
+        try:
+            import soundcard
+            d = soundcard.default_speaker().name
+        except Exception:
+            return ''
+        if 'CABLE' in d or (loop and d == loop):
+            return ('The PC\'s default output is "' + d + '", so the living room TV\'s sound goes there too and the TV stays quiet. '
+                    'Set Windows\' default output back to your speakers and pick the TV under "Sound comes out of" above.')
+        return ''
+
+    @staticmethod
     def outputs():
         """Names of this PC's sound outputs (for the phone), or [] if 'soundcard' is missing."""
         try:
@@ -857,7 +872,7 @@ def setup(app, demo=False, lights=None, cast=False):
             'pc': {'monitor': rcfg['pc'].get('monitor'), 'monitors': kiosk.monitors() if kiosk else [], 'outs': rooms['pc']['outs'],
                    'sink': rcfg['pc'].get('sink', ''), 'loop': rcfg['pc'].get('loop', ''),
                    'loops': ['Demo TV (HDMI)', 'Speakers'] if kiosk.fake else await asyncio.to_thread(PcAudio.outputs),
-                   'audioErr': hub.get('pc_audio_err', '')} if kiosk else None,
+                   'audioErr': hub.get('pc_audio_err', '') or ('' if kiosk.fake else await asyncio.to_thread(PcAudio.clash, rcfg['pc'].get('loop', ''), rcfg['pc'].get('sink', '')))} if kiosk else None,
             'sync': sync_on(), 'offset': offset(),
             'tv': tv, 'board': hub['board'], 'lights': lights is not None,
             'place': (cfg.get('place') or {}).get('name', ''), 'units': cfg.get('units') or '', 'unitsNow': units() if cfg.get('place') else '',
