@@ -62,9 +62,10 @@ RADIO = {
     'secret-agent': ['https://nonstopcasiopea.radioca.st/', 'https://nonstopcasiopea.radioca.st/stream'],
 }
 MUSIC = tuple(RADIO) + ('pc',)   # 'pc' = PC audio: whatever this PC plays on one output (Floyd's Spotify), sent to the kitchen
-PC_AUDIO_LAG = 1.0                # seconds behind live for PC audio (radio uses RADIO_LAG); the living room hears it directly
+PC_AUDIO_LAG = 3.5                # seconds behind live for PC audio (radio uses RADIO_LAG); the living room hears it directly
 RADIO_LAG = 4.0            # seconds behind the live edge every listener starts, so all TVs line up
-RADIO_KEEP = 10.0          # seconds of each station kept, for the lag plus the sync offset
+RADIO_KEEP = 20.0          # seconds of each station kept, for the lag, the sync offset and JOIN_SPARE
+JOIN_SPARE = 5.0           # extra seconds a TV gets on joining, so the relay can skip it forward to the exact spot
 RADIO_MAX_OFFSET = 3000    # ms the living room can be shifted against the kitchen, either way
 # Two TVs: 'cast' = the Chromecast (the kitchen CRT), 'pc' = a monitor on this PC (the living room TV, over HDMI)
 ROOMS = ('cast', 'pc')
@@ -74,7 +75,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '4.5'           # the phone app compares this to know which features the relay has
+VERSION = '4.7'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -526,14 +527,14 @@ class Station:
         self.on_idle(self)
 
     def join(self, delay_ms):
-        """A new listener: (backlog to send first, queue of live chunks)."""
+        """A new listener: (backlog to send first, queue of live chunks, stream byte the backlog starts at)."""
         q = asyncio.Queue()
         end = self.base + len(self.buf)
         start = max(self.base, end - int((self.lag + delay_ms / 1000) * self.rate))
         self.listeners.add(q)
         if self.idle_t:
             self.idle_t.cancel(); self.idle_t = None
-        return bytes(self.buf[start - self.base:]), q
+        return bytes(self.buf[start - self.base:]), q, start
 
     def leave(self, q):
         self.listeners.discard(q)
@@ -585,8 +586,10 @@ class PcAudio(Station):
             if self.demo:   # a quiet 440 Hz tone instead of a real output
                 import math, struct
                 block = b''.join(struct.pack('<hh', v, v) for v in (int(3000 * math.sin(2 * math.pi * 440 * i / self.RATE)) for i in range(4800)))
-                while not stop.is_set():
-                    ff.stdin.write(block); ff.stdin.flush(); time.sleep(.1)
+                t0, n = time.time(), 0
+                while not stop.is_set():   # paced by the clock, like a real sound card
+                    ff.stdin.write(block); ff.stdin.flush(); n += 1
+                    time.sleep(max(0, t0 + n * .1 - time.time()))
                 return
             if os.name == 'nt':
                 import ctypes
@@ -685,7 +688,7 @@ def setup(app, demo=False, lights=None, cast=False):
 
     def new_room(r):
         return {'id': r, 'socks': set(), 'screen': '', 'focus': '', 'want': None, 'app': '', 'started': 0.0, 'art': None, 'heard': None,
-                'scene': '', 'scene_t': 0.0, 'watch': [], 'sleep_at': 0.0, 'fading': False, 'outs': [],
+                'scene': '', 'scene_t': 0.0, 'watch': [], 'sleep_at': 0.0, 'fading': False, 'outs': [], 'play': None, 'behind': None,
                 'sound': {'music': '', 'amb': '', 'mv': 70, 'av': 60, **rcfg[r].get('sound', {})}}
     rooms = {r: new_room(r) for r in ROOMS}
     page = {'html': None, 'at': 0.0}
@@ -884,7 +887,7 @@ def setup(app, demo=False, lights=None, cast=False):
                    'sink': rcfg['pc'].get('sink', ''), 'loop': rcfg['pc'].get('loop', ''),
                    'loops': ['Demo TV (HDMI)', 'Speakers'] if kiosk.fake else await asyncio.to_thread(PcAudio.outputs),
                    'audioErr': hub.get('pc_audio_err', '') or ('' if kiosk.fake else await asyncio.to_thread(PcAudio.clash, rcfg['pc'].get('loop', ''), rcfg['pc'].get('sink', '')))} if kiosk else None,
-            'sync': sync_on(), 'offset': offset(),
+            'sync': sync_on(), 'offset': offset(), 'behind': {x: rooms[x]['behind'] if rooms[x]['play'] else None for x in ROOMS},
             'tv': tv, 'board': hub['board'], 'lights': lights is not None,
             'place': (cfg.get('place') or {}).get('name', ''), 'units': cfg.get('units') or '', 'unitsNow': units() if cfg.get('place') else '',
             'art': room['art'] if on else None, 'sound': room['sound'], 'heard': room['heard'] if on else None,
@@ -1447,6 +1450,8 @@ def setup(app, demo=False, lights=None, cast=False):
                 h = d.get('heard')
                 if isinstance(h, dict) and h.get('state') in ('playing', 'loading', 'error', 'blocked', 'off'):
                     room['heard'] = {'state': h['state'], 'what': h.get('what') if h.get('what') in MUSIC + AMBIENCE else ''}
+                if isinstance(d.get('pos'), (int, float)):
+                    await keep_in_step(room, float(d['pos']), sock)
                 outs = d.get('outs')   # the living room PC's sound outputs, by name, for picking the TV's speakers
                 if room['id'] == 'pc' and isinstance(outs, list):
                     room['outs'] = [{'id': o['id'], 'label': ' '.join(str(o.get('label') or '').split())[:80] or 'Unnamed output'}
@@ -1476,6 +1481,36 @@ def setup(app, demo=False, lights=None, cast=False):
             del hub['stations'][st.sid]
         st.stop()
 
+    async def keep_in_step(room, pos, sock):
+        """Sync, measured by the relay itself: the TV reports how far into its stream it is playing (seconds since
+        the first byte it got). The relay knows which stream byte that was and where the live edge is now, so it
+        knows exactly how far behind live the TV plays, whatever its start-up time or buffering. It nudges the TV's
+        speed (up to 5%) to hold lag + delay, or rejoins it at the right place when it's far off."""
+        p = room.get('play')
+        if not p or pos < 0:
+            return
+        st = p['st']
+        behind = (st.base + len(st.buf) - (p['start'] + pos * st.rate)) / st.rate
+        want = st.lag + (delay_of(room['id']) / 1000 if sync_on() else 0)
+        err = behind - want
+        room['behind'] = round(behind, 2)
+        now = time.time()
+        if abs(err) > .25:
+            if now - p['at'] > 2 and now - p['fix'] > 3:
+                p['fix'] = now
+                p['skips'] = p.get('skips', 0) + 1 if err > 0 else 0
+                if p['skips'] > 4:
+                    # This TV can't play that close to live (it holds a few seconds itself), so every TV moves back
+                    st.lag = min(st.lag + err + .3, RADIO_KEEP - JOIN_SPARE - 4)
+                    p['skips'] = 0
+                    print(f'TV: {ROOM_NAMES[room["id"]]} needs more buffer, both TVs now play {st.lag:.1f} s behind live.')
+                    return
+                # Too far behind: jump forward within what the TV already holds. Too early: rejoin further back.
+                await sock.send_json({'skip': round(err, 2)} if err > 0 else {'resync': True})
+            return
+        p['skips'] = 0
+        await sock.send_json({'rate': 1.0 if abs(err) < .03 else round(1 + max(-.02, min(.02, err * .1)), 3)})
+
     async def tv_radio(request):
         """A station from RADIO's fixed list, fetched once by the relay and shared by both TVs."""
         sid = request.match_info['sid']
@@ -1493,7 +1528,8 @@ def setup(app, demo=False, lights=None, cast=False):
             if isinstance(st, PcAudio) and st.error:
                 hub['pc_audio_err'] = st.error
             raise web.HTTPBadGateway(text='The station didn\'t answer.')
-        backlog, q = st.join(delay_of(r) if sync_on() else 0)
+        backlog, q, start = st.join((delay_of(r) if sync_on() else 0) + JOIN_SPARE * 1000)
+        play = rooms[r]['play'] = {'st': st, 'start': start, 'at': time.time(), 'fix': 0.0}   # for keep_in_step()
         resp = web.StreamResponse(headers={'Content-Type': st.ctype, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
         try:
             await resp.prepare(request)
@@ -1507,6 +1543,8 @@ def setup(app, demo=False, lights=None, cast=False):
             pass
         finally:
             st.leave(q)
+            if rooms[r].get('play') is play:
+                rooms[r]['play'] = None
         return resp
 
     async def make_fires():

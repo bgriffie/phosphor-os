@@ -892,7 +892,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.29</span>
+      <span class="app-meta">v1.31</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1128,7 +1128,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.29</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.31</span></a>
           </div>
         </div>
       </section>
@@ -1162,7 +1162,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
             <div class="menu-item"><span class="mi-label">Line up<small id="pc-off-note">In step</small></span>
               <span class="offset"><button class="rm-b" data-off="-50" aria-label="Living room earlier">−</button><b id="pc-off">0.00 s</b><button class="rm-b" data-off="50" aria-label="Living room later">+</button></span></div>
           </div>
-          <p class="menu-note">Stand where you hear both. If the living room is ahead, tap + until they match; if it's behind, tap −. Each tap is 0.05 s; each TV glides into place over a few seconds, so wait a moment before the next tap.</p>
+          <p class="menu-note">Stand where you hear both. If the living room is ahead, tap + until they match; if it's behind, tap −. Each tap is 0.05 s; the relay measures both TVs and glides each into place over a few seconds; use −/+ only for what the TVs themselves add (a TV that shows sound late).</p>
         </div>
       </section>
 
@@ -1518,7 +1518,7 @@ PH.init({});
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
   let lastErr = '', pollT = 0, busyPower = false, sleepAt = 0;
   const ready = () => !!(link && link.url && link.key);
-  const RELAY_WANTS = '4.5';   // tv_control.py version this app expects
+  const RELAY_WANTS = '4.7';   // tv_control.py version this app expects
   const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
   // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
   const toast = PH.toast;
@@ -2293,7 +2293,9 @@ PH.init({});
     $('#pc-sync').checked = !!info.sync;
     const off = info.offset || 0;
     $('#pc-off').textContent = (off > 0 ? '+' : off < 0 ? '−' : '') + (Math.abs(off) / 1000).toFixed(2) + ' s';
-    $('#pc-off-note').textContent = !info.sync ? 'Turn on "Same music on both" first' : off > 0 ? 'Living room plays later' : off < 0 ? 'Kitchen plays later' : 'In step';
+    const bh = info.behind || {}, sec = v => typeof v === 'number' ? v.toFixed(1) + ' s' : '–';
+    $('#pc-off-note').textContent = (!info.sync ? 'Turn on "Same music on both" first' : off > 0 ? 'Living room plays later' : off < 0 ? 'Kitchen plays later' : 'In step')
+      + (info.sync && (bh.cast != null || bh.pc != null) ? ' · behind live: kitchen ' + sec(bh.cast) + ', living room ' + sec(bh.pc) : '');
     $$('[data-off]').forEach(b => b.disabled = !info.sync);
   }
 
