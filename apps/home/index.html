@@ -900,7 +900,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.13</span>
+      <span class="app-meta">v1.13.1</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1162,7 +1162,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.13</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.13.1</span></a>
           </div>
         </div>
       </section>
@@ -1238,6 +1238,8 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
       <button class="menu-item" data-route="/place"><span class="mi-label">Move things</span></button>
       <button class="menu-item" data-route="/settings"><span class="mi-label">Settings</span></button>
       <button class="menu-item" data-act="off"><span class="mi-label">All lights off</span></button>
+      <button class="menu-item" data-act="os:#/" data-os hidden><span class="mi-label">Other apps</span></button>
+      <button class="menu-item" data-act="os:#/settings" data-os hidden><span class="mi-label">phosphor.os settings</span></button>
     </div>
   </dialog>
 
@@ -3550,6 +3552,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   document.addEventListener('click', e => {
     const a = e.target.closest('[data-act]'); if (!a) return;
     const d = a.closest('dialog'); if (d) d.close();
+    if (a.dataset.act.startsWith('os:')) { try { window.parent.location.hash = a.dataset.act.slice(3); } catch {} return; }
     if (a.dataset.act === 'view') toggleView();
     if (a.dataset.act === 'fit') { fit(); save('cam', cam); req(); }
     if (a.dataset.act === 'off') allOff();
@@ -3558,6 +3561,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     if (a.dataset.act === 'remote') openRemote();
     if (a.dataset.act === 'scenes' && !scenesOpen) { lpOpen = false; renderLP(); scenesOpen = true; renderScenes(); }
   });
+  // inside phosphor.os, the menu also leads to the OS's own apps and settings
+  { let os = false; try { os = window.parent !== window && !!window.parent.PhosphorOS; } catch {} $$('[data-os]').forEach(b => { b.hidden = !os; }); }
   PH.on('view', () => { render(); });
   ['walls', 'furn'].forEach(k => PH.on(k, () => { build(); req(); }));
   PH.on('live', () => { render(); });
