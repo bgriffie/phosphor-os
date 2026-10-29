@@ -75,7 +75,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '4.7'           # the phone app compares this to know which features the relay has
+VERSION = '4.8'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -993,9 +993,8 @@ def setup(app, demo=False, lights=None, cast=False):
                 resync = True
         if isinstance(body.get('offset'), int):
             cfg['offset'] = max(-RADIO_MAX_OFFSET, min(RADIO_MAX_OFFSET, body['offset']))
+            hub['align_until'] = time.time() + 15   # keep_in_step() lines the TVs up for the next 15 s, then leaves them be
         save_config(cfg)
-        # Each TV holds itself at (lag + its delay) behind the live edge by playing a touch faster or slower
-        # (sound.js steer), so the offset glides into place: no rejoin, whose start-up time varies every time
         for r in ROOMS:
             await send_tv(rooms[r], {'delay': delay_of(r) if sync_on() else 0})
         if resync and sync_on():
@@ -1495,21 +1494,12 @@ def setup(app, demo=False, lights=None, cast=False):
         err = behind - want
         room['behind'] = round(behind, 2)
         now = time.time()
-        if abs(err) > .25:
-            if now - p['at'] > 2 and now - p['fix'] > 3:
-                p['fix'] = now
-                p['skips'] = p.get('skips', 0) + 1 if err > 0 else 0
-                if p['skips'] > 4:
-                    # This TV can't play that close to live (it holds a few seconds itself), so every TV moves back
-                    st.lag = min(st.lag + err + .3, RADIO_KEEP - JOIN_SPARE - 4)
-                    p['skips'] = 0
-                    print(f'TV: {ROOM_NAMES[room["id"]]} needs more buffer, both TVs now play {st.lag:.1f} s behind live.')
-                    return
-                # Too far behind: jump forward within what the TV already holds. Too early: rejoin further back.
-                await sock.send_json({'skip': round(err, 2)} if err > 0 else {'resync': True})
-            return
-        p['skips'] = 0
-        await sock.send_json({'rate': 1.0 if abs(err) < .03 else round(1 + max(-.02, min(.02, err * .1)), 3)})
+        if now > hub.get('align_until', 0) or now - p['at'] < 2:
+            return   # only lines up while the offset is being changed in Settings; otherwise it just measures
+        if abs(err) > .15 and now - p['fix'] > 3:
+            p['fix'] = now
+            # Too far behind: jump forward within what the TV already holds. Too early: rejoin further back, then jump.
+            await sock.send_json({'skip': round(err, 2)} if err > 0 else {'resync': True})
 
     async def tv_radio(request):
         """A station from RADIO's fixed list, fetched once by the relay and shared by both TVs."""
@@ -1528,7 +1518,8 @@ def setup(app, demo=False, lights=None, cast=False):
             if isinstance(st, PcAudio) and st.error:
                 hub['pc_audio_err'] = st.error
             raise web.HTTPBadGateway(text='The station didn\'t answer.')
-        backlog, q, start = st.join((delay_of(r) if sync_on() else 0) + JOIN_SPARE * 1000)
+        spare = JOIN_SPARE if time.time() < hub.get('align_until', 0) else 0   # room to jump forward while lining up
+        backlog, q, start = st.join((delay_of(r) if sync_on() else 0) + spare * 1000)
         play = rooms[r]['play'] = {'st': st, 'start': start, 'at': time.time(), 'fix': 0.0}   # for keep_in_step()
         resp = web.StreamResponse(headers={'Content-Type': st.ctype, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
         try:

@@ -1342,7 +1342,7 @@ const Sound = (() => {
     if (d.sound && typeof d.sound === 'object') { stopFade(); Sound.set(d.sound); showSound(); }
     if (d.resync === true) Sound.resync();
     if (typeof d.rate === 'number' && d.rate >= .9 && d.rate <= 1.1) Sound.setRate(d.rate);
-    if (typeof d.skip === 'number' && d.skip > 0 && d.skip < 30 && !Sound.skip(d.skip)) Sound.setRate(1.05);
+    if (typeof d.skip === 'number' && d.skip > 0 && d.skip < 30) Sound.skip(d.skip);
     if (typeof d.fade === 'number') fadeOut(d.fade);
     if (typeof d.sleep === 'number') sleepFor(d.sleep);
   }
