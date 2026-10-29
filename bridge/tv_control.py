@@ -74,7 +74,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '4.1'           # the phone app compares this to know which features the relay has
+VERSION = '4.2'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -431,7 +431,10 @@ class Kiosk:
             '--no-first-run', '--no-default-browser-check', '--disable-session-crashed-bubble', '--noerrdialogs',
             '--disable-translate', '--disable-features=Translate,HardwareMediaKeyHandling', '--overscroll-history-navigation=0']
             # lets the page list the sound outputs by name, so its sound can go to the TV instead of the PC speakers
-            + (['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] if tv else []),
+            + (['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream',
+                # the TV page is plain http on the LAN, where Chrome hides sound outputs and setSinkId; this
+                # kiosk-only profile treats just that one address as secure
+                '--unsafely-treat-insecure-origin-as-secure=' + '/'.join(url.split('/')[:3])] if tv else []),
             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def close(self):
