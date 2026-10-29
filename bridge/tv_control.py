@@ -74,7 +74,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '4.3'           # the phone app compares this to know which features the relay has
+VERSION = '4.4'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -594,11 +594,14 @@ class PcAudio(Station):
             import soundcard
             import numpy
             sp = next((x for x in soundcard.all_speakers() if x.name == self.out_name), None) or soundcard.default_speaker()
-            mic = None
-            if 'CABLE Input' in sp.name:   # VB-Audio Virtual Cable: record its own recording side, "CABLE Output"
-                mic = next((m for m in soundcard.all_microphones() if 'CABLE Output' in m.name), None)
-            if mic is None:   # otherwise record what that output plays (by its exact id, not a name guess)
+            # What that output plays (by its exact id). Loopback needs no microphone permission; for VB-Cable the
+            # cable's recording side "CABLE Output" is the fallback (that one needs Windows' microphone access).
+            try:
                 mic = soundcard.get_microphone(id=sp.id, include_loopback=True)
+            except Exception:
+                mic = next((m for m in soundcard.all_microphones() if 'CABLE Output' in m.name), None) if 'CABLE' in sp.name else None
+                if mic is None:
+                    raise
             print(f'TV: PC audio is recording "{mic.name}".')
             import warnings
             warnings.filterwarnings('ignore', message='data discontinuity')   # a dropped packet now and then; don't flood the window
@@ -606,9 +609,14 @@ class PcAudio(Station):
             # audio ("data discontinuity") and the kitchen heard it garbled. soundcard itself returns silence while
             # nothing plays, so the stream keeps going.
             with mic.recorder(samplerate=self.RATE, channels=self.CH, blocksize=self.RATE // 5) as rec:
+                peak, said = 0.0, time.time()
                 while not stop.is_set():
                     data = rec.record(numframes=self.RATE // 20)
                     ff.stdin.write((numpy.clip(data, -1, 1) * 32767).astype('<i2').tobytes()); ff.stdin.flush()
+                    peak = max(peak, float(numpy.abs(data).max()) if len(data) else 0.0)
+                    if time.time() - said > 10:   # a level now and then, so a silent source is easy to spot
+                        print(f'TV: PC audio level {round(peak * 100)}%' + ('  (silent: is anything playing into it?)' if peak < .001 else ''))
+                        peak, said = 0.0, time.time()
         except ImportError:
             self.error = 'PC audio needs:  py -m pip install soundcard numpy'
         except Exception as e:

@@ -833,7 +833,8 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     }
 
     .rm-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
-    #np-move { grid-column: 1 / -1; }
+    #np-move, .sp-wide { grid-column: 1 / -1; }
+    .sp-keys { margin: var(--sp-2) 0; }
     .rm-b { min-height: 48px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text);
       display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: inherit; font-size: var(--fs-xs); font-weight: 700;
       text-transform: uppercase; letter-spacing: var(--tracking-label); cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; padding: 0 var(--sp-2); }
@@ -891,7 +892,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.27</span>
+      <span class="app-meta">v1.28</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1040,6 +1041,18 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
 
       <section class="view" data-route="/sound" data-title="Sound">
         <p class="menu-note" id="snd-note" hidden></p>
+        <div class="menu-group" id="sp-group" hidden>
+          <span class="label">Spotify</span>
+          <div class="menu"><div class="menu-item"><span class="mi-label" id="sp-now">Spotify<small id="sp-sub"></small></span></div></div>
+          <div class="rm-row sp-keys">
+            <button class="rm-b" data-sp="previous" aria-label="Previous"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+            <button class="rm-b" data-sp="toggle" id="sp-pp" aria-label="Play or pause"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg></button>
+            <button class="rm-b" data-sp="next" aria-label="Next"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+            <button class="rm-b sp-wide" id="sp-play"><span>Play Spotify on the TVs</span></button>
+          </div>
+          <div class="menu" id="sp-recent"></div>
+          <p class="menu-note" id="sp-note">Spotify plays on the PC into the cable, and the TVs play it instead of the radio and background.</p>
+        </div>
         <div class="menu-group">
           <span class="label">Music</span>
           <div class="menu" role="radiogroup" aria-label="Music" id="music-list"></div>
@@ -1115,7 +1128,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.27</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.28</span></a>
           </div>
         </div>
       </section>
@@ -1505,7 +1518,7 @@ PH.init({});
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
   let lastErr = '', pollT = 0, busyPower = false, sleepAt = 0;
   const ready = () => !!(link && link.url && link.key);
-  const RELAY_WANTS = '3.6';   // tv_control.py version this app expects
+  const RELAY_WANTS = '4.4';   // tv_control.py version this app expects
   const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
   // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
   const toast = PH.toast;
@@ -1670,10 +1683,86 @@ PH.init({});
   const AMB = [['rain', 'Rain'], ['storm', 'Thunderstorm'], ['fire', 'Fireplace'], ['ocean', 'Ocean waves'], ['wind', 'Wind'], ['brown', 'Brown noise']];
   const snd = () => (info && info.sound) || { music: '', amb: '', mv: 70, av: 60 };
   async function soundSend(body) {
+    if ('music' in body && body.music !== 'pc' && snd().music === 'pc') spCall('pause').catch(() => {});   // radio replaces Spotify
     if (info) info.sound = { ...snd(), ...body }; renderSound();
     try { const d = await call('/tv/sound', body, 8000); if (info) info.sound = d.sound; if (!d.shown && (body.music || body.amb)) PH.toast('Saved. It plays when Phosphor TV is on.'); setTimeout(check, 2500); }
     catch (e) { PH.toast(e.message, 'warn'); check(); }
   }
+  /* ---------- Spotify: plays on the PC's Spotify app (into VB-Cable); the TVs play it as 'PC audio' ----------
+     Uses the Spotify sign-in from phosphor.os › Music (same site, same storage), refreshing it the same way. */
+  const SP = 'phosphor-os:data:spotify';
+  const spAuth = () => { try { return JSON.parse(localStorage.getItem(SP)) || {}; } catch { return {}; } };
+  async function spToken() {
+    const a = spAuth();
+    if (!a.refresh || !a.clientId) throw new Error('Connect Spotify once in phosphor.os › Music.');
+    if (a.access && a.expires > Date.now() + 60000) return a.access;
+    const r = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: a.refresh, client_id: a.clientId }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error('Spotify sign-in expired. Reconnect it in phosphor.os › Music.');
+    const now = spAuth(); now.access = d.access_token; now.expires = Date.now() + (d.expires_in || 3600) * 1000;
+    if (d.refresh_token) now.refresh = d.refresh_token;   // they rotate: keep the newest for the OS too
+    try { localStorage.setItem(SP, JSON.stringify(now)); } catch {}
+    return now.access;
+  }
+  async function sp(path, method = 'GET', body) {
+    const r = await fetch('https://api.spotify.com/v1' + path, { method, headers: { Authorization: 'Bearer ' + await spToken(), 'Content-Type': 'application/json' }, body: body && JSON.stringify(body) });
+    if (r.status === 204 || r.status === 202) return null;
+    const d = await r.json().catch(() => null);
+    if (!r.ok) throw new Error((d && d.error && d.error.message) || 'Spotify said ' + r.status);
+    return d;
+  }
+  async function spPc() {   // the PC's Spotify app
+    const d = await sp('/me/player/devices');
+    const pc = (d.devices || []).find(x => x.type === 'Computer' && !x.is_restricted);
+    if (!pc) throw new Error('Open Spotify on the PC first.');
+    return pc;
+  }
+  async function spCall(k) {
+    if (k === 'pause' || k === 'play') return sp('/me/player/' + k, 'PUT');
+    return sp('/me/player/' + k, 'POST');
+  }
+  async function spStart(body) {   // play on the PC and switch the TVs to it (radio and background off)
+    try {
+      const pc = await spPc();
+      if (body) await sp('/me/player/play?device_id=' + pc.id, 'PUT', body);
+      else await sp('/me/player', 'PUT', { device_ids: [pc.id], play: true });
+      await soundSend({ music: 'pc', amb: '' });
+      setTimeout(spRender, 1200);
+    } catch (e) { PH.toast(e.message, 'warn'); }
+  }
+  let spPlaying = false;
+  async function spRender() {
+    $('#sp-group').hidden = !hasPc();
+    if (!hasPc()) return;
+    if (!spAuth().refresh) { $('#sp-sub').textContent = 'Connect Spotify once in phosphor.os › Music'; return; }
+    try {
+      const st = await sp('/me/player'), it = st && st.item;
+      spPlaying = !!(st && st.is_playing);
+      $('#sp-now').firstChild.textContent = it ? it.name : 'Nothing playing';
+      $('#sp-sub').textContent = it ? (it.artists || it.show && [it.show] || []).map(a => a.name).join(', ') + (st.device ? ' · ' + st.device.name : '') : '';
+      $('#sp-pp').innerHTML = spPlaying ? '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>' : '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>';
+    } catch (e) { $('#sp-sub').textContent = e.message; }
+    try {
+      const rec = await sp('/me/player/recently-played?limit=8'), box = $('#sp-recent'), seen = new Set();
+      box.textContent = '';
+      (rec.items || []).forEach(x => {
+        const t = x.track; if (!t || seen.has(t.uri)) return; seen.add(t.uri);
+        const b = el('button', 'menu-item'), lab = el('span', 'mi-label', t.name); lab.appendChild(el('small', '', (t.artists || []).map(a => a.name).join(', '))); b.appendChild(lab);
+        b.addEventListener('click', () => spStart(x.context && x.context.uri ? { context_uri: x.context.uri, offset: { uri: t.uri } } : { uris: [t.uri] }));
+        box.appendChild(b);
+      });
+    } catch {}
+  }
+  $('#sp-play').addEventListener('click', () => spStart());
+  $$('[data-sp]').forEach(b => b.addEventListener('click', async () => {
+    try {
+      if (b.dataset.sp === 'toggle') { if (spPlaying) await spCall('pause'); else return spStart(); }
+      else await spCall(b.dataset.sp);
+    } catch (e) { PH.toast(e.message, 'warn'); }
+    setTimeout(spRender, 800);
+  }));
+  addEventListener('hashchange', () => { if (route() === '/sound') spRender(); });
   function soundList(box, items, field) {
     [['', 'Off']].concat(items).forEach(([id, name, sub]) => {
       const b = el('button', 'menu-item'); b.setAttribute('role', 'radio'); b.dataset.id = id;
