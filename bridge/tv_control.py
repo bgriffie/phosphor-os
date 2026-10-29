@@ -74,7 +74,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '3.9'           # the phone app compares this to know which features the relay has
+VERSION = '4.0'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -576,7 +576,12 @@ class PcAudio(Station):
             import soundcard
             import numpy
             sp = next((x for x in soundcard.all_speakers() if x.name == self.out_name), None) or soundcard.default_speaker()
-            mic = soundcard.get_microphone(id=str(sp.name), include_loopback=True)
+            mic = None
+            if 'CABLE Input' in sp.name:   # VB-Audio Virtual Cable: record its own recording side, "CABLE Output"
+                mic = next((m for m in soundcard.all_microphones() if 'CABLE Output' in m.name), None)
+            if mic is None:   # otherwise record what that output plays (by its exact id, not a name guess)
+                mic = soundcard.get_microphone(id=sp.id, include_loopback=True)
+            print(f'TV: PC audio is recording "{mic.name}".')
             import warnings
             warnings.filterwarnings('ignore', message='data discontinuity')   # a dropped packet now and then; don't flood the window
             # Big buffer, read in steady 50 ms blocks with no pauses: reading too little too often made Windows drop
