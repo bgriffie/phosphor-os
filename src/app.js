@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.83';
+  const VERSION = '1.84';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -774,7 +774,13 @@
     closeDialogs(); PH.back();
   });
   // Middle key: one tap opens the menu (Floyd, v1.82)
-  $('#k-home').addEventListener('click', () => { closeDialogs(); openMenu(); });
+  // On the Map, the Map's own menu opens straight away (it links back to Apps and Settings itself)
+  $('#k-home').addEventListener('click', () => {
+    closeDialogs();
+    const c = child(); let own = false;
+    try { own = frameId === 'home' && term.hidden && !!frame.contentDocument.getElementById('menu') && c && c.openMenu; } catch {}
+    if (own) c.openMenu(); else openMenu();
+  });
   function openMenu() { if (term.hidden) openTerm(); else closeTerm(); }
 
   /* ---------- Menu: tap the ~/path line (or hold the right key) ---------- */
