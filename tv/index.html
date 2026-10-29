@@ -396,7 +396,7 @@
         <div class="offline" id="offline" hidden>Phone remote not connected</div>
       </div>
     </div>
-    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.28</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="bar"><span class="led" id="led"></span><span>Phosphor TV</span><span class="meta">v1.29</span><span class="snd" id="snd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span id="snd-name"></span></span><span class="snd" id="sleep" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Sleep <span id="sleep-left"></span></span><span class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
   </div>
   <script>
 /* Art channel: generative pieces, a new one every few minutes like flicking through channels.
@@ -1057,6 +1057,16 @@ const Sound = (() => {
 
   /* ---------- Music ---------- */
   const au = new Audio(); au.preload = 'none';
+  /* Steady sync: through the relay the newest data arriving is the live edge, so (buffered end - playing position)
+     is how far behind live this TV is. Hold that at lag + delay (lag as in tv_control.py: 1 s for PC audio, 4 s for
+     radio) by playing up to 4% faster or slower; a big miss jumps straight there. */
+  let delayMs = 0;
+  setInterval(() => {
+    if (!relay || !mId || au.paused || !au.src.includes('/radio/') || !au.buffered.length) { if (au.playbackRate !== 1) au.playbackRate = 1; return; }
+    const want = (mId === 'pc' ? 1 : 4) + delayMs / 1000, end = au.buffered.end(au.buffered.length - 1), err = (end - au.currentTime) - want;
+    if (Math.abs(err) > 2.5 && end - want > au.buffered.start(au.buffered.length - 1)) { au.currentTime = end - want; au.playbackRate = 1; }
+    else au.playbackRate = Math.abs(err) < .02 ? 1 : 1 + Math.max(-.04, Math.min(.04, err * .1));
+  }, 500);
   let mId = '', mTry = 0, mRetry = 0, connT = 0, relay = null, sink = '';
   function music(id) {
     if (id === mId) return;
@@ -1271,6 +1281,7 @@ const Sound = (() => {
     // If the TV refused to start sound without a button press, any key from the phone gets another go
     viaRelay(fn) { relay = fn; },
     // Join the station again (the relay starts everyone at their synced place)
+    setDelay(ms) { delayMs = Math.max(0, Math.min(3000, ms)); },
     resync() { if (mId && MUSIC[mId]) { clearTimeout(mRetry); mTry = 0; load(); } },
     // Where the sound goes, on the PC: '' = the PC's default output
     setSink(id) {
@@ -1334,6 +1345,7 @@ const Sound = (() => {
     if (typeof d.sink === 'string') Sound.setSink(d.sink);
     if (d.sound && typeof d.sound === 'object') { stopFade(); Sound.set(d.sound); showSound(); }
     if (d.resync === true) Sound.resync();
+    if (typeof d.delay === 'number') Sound.setDelay(d.delay);
     if (typeof d.fade === 'number') fadeOut(d.fade);
     if (typeof d.sleep === 'number') sleepFor(d.sleep);
   }

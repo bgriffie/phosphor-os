@@ -74,7 +74,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '4.4'           # the phone app compares this to know which features the relay has
+VERSION = '4.5'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -990,10 +990,13 @@ def setup(app, demo=False, lights=None, cast=False):
                 resync = True
         if isinstance(body.get('offset'), int):
             cfg['offset'] = max(-RADIO_MAX_OFFSET, min(RADIO_MAX_OFFSET, body['offset']))
-            resync = True
         save_config(cfg)
+        # Each TV holds itself at (lag + its delay) behind the live edge by playing a touch faster or slower
+        # (sound.js steer), so the offset glides into place: no rejoin, whose start-up time varies every time
+        for r in ROOMS:
+            await send_tv(rooms[r], {'delay': delay_of(r) if sync_on() else 0})
         if resync and sync_on():
-            await send_all({'resync': True})   # both TVs rejoin the station at their new places
+            await send_all({'resync': True})   # turning sync on: both TVs rejoin the station
         return web.json_response({'ok': True, 'sync': sync_on(), 'offset': offset(), 'monitor': rcfg['pc'].get('monitor'),
                                   'sink': rcfg['pc'].get('sink', ''), 'loop': rcfg['pc'].get('loop', '')})
 
@@ -1409,7 +1412,7 @@ def setup(app, demo=False, lights=None, cast=False):
         try:
             if cfg.get('place') and time.time() - hub['weather_at'] > WEATHER_EVERY:
                 await refresh_weather(push=False)
-            hello = {'room': room['id'], 'radio': True, 'shape': shape(room['id']), 'fit': fit(room['id']), 'fires': fires(), 'board': hub['board'], 'weather': hub['weather'],
+            hello = {'room': room['id'], 'radio': True, 'delay': delay_of(room['id']) if sync_on() else 0, 'shape': shape(room['id']), 'fit': fit(room['id']), 'fires': fires(), 'board': hub['board'], 'weather': hub['weather'],
                      'sound': room['sound'], 'watch': room['watch'], 'sleep': max(0, int(room['sleep_at'] - time.time())) if room['sleep_at'] else 0,
                      **(await lights_list() if lights is not None else {'lights': False})}
             if room['id'] == 'pc':
