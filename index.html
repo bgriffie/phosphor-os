@@ -1073,7 +1073,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>phosphor.os</h1>
-      <span class="app-meta">v1.81</span>
+      <span class="app-meta">v1.82</span>
     </header>
     <div class="screen-slot">
     <div class="screen">
@@ -1093,7 +1093,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
       <div class="screen-body">
 
       <!-- ===== Home ===== -->
-      <section class="view home-view" data-route="/" data-title="phosphor.os">
+      <section class="view home-view" data-route="/" data-title="Apps">
         <div class="home-clock" aria-live="off">
           <div class="readout" id="clock">--:--</div>
           <div class="date" id="date"></div>
@@ -1327,13 +1327,14 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         <div class="menu-group">
           <span class="label">General</span>
           <div class="menu">
-            <a class="menu-item" href="#/tiles"><span class="mi-label">Tiles</span><span class="mi-value" id="tile-count"></span></a>
+            <a class="menu-item" href="#/tiles"><span class="mi-label">App tiles<small>Add, rename or remove the tiles under Apps</small></span><span class="mi-value" id="tile-count"></span></a>
             <a class="menu-item" href="#/music/setup"><span class="mi-label">Spotify</span><span class="mi-value" id="set-spotify"></span></a>
                         <a class="menu-item" href="#/settings/clock"><span class="mi-label">Clock</span><span class="mi-value" data-setting-value="clock"></span></a>
-            <a class="menu-item" href="#/settings/orient"><span class="mi-label">Orientation<small>The right key switches it. Hold the right key for the menu, or an app's own button.</small></span><span class="mi-value" data-setting-value="orient"></span></a>
-            <a class="menu-item" href="#/settings/home"><span class="mi-label">Home screen</span><span class="mi-value" data-setting-value="home"></span></a>
-            <a class="menu-item" href="#/settings/columns"><span class="mi-label">Grid columns</span><span class="mi-value" data-setting-value="cols"></span></a>
-            <label class="menu-item"><span class="mi-label">Boot screen<small>Short start-up text when the app cold starts</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="boot"></label>
+            <a class="menu-item" href="#/settings/orient"><span class="mi-label">Turn the screen<small>Tap the right key to turn it. The middle key opens the menu.</small></span><span class="mi-value" data-setting-value="orient"></span></a>
+            <a class="menu-item" href="#/settings/start"><span class="mi-label">Start screen<small>What opens first</small></span><span class="mi-value" data-setting-value="start"></span></a>
+            <a class="menu-item" href="#/settings/home"><span class="mi-label">Apps layout</span><span class="mi-value" data-setting-value="home"></span></a>
+            <a class="menu-item" href="#/settings/columns"><span class="mi-label">Tiles per row</span><span class="mi-value" data-setting-value="cols"></span></a>
+            <label class="menu-item"><span class="mi-label">Start-up text<small>A few retro lines when the app first opens</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="boot"></label>
           </div>
         </div>
         <div class="menu-group">
@@ -1345,9 +1346,9 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         <div class="menu-group">
           <span class="label">Data</span>
           <div class="menu">
-            <button class="menu-item" id="export"><span class="mi-label">Export data</span></button>
-            <button class="menu-item" id="import"><span class="mi-label">Import data</span></button>
-            <button class="menu-item danger" id="erase"><span class="mi-label">Erase all data</span></button>
+            <button class="menu-item" id="export"><span class="mi-label">Save a backup file</span></button>
+            <button class="menu-item" id="import"><span class="mi-label">Restore from a backup</span></button>
+            <button class="menu-item danger" id="erase"><span class="mi-label">Erase everything</span></button>
           </div>
           <p class="menu-note">Tiles, notes and favorites stay on this phone.</p>
           <input type="file" id="import-file" accept="application/json,.json" hidden>
@@ -1355,7 +1356,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.81</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.82</span></a>
           </div>
         </div>
       </section>
@@ -1374,14 +1375,21 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
         </div>
       </section>
 
-      <section class="view" data-route="/settings/home" data-title="Home screen">
+      <section class="view" data-route="/settings/start" data-title="Start screen">
+        <div class="menu" role="radiogroup" aria-label="Start screen">
+          <button class="menu-item" role="radio" data-setting="start" data-value="map" data-back-on-pick><span class="mi-label">Map<small>Your 3D home with lights and TVs</small></span></button>
+          <button class="menu-item" role="radio" data-setting="start" data-value="apps" data-back-on-pick><span class="mi-label">Apps<small>The tiles</small></span></button>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/home" data-title="Apps layout">
         <div class="menu" role="radiogroup" aria-label="Home screen">
           <button class="menu-item" role="radio" data-setting="home" data-value="sphere" data-back-on-pick><span class="mi-label">Sphere<small>A 3D web of tiles you drag to spin</small></span></button>
           <button class="menu-item" role="radio" data-setting="home" data-value="grid" data-back-on-pick><span class="mi-label">Grid<small>Rows of tiles</small></span></button>
         </div>
       </section>
 
-      <section class="view" data-route="/settings/columns" data-title="Columns">
+      <section class="view" data-route="/settings/columns" data-title="Tiles per row">
         <div class="menu" role="radiogroup" aria-label="Grid columns">
           <button class="menu-item" role="radio" data-setting="cols" data-value="3" data-back-on-pick><span class="mi-label">3 across<small>Bigger tiles</small></span></button>
           <button class="menu-item" role="radio" data-setting="cols" data-value="4" data-back-on-pick><span class="mi-label">4 across</span></button>
@@ -1399,7 +1407,7 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="phosphor.os">
-          <div class="kv"><span>Version</span><span>1.81</span></div>
+          <div class="kv"><span>Version</span><span>1.82</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
@@ -2430,7 +2438,7 @@ const ChoresDue = (() => {
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.81';
+  const VERSION = '1.82';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -2452,6 +2460,7 @@ const ChoresDue = (() => {
     pot: '<path d="M3 10h18M5 10v9h14v-9M8 5v2M12 4v3M16 5v2"/>',
     note: '<path d="M5 3h10l4 4v14H5zM15 3v4h4M8 12h8M8 16h8"/>',
     calc: '<rect x="5" y="3" width="14" height="18"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/>',
+    grid: '<rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
     bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
@@ -3079,7 +3088,11 @@ const ChoresDue = (() => {
   /* ---------- Bundled apps: run inside the screen (#/app/<id>); the case and keys never move ---------- */
   let frame = null, frameId = null;
   const routeKey = id => 'route:' + id;
-  const home = () => location.href.split('#')[0] + '#/';   // absolute: a relative URL would resolve against a calling app's page
+  // v1.82 (Floyd): the 3D Home Map is the start screen; the tiles live one tap away under Apps
+  const mapStart = () => PH.store.get('start') !== 'apps';
+  const base = () => location.href.split('#')[0];
+  const home = () => base() + (mapStart() ? '#/app/home' : '#/');   // absolute: a relative URL would resolve against a calling app's page
+  const showApps = () => { if (frameId) hideFrame(); location.replace(base() + '#/'); };
   function openApp(id) { location.replace('#/app/' + id); }   // replace: the frame's own pages fill the history
   // #/app/<id>/<route> opens the app at that page, e.g. #/app/pc/windows/live from Home Map (v1.72)
   function showFrame(id, route) {
@@ -3136,8 +3149,9 @@ const ChoresDue = (() => {
   const appKey = () => { const c = child(); return frameId && c && !c.atHome() ? c.pageKey() : null; };
   function renderKeys() {
     const back = $('#k-back'), hm = $('#k-home'), right = $('#k-right');
-    if (!back.dataset.icon) { back.innerHTML = keySvg('back'); hm.innerHTML = keySvg('home'); right.innerHTML = keySvg('turn'); back.dataset.icon = hm.dataset.icon = '1'; }
-    back.disabled = !frameId && curRoute() === '/';
+    if (!back.dataset.icon) { back.innerHTML = keySvg('back'); hm.innerHTML = keySvg('menu'); right.innerHTML = keySvg('turn'); back.dataset.icon = hm.dataset.icon = '1'; }
+    back.disabled = !frameId && curRoute() === '/' && !mapStart();
+    hm.setAttribute('aria-label', 'Menu');
     const land = PH.store.get('orient') === 'landscape', k = appKey();
     right.setAttribute('aria-label', (land ? 'Portrait' : 'Landscape') + (k ? '. Hold for ' + (k.label || k.text) : '. Hold for the menu'));
     right.setAttribute('aria-pressed', String(land));
@@ -3183,20 +3197,19 @@ const ChoresDue = (() => {
   $('#k-back').addEventListener('click', () => {
     if (!term.hidden) { closeTerm(); return; }
     if (frameId) {
-      const c = child(); if (!c || c.atHome()) { PhosphorOS.closeApp(); return; }
+      const c = child();
+      if (!c || c.atHome()) { if (!(frameId === 'home' && mapStart())) PhosphorOS.closeApp(); return; }   // the Map is home: nothing behind it
       // if the app's own Back doesn't move it (its history can get out of step inside the frame), go to its first page
       const was = c.route(), dialog = !!(frame && frame.contentDocument && frame.contentDocument.querySelector('dialog[open]'));
       c.back();
       if (!dialog) setTimeout(() => { const k = child(); if (k === c && k.route() === was) k.home(); }, 400);
       return;
     }
+    if (mapStart() && curRoute() === '/') { openApp('home'); return; }   // Apps → back to the Map
     closeDialogs(); PH.back();
   });
-  $('#k-home').addEventListener('click', () => {
-    closeDialogs(); closeTerm();
-    if (frameId) { PhosphorOS.closeApp(); return; }
-    if (curRoute() !== '/') location.replace(home());
-  });
+  // Middle key: one tap opens the menu (Floyd, v1.82)
+  $('#k-home').addEventListener('click', () => { closeDialogs(); openMenu(); });
   function openMenu() { if (term.hidden) openTerm(); else closeTerm(); }
 
   /* ---------- Menu: tap the ~/path line (or hold the right key) ---------- */
@@ -3210,21 +3223,19 @@ const ChoresDue = (() => {
   function termGroups() {
     const r = curRoute(), c = child(), groups = [];
     if (frameId && c) {
-      const name = APPS[frameId][0], here = [];
+      const name = frameId === 'home' ? 'Map' : APPS[frameId][0], here = [];
       let hasMenu = false; try { hasMenu = !!frame.contentDocument.getElementById('menu'); } catch {}
       if (hasMenu) here.push([name + ' options', () => c.openMenu()]);
-      here.push(['Close ' + name, () => PhosphorOS.closeApp()]);
+      if (!(frameId === 'home' && mapStart())) here.push(['Close ' + name, () => PhosphorOS.closeApp()]);
       groups.push(['', here]);
     }
-    // only apps that stay inside the OS; links and Shortcuts that leave it stay on the home screen
-    const apps = [['Home', goTo('/'), !frameId && r === '/', keySvg('home')]];
-    tiles.filter(t => t.kind === 'app' && APPS[t.target]).forEach(t => {
-      const a = APPS[t.target], cur = a[2] ? frameId === t.target : !frameId && (r === a[1] || r.startsWith(a[1] + '/'));
-      apps.push([t.label, a[2] ? () => launch(t) : goTo(a[1]), cur, svg(t.glyph)]);
-    });
-    if (!tiles.some(t => t.kind === 'app' && t.target === 'settings')) apps.push(['Settings', goTo('/settings'), !frameId && r.startsWith('/settings'), svg('gear')]);
-    groups.push(['apps', apps]);
-    if (window.PhosphorMusic) { const on = PhosphorMusic.playing(); groups.push(['', [[on ? 'Pause music' : 'Play music', () => PhosphorMusic.toggle()]]]); }
+    // Just three places (Floyd, v1.82): the Map, everything else under Apps, and Settings
+    const onMap = frameId === 'home';
+    groups.push(['apps', [
+      ['Map', onMap ? () => {} : () => { if (frameId) hideFrame(); openApp('home'); }, onMap, svg('house')],
+      ['Apps', showApps, !frameId && r === '/', svg('grid')],
+      ['Settings', goTo('/settings'), !frameId && r.startsWith('/settings'), svg('gear')],
+    ]]);
     return groups;
   }
   function renderTerm() {
@@ -3315,10 +3326,10 @@ const ChoresDue = (() => {
 
   /* ---------- Start ---------- */
   renderGrid(); renderTileList(); renderNotes(); renderDial(); renderCalc();
-  PH.init({ clock: '12', cols: '4', boot: true, home: 'sphere', orient: 'portrait' });
+  PH.init({ clock: '12', cols: '4', boot: true, home: 'sphere', start: 'map', orient: 'portrait' });
   renderGrid(); applyOrient();
   startClock();
-  if (/^#\/app\//.test(location.hash)) syncFrame(); else boot();
+  if (/^#\/app\//.test(location.hash)) syncFrame(); else { boot(); if (mapStart() && curRoute() === '/') openApp('home'); }
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 })();
 

@@ -350,7 +350,7 @@
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>phosphor.os</h1>
-      <span class="app-meta">v1.81</span>
+      <span class="app-meta">v1.82</span>
     </header>
     <div class="screen-slot">
     <div class="screen">
@@ -370,7 +370,7 @@
       <div class="screen-body">
 
       <!-- ===== Home ===== -->
-      <section class="view home-view" data-route="/" data-title="phosphor.os">
+      <section class="view home-view" data-route="/" data-title="Apps">
         <div class="home-clock" aria-live="off">
           <div class="readout" id="clock">--:--</div>
           <div class="date" id="date"></div>
@@ -604,13 +604,14 @@
         <div class="menu-group">
           <span class="label">General</span>
           <div class="menu">
-            <a class="menu-item" href="#/tiles"><span class="mi-label">Tiles</span><span class="mi-value" id="tile-count"></span></a>
+            <a class="menu-item" href="#/tiles"><span class="mi-label">App tiles<small>Add, rename or remove the tiles under Apps</small></span><span class="mi-value" id="tile-count"></span></a>
             <a class="menu-item" href="#/music/setup"><span class="mi-label">Spotify</span><span class="mi-value" id="set-spotify"></span></a>
                         <a class="menu-item" href="#/settings/clock"><span class="mi-label">Clock</span><span class="mi-value" data-setting-value="clock"></span></a>
-            <a class="menu-item" href="#/settings/orient"><span class="mi-label">Orientation<small>The right key switches it. Hold the right key for the menu, or an app's own button.</small></span><span class="mi-value" data-setting-value="orient"></span></a>
-            <a class="menu-item" href="#/settings/home"><span class="mi-label">Home screen</span><span class="mi-value" data-setting-value="home"></span></a>
-            <a class="menu-item" href="#/settings/columns"><span class="mi-label">Grid columns</span><span class="mi-value" data-setting-value="cols"></span></a>
-            <label class="menu-item"><span class="mi-label">Boot screen<small>Short start-up text when the app cold starts</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="boot"></label>
+            <a class="menu-item" href="#/settings/orient"><span class="mi-label">Turn the screen<small>Tap the right key to turn it. The middle key opens the menu.</small></span><span class="mi-value" data-setting-value="orient"></span></a>
+            <a class="menu-item" href="#/settings/start"><span class="mi-label">Start screen<small>What opens first</small></span><span class="mi-value" data-setting-value="start"></span></a>
+            <a class="menu-item" href="#/settings/home"><span class="mi-label">Apps layout</span><span class="mi-value" data-setting-value="home"></span></a>
+            <a class="menu-item" href="#/settings/columns"><span class="mi-label">Tiles per row</span><span class="mi-value" data-setting-value="cols"></span></a>
+            <label class="menu-item"><span class="mi-label">Start-up text<small>A few retro lines when the app first opens</small></span><input type="checkbox" role="switch" class="mi-switch" data-setting="boot"></label>
           </div>
         </div>
         <div class="menu-group">
@@ -622,9 +623,9 @@
         <div class="menu-group">
           <span class="label">Data</span>
           <div class="menu">
-            <button class="menu-item" id="export"><span class="mi-label">Export data</span></button>
-            <button class="menu-item" id="import"><span class="mi-label">Import data</span></button>
-            <button class="menu-item danger" id="erase"><span class="mi-label">Erase all data</span></button>
+            <button class="menu-item" id="export"><span class="mi-label">Save a backup file</span></button>
+            <button class="menu-item" id="import"><span class="mi-label">Restore from a backup</span></button>
+            <button class="menu-item danger" id="erase"><span class="mi-label">Erase everything</span></button>
           </div>
           <p class="menu-note">Tiles, notes and favorites stay on this phone.</p>
           <input type="file" id="import-file" accept="application/json,.json" hidden>
@@ -632,7 +633,7 @@
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.81</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.82</span></a>
           </div>
         </div>
       </section>
@@ -651,14 +652,21 @@
         </div>
       </section>
 
-      <section class="view" data-route="/settings/home" data-title="Home screen">
+      <section class="view" data-route="/settings/start" data-title="Start screen">
+        <div class="menu" role="radiogroup" aria-label="Start screen">
+          <button class="menu-item" role="radio" data-setting="start" data-value="map" data-back-on-pick><span class="mi-label">Map<small>Your 3D home with lights and TVs</small></span></button>
+          <button class="menu-item" role="radio" data-setting="start" data-value="apps" data-back-on-pick><span class="mi-label">Apps<small>The tiles</small></span></button>
+        </div>
+      </section>
+
+      <section class="view" data-route="/settings/home" data-title="Apps layout">
         <div class="menu" role="radiogroup" aria-label="Home screen">
           <button class="menu-item" role="radio" data-setting="home" data-value="sphere" data-back-on-pick><span class="mi-label">Sphere<small>A 3D web of tiles you drag to spin</small></span></button>
           <button class="menu-item" role="radio" data-setting="home" data-value="grid" data-back-on-pick><span class="mi-label">Grid<small>Rows of tiles</small></span></button>
         </div>
       </section>
 
-      <section class="view" data-route="/settings/columns" data-title="Columns">
+      <section class="view" data-route="/settings/columns" data-title="Tiles per row">
         <div class="menu" role="radiogroup" aria-label="Grid columns">
           <button class="menu-item" role="radio" data-setting="cols" data-value="3" data-back-on-pick><span class="mi-label">3 across<small>Bigger tiles</small></span></button>
           <button class="menu-item" role="radio" data-setting="cols" data-value="4" data-back-on-pick><span class="mi-label">4 across</span></button>
@@ -676,7 +684,7 @@
 
       <section class="view" data-route="/settings/about" data-title="About">
         <section class="panel" data-title="phosphor.os">
-          <div class="kv"><span>Version</span><span>1.81</span></div>
+          <div class="kv"><span>Version</span><span>1.82</span></div>
           <div class="kv"><span>Works offline</span><span class="t-accent">Yes</span></div>
           <div class="kv"><span>Storage</span><span>This phone</span></div>
         </section>
