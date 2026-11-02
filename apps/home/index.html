@@ -854,6 +854,10 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .sb-row .sb-more[hidden] { display: none; }
     .sb-row select, .sb-row input[type=range] { width: 100%; }
     .sb-row select { min-height: 40px; background: var(--bg); color: var(--text); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); font: inherit; padding: 0 var(--sp-2); }
+    .bt-key { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-2) 0; border-top: 1px solid var(--line); }
+    .bt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
+    .bt-grid label { display: flex; flex-direction: column; gap: 4px; }
+    .bt-grid select { width: 100%; min-height: 40px; background: var(--bg); color: var(--text); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); font: inherit; padding: 0 var(--sp-2); }
     .sb-tv { border-top: 1px solid var(--line); padding-top: var(--sp-2); }
     .sc-btn { background: rgba(8, 17, 10, .94); }
     .sc-wrap { flex-wrap: wrap; }
@@ -915,7 +919,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.14</span>
+      <span class="app-meta">v1.15</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1165,6 +1169,11 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         </div>
       </section>
 
+      <section class="view" data-route="/buttons" data-title="Buttons">
+        <p class="menu-note" id="bt-note">Pick the scene each button on your ESP32 remotes runs. Changes reach the remotes within about 10 seconds, with no plugging in. Short names fit the remote's screen best (5 letters for a tap, 9 for a hold).</p>
+        <div id="bt-list"></div>
+      </section>
+
       <section class="view" data-route="/settings" data-title="Settings">
         <div class="menu-group">
           <span class="label">Connection</span>
@@ -1204,7 +1213,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.14</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.15</span></a>
           </div>
         </div>
       </section>
@@ -1277,6 +1286,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
       <button class="menu-item" data-act="remote"><span class="mi-label">TV remote</span></button>
       <button class="menu-item" data-route="/pc"><span class="mi-label">PC screen</span></button>
       <button class="menu-item" data-act="scenes"><span class="mi-label">Scenes</span></button>
+      <button class="menu-item" data-route="/buttons"><span class="mi-label">Remote buttons</span></button>
       <button class="menu-item" data-route="/place"><span class="mi-label">Move things</span></button>
       <button class="menu-item" data-route="/settings"><span class="mi-label">Settings</span></button>
       <button class="menu-item" data-act="off"><span class="mi-label">All lights off</span></button>
@@ -1698,8 +1708,9 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
 
   /* ---------- Lights (the Kasa Lights logic) ---------- */
   let lights = load('lights', []), lastOk = 0, failing = '', dragging = false;
+  let espSent = false;
   async function refreshLights() {
-    try { const d = await call('/lights'); lights = d.lights || []; save('lights', lights); lastOk = Date.now(); failing = ''; }
+    try { const d = await call('/lights'); lights = d.lights || []; save('lights', lights); lastOk = Date.now(); failing = ''; if (!espSent) { espSent = true; setTimeout(espSync, 3000); } }
     catch (e) { failing = e.message; }
     render();
   }
@@ -3475,6 +3486,83 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     });
   }
 
+  /* ---------- ESP32 remote buttons ----------
+     The relay (esp.py 1.6+) plays scenes for the battery buttons. The phone sends every scene already worked out light by light
+     (POST /esp/scenes), and the Buttons page picks which scene each press runs (GET/POST /esp/buttons). */
+  const ESP_ID = { off: 'tvs-off' };
+  function espLight(l, b) {
+    if (!b) return null;
+    if ('on' in b && !b.on) return { on: false };
+    const out = { on: true, ...b }; if (out.temp) out.temp = clamp(out.temp, 2500, 6500);
+    return out;
+  }
+  function espScene(sc) {
+    const out = { name: sc.name, lights: [], tv: [] }, flk = [];
+    for (const l of lights) {
+      let b = null;
+      if (sc.per) { const x = sc.per[l.id]; if (!x || !x.m) continue; if (x.m === 'flicker') { flk.push(l.id); continue; } b = lightBody(l, x); }
+      else if (sc.lights) {
+        if (sc.flicker && sc.flicker(l)) { flk.push(l.id); continue; }
+        b = sc.lights[lightGroup(l)] || sc.lights.other || sc.lights.all;
+        if (b && b.hsv && !l.hsv) b = sc.red ? { on: false } : { brightness: Math.max(5, b.hsv[2]), temp: 2500 };
+      }
+      const set = espLight(l, b); if (set) out.lights.push({ id: l.id, set });
+    }
+    if (flk.length) out.flicker = { lights: flk, level: sc.level || 8 };
+    if (sc.tv) for (const room of ['cast', 'pc']) { const t = sc.tv[room] || sc.tv; if (t.scene) out.tv.push({ scene: t.scene, room, ...(t.open ? { open: t.open } : {}) }); }
+    if (sc.tvs) for (const room in sc.tvs) out.tv.push({ room, ...sc.tvs[room] });
+    return out;
+  }
+  let espHas = null, espT = 0;
+  async function espSync() {
+    if (!ready() || espHas === false || !lights.length) return;
+    const scenes = {};
+    for (const k in HOME_SCENES) scenes[ESP_ID[k] || k] = espScene(HOME_SCENES[k]);
+    scenes['lights-off'] = { name: 'Lights off', lights: lights.map(l => ({ id: l.id, set: { on: false } })), tv: [] };
+    for (const x of mine()) scenes['my-' + x.id] = espScene(x);
+    try { await call('/esp/scenes', { scenes }); espHas = true; } catch (e) { if (e.missing) espHas = false; }
+  }
+  const espSoon = () => { clearTimeout(espT); espT = setTimeout(espSync, 1500); };
+  let bt = null;
+  const PRESSES = [['tap', 'Tap'], ['double', 'Double'], ['triple', 'Triple'], ['hold', 'Hold']];
+  const ago = t => { const s = Math.max(0, Date.now() / 1000 - t); return s < 60 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' d ago'; };
+  async function btLoad() {
+    if (!ready()) { $('#bt-list').innerHTML = '<p class="note">Set up the relay first.</p>'; return; }
+    await espSync();
+    try { bt = await call('/esp/buttons'); } catch (e) { $('#bt-list').textContent = ''; const n = document.createElement('p'); n.className = 'note'; n.textContent = e.missing ? 'Your relay needs esp.py 1.6 for remote buttons.' : e.message; $('#bt-list').appendChild(n); return; }
+    btRender();
+  }
+  function btRender() {
+    if (!bt || route() !== '/buttons') return;
+    const box = $('#bt-list'); box.textContent = '';
+    const remotes = [...new Set([...Object.keys(bt.buttons || {}), ...Object.keys(bt.bind || {})])].sort();
+    if (!remotes.length) { box.innerHTML = '<p class="note">No remotes heard from yet. Press a button on one.</p>'; return; }
+    const names = bt.names || {}, ids = (bt.scenes || []).slice().sort((a, b) => (names[a] || a).localeCompare(names[b] || b));
+    const opts = cur => '<option value="">Nothing</option>' + ids.map(k => `<option value="${k}"${k === cur ? ' selected' : ''}></option>`).join('');
+    for (const r of remotes) {
+      const g = document.createElement('div'); g.className = 'menu-group'; g.dataset.remote = r;
+      const info = (bt.buttons || {})[r] || {}, last = info.last, bind = (bt.bind || {})[r] || bt.default_bind || {};
+      g.innerHTML = '<span class="label"></span><p class="menu-note"></p>';
+      g.children[0].textContent = r.charAt(0).toUpperCase() + r.slice(1) + ' remote';
+      g.children[1].textContent = [last ? 'Last: button ' + last.key + ' ' + last.press + ', ' + ago(last.at) : 'No presses yet', info.mv ? (info.mv / 1000).toFixed(2) + ' V battery' : '', info.seen ? 'seen ' + ago(info.seen) : ''].filter(Boolean).join(' · ');
+      for (const key of ['1', '2', '3']) {
+        const k = document.createElement('div'); k.className = 'bt-key';
+        k.innerHTML = `<b>Button ${key}</b><div class="bt-grid">` + PRESSES.map(([p, t]) => `<label><span class="label">${t}</span><select data-key="${key}" data-press="${p}">${opts((bind[key] || {})[p] || '')}</select></label>`).join('') + '</div>';
+        k.querySelectorAll('option[value]').forEach(o => { if (o.value) o.textContent = names[o.value] || o.value; });
+        g.appendChild(k);
+      }
+      box.appendChild(g);
+    }
+  }
+  $('#bt-list').addEventListener('change', async e => {
+    const sel = e.target.closest('select[data-key]'); if (!sel || !bt) return;
+    const r = sel.closest('[data-remote]').dataset.remote, bind = JSON.parse(JSON.stringify(bt.bind || {}));
+    bind[r] = bind[r] || JSON.parse(JSON.stringify(bt.default_bind || {}));
+    (bind[r][sel.dataset.key] = bind[r][sel.dataset.key] || {})[sel.dataset.press] = sel.value;
+    try { bt = await call('/esp/buttons', { bind }); PH.toast('Saved. The remote shows it within 10 seconds.'); } catch (err) { PH.toast(err.message, 'warn'); }
+    btRender();
+  });
+
   /* ---------- Scene builder: every light, and what each TV shows and plays ---------- */
   let sbId = null;
   const TV_SCREENS = { '': 'Leave as is', off: 'Turn off', black: 'Black (silent)', dim: 'Dim clock', clock: 'Clock', today: 'Today', fire: 'Fireplace', art: 'Art', rain: 'Rain', watch: 'Watch' };
@@ -3529,14 +3617,14 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   }
   $('#sb-save').addEventListener('click', () => {
     const x = sbRead(), all = mine(), k = all.findIndex(s => s.id === x.id);
-    if (k >= 0) all[k] = x; else all.push(x); save('my-scenes', all);
+    if (k >= 0) all[k] = x; else all.push(x); save('my-scenes', all); espSoon();
     PH.toast('Saved ' + x.name + '.'); sbClose(); openScenes(true);
   });
   $('#sb-try').addEventListener('click', () => { const x = sbRead(), gen = ++sceneGen; lastScene = ''; PH.toast('Trying ' + x.name + '…');
     Promise.all([sceneSetLights(x), sceneRooms(x.tvs, gen)]).then(() => { if (gen === sceneGen) { refreshTV(); refreshLights(); } }); });
   $('#sb-del').addEventListener('click', async () => {
     if (!sbId || !(await PH.confirm('Delete this scene?', { ok: 'Delete', danger: true }))) return;
-    save('my-scenes', mine().filter(s => s.id !== sbId)); sbClose(); openScenes(true);
+    save('my-scenes', mine().filter(s => s.id !== sbId)); espSoon(); sbClose(); openScenes(true);
   });
   $('#sb-close').addEventListener('click', () => { sbClose(); openScenes(true); });
 
@@ -3825,7 +3913,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       if ((tvOf() || tvGet('crt')) && tvState !== 'none' && (isTVid(cardId) || Object.keys(mirs).length || ++tick % 2 === 0)) refreshTV();
     }, 5000);
   }
-  PH.on('route', () => { place(); sync(); pcvSync(); });
+  PH.on('route', () => { place(); sync(); pcvSync(); if (route() === '/buttons') btLoad(); });
   document.addEventListener('visibilitychange', () => { sync(); pcvSync(); });
   addEventListener('online', sync);
   addEventListener('pageshow', e => { if (e.persisted) sync(); });
