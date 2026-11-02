@@ -50,6 +50,10 @@ The relay buzzes your iPhone when a chore is due, even when phosphor.os is close
 
 The relay keeps its alert keys in `chores.json` and `chores_vapid.pem` next to it. Don't share those files.
 
+## ESP32 gadgets (scene buttons and room sensors)
+
+Download `esp.py` and the new `kasa_bridge.py` into the relay folder and restart the relay. It should print "ESP32 gadgets: listening on UDP 7791". No pip installs are needed. If Windows asks whether Python may use the network, allow **Private** networks only.
+
 ## Mac or Raspberry Pi
 Same steps, but save [start-lights.sh](https://raw.githubusercontent.com/bgriffie/phosphor-os/main/bridge/start-lights.sh)
 instead of the .bat file and run `./start-lights.sh` in Terminal. On a Pi, install Tailscale with
