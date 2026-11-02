@@ -834,12 +834,27 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .tv-live[hidden] { display: none; }
     .sc-wrap { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-2); pointer-events: none; }
     .sc-wrap > * { pointer-events: auto; }
-    .sc-chips { flex: 1; min-width: 0; border: 1px solid var(--line-strong); border-radius: 24px; background: rgba(8, 17, 10, .94); padding: 4px; }
-    .sc-chips[hidden] { display: none; }
-    .sc-chips .chip { min-height: 36px; }
-    .sc-chips .chip:disabled { opacity: .5; }
-    .sc-chips .chip.warn { color: var(--red, #FF5C5C); border-color: rgba(255, 92, 92, .5); }
-    .sc-chips .chip.warn.is-sel { background: rgba(255, 92, 92, .18); border-color: var(--red, #FF5C5C); box-shadow: 0 0 12px rgba(255, 92, 92, .5); }
+    .sc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }
+    .sc-grid:empty { display: none; }
+    .sc-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 72px; padding: 6px 4px;
+      border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-1); color: var(--text); font: inherit; font-size: var(--fs-xs);
+      text-transform: uppercase; letter-spacing: var(--tracking-label); cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; text-align: center; }
+    .sc-tile svg { width: 26px; height: 26px; }
+    .sc-tile span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sc-tile.is-sel { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow-box); }
+    .sc-tile.warn { color: var(--red, #FF5C5C); border-color: rgba(255, 92, 92, .5); }
+    .sc-tile.warn.is-sel { background: rgba(255, 92, 92, .18); border-color: var(--red, #FF5C5C); box-shadow: 0 0 12px rgba(255, 92, 92, .5); }
+    .sc-tile.add { border-style: dashed; color: var(--text-dim); }
+    #scc, #sb { max-height: 72vh; }
+    .sb-name { width: 100%; min-height: 40px; background: var(--bg); color: var(--text); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); font: inherit; padding: 0 var(--sp-2); }
+    .sb-list { display: flex; flex-direction: column; gap: var(--sp-2); }
+    .sb-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: var(--sp-2); align-items: center; }
+    .sb-row > b { font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sb-row .sb-more { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-2); }
+    .sb-row .sb-more[hidden] { display: none; }
+    .sb-row select, .sb-row input[type=range] { width: 100%; }
+    .sb-row select { min-height: 40px; background: var(--bg); color: var(--text); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); font: inherit; padding: 0 var(--sp-2); }
+    .sb-tv { border-top: 1px solid var(--line); padding-top: var(--sp-2); }
     .sc-btn { background: rgba(8, 17, 10, .94); }
     .sc-wrap { flex-wrap: wrap; }
     .scroll-card { max-height: 62vh; overflow-y: auto; overscroll-behavior: contain; }
@@ -900,7 +915,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.13.1</span>
+      <span class="app-meta">v1.14</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -920,21 +935,6 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="tv-layer" id="tv-layer" aria-hidden="true"></div>
         <div class="over">
           <div class="sc-wrap">
-            <div class="chips sc-chips" id="sc-row" hidden role="group" aria-label="Scenes">
-              <button class="chip warn" data-scene="intruder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3 2 20h20zM12 10v4M12 17v.5"/></svg><span>Intruder</span></button>
-              <button class="chip" data-scene="morning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="14" r="4"/><path d="M12 4v3M4.9 8.9l2.1 2.1M19.1 8.9 17 11M2 20h20"/></svg><span>Morning</span></button>
-              <button class="chip" data-scene="dinner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M7 3v8M5 3v4a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-2 6 0 8v10"/></svg><span>Dinner</span></button>
-              <button class="chip" data-scene="movie"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="6" width="18" height="13"/><path d="M3 10h18M7 6l2 4M12 6l2 4M17 6l2 4"/></svg><span>Movie</span></button>
-              <button class="chip" data-scene="focus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg><span>Focus</span></button>
-              <button class="chip" data-scene="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/></svg><span>Fireplace</span></button>
-              <button class="chip" data-scene="romantic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg><span>Romantic</span></button>
-              <button class="chip" data-scene="bedtime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 18V9M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5M7 12h.5"/></svg><span>Bedtime</span></button>
-              <button class="chip" data-scene="away"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 21c-4-3-7-6-7-10a7 7 0 0 1 14 0c0 4-3 7-7 10zM12 21V9M12 13l-3-2M12 11l3-2"/></svg><span>Away</span></button>
-              <button class="chip" data-scene="party"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span>Party</span></button>
-              <button class="chip" data-scene="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M8 3l4 4 4-4"/></svg><span>TVs off</span></button>
-              <button class="chip" data-scene="lights-off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><span>Lights off</span></button>
-              <button class="chip" data-scene="all-off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg><span>All off</span></button>
-            </div>
             <button class="rm-b pow sc-btn" id="lp-btn" aria-label="Lights" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg></button>
             <button class="rm-b pow sc-btn" id="rc-btn" aria-label="TV remote" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M8 3l4 4 4-4"/></svg></button>
             <button class="rm-b pow sc-btn" id="pcv-btn" aria-label="PC screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="4" width="18" height="12"/><path d="M9 20h6M12 16v4"/></svg></button>
@@ -957,6 +957,48 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
             </div>
             <div class="sw-row" id="lc-sw"></div>
             <div class="row wh-row" id="lc-wh"></div>
+          </section>
+
+          <section class="card scroll-card" id="scc" hidden aria-label="Scenes">
+            <div class="c-top">
+              <div class="c-who"><div class="who-t">Scenes</div><div class="who-s" id="scc-sub">Hold one of your own scenes to change it</div></div>
+              <button class="rm-b ic" id="scc-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            </div>
+            <div class="sc-grid" id="sc-grid" role="group" aria-label="Scenes">
+              <button class="sc-tile" data-scene="morning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="14" r="4"/><path d="M12 4v3M4.9 8.9l2.1 2.1M19.1 8.9 17 11M2 20h20"/></svg><span>Morning</span></button>
+              <button class="sc-tile" data-scene="dinner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M7 3v8M5 3v4a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-2 6 0 8v10"/></svg><span>Dinner</span></button>
+              <button class="sc-tile" data-scene="movie"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="6" width="18" height="13"/><path d="M3 10h18M7 6l2 4M12 6l2 4M17 6l2 4"/></svg><span>Movie</span></button>
+              <button class="sc-tile" data-scene="focus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg><span>Focus</span></button>
+              <button class="sc-tile" data-scene="fire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/></svg><span>Fire</span></button>
+              <button class="sc-tile" data-scene="stars"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3l2 5.5 5.5.5-4.2 3.6 1.3 5.4L12 15l-4.6 3 1.3-5.4L4.5 9l5.5-.5z"/></svg><span>Stargazing</span></button>
+              <button class="sc-tile" data-scene="romantic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg><span>Romantic</span></button>
+              <button class="sc-tile" data-scene="bedtime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 18V9M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5M7 12h.5"/></svg><span>Bedtime</span></button>
+              <button class="sc-tile" data-scene="away"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 21c-4-3-7-6-7-10a7 7 0 0 1 14 0c0 4-3 7-7 10zM12 21V9M12 13l-3-2M12 11l3-2"/></svg><span>Away</span></button>
+              <button class="sc-tile" data-scene="party"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span>Party</span></button>
+              <button class="sc-tile warn" data-scene="intruder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3 2 20h20zM12 10v4M12 17v.5"/></svg><span>Intruder</span></button>
+              <button class="sc-tile" data-scene="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M8 3l4 4 4-4"/></svg><span>TVs off</span></button>
+              <button class="sc-tile" data-scene="lights-off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><span>Lights off</span></button>
+              <button class="sc-tile" data-scene="all-off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg><span>All off</span></button>
+            </div>
+            <div class="sc-grid" id="sc-mine" role="group" aria-label="Your scenes"></div>
+          </section>
+
+          <section class="card scroll-card" id="sb" hidden aria-label="Scene builder">
+            <div class="c-top">
+              <div class="c-who"><div class="who-t" id="sb-title">New scene</div><div class="who-s">Every light, and what each TV shows and plays</div></div>
+              <button class="rm-b ic" id="sb-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            </div>
+            <input type="text" class="sb-name" id="sb-name" maxlength="24" placeholder="Scene name" autocomplete="off">
+            <span class="label">Lights</span>
+            <div class="sb-list" id="sb-lights"></div>
+            <div class="dim" id="sb-flk"><span class="label">Flicker</span><input type="range" class="li-range" id="sb-level" min="2" max="40" aria-label="How bright flickering lights are"><span class="readout" id="sb-levelv">—</span></div>
+            <span class="label">TVs</span>
+            <div class="sb-list" id="sb-tvs"></div>
+            <div class="row" style="--n:3">
+              <button class="rm-b" id="sb-del">Delete</button>
+              <button class="rm-b" id="sb-try">Try it</button>
+              <button class="rm-b is-sel" id="sb-save">Save</button>
+            </div>
           </section>
 
           <section class="card scroll-card" id="lp" hidden aria-label="Lights">
@@ -1162,7 +1204,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.13.1</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.14</span></a>
           </div>
         </div>
       </section>
@@ -1699,6 +1741,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   // What a light is doing on this beat of the party, as the relay sends it: [h, s, l], or null for a dark flash
   function partyHSL(l) {
     const i = party.lights.indexOf(l.id); if (i < 0) return undefined;
+    if (party.mode === 'flame') return [22 + Math.random() * 14, 95, 28 + Math.random() * 18];
     const ms = BEAT[party.speed] || 600, k = Math.max(0, Math.floor((Date.now() - party.since * 1000) / ms)), on = k % 2 === 0;
     if (l.hsv && (party.mode === 'color' || (party.mode === 'both' && on))) return [((k * 137) % 360 + i * 60) % 360, 100, 55];
     return party.mode === 'color' || on ? [42, 90, 62] : null;
@@ -2760,7 +2803,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   function savePins() { save('pins', pins); save('tv', tvBox); save('crt', crtBox); save('plants', plants); save('furniture', furn); }
 
   /* ---------- Cards over the map ---------- */
-  function openCard(id) { cardId = id; if (id && isTVid(id)) save('rc', id); if (id && lpOpen) { lpOpen = false; renderLP(); } if (id && sun.on) { sun.on = false; sunPlay = ''; renderSun(); } if (id && partyOpen) { partyOpen = false; renderParty(); } renderCard(); req(); requestAnimationFrame(placeMirror); }
+  function openCard(id) { cardId = id; if (id) sbClose(); if (id && scenesOpen) { scenesOpen = false; renderScenes(); } if (id && isTVid(id)) save('rc', id); if (id && lpOpen) { lpOpen = false; renderLP(); } if (id && sun.on) { sun.on = false; sunPlay = ''; renderSun(); } if (id && partyOpen) { partyOpen = false; renderParty(); } renderCard(); req(); requestAnimationFrame(placeMirror); }
   const SWATCH = [['Green', 125, 85], ['Cyan', 185, 90], ['Blue', 225, 95], ['Purple', 275, 85], ['Pink', 320, 75], ['Red', 0, 95], ['Orange', 28, 95], ['Gold', 45, 85]];
   const WHITES = [['Warm', 2700], ['Soft', 3500], ['Neutral', 4500], ['Day', 6500]];
   const near = (a, b, d) => Math.abs(a - b) < d;
@@ -2863,7 +2906,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   let lpOpen = false;
   function openLP(on = !lpOpen) {
     lpOpen = on;
-    if (on) { openCard(null); if (partyOpen) { partyOpen = false; renderParty(); } if (sun.on) { sun.on = false; sunPlay = ''; renderSun(); } if (scenesOpen) { scenesOpen = false; renderScenes(); } refreshLights(); }
+    if (on) { openCard(null); sbClose(); if (partyOpen) { partyOpen = false; renderParty(); } if (sun.on) { sun.on = false; sunPlay = ''; renderSun(); } if (scenesOpen) { scenesOpen = false; renderScenes(); } refreshLights(); }
     renderLP();
   }
   function renderLP() {
@@ -3219,7 +3262,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   function renderParty() {
     const on = partyOn(), m = on ? party.mode : PH.store.get('partyMode'), sp = on ? party.speed : PH.store.get('partySpeed');
     $('#pc').hidden = !partyOpen;
-    const chip = $('#sc-row [data-scene="party"]'); if (chip) chip.classList.toggle('is-sel', on || partyOpen);
+    const chip = $('#scc [data-scene="party"]'); if (chip) chip.classList.toggle('is-sel', on || partyOpen);
     $('#pc-led').className = 'led' + (partyBusy ? ' wait' : on ? ' on' : '');
     $('#pc-sub').textContent = partyHas === false ? 'Needs the relay update' : on ? MODE_T[m] + ' · ' + SPEED_T[sp] + ' · ' + party.lights.length + ' light' + (party.lights.length === 1 ? '' : 's') : 'Every light flashes together';
     $$('#pc-mode [data-mode]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.mode === m)));
@@ -3242,10 +3285,15 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     dinner: { name: 'Dinner', lights: { kitchen: WARM(80), other: WARM(25) }, tv: { cast: { scene: 'home' }, pc: { scene: 'away', open: 'art' } } },
     movie: { name: 'Movie', lights: { living: { brightness: 8, temp: 2500 }, other: { on: false } }, tv: { cast: { scene: 'off' }, pc: { scene: 'away', open: 'watch' } } },
     focus: { name: 'Focus', lights: { all: { brightness: 100, temp: 5000 } }, tv: { scene: 'away', open: 'clock' } },
-    home: { name: 'Fireplace', lights: { all: WARM(40) }, tv: { scene: 'home' } },
+    // Fire: the piano and small living-room lamps flicker low and warm (the relay's flame loop), the rest off, fireplace and fire sound
+    fire: { name: 'Fire', flicker: l => /piano|small/i.test(l.name), level: 8, lights: { all: { on: false } }, tvs: { cast: { screen: 'fire', music: '', amb: 'fire', wake: true }, pc: { screen: 'fire', music: '', amb: 'fire', wake: true } } },
+    // Stargazing: red light only, the solar system on both TVs, deep-space ambient
+    stars: { name: 'Stargazing', red: true, lights: { all: { hsv: [0, 100, 8] } }, tvs: { cast: { screen: 'art', art: 0, music: 'groove-salad', amb: '', wake: true }, pc: { screen: 'art', art: 0, music: 'groove-salad', amb: '', wake: true } } },
     romantic: { name: 'Romantic', lights: { living: { hsv: [0, 100, 10] }, other: { on: false } }, tv: { scene: 'romantic' } },
-    bedtime: { name: 'Bedtime', lights: { all: { on: false } }, tv: { scene: 'bedtime' } },
-    away: { name: 'Away', lights: { all: { on: false } }, tv: { scene: 'away' } },
+    // Bedtime: lights off, TVs left on but fully black and silent (TVs already off stay off)
+    bedtime: { name: 'Bedtime', lights: { all: { on: false } }, tvs: { cast: { screen: 'black', music: '', amb: '' }, pc: { screen: 'black', music: '', amb: '' } } },
+    // Away: lights off, a very dim clock and calm classical on both TVs
+    away: { name: 'Away', lights: { all: { on: false } }, tvs: { cast: { screen: 'dim', music: 'swiss-classic', amb: '', wake: true }, pc: { screen: 'dim', music: 'swiss-classic', amb: '', wake: true } } },
     off: { name: 'TVs off', tv: { scene: 'off' } },
     'all-off': { name: 'All off', lights: { all: { on: false } }, tv: { scene: 'off' } },
   };
@@ -3254,14 +3302,32 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     const p = pins[l.id], rn = p ? roomName(roomAt(p.x, p.z)) || '' : l.name || '';
     return /living/i.test(rn) ? 'living' : /kitchen|dining|laundry/i.test(rn) || (p && rn === '') ? 'kitchen' : 'other';
   }
-  async function sceneLights(L) {
+  async function sceneLights(L, red) {
     if (!L) return;
     if (partyOn()) await setParty({ on: false }, true);
     await Promise.all(lights.filter(l => l.online).map(l => {
       let b = L[lightGroup(l)] || L.other || L.all; if (!b) return null;
-      if (b.hsv && !l.hsv) b = { brightness: Math.max(5, b.hsv[2]), temp: 2500 };   // a white bulb: as dim and warm as it goes
+      if (b.hsv && !l.hsv) b = red ? { on: false } : { brightness: Math.max(5, b.hsv[2]), temp: 2500 };   // a white bulb: as dim and warm as it goes (off when only red will do)
       return setLight(l.id, b);
     }));
+  }
+  // A custom scene's light: { m: off|on|flicker|'' , b: brightness, c: colour name }
+  const COLOURS = { warm: ['Warm white', 2700], soft: ['Soft white', 3500], neutral: ['Neutral', 4500], day: ['Daylight', 6500],
+    red: ['Red', 0, 100], orange: ['Orange', 28, 95], gold: ['Gold', 45, 85], green: ['Green', 125, 85], cyan: ['Cyan', 185, 90], blue: ['Blue', 225, 95], purple: ['Purple', 275, 85], pink: ['Pink', 320, 75] };
+  function lightBody(l, x) {
+    if (x.m === 'off') return { on: false };
+    const b = clamp(x.b || 50, 1, 100), c = COLOURS[x.c] || COLOURS.warm;
+    if (c.length === 2 || !l.hsv) return l.tempRange ? { brightness: b, temp: c.length === 2 ? c[1] : 2700 } : { brightness: b };
+    return { hsv: [c[1], c[2], b] };
+  }
+  // Flickering lights run on the relay (party.py 1.1 'flame'), so the fire keeps going when the phone sleeps
+  async function sceneFlicker(ids, level) {
+    if (!ids.length) return;
+    if (partyHas === false || (party && !('level' in party))) {
+      ids.forEach(id => setLight(id, { brightness: level, temp: 2500 }));
+      PH.toast('Flicker needs the relay update (party.py 1.1). Lights set low and warm for now.', 'warn'); return;
+    }
+    await setParty({ on: true, mode: 'flame', lights: ids, level }, true);
   }
   // Run a TV scene (and page) in each room that can take it
   async function sceneTVs(T) {
@@ -3278,19 +3344,46 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     const r = await Promise.allSettled(jobs), bad = r.find(x => x.status === 'rejected');
     if (bad) PH.toast(bad.reason.message, 'warn');
   }
+  // A room's TV to a screen ('off' turns it off; 'fire' = the fireplace full screen; 'art' + art: piece), music and sound.
+  // wake: turn the TV on first if it's off; otherwise a TV that's off is left off.
+  const roomInfo = room => room === 'pc' ? pcInfo : tvInfo;
+  const roomBody = (room, more) => ({ ...(room === 'cast' ? { id: tvInfo && tvInfo.id } : {}), room, ...more });
+  async function tvRoom(room, t, gen) {
+    if (room === 'pc' ? pcState !== 'ok' : !(tvInfo && tvInfo.id)) return;
+    let i = roomInfo(room); const on = () => !!(i && i.tv && i.tv.on && i.tv.linked);
+    if (t.screen === 'off') { if (i && i.tv && i.tv.on) await call('/tv/stop', roomBody(room), 25000); return; }
+    if (!on()) {
+      if (!t.wake) return;
+      await call('/tv/start', roomBody(room), 25000);
+      for (let k = 0; k < 12 && !on() && gen === sceneGen; k++) { await new Promise(r => setTimeout(r, 2500)); try { i = await call('/tv' + (room === 'pc' ? '?room=pc' : '')); } catch {} }
+      if (!on() || gen !== sceneGen) return;
+    }
+    const snd = {}; if (t.music != null) snd.music = t.music; if (t.amb != null) snd.amb = t.amb;
+    if (Object.keys(snd).length) await call('/tv/sound', roomBody(room, snd), 8000).catch(() => {});
+    if (!t.screen) return;
+    if (t.screen === 'black') { try { await call('/tv/open', { screen: 'black', room }, 10000); } catch { await call('/tv/open', { screen: 'dim', room }, 10000); } return; }
+    const art = t.screen === 'fire' ? ARTS.indexOf('Fireplace') : t.screen === 'art' && t.art != null ? +t.art : null;
+    await call('/tv/open', { screen: t.screen === 'fire' ? 'art' : t.screen, room }, 10000);
+    if (art != null) await call('/tv/art', { room, piece: art, hold: true, full: true }, 8000).catch(() => {});
+  }
+  async function sceneRooms(T, gen) {
+    if (!T) return;
+    const r = await Promise.allSettled(['cast', 'pc'].filter(k => T[k]).map(k => tvRoom(k, T[k], gen))), bad = r.find(x => x.status === 'rejected');
+    if (bad) PH.toast(bad.reason.message, 'warn');
+  }
   let scenesOpen = false, sceneBusy = '', lastScene = '', sceneGen = 0;
   async function runScene(name) {
     if (!ready()) { PH.go('/settings/relay'); return; }
     if (name === 'lights-off') { allOff(); return; }
-    if (name === 'party') { partyOpen = !partyOpen; if (partyOpen) { cardId = null; renderCard(); if (sun.on) { sun.on = false; sunPlay = ''; renderSun(); } refreshParty(); } renderParty(); return; }
+    if (name === 'party') { partyOpen = !partyOpen; if (partyOpen) { scenesOpen = false; renderScenes(); cardId = null; renderCard(); if (sun.on) { sun.on = false; sunPlay = ''; renderSun(); } refreshParty(); } renderParty(); return; }
     if (name === 'intruder') { intruderToggle(); return; }
-    const sc = HOME_SCENES[name]; if (!sc) return;
+    const sc = HOME_SCENES[name] || mine().find(x => 'my:' + x.id === name); if (!sc) return;
     if (intruder) await intruderToggle(false);
     // A TV scene can take most of a minute (the TV turning on); another scene can be picked meanwhile and wins
     const gen = ++sceneGen;
     sceneBusy = name; lastScene = name; renderScenes();
     PH.toast(sc.name + '…');
-    await Promise.all([sceneLights(sc.lights), sceneTVs(sc.tv)]);
+    await Promise.all([sceneSetLights(sc), sceneTVs(sc.tv), sceneRooms(sc.tvs, gen)]);
     if (gen !== sceneGen) return;
     sceneBusy = ''; renderScenes();
     await refreshTV(); refreshLights();
@@ -3334,16 +3427,118 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     if (gen === sceneGen) { sceneBusy = ''; renderScenes(); }
     refreshTV();
   }
+  async function sceneSetLights(sc) {
+    if (sc.per) {   // a custom scene: each light its own way; '' leaves it alone
+      if (partyOn()) await setParty({ on: false }, true);
+      const flk = [];
+      await Promise.all(lights.filter(l => l.online && sc.per[l.id] && sc.per[l.id].m).map(l => {
+        const x = sc.per[l.id]; if (x.m === 'flicker') { flk.push(l.id); return null; } return setLight(l.id, lightBody(l, x)); }));
+      return sceneFlicker(flk, sc.level || 8);
+    }
+    const flk = sc.flicker ? lights.filter(l => l.online && sc.flicker(l)).map(l => l.id) : [];
+    if (sc.flicker && !flk.length) PH.toast('No light named piano or small, so nothing flickers. A scene of your own can pick the lights.', 'warn');
+    await sceneLights(sc.lights, sc.red);
+    if (flk.length) { await new Promise(r => setTimeout(r, 400)); await sceneFlicker(flk, sc.level); }
+  }
+  const mine = () => load('my-scenes', []);
+  function openScenes(on = !scenesOpen) {
+    scenesOpen = on;
+    if (on) { openCard(null); lpOpen = false; renderLP(); partyOpen = false; renderParty(); if (sun.on) { sun.on = false; sunPlay = ''; renderSun(); } sbClose(); }
+    renderScenes();
+  }
   function renderScenes() {
-    $('#sc-row').hidden = !scenesOpen;
+    $('#scc').hidden = !scenesOpen;
+    const box = $('#sc-mine'); box.textContent = '';
+    mine().forEach(x => { const b = document.createElement('button'); b.className = 'sc-tile'; b.dataset.scene = 'my:' + x.id;
+      b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><span></span>';
+      b.lastChild.textContent = x.name; box.appendChild(b); });
+    const add = document.createElement('button'); add.className = 'sc-tile add'; add.dataset.new = '1';
+    add.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>New scene</span>'; box.appendChild(add);
     $('#sc-btn').setAttribute('aria-expanded', String(scenesOpen));
     // the scene picked last (the TV's own scene name can't tell Dinner from Fireplace); nothing is ever locked
     const cur = intruder ? 'intruder' : sceneBusy || lastScene;
-    $$('#sc-row [data-scene]').forEach(b => { b.classList.toggle('is-sel', b.dataset.scene === cur); b.disabled = false; });
+    $$('#scc [data-scene]').forEach(b => { b.classList.toggle('is-sel', b.dataset.scene === cur); b.disabled = false; });
     $('#sc-btn').classList.toggle('is-sel', !!cur);
   }
-  $('#sc-btn').addEventListener('click', () => { scenesOpen = !scenesOpen; if (scenesOpen && lpOpen) { lpOpen = false; renderLP(); } renderScenes(); });
-  $('#sc-row').addEventListener('click', e => { const b = e.target.closest('[data-scene]'); if (b) runScene(b.dataset.scene); });
+  $('#sc-btn').addEventListener('click', () => openScenes());
+  $('#scc-close').addEventListener('click', () => openScenes(false));
+  {   // tap runs a scene; holding one of your own opens it in the builder
+    let holdT = 0, held = false;
+    $('#scc').addEventListener('pointerdown', e => { const b = e.target.closest('[data-scene^="my:"]'); held = false; clearTimeout(holdT);
+      if (b) holdT = setTimeout(() => { held = true; sbOpen(b.dataset.scene.slice(3)); }, 550); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => $('#scc').addEventListener(t, () => clearTimeout(holdT)));
+    $('#scc').addEventListener('contextmenu', e => { if (e.target.closest('[data-scene^="my:"]')) e.preventDefault(); });
+    $('#scc').addEventListener('click', e => {
+      if (held) { held = false; return; }
+      if (e.target.closest('[data-new]')) { sbOpen(null); return; }
+      const b = e.target.closest('[data-scene]'); if (b) runScene(b.dataset.scene);
+    });
+  }
+
+  /* ---------- Scene builder: every light, and what each TV shows and plays ---------- */
+  let sbId = null;
+  const TV_SCREENS = { '': 'Leave as is', off: 'Turn off', black: 'Black (silent)', dim: 'Dim clock', clock: 'Clock', today: 'Today', fire: 'Fireplace', art: 'Art', rain: 'Rain', watch: 'Watch' };
+  const opt = (map, cur) => Object.entries(map).map(([k, v]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${v}</option>`).join('');
+  const LEAVE = { '': 'Leave as is' };
+  function sbOpen(id) {
+    const x = id ? mine().find(s => s.id === id) : null; if (id && !x) return;
+    sbId = x ? x.id : null; scenesOpen = false; renderScenes(); $('#sb').hidden = false;
+    $('#sb-title').textContent = x ? 'Change scene' : 'New scene'; $('#sb-name').value = x ? x.name : ''; $('#sb-del').hidden = !x;
+    $('#sb-level').value = (x && x.level) || 8; $('#sb-levelv').textContent = $('#sb-level').value + '%';
+    const lb = $('#sb-lights'); lb.textContent = '';
+    if (!lights.length) lb.innerHTML = '<p class="note">No lights found yet. Check the relay.</p>';
+    [...lights].sort((a, b) => a.name.localeCompare(b.name)).forEach(l => {
+      const v = (x && x.per && x.per[l.id]) || { m: '', b: 50, c: 'warm' };
+      const row = document.createElement('div'); row.className = 'sb-row'; row.dataset.id = l.id;
+      const cols = Object.fromEntries(Object.entries(COLOURS).filter(([, c]) => c.length === 2 ? l.tempRange : l.hsv).map(([k, c]) => [k, c[0]]));
+      row.innerHTML = `<b></b><select data-k="m" aria-label="What this light does">${opt({ '': 'Leave as is', off: 'Off', on: 'On', flicker: 'Flicker (fire)' }, v.m)}</select>
+        <div class="sb-more"${v.m === 'on' ? '' : ' hidden'}><input type="range" class="li-range" data-k="b" min="1" max="100" value="${v.b || 50}" aria-label="Brightness">${Object.keys(cols).length ? `<select data-k="c" aria-label="Colour">${opt(cols, v.c)}</select>` : ''}</div>`;
+      row.firstChild.textContent = l.name; lb.appendChild(row);
+    });
+    const tb = $('#sb-tvs'); tb.textContent = '';
+    ['tv', 'crt'].forEach(tid => {
+      const room = TVS[tid].room, t = (x && x.tvs && x.tvs[room]) || {};
+      const row = document.createElement('div'); row.className = 'sb-row sb-tv'; row.dataset.room = room;
+      const arts = Object.fromEntries(ARTS.map((a, k) => [String(k), a]).filter(([k, a]) => ARTS.indexOf(a) === +k));
+      row.innerHTML = `<b></b><select data-k="screen" aria-label="Screen">${opt(TV_SCREENS, t.screen || '')}</select>
+        <div class="sb-more"><select data-k="music" aria-label="Music">${opt({ ...LEAVE, '-': 'No music', ...MUSIC }, t.music == null ? '' : t.music || '-')}</select>
+        <select data-k="amb" aria-label="Sound">${opt({ ...LEAVE, '-': 'No sound', ...AMB }, t.amb == null ? '' : t.amb || '-')}</select></div>
+        <div class="sb-more" data-art${t.screen === 'art' ? '' : ' hidden'}><select data-k="art" aria-label="Art piece" style="grid-column:1/-1">${opt(arts, String(t.art || 0))}</select></div>`;
+      row.firstChild.textContent = TVS[tid].name; tb.appendChild(row);
+    });
+    sbFlk(); req();
+  }
+  function sbClose() { $('#sb').hidden = true; sbId = null; }
+  const sbFlk = () => { $('#sb-flk').hidden = !$$('#sb-lights [data-k="m"]').some(s => s.value === 'flicker'); };
+  $('#sb').addEventListener('change', e => {
+    const k = e.target.dataset.k, row = e.target.closest('.sb-row');
+    if (k === 'm') { row.querySelector('.sb-more').hidden = e.target.value !== 'on'; sbFlk(); }
+    if (k === 'screen') row.querySelector('[data-art]').hidden = e.target.value !== 'art';
+  });
+  $('#sb-level').addEventListener('input', e => { $('#sb-levelv').textContent = e.target.value + '%'; });
+  function sbRead() {
+    const per = {}, tvs = {};
+    $$('#sb-lights .sb-row').forEach(r => { const g = k => { const el = r.querySelector(`[data-k="${k}"]`); return el ? el.value : ''; };
+      if (g('m')) per[r.dataset.id] = { m: g('m'), b: +g('b') || 50, c: g('c') || 'warm' }; });
+    $$('#sb-tvs .sb-row').forEach(r => { const g = k => r.querySelector(`[data-k="${k}"]`).value, t = { wake: true };
+      if (g('screen')) t.screen = g('screen'); if (g('screen') === 'art') t.art = +g('art');
+      if (g('music')) t.music = g('music') === '-' ? '' : g('music'); if (g('amb')) t.amb = g('amb') === '-' ? '' : g('amb');
+      if (t.screen === 'black') { t.wake = false; t.music = ''; t.amb = ''; }
+      if (Object.keys(t).length > 1) tvs[r.dataset.room] = t; });
+    return { id: sbId || Date.now().toString(36), name: $('#sb-name').value.trim() || 'My scene', per, tvs, level: +$('#sb-level').value };
+  }
+  $('#sb-save').addEventListener('click', () => {
+    const x = sbRead(), all = mine(), k = all.findIndex(s => s.id === x.id);
+    if (k >= 0) all[k] = x; else all.push(x); save('my-scenes', all);
+    PH.toast('Saved ' + x.name + '.'); sbClose(); openScenes(true);
+  });
+  $('#sb-try').addEventListener('click', () => { const x = sbRead(), gen = ++sceneGen; lastScene = ''; PH.toast('Trying ' + x.name + '…');
+    Promise.all([sceneSetLights(x), sceneRooms(x.tvs, gen)]).then(() => { if (gen === sceneGen) { refreshTV(); refreshLights(); } }); });
+  $('#sb-del').addEventListener('click', async () => {
+    if (!sbId || !(await PH.confirm('Delete this scene?', { ok: 'Delete', danger: true }))) return;
+    save('my-scenes', mine().filter(s => s.id !== sbId)); sbClose(); openScenes(true);
+  });
+  $('#sb-close').addEventListener('click', () => { sbClose(); openScenes(true); });
 
   /* ---------- Placing lights and the TV ---------- */
   let lastH = 2.3, lastPlant = 1.0, lastKind = 'monstera', lastPlantY = 0;
@@ -3559,7 +3754,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     if (route() !== '/' && route() !== '/place') PH.go('/');
     if (a.dataset.act === 'lights') openLP(true);
     if (a.dataset.act === 'remote') openRemote();
-    if (a.dataset.act === 'scenes' && !scenesOpen) { lpOpen = false; renderLP(); scenesOpen = true; renderScenes(); }
+    if (a.dataset.act === 'scenes') openScenes(true);
   });
   // inside phosphor.os, the menu also leads to the OS's own apps and settings
   { let os = false; try { os = window.parent !== window && !!window.parent.PhosphorOS; } catch {} $$('[data-os]').forEach(b => { b.hidden = !os; }); }
