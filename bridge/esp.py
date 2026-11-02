@@ -1,4 +1,4 @@
-"""ESP32 gadgets for the Phosphor relay (v1.3). Put this file next to kasa_bridge.py.
+"""ESP32 gadgets for the Phosphor relay (v1.4). Put this file next to kasa_bridge.py.
 
 Boards broadcast a small hello on UDP port 7791 every 10 s, with their name and latest
 readings. This add-on keeps the latest one from each board and serves them behind the key:
@@ -7,7 +7,7 @@ readings. This add-on keeps the latest one from each board and serves them behin
   POST /esp/{name}   -> body passed to the board's /set (for gadgets with controls)
 Battery scene buttons reach us through the button gateway board ({"press": {...}} messages):
   GET  /esp/buttons  -> {"buttons": {name: {seen, mv, last}}, "bind": {...}, "scenes": [names]}
-  POST /esp/buttons  -> {"bind": {"hall": {"1": {"tap": "movie", "hold": "all-off"}}}}
+  POST /esp/buttons  -> {"bind": {"hall": {"1": {"tap": "movie", "double": ..., "triple": ..., "hold": "all-off"}}}}
   POST /esp/scenes   -> {"scenes": {name: {"lights": [{"id", "set"}], "tv": [{"scene", "room"}]}}}
 The phone sends the scenes already worked out (which light gets what), so the relay just plays them.
 Nothing to pip install: it uses aiohttp, which the relay already has.
@@ -17,29 +17,46 @@ from pathlib import Path
 
 from aiohttp import web, ClientSession, ClientTimeout
 
-VERSION = '1.3'
+VERSION = '1.4'
 HERE = Path(__file__).resolve().parent
 SAVED = HERE / 'esp.json'   # button bindings and scenes
 
 # Scenes that work before the Map has sent its own (a Map scene with the same name wins).
-# 'lights': {'id': '*'} means every light, {'name': ...} one light by its Kasa name, and
-# 'except' leaves the named lights out. TV parts need the relay started with --cast.
-FIRE_LAMP = 'Living Room Lamp Small'
+# 'lights': {'id': '*'} means every light, {'name': ...} one light (or a list) by its Kasa name, and
+# 'except' leaves the named lights out. TV rooms: 'cast' = kitchen, 'pc' = living room. TV parts
+# need the relay started with --cast.
+SMALL, BIG, PIANO, PORCH = 'Living Room Lamp Small', 'Living Room Lamp Big', 'Piano Lamp', 'Outdoor Lights'
+LIVING = [SMALL, BIG]
+BOTH_TVS = lambda scene: [{'scene': scene, 'room': 'cast'}, {'scene': scene, 'room': 'pc'}]
+OFF = {'on': False}
+GLOW = lambda b: {'on': True, 'brightness': b, 'temp': 2500}   # Kasa's warmest white
 BUILTIN = {
-    # Fireplace: everything off except the small living room lamp, as a very warm low glow,
-    # and the fireplace on both TVs (kitchen Chromecast and the living room monitor)
-    'fireplace': {'lights': [{'id': '*', 'except': [FIRE_LAMP], 'set': {'on': False}},
-                             {'name': FIRE_LAMP, 'set': {'on': True, 'brightness': 15, 'temp': 2500}}],
-                  'tv': [{'scene': 'home', 'room': 'cast'}, {'scene': 'home', 'room': 'pc'}]},
-    'warm': {'lights': [{'id': '*', 'set': {'on': True, 'brightness': 60, 'temp': 2700}}]},
-    'bedtime': {'lights': [{'id': '*', 'set': {'on': False}}], 'tv': [{'scene': 'bedtime', 'room': 'cast'}]},
-    'all-off': {'lights': [{'id': '*', 'set': {'on': False}}], 'tv': [{'scene': 'off', 'room': 'cast'}]},
+    # Fireplace: everything off except the small living room lamp as a very warm low glow,
+    # and the fireplace on both TVs
+    'fireplace': {'lights': [{'id': '*', 'except': [SMALL], 'set': OFF}, {'name': SMALL, 'set': GLOW(15)}],
+                  'tv': BOTH_TVS('home')},
+    # Cosy: the fireplace with both living room lamps and the piano lamp warm at 30%
+    'cosy': {'lights': [{'id': '*', 'except': LIVING + [PIANO], 'set': OFF}, {'name': LIVING + [PIANO], 'set': GLOW(30)}],
+             'tv': BOTH_TVS('home')},
+    # Movie: living room lamps barely on, everything else off, the kitchen TV off (the living room
+    # TV is left alone, since that's what you're watching)
+    'movie': {'lights': [{'id': '*', 'except': LIVING, 'set': OFF}, {'name': LIVING, 'set': GLOW(5)}],
+              'tv': [{'scene': 'off', 'room': 'cast'}]},
+    'intermission': {'lights': [{'name': LIVING, 'set': GLOW(40)}]},
+    'bright': {'lights': [{'id': '*', 'set': {'on': True, 'brightness': 100, 'temp': 4000}}]},
+    'tvs-off': {'tv': BOTH_TVS('off')},
+    # Away: every light off and both TVs on their Away screen
+    'away': {'lights': [{'id': '*', 'set': OFF}], 'tv': BOTH_TVS('away')},
+    'porch': {'lights': [{'name': PORCH, 'set': {'on': True}}]},
+    'warm': {'lights': [{'id': '*', 'set': GLOW(60)}]},
+    'bedtime': {'lights': [{'id': '*', 'set': OFF}], 'tv': [{'scene': 'bedtime', 'room': 'cast'}]},
+    'all-off': {'lights': [{'id': '*', 'set': OFF}], 'tv': BOTH_TVS('off')},
 }
 # 'party' taps Party mode on and off; 'party-fast' turns it on (or speeds it up) at the fast beat.
 # Every remote uses these until esp.json says otherwise for its name.
-DEFAULT_BIND = {'1': {'tap': 'party', 'hold': 'party-fast'},
-                '2': {'tap': 'fireplace', 'hold': 'warm'},
-                '3': {'tap': 'bedtime', 'hold': 'all-off'}}
+DEFAULT_BIND = {'1': {'tap': 'fireplace', 'double': 'cosy', 'triple': 'party', 'hold': 'all-off'},
+                '2': {'tap': 'movie', 'double': 'intermission', 'triple': 'bright', 'hold': 'tvs-off'},
+                '3': {'tap': 'away', 'double': 'porch', 'triple': 'bedtime', 'hold': 'all-off'}}
 HELLO_PORT = 7791
 GONE_AFTER = 60   # seconds without a hello before a board shows as offline
 
@@ -133,9 +150,11 @@ def setup(app, lights, demo=False):
             if l.get('id') == '*' or 'name' in l:
                 everyone = everyone or await lights.list()
                 skip = {n.lower() for n in l.get('except', [])}
+                pick = l.get('name', [])
+                pick = {n.lower() for n in ([pick] if isinstance(pick, str) else pick)}
                 for d in everyone:
                     named = d['name'].lower()
-                    if ('name' in l and named == l['name'].lower()) or (l.get('id') == '*' and named not in skip):
+                    if named in pick or (l.get('id') == '*' and named not in skip):
                         jobs.append(lights.set(d['id'], l['set']))
             else:
                 jobs.append(lights.set(l['id'], l['set']))
