@@ -933,7 +933,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.16</span>
+      <span class="app-meta">v1.16.1</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1232,7 +1232,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.16</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.16.1</span></a>
           </div>
         </div>
       </section>
@@ -3579,36 +3579,50 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   let bt = null;
   const PRESSES = [['tap', 'Tap'], ['double', 'Double'], ['triple', 'Triple'], ['hold', 'Hold']];
   const ago = t => { const s = Math.max(0, Date.now() / 1000 - t); return s < 60 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' d ago'; };
+  // the relay's own defaults (esp.py), so the page always has the hall remote to fill in, even before it's heard from
+  const BT_DEFAULT = { '1': { tap: 'fireplace', double: 'cosy', triple: 'party', hold: 'all-off' }, '2': { tap: 'movie', double: 'intermission', triple: 'bright', hold: 'tvs-off' },
+    '3': { tap: 'away', double: 'porch', triple: 'bedtime', hold: 'all-off' } };
+  let btMsg = '';
   async function btLoad() {
-    if (!ready()) { $('#bt-list').innerHTML = '<p class="note">Set up the relay first.</p>'; return; }
-    await espSync();
-    try { bt = await call('/esp/buttons'); } catch (e) { $('#bt-list').textContent = ''; const n = document.createElement('p'); n.className = 'note'; n.textContent = e.missing ? 'Your relay needs esp.py 1.6 for remote buttons.' : e.message; $('#bt-list').appendChild(n); return; }
+    btMsg = ready() ? 'Checking the relay…' : 'Set up the relay in Settings first.';
+    if (!bt) bt = { buttons: {}, bind: {}, default_bind: BT_DEFAULT, scenes: [], names: {}, off: true };
+    btRender();
+    if (!ready()) return;
+    espSync();   // in the background: the page doesn't wait for it
+    try { bt = await call('/esp/buttons'); btMsg = ''; if (!bt.bind) throw new Error('old'); }
+    catch (e) {
+      bt = { buttons: {}, bind: {}, default_bind: BT_DEFAULT, scenes: [], names: {}, off: true };
+      btMsg = e.missing || /board|old/i.test(e.message) ? 'Your relay needs the new esp.py (1.7) before buttons can be changed here. The ESP32 thread has the steps.' : 'Can\'t reach the relay: ' + e.message;
+    }
     btRender();
   }
   function btRender() {
     if (!bt || route() !== '/buttons') return;
     const box = $('#bt-list'); box.textContent = '';
-    const remotes = [...new Set([...Object.keys(bt.buttons || {}), ...Object.keys(bt.bind || {})])].sort();
-    if (!remotes.length) { box.innerHTML = '<p class="note">No remotes heard from yet. Press a button on one.</p>'; return; }
-    const names = bt.names || {}, ids = (bt.scenes || []).slice().sort((a, b) => (names[a] || a).localeCompare(names[b] || b));
+    if (btMsg) { const n = document.createElement('p'); n.className = 'strip' + (bt.off && !/Checking/.test(btMsg) ? ' warn' : ''); n.textContent = btMsg; box.appendChild(n); }
+    // every remote heard from or set up, and always the hall remote
+    const remotes = [...new Set(['hall', ...Object.keys(bt.buttons || {}), ...Object.keys(bt.bind || {})])].sort();
+    const names = bt.names || {}, used = new Set(Object.values(bt.default_bind || BT_DEFAULT).flatMap(Object.values));
+    const ids = [...new Set([...(bt.scenes || []), ...used])].sort((a, b) => String(names[a] || a).localeCompare(String(names[b] || b)));
     const opts = cur => '<option value="">Nothing</option>' + ids.map(k => `<option value="${k}"${k === cur ? ' selected' : ''}></option>`).join('');
     for (const r of remotes) {
       const g = document.createElement('div'); g.className = 'menu-group'; g.dataset.remote = r;
-      const info = (bt.buttons || {})[r] || {}, last = info.last, bind = (bt.bind || {})[r] || bt.default_bind || {};
+      const info = (bt.buttons || {})[r] || {}, last = info.last, bind = (bt.bind || {})[r] || bt.default_bind || BT_DEFAULT;
       g.innerHTML = '<span class="label"></span><p class="menu-note"></p>';
       g.children[0].textContent = r.charAt(0).toUpperCase() + r.slice(1) + ' remote';
       g.children[1].textContent = [last ? 'Last: button ' + last.key + ' ' + last.press + ', ' + ago(last.at) : 'No presses yet', info.mv ? (info.mv / 1000).toFixed(2) + ' V battery' : '', info.seen ? 'seen ' + ago(info.seen) : ''].filter(Boolean).join(' · ');
       for (const key of ['1', '2', '3']) {
         const k = document.createElement('div'); k.className = 'bt-key';
         k.innerHTML = `<b>Button ${key}</b><div class="bt-grid">` + PRESSES.map(([p, t]) => `<label><span class="label">${t}</span><select data-key="${key}" data-press="${p}">${opts((bind[key] || {})[p] || '')}</select></label>`).join('') + '</div>';
-        k.querySelectorAll('option[value]').forEach(o => { if (o.value) o.textContent = names[o.value] || o.value; });
+        k.querySelectorAll('option[value]').forEach(o => { if (o.value) o.textContent = names[o.value] || o.value.replace(/-/g, ' ').replace(/^./, c => c.toUpperCase()); });
+        k.querySelectorAll('select').forEach(sl => { sl.disabled = !!bt.off; });
         g.appendChild(k);
       }
       box.appendChild(g);
     }
   }
   $('#bt-list').addEventListener('change', async e => {
-    const sel = e.target.closest('select[data-key]'); if (!sel || !bt) return;
+    const sel = e.target.closest('select[data-key]'); if (!sel || !bt || bt.off) return;
     const r = sel.closest('[data-remote]').dataset.remote, bind = JSON.parse(JSON.stringify(bt.bind || {}));
     bind[r] = bind[r] || JSON.parse(JSON.stringify(bt.default_bind || {}));
     (bind[r][sel.dataset.key] = bind[r][sel.dataset.key] || {})[sel.dataset.press] = sel.value;
@@ -3977,7 +3991,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   build();
   cam = load('cam', null);
   if (cam && !(cam.dist > 0)) cam = null;
-  place(); setTimeout(sync, 0);
+  place(); setTimeout(() => { sync(); if (route() === '/buttons') btLoad(); }, 0);
 })();
 /* service worker: provided by Phosphor OS */
 
