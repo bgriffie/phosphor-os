@@ -1,4 +1,4 @@
-"""ESP32 gadgets for the Phosphor relay (v1.4). Put this file next to kasa_bridge.py.
+"""ESP32 gadgets for the Phosphor relay (v1.5). Put this file next to kasa_bridge.py.
 
 Boards broadcast a small hello on UDP port 7791 every 10 s, with their name and latest
 readings. This add-on keeps the latest one from each board and serves them behind the key:
@@ -17,7 +17,7 @@ from pathlib import Path
 
 from aiohttp import web, ClientSession, ClientTimeout
 
-VERSION = '1.4'
+VERSION = '1.5'
 HERE = Path(__file__).resolve().parent
 SAVED = HERE / 'esp.json'   # button bindings and scenes
 
@@ -144,6 +144,15 @@ def setup(app, lights, demo=False):
         if not sc:
             print(f'  no scene called {name!r}')
             return
+        # Party mode keeps flashing the lights, so stop it first (it puts the lights back as
+        # they were before the party, then this scene sets them)
+        if sc.get('lights'):
+            try:
+                if (await boards.call_self('/party')).get('on'):
+                    await boards.call_self('/party', {'on': False})
+                    print('  Party off first')
+            except Exception as e:
+                print(f'  could not check Party mode: {e}')
         everyone = None
         jobs = []
         for l in sc.get('lights', []):

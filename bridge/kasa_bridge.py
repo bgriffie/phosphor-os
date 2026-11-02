@@ -298,6 +298,13 @@ def main():
     lights = DemoLights() if args.demo else KasaLights(cfg.get('username'), cfg.get('password'))
 
     async def start(app):
+        # Windows prints a scary ConnectionResetError traceback whenever a phone or TV drops a connection.
+        # It's harmless, so keep it out of the relay window.
+        loop = asyncio.get_running_loop()
+        def quiet(loop, ctx):
+            if not isinstance(ctx.get('exception'), (ConnectionResetError, ConnectionAbortedError)):
+                loop.default_exception_handler(ctx)
+        loop.set_exception_handler(quiet)
         n = await lights.scan(rounds=2, verbose=True)
         print(f'Found {n} light(s) and plug(s).' + ('' if n else ' Is this computer on the same Wi-Fi as the bulbs?'))
     app = make_app(lights, cfg['key'], cast=args.cast)
