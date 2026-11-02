@@ -933,7 +933,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.16.1</span>
+      <span class="app-meta">v1.16.3</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1232,7 +1232,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.16.1</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.16.3</span></a>
           </div>
         </div>
       </section>
@@ -2830,7 +2830,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     }
     openCard(null);
   }
-  function savePins() { save('pins', pins); save('tv', tvBox); save('crt', crtBox); save('plants', plants); save('furniture', furn); }
+  function savePins() { save('pins', pins); save('tv', tvBox); save('crt', crtBox); save('plants', plants); save('furniture', furn); setTimeout(() => espSoon()); }
 
   /* ---------- Cards over the map ---------- */
   function openCard(id) { cardId = id; if (id) sbClose(); if (id && scenesOpen) { scenesOpen = false; renderScenes(); } if (id && isTVid(id)) save('rc', id); if (id && lpOpen) { lpOpen = false; renderLP(); } if (id && sun.on) { sun.on = false; sunPlay = ''; renderSun(); } if (id && partyOpen) { partyOpen = false; renderParty(); } renderCard(); req(); requestAnimationFrame(placeMirror); }
@@ -3573,7 +3573,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     for (const k in HOME_SCENES) scenes[ESP_ID[k] || k] = { ...espScene(HOME_SCENES[k]), name: ESP_NAME[k] || HOME_SCENES[k].name };
     scenes['lights-off'] = { name: 'Dark', lights: lights.map(l => ({ id: l.id, set: { on: false } })), tv: [] };
     for (const x of mine()) scenes['my-' + x.id] = espScene(x);
-    try { await call('/esp/scenes', { scenes }); espHas = true; } catch (e) { if (e.missing) espHas = false; }
+    try { await call('/esp/scenes', { scenes, pins });   // pins: where each light sits on the plan, for the remote's house picture
+    espHas = true; } catch (e) { if (e.missing) espHas = false; }
   }
   const espSoon = () => { clearTimeout(espT); espT = setTimeout(espSync, 1500); };
   let bt = null;
@@ -3600,8 +3601,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     if (!bt || route() !== '/buttons') return;
     const box = $('#bt-list'); box.textContent = '';
     if (btMsg) { const n = document.createElement('p'); n.className = 'strip' + (bt.off && !/Checking/.test(btMsg) ? ' warn' : ''); n.textContent = btMsg; box.appendChild(n); }
-    // every remote heard from or set up, and always the hall remote
-    const remotes = [...new Set(['hall', ...Object.keys(bt.buttons || {}), ...Object.keys(bt.bind || {})])].sort();
+    // every remote heard from or set up; with none yet, a 'home' one to fill in (Floyd's remote is called home)
+    let remotes = [...new Set([...Object.keys(bt.buttons || {}), ...Object.keys(bt.bind || {})])].sort(); if (!remotes.length) remotes = ['home'];
     const names = bt.names || {}, used = new Set(Object.values(bt.default_bind || BT_DEFAULT).flatMap(Object.values));
     const ids = [...new Set([...(bt.scenes || []), ...used])].sort((a, b) => String(names[a] || a).localeCompare(String(names[b] || b)));
     const opts = cur => '<option value="">Nothing</option>' + ids.map(k => `<option value="${k}"${k === cur ? ' selected' : ''}></option>`).join('');

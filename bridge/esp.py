@@ -1,4 +1,4 @@
-"""ESP32 gadgets for the Phosphor relay (v1.7). Put this file next to kasa_bridge.py.
+"""ESP32 gadgets for the Phosphor relay (v1.8). Put this file next to kasa_bridge.py.
 
 Boards broadcast a small hello on UDP port 7791 every 10 s, with their name and latest
 readings. This add-on keeps the latest one from each board and serves them behind the key:
@@ -9,13 +9,16 @@ Battery scene buttons reach us through the button gateway board ({"press": {...}
   GET  /esp/buttons  -> {"buttons": {name: {seen, mv, last}}, "bind": {...}, "default_bind": {...},
                          "scenes": [ids], "names": {id: display name}}
   POST /esp/buttons  -> {"bind": {"hall": {"1": {"tap": "movie", "double": ..., "triple": ..., "hold": "all-off"}}}}
-  POST /esp/scenes   -> {"scenes": {id: {"name", "lights": [{"id", "set"}], "tv": [...], "flicker": {...}}}}
+  POST /esp/scenes   -> {"scenes": {id: {"name", "lights": [{"id", "set"}], "tv": [...], "flicker": {...}}},
+                         "pins": {light id: {"x", "y", "z", "name"}}}   (pins: where each light sits on the Map)
      A tv entry is {"scene", "room"} (a relay TV scene) or {"room", "screen", "music", "amb", "art", "wake"}
      (drive that TV directly; "wake" turns it on first if it's off). "flicker": {"lights": [ids], "level"}
      runs Party's flame mode on those lights after the scene's lights are set.
 The phone sends the scenes already worked out (which light gets what), so the relay just plays them,
 and may give each a "name". Every 10 s the gateway says hello and gets back the scene names for
-each button (UDP 7792, "remote|key|press|LABEL" lines), so the remotes' screens show them.
+each button (UDP 7792, "remote|key|press|LABEL" lines), so the remotes' screens show them, plus an
+"@lit|x,z,y;..." line (centimetres on the Map's plan) for the lights that are on, so the screen's house picture
+can mark them. On a press that list is sent straight away with the scene's changes already worked in.
 Nothing to pip install: it uses aiohttp, which the relay already has.
 """
 import asyncio, json, socket, time
@@ -23,7 +26,7 @@ from pathlib import Path
 
 from aiohttp import web, ClientSession, ClientTimeout
 
-VERSION = '1.7'
+VERSION = '1.8'
 HERE = Path(__file__).resolve().parent
 SAVED = HERE / 'esp.json'   # button bindings and scenes
 
@@ -79,6 +82,7 @@ class Boards(asyncio.DatagramProtocol):
         self.http = None
         self.on_press = on_press
         self.labels = None
+        self.on_hello = None
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def datagram_received(self, data, addr):
@@ -90,13 +94,12 @@ class Boards(asyncio.DatagramProtocol):
         if msg.get('phosphor') != 1 or not name:
             return
         if isinstance(msg.get('press'), dict):
-            self.on_press(msg['press'])
+            self.on_press(msg['press'], addr[0])
             return
         if name == 'button-gateway' and self.labels:
-            try:   # the gateway's hello: send it the scene names for the remotes' screens
-                self.sock.sendto(self.labels().encode()[:1400], (addr[0], LABEL_PORT))
-            except OSError as e:
-                print('  could not send labels to the gateway:', e)
+            self.send_labels(addr[0])   # the gateway's hello: the scene names for the remotes' screens
+            if self.on_hello:
+                self.on_hello()
         d = self.devices.setdefault(name, {'info': None})
         if name not in self._announced:
             self._announced.add(name)
@@ -106,6 +109,12 @@ class Boards(asyncio.DatagramProtocol):
             asyncio.ensure_future(self._fetch_info(name))
 
     _announced = set()
+
+    def send_labels(self, ip):
+        try:
+            self.sock.sendto(self.labels().encode()[:1400], (ip, LABEL_PORT))
+        except OSError as e:
+            print('  could not send labels to the gateway:', e)
 
     async def _fetch_info(self, name):
         d = self.devices[name]
@@ -150,8 +159,45 @@ def load_saved():
 
 def setup(app, lights, demo=False):
     saved = load_saved()
-    saved.setdefault('bind', {}); saved.setdefault('scenes', {})
+    saved.setdefault('bind', {}); saved.setdefault('scenes', {}); saved.setdefault('pins', {})
     buttons = {}   # name -> {seen, mv, last, n}
+    known = {'lights': [], 'at': 0, 'busy': False}   # the lights as last read, for the remotes' screens
+
+    async def refresh(wait=0):
+        if known['busy']:
+            return
+        known['busy'] = True
+        try:
+            await asyncio.sleep(wait)
+            known['lights'] = await lights.list()
+            known['at'] = time.time()
+        except Exception as e:
+            print('  could not read the lights:', e)
+        finally:
+            known['busy'] = False
+
+    def hello():
+        if time.time() - known['at'] > 20:
+            asyncio.ensure_future(refresh())
+
+    def targets(entry):   # the cached lights one scene entry touches
+        if entry.get('id') != '*' and 'name' not in entry:
+            return [d for d in known['lights'] if d['id'] == entry.get('id')]
+        skip = {n.lower() for n in entry.get('except', [])}
+        pick = entry.get('name', [])
+        pick = {n.lower() for n in ([pick] if isinstance(pick, str) else pick)}
+        return [d for d in known['lights'] if d['name'].lower() in pick or
+                (entry.get('id') == '*' and d['name'].lower() not in skip)]
+
+    def predict(name):    # what the scene is about to do, so the screen is right straight away
+        sc = saved['scenes'].get(name) or BUILTIN.get(name) or {}
+        for entry in sc.get('lights', []):
+            for d in targets(entry):
+                d['on'] = bool((entry.get('set') or {}).get('on', True))
+        for lid in (sc.get('flicker') or {}).get('lights', []):
+            for d in known['lights']:
+                if d['id'] == lid:
+                    d['on'] = True
 
     async def play(name):
         if name in ('party', 'party-fast'):
@@ -238,7 +284,7 @@ def setup(app, lights, demo=False):
         except Exception as e:
             print(f'  {name} failed: {e}')
 
-    def on_press(p):
+    def on_press(p, ip=None):
         name, key, kind, n = str(p.get('b', ''))[:40], str(p.get('k', 0)), p.get('p'), p.get('n')
         b = buttons.setdefault(name, {})
         repeat = b.get('n') == n and time.time() - b.get('seen', 0) < 5
@@ -249,14 +295,18 @@ def setup(app, lights, demo=False):
         scene = saved['bind'].get(name, DEFAULT_BIND).get(key, {}).get(kind)
         print(f'Button {name} {key} {kind}' + (f' -> {scene}' if scene else ' (not set up)'))
         if scene:
+            predict(scene)
             asyncio.ensure_future(safe_play(scene))
+            asyncio.ensure_future(refresh(8))   # read the real states once the scene has settled
+        if ip:
+            boards.send_labels(ip)   # the gateway waits a moment for this before answering the remote
 
     boards = Boards(on_press)
 
     def label(scene, press):
         sc = saved['scenes'].get(scene) or {}
         text = (sc.get('name') or SHORT.get(scene) or scene.replace('-', ' ')).upper()
-        return text[:9] if press == 'hold' else text[:5]   # what fits the screen's tabs
+        return text[:7]   # what fits a cell of the screen's grid
 
     def labels():
         lines = ['PHOSPHOR-LABELS']
@@ -265,8 +315,18 @@ def setup(app, lights, demo=False):
                 for press in PRESSES:
                     if kinds.get(press):
                         lines.append(f'{remote}|{key}|{press}|{label(kinds[press], press)}')
+        lit = []
+        for d in known['lights']:
+            pin = saved['pins'].get(d['id'])
+            if d.get('on') and isinstance(pin, dict) and len(lit) < 16:
+                try:
+                    lit.append(f"{round(pin['x'] * 100)},{round(pin['z'] * 100)},{round(min(pin.get('y', 1), 1) * 100)}")
+                except (KeyError, TypeError, ValueError):
+                    pass
+        lines.append('@lit|' + ';'.join(lit))
         return '\n'.join(lines)
     boards.labels = labels
+    boards.on_hello = hello
 
     def keep():
         SAVED.write_text(json.dumps(saved, indent=1))
@@ -322,6 +382,8 @@ def setup(app, lights, demo=False):
         body = await request.json()
         if isinstance(body.get('scenes'), dict):
             saved['scenes'] = body['scenes']; keep()
+        if isinstance(body.get('pins'), dict):
+            saved['pins'] = body['pins']; keep()
         return web.json_response({'scenes': sorted(saved['scenes'])})
 
     async def set_board(request):
