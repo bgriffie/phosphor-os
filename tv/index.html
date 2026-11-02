@@ -706,7 +706,7 @@ const Art = (() => {
     };
     return { name: name || 'Fireplace (drawn)', dur: 600000,
       // Filmed fire (free Pixabay / Videezy clips, wide shots of the whole fireplace): the listed clip first, then
-      // the others as backups; the drawn fire below shows if none of them will play
+      // the others as backups; black if none of them will play
       video: film && [film].concat(FILMS.filter(f => f !== film)),
       init() {
         sprites = sprites || makeSprites();
@@ -914,7 +914,6 @@ const Art = (() => {
             x.rect(W / 2 + Math.cos(a) * r - d / 2, H / 2 + Math.sin(a) * r - d / 2, d, d); }
           x.fill(); }
         if (this.t > 60000) this.init(); } },
-    fireplace(false),
     fireplace(FILMS[2], 'Fireplace: roaring'),
     fireplace(FILMS[3], 'Fireplace: firewood'),
   ];
@@ -998,7 +997,8 @@ const Art = (() => {
     if (!hold && t - since > (piece.dur || DUR)) show(idx + 1);
     if (staticT > 0) { staticT -= dt; snow(); if (staticT <= 0) piece.init(); return; }
     const t0 = performance.now();
-    if (!(piece.video && vid.live)) piece.frame(dt);   // a film shown directly needs no drawing
+    if (piece.video) { if (!vid.live) { x.fillStyle = '#000'; x.fillRect(0, 0, W, H); } }   // filmed pieces: black until the film plays, never a drawn fire under it
+    else piece.frame(dt);
     // If frames keep costing more than the box can afford, draw at a lower resolution
     cost += performance.now() - t0; if (++costN === 90) { const avg = cost / costN; cost = costN = 0;
       if (avg > 24 && lines > 240) { lines = Math.max(240, Math.round(lines * .8)); size(); piece.resized ? piece.resized() : piece.init(); } }

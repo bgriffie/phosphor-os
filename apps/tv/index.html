@@ -892,7 +892,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.34</span>
+      <span class="app-meta">v1.35</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1128,7 +1128,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.34</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.35</span></a>
           </div>
         </div>
       </section>
@@ -1628,7 +1628,7 @@ PH.init({});
   const ARTS = [['Solar system', 'The whole system, then each world up close'], ['Fireplace', 'Filmed: a cottage fireplace'], ['Harmonograph', 'Pendulum drawings'],
     ['Flow field', 'Drifting currents'], ['Life', 'Conway\'s Game of Life'], ['Warp', 'Stars rushing past'], ['Outrun', 'Retro sunset road'], ['Plasma', 'Slow glowing waves'],
     ['Tunnel', 'Endless tunnel'], ['Matrix rain', 'Falling code'], ['10 PRINT', 'The classic maze'], ['Sunflower', 'Golden-angle spiral'],
-    ['Fireplace (drawn)', 'The drawn fire, if the filmed one won\'t play'], ['Fireplace: roaring', 'Filmed: a big roaring wood fire'], ['Fireplace: firewood', 'Filmed: logs burning close up']];
+    ['Fireplace: roaring', 'Filmed: a big roaring wood fire'], ['Fireplace: firewood', 'Filmed: logs burning close up']];
   const art = () => (info && info.art) || null;
   async function artSend(body, after) {
     try { await call('/tv/art', body, 8000); if (after) after(); setTimeout(check, 400); }
