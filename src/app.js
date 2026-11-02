@@ -3,7 +3,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const VERSION = '1.96';
+  const VERSION = '1.97';
 
   /* ---------- Storage (prefixed: every tool shares bgriffie.github.io) ---------- */
   const KEY = 'phosphor-os:data:';
@@ -901,5 +901,11 @@
   renderGrid(); applyOrient();
   startClock();
   if (/^#\/app\//.test(location.hash)) syncFrame(); else { boot(); if (mapStart() && curRoute() === '/') openApp('home'); }
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+  // Updates (v1.97): check for a new version each time the app comes back, and reload once when it takes over,
+  // so a new version shows on the next open instead of the one after
+  if ('serviceWorker' in navigator) {
+    const had = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (had) location.reload(); });
+    navigator.serviceWorker.register('sw.js').then(reg => document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); })).catch(() => {});
+  }
 })();
