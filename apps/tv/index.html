@@ -892,7 +892,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.35</span>
+      <span class="app-meta">v1.36</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1128,7 +1128,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.35</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.36</span></a>
           </div>
         </div>
       </section>
@@ -1159,10 +1159,11 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <span class="label">Sync with the kitchen</span>
           <div class="menu">
             <label class="menu-item"><span class="mi-label">Same music on both<small>Both TVs play one stream from the PC, in step</small></span><input type="checkbox" role="switch" class="mi-switch" id="pc-sync"></label>
+            <label class="menu-item"><span class="mi-label">Auto line-up<small>Measures both TVs after each tap; off = taps move it by exactly that much</small></span><input type="checkbox" role="switch" class="mi-switch" id="pc-auto"></label>
             <div class="menu-item"><span class="mi-label">Line up<small id="pc-off-note">In step</small></span>
               <span class="offset"><button class="rm-b" data-off="-50" aria-label="Living room earlier">−</button><b id="pc-off">0.00 s</b><button class="rm-b" data-off="50" aria-label="Living room later">+</button></span></div>
           </div>
-          <p class="menu-note">Stand where you hear both. If the living room is ahead, tap + until they match; if it's behind, tap −. Each tap is 0.05 s; the relay measures both TVs and glides each into place over a few seconds; use −/+ only for what the TVs themselves add (a TV that shows sound late).</p>
+          <p class="menu-note">Stand where you hear both. If the living room is ahead, tap + until they match; if it's behind, tap −. Each tap is 0.05 s. With Auto line-up on, the relay measures both TVs and puts each in place, so −/+ only covers what the TVs themselves add. With it off, each tap moves the living room by exactly that much and nothing else.</p>
         </div>
       </section>
 
@@ -1518,7 +1519,7 @@ PH.init({});
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
   let lastErr = '', pollT = 0, busyPower = false, sleepAt = 0;
   const ready = () => !!(link && link.url && link.key);
-  const RELAY_WANTS = '5.0';   // tv_control.py version this app expects
+  const RELAY_WANTS = '5.1';   // tv_control.py version this app expects
   const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
   // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
   const toast = PH.toast;
@@ -2247,10 +2248,11 @@ PH.init({});
   $$('#wx-units [data-u]').forEach(b => b.addEventListener('click', () => savePlace({ units: b.dataset.u })));
   /* ---------- Living room TV: its monitor, its speakers, and syncing its music with the kitchen ---------- */
   async function pcSave(body, done) {
-    try { const d = await call('/tv/pc', body, 20000); if (info && info.pc) Object.assign(info.pc, { monitor: d.monitor, sink: d.sink, loop: d.loop }); if (info) Object.assign(info, { sync: d.sync, offset: d.offset }); if (done) done(); }
+    try { const d = await call('/tv/pc', body, 20000); if (info && info.pc) Object.assign(info.pc, { monitor: d.monitor, sink: d.sink, loop: d.loop }); if (info) Object.assign(info, { sync: d.sync, auto: d.auto, offset: d.offset }); if (done) done(); }
     catch (e) { PH.toast(e.message, 'warn'); }
     render();
   }
+  $('#pc-auto').addEventListener('change', e => pcSave({ auto: e.target.checked }, () => PH.toast(e.target.checked ? 'Line-up adjusts itself.' : 'Line-up is by hand: each tap moves the living room by exactly that much.')));
   $('#pc-sync').addEventListener('change', e => pcSave({ sync: e.target.checked }, () => PH.toast(e.target.checked ? 'Both TVs now play the same music.' : 'Each TV plays its own music again.')));
   $$('[data-off]').forEach(b => b.addEventListener('click', () => {
     const v = Math.max(-3000, Math.min(3000, ((info && info.offset) || 0) + +b.dataset.off));
@@ -2291,6 +2293,7 @@ PH.init({});
     }
     $('#pc-loops-note').textContent = p.audioErr || 'In Windows, set Spotify\'s output to the living room TV (Settings › System › Sound › Volume mixer), then pick that same output here. Kitchen › Sound › PC audio plays it on the kitchen TV.';
     $('#pc-sync').checked = !!info.sync;
+    $('#pc-auto').checked = info.auto !== false;
     const off = info.offset || 0;
     $('#pc-off').textContent = (off > 0 ? '+' : off < 0 ? '−' : '') + (Math.abs(off) / 1000).toFixed(2) + ' s';
     const bh = info.behind || {}, sec = v => typeof v === 'number' ? v.toFixed(1) + ' s' : '–';

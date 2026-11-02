@@ -75,7 +75,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '5.0'           # the phone app compares this to know which features the relay has
+VERSION = '5.1'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -888,7 +888,7 @@ def setup(app, demo=False, lights=None, cast=False):
                    'sink': rcfg['pc'].get('sink', ''), 'loop': rcfg['pc'].get('loop', ''),
                    'loops': ['Demo TV (HDMI)', 'Speakers'] if kiosk.fake else await asyncio.to_thread(PcAudio.outputs),
                    'audioErr': hub.get('pc_audio_err', '') or ('' if kiosk.fake else await asyncio.to_thread(PcAudio.clash, rcfg['pc'].get('loop', ''), rcfg['pc'].get('sink', '')))} if kiosk else None,
-            'sync': sync_on(), 'offset': offset(), 'behind': {x: rooms[x]['behind'] if rooms[x]['play'] else None for x in ROOMS},
+            'sync': sync_on(), 'auto': cfg.get('auto_sync', True), 'offset': offset(), 'behind': {x: rooms[x]['behind'] if rooms[x]['play'] else None for x in ROOMS},
             'tv': tv, 'board': hub['board'], 'lights': lights is not None,
             'place': (cfg.get('place') or {}).get('name', ''), 'units': cfg.get('units') or '', 'unitsNow': units() if cfg.get('place') else '',
             'art': room['art'] if on else None, 'sound': room['sound'], 'heard': room['heard'] if on else None,
@@ -992,15 +992,24 @@ def setup(app, demo=False, lights=None, cast=False):
                 rcfg['pc']['sound'] = pc['sound']
                 await send_tv(pc, {'sound': pc['sound']})
                 resync = True
+        if isinstance(body.get('auto'), bool):
+            cfg['auto_sync'] = body['auto']
+        shifts = {}
         if isinstance(body.get('offset'), int):
+            was = {r: delay_of(r) for r in ROOMS}
             cfg['offset'] = max(-RADIO_MAX_OFFSET, min(RADIO_MAX_OFFSET, body['offset']))
-            hub['align_until'] = time.time() + 15   # keep_in_step() lines the TVs up for the next 15 s, then leaves them be
+            if cfg.get('auto_sync', True):
+                hub['align_until'] = time.time() + 15   # keep_in_step() lines the TVs up for the next 15 s, then leaves them be
+            elif sync_on():   # by hand: each TV moves by exactly the change and nothing else (pause = later, jump = earlier)
+                shifts = {r: (delay_of(r) - was[r]) / 1000 for r in ROOMS if delay_of(r) != was[r]}
         save_config(cfg)
+        for r, s in shifts.items():
+            await send_tv(rooms[r], {'shift': s})
         for r in ROOMS:
             await send_tv(rooms[r], {'delay': delay_of(r) if sync_on() else 0})
         if resync and sync_on():
             await send_all({'resync': True})   # turning sync on: both TVs rejoin the station
-        return web.json_response({'ok': True, 'sync': sync_on(), 'offset': offset(), 'monitor': rcfg['pc'].get('monitor'),
+        return web.json_response({'ok': True, 'sync': sync_on(), 'auto': cfg.get('auto_sync', True), 'offset': offset(), 'monitor': rcfg['pc'].get('monitor'),
                                   'sink': rcfg['pc'].get('sink', ''), 'loop': rcfg['pc'].get('loop', '')})
 
     async def start(request):
