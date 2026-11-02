@@ -992,7 +992,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
               <div class="c-who"><div class="who-t" id="sb-title">New scene</div><div class="who-s">Every light, and what each TV shows and plays</div></div>
               <button class="rm-b ic" id="sb-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
             </div>
-            <input type="text" class="sb-name" id="sb-name" maxlength="24" placeholder="Scene name" autocomplete="off">
+            <input type="text" class="sb-name" id="sb-name" maxlength="24" placeholder="Scene name (5 letters fit the remote)" autocomplete="off">
             <span class="label">Lights</span>
             <div class="sb-list" id="sb-lights"></div>
             <div class="dim" id="sb-flk"><span class="label">Flicker</span><input type="range" class="li-range" id="sb-level" min="2" max="40" aria-label="How bright flickering lights are"><span class="readout" id="sb-levelv">—</span></div>
@@ -3490,6 +3490,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
      The relay (esp.py 1.6+) plays scenes for the battery buttons. The phone sends every scene already worked out light by light
      (POST /esp/scenes), and the Buttons page picks which scene each press runs (GET/POST /esp/buttons). */
   const ESP_ID = { off: 'tvs-off' };
+  // what the remotes' e-ink tabs show: 5 letters fit a tap, 9 a hold
+  const ESP_NAME = { morning: 'Wake', dinner: 'Dine', movie: 'Movie', focus: 'Focus', fire: 'Fire', stars: 'Stars', romantic: 'Love', bedtime: 'Bed', away: 'Away', off: 'TV off', 'all-off': 'Off' };
   function espLight(l, b) {
     if (!b) return null;
     if ('on' in b && !b.on) return { on: false };
@@ -3517,8 +3519,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   async function espSync() {
     if (!ready() || espHas === false || !lights.length) return;
     const scenes = {};
-    for (const k in HOME_SCENES) scenes[ESP_ID[k] || k] = espScene(HOME_SCENES[k]);
-    scenes['lights-off'] = { name: 'Lights off', lights: lights.map(l => ({ id: l.id, set: { on: false } })), tv: [] };
+    for (const k in HOME_SCENES) scenes[ESP_ID[k] || k] = { ...espScene(HOME_SCENES[k]), name: ESP_NAME[k] || HOME_SCENES[k].name };
+    scenes['lights-off'] = { name: 'Dark', lights: lights.map(l => ({ id: l.id, set: { on: false } })), tv: [] };
     for (const x of mine()) scenes['my-' + x.id] = espScene(x);
     try { await call('/esp/scenes', { scenes }); espHas = true; } catch (e) { if (e.missing) espHas = false; }
   }

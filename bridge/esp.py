@@ -1,4 +1,4 @@
-"""ESP32 gadgets for the Phosphor relay (v1.6). Put this file next to kasa_bridge.py.
+"""ESP32 gadgets for the Phosphor relay (v1.7). Put this file next to kasa_bridge.py.
 
 Boards broadcast a small hello on UDP port 7791 every 10 s, with their name and latest
 readings. This add-on keeps the latest one from each board and serves them behind the key:
@@ -9,7 +9,10 @@ Battery scene buttons reach us through the button gateway board ({"press": {...}
   GET  /esp/buttons  -> {"buttons": {name: {seen, mv, last}}, "bind": {...}, "default_bind": {...},
                          "scenes": [ids], "names": {id: display name}}
   POST /esp/buttons  -> {"bind": {"hall": {"1": {"tap": "movie", "double": ..., "triple": ..., "hold": "all-off"}}}}
-  POST /esp/scenes   -> {"scenes": {name: {"lights": [{"id", "set"}], "tv": [{"scene", "room"}]}}}
+  POST /esp/scenes   -> {"scenes": {id: {"name", "lights": [{"id", "set"}], "tv": [...], "flicker": {...}}}}
+     A tv entry is {"scene", "room"} (a relay TV scene) or {"room", "screen", "music", "amb", "art", "wake"}
+     (drive that TV directly; "wake" turns it on first if it's off). "flicker": {"lights": [ids], "level"}
+     runs Party's flame mode on those lights after the scene's lights are set.
 The phone sends the scenes already worked out (which light gets what), so the relay just plays them,
 and may give each a "name". Every 10 s the gateway says hello and gets back the scene names for
 each button (UDP 7792, "remote|key|press|LABEL" lines), so the remotes' screens show them.
@@ -20,7 +23,7 @@ from pathlib import Path
 
 from aiohttp import web, ClientSession, ClientTimeout
 
-VERSION = '1.6'
+VERSION = '1.7'
 HERE = Path(__file__).resolve().parent
 SAVED = HERE / 'esp.json'   # button bindings and scenes
 
@@ -61,6 +64,7 @@ DEFAULT_BIND = {'1': {'tap': 'fireplace', 'double': 'cosy', 'triple': 'party', '
                 '2': {'tap': 'movie', 'double': 'intermission', 'triple': 'bright', 'hold': 'tvs-off'},
                 '3': {'tap': 'away', 'double': 'porch', 'triple': 'bedtime', 'hold': 'all-off'}}
 HELLO_PORT = 7791
+FIREPLACE = 1      # the filmed fireplace in the TV page's art list (tv_control.FIREPLACE)
 LABEL_PORT = 7792
 PRESSES = ('tap', 'double', 'triple', 'hold')
 SHORT = {'fireplace': 'FIRE', 'cosy': 'COSY', 'party': 'PARTY', 'party-fast': 'PARTY+', 'movie': 'MOVIE',
@@ -116,6 +120,10 @@ class Boards(asyncio.DatagramProtocol):
             self.http = ClientSession(timeout=ClientTimeout(total=90))
         async with self.http.request('GET' if body is None else 'POST', f'http://127.0.0.1:7788{path}', json=body,
                                      headers={'Authorization': 'Bearer ' + cfg['key']}) as r:
+            if r.status >= 400:   # tv_control answers errors as plain text
+                text = await r.text()
+                print(f'  {path}: {text[:120]}')
+                return {'error': text, 'status': r.status}
             return await r.json(content_type=None)
 
     async def call(self, name, method, path, body=None):
@@ -183,10 +191,46 @@ def setup(app, lights, demo=False):
             else:
                 jobs.append(lights.set(l['id'], l['set']))
         for t in sc.get('tv', []):   # through our own front door, so tv_control does the usual
-            jobs.append(boards.call_self('/tv/scene', t))
+            jobs.append(boards.call_self('/tv/scene', t) if 'scene' in t else drive_tv(t))
         for r in await asyncio.gather(*jobs, return_exceptions=True):
             if isinstance(r, Exception):
                 print('  ', r)
+        fl = sc.get('flicker')
+        if fl and fl.get('lights'):
+            await boards.call_self('/party', {'on': True, 'mode': 'flame', 'lights': fl['lights'], 'level': fl.get('level', 8)})
+
+    async def drive_tv(t):
+        """One TV set the way a Map scene wants it: screen, sound and art, turning it on if asked."""
+        room = t.get('room') or 'cast'
+        call = boards.call_self
+        if t.get('screen') == 'off':
+            await call('/tv/stop', {'room': room})
+            return
+        linked = lambda: call(f'/tv?room={room}')
+        if not ((await linked()).get('tv') or {}).get('linked'):
+            if not t.get('wake'):
+                return                       # it's off and this scene leaves it off
+            await call('/tv/start', {'room': room})
+            for _ in range(15):              # up to about 30 s for the TV page to come up
+                await asyncio.sleep(2)
+                if ((await linked()).get('tv') or {}).get('linked'):
+                    break
+            else:
+                print(f'  TV ({room}) did not come on in time')
+                return
+        if 'music' in t or 'amb' in t:
+            await call('/tv/sound', {'room': room, **{k: t[k] for k in ('music', 'amb') if k in t}})
+        screen = t.get('screen')
+        if screen == 'black':
+            r = await call('/tv/open', {'room': room, 'screen': 'black'})
+            if 'error' in r:
+                await call('/tv/open', {'room': room, 'screen': 'dim'})
+        elif screen in ('fire', 'art'):
+            await call('/tv/open', {'room': room, 'screen': 'art'})
+            piece = FIREPLACE if screen == 'fire' else t.get('art', 0)
+            await call('/tv/art', {'room': room, 'piece': piece, 'hold': True, 'full': True})
+        elif screen:
+            await call('/tv/open', {'room': room, 'screen': screen})
 
     async def safe_play(name):   # so a failed scene says why in the relay window
         try:
