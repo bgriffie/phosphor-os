@@ -1,4 +1,4 @@
-"""ESP32 gadgets for the Phosphor relay (v1.2). Put this file next to kasa_bridge.py.
+"""ESP32 gadgets for the Phosphor relay (v1.3). Put this file next to kasa_bridge.py.
 
 Boards broadcast a small hello on UDP port 7791 every 10 s, with their name and latest
 readings. This add-on keeps the latest one from each board and serves them behind the key:
@@ -17,15 +17,20 @@ from pathlib import Path
 
 from aiohttp import web, ClientSession, ClientTimeout
 
-VERSION = '1.2'
+VERSION = '1.3'
 HERE = Path(__file__).resolve().parent
 SAVED = HERE / 'esp.json'   # button bindings and scenes
 
 # Scenes that work before the Map has sent its own (a Map scene with the same name wins).
-# 'lights': [{'id': '*', ...}] means every light. TV parts need the relay started with --cast.
+# 'lights': {'id': '*'} means every light, {'name': ...} one light by its Kasa name, and
+# 'except' leaves the named lights out. TV parts need the relay started with --cast.
+FIRE_LAMP = 'Living Room Lamp Small'
 BUILTIN = {
-    'fireplace': {'lights': [{'id': '*', 'set': {'on': True, 'brightness': 20, 'temp': 2700}}],
-                  'tv': [{'scene': 'home', 'room': 'cast'}]},
+    # Fireplace: everything off except the small living room lamp, as a very warm low glow,
+    # and the fireplace on both TVs (kitchen Chromecast and the living room monitor)
+    'fireplace': {'lights': [{'id': '*', 'except': [FIRE_LAMP], 'set': {'on': False}},
+                             {'name': FIRE_LAMP, 'set': {'on': True, 'brightness': 15, 'temp': 2500}}],
+                  'tv': [{'scene': 'home', 'room': 'cast'}, {'scene': 'home', 'room': 'pc'}]},
     'warm': {'lights': [{'id': '*', 'set': {'on': True, 'brightness': 60, 'temp': 2700}}]},
     'bedtime': {'lights': [{'id': '*', 'set': {'on': False}}], 'tv': [{'scene': 'bedtime', 'room': 'cast'}]},
     'all-off': {'lights': [{'id': '*', 'set': {'on': False}}], 'tv': [{'scene': 'off', 'room': 'cast'}]},
@@ -125,9 +130,13 @@ def setup(app, lights, demo=False):
         everyone = None
         jobs = []
         for l in sc.get('lights', []):
-            if l['id'] == '*':
+            if l.get('id') == '*' or 'name' in l:
                 everyone = everyone or await lights.list()
-                jobs += [lights.set(d['id'], l['set']) for d in everyone]
+                skip = {n.lower() for n in l.get('except', [])}
+                for d in everyone:
+                    named = d['name'].lower()
+                    if ('name' in l and named == l['name'].lower()) or (l.get('id') == '*' and named not in skip):
+                        jobs.append(lights.set(d['id'], l['set']))
             else:
                 jobs.append(lights.set(l['id'], l['set']))
         for t in sc.get('tv', []):   # through our own front door, so tv_control does the usual
@@ -135,6 +144,12 @@ def setup(app, lights, demo=False):
         for r in await asyncio.gather(*jobs, return_exceptions=True):
             if isinstance(r, Exception):
                 print('  ', r)
+
+    async def safe_play(name):   # so a failed scene says why in the relay window
+        try:
+            await play(name)
+        except Exception as e:
+            print(f'  {name} failed: {e}')
 
     def on_press(p):
         name, key, kind, n = str(p.get('b', ''))[:40], str(p.get('k', 0)), p.get('p'), p.get('n')
@@ -147,7 +162,7 @@ def setup(app, lights, demo=False):
         scene = saved['bind'].get(name, DEFAULT_BIND).get(key, {}).get(kind)
         print(f'Button {name} {key} {kind}' + (f' -> {scene}' if scene else ' (not set up)'))
         if scene:
-            asyncio.ensure_future(play(scene))
+            asyncio.ensure_future(safe_play(scene))
 
     boards = Boards(on_press)
 
