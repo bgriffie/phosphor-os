@@ -867,8 +867,22 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .lp-name { display: flex; align-items: center; gap: var(--sp-2); background: none; border: 0; color: var(--text); font: inherit; text-align: left; padding: 0; min-height: 40px; cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
     .lp-name .dot { flex: none; }
     .lp-row .li-range:disabled { opacity: .35; }
-    .tc-on { display: flex; flex-direction: column; gap: var(--sp-2); }
-    .tc-on[hidden], .over .row[hidden] { display: none; }
+    #tc { max-height: 78vh; touch-action: pan-y; }
+    #tc > :not(.tc-scroll) { flex: none; }
+    .tc-scroll { display: flex; flex-direction: column; gap: var(--sp-2); flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    .tc-scroll[hidden], .over .row[hidden], .tc-vol[hidden], #tc .rm-b[hidden] { display: none; }
+    .tc-grab { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: calc(-1 * var(--sp-1)); touch-action: none; }
+    .tc-grab > span { width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong); }
+    .tc-up { display: flex; align-items: center; gap: 4px; background: none; border: 0; color: var(--text-dim); font: inherit; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--tracking-label); min-height: 28px; cursor: pointer; }
+    .tc-up svg { width: 16px; height: 16px; }
+    .tc-vol { display: grid; grid-template-columns: 48px minmax(0, 1fr) 48px auto auto; gap: var(--sp-2); align-items: center; }
+    .tc-vol .rm-b { min-width: 48px; padding: 0; }
+    .tc-vol .rm-b svg { width: 22px; height: 22px; }
+    .tc-vbar { position: relative; height: 40px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); overflow: hidden; display: grid; place-items: center; }
+    .tc-vbar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(51, 255, 102, .18); border-right: 2px solid var(--accent); transition: none; }
+    .tc-vbar span { position: relative; color: var(--accent); font-weight: 700; }
+    #tc-mute[aria-pressed="true"] { color: var(--amber); border-color: var(--amber); }
+    #tc-mute[aria-pressed="false"] #tc-mute-x { display: none; }
     .tc-l { display: grid; grid-template-columns: 4.5em minmax(0, 1fr); align-items: center; gap: var(--sp-2); }
     .tc-sel, .tc-msg input { width: 100%; min-height: 40px; background: var(--bg); color: var(--text); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); font: inherit; padding: 0 var(--sp-2); }
     .tc-msg { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-2); }
@@ -919,7 +933,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.15</span>
+      <span class="app-meta">v1.16</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1055,7 +1069,8 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
             <button class="rm-b" id="sun-live" aria-pressed="false">Live sun: off</button>
           </section>
 
-          <section class="card scroll-card" id="tc" hidden aria-label="TV">
+          <section class="card" id="tc" hidden aria-label="TV remote">
+            <div class="tc-grab" id="tc-grab"><span aria-hidden="true"></span><button class="tc-up" id="tc-full"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Swipe up for the full remote</button></div>
             <div class="c-top">
               <span class="led" id="tc-led" aria-hidden="true"></span>
               <div class="c-who"><div class="who-t" id="tc-name">TV</div><div class="who-s" id="tc-sub">—</div></div>
@@ -1065,29 +1080,33 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
             <div class="row tabs" id="tc-rooms" role="tablist" style="--n:2"><button class="rm-b" role="tab" data-tv="tv">Living room</button><button class="rm-b" role="tab" data-tv="crt">Kitchen</button></div>
             <div class="tv-mini" id="tc-mini"><span class="tv-clock" id="tc-clock"></span><span class="tv-big" id="tc-big">Off</span><span class="tv-small" id="tc-small"></span></div>
             <p class="note" id="tc-note" hidden></p>
-            <div class="tc-on" id="tc-on">
+            <div class="tc-vol" id="tc-vol" role="group" aria-label="Volume">
+              <button class="rm-b" data-vol="-5" aria-label="Volume down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+              <div class="tc-vbar" aria-hidden="true"><i id="tc-vfill"></i><span id="tc-vnum">—</span></div>
+              <button class="rm-b" data-vol="5" aria-label="Volume up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+              <button class="rm-b" data-vol="mute" id="tc-mute" aria-pressed="false" aria-label="Mute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path id="tc-mute-x" d="M16 9l5 6M21 9l-5 6"/></svg></button>
+              <button class="rm-b" data-vol="play" id="tc-play" aria-label="Pause"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg></button>
+            </div>
+            <div class="tc-scroll" id="tc-on">
+              <span class="label">Show</span>
               <div class="row" id="tc-chans" style="--n:3">
                 <button class="rm-b tv-ch" data-screen="today">Today</button>
                 <button class="rm-b tv-ch" data-screen="art">Art</button>
                 <button class="rm-b tv-ch" data-screen="clock">Clock</button>
                 <button class="rm-b tv-ch" data-screen="watch">Watch</button>
                 <button class="rm-b tv-ch" data-screen="rain">Rain</button>
-                <button class="rm-b tv-ch" data-screen="dim">Dark</button>
+                <button class="rm-b tv-ch" data-screen="black">Black</button>
               </div>
               <div class="row" id="tc-art" style="--n:3">
                 <button class="rm-b" data-art="-1" aria-label="Previous art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
                 <button class="rm-b" data-art="fire">Fireplace</button>
                 <button class="rm-b" data-art="1" aria-label="Next art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M9 4l8 8-8 8"/></svg></button>
               </div>
+              <span class="label">Listen</span>
               <label class="tc-l"><span class="label">Music</span><select class="tc-sel" id="tc-music"></select></label>
               <label class="tc-l"><span class="label">Sound</span><select class="tc-sel" id="tc-amb"></select></label>
-              <div class="tc-msg"><input type="text" id="tc-say" maxlength="140" placeholder="Message on the TV" autocomplete="off" enterkeyhint="send"><button class="rm-b" id="tc-send">Send</button></div>
-            </div>
-            <div class="row" id="tc-vol" style="--n:4">
-              <button class="rm-b" data-vol="-5" aria-label="Volume down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14"/></svg></button>
-              <button class="rm-b" data-vol="mute" id="tc-mute">Mute</button>
-              <button class="rm-b" data-vol="5" aria-label="Volume up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-              <button class="rm-b" data-vol="play" id="tc-play">Pause</button>
+              <span class="label">Message</span>
+              <div class="tc-msg"><input type="text" id="tc-say" maxlength="140" placeholder="Shows on the TV" autocomplete="off" enterkeyhint="send"><button class="rm-b" id="tc-send">Send</button></div>
             </div>
           </section>
           <section class="card" id="mc" hidden aria-label="PC monitor">
@@ -1213,7 +1232,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.15</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.16</span></a>
           </div>
         </div>
       </section>
@@ -2843,7 +2862,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       $('#tc-name').textContent = TVS[id].name + (dev ? ' · ' + dev.name : '');
       $('#tc-sub').textContent = tvBusy ? 'One moment…' : n.mode === 'on' ? 'Phosphor TV is on' : n.mode === 'off' ? 'Off' : n.mode === 'other' ? (i.cast && i.cast.app) || 'On' : n.big;
       $('#tc-led').className = 'led' + (tvBusy ? ' wait' : n.mode === 'on' ? ' on' : n.mode === 'other' ? ' wait' : tvState === 'down' ? ' err' : '');
-      const m = $('#tc-mini'); m.className = 'tv-mini ' + (n.mode === 'on' ? 'on' : n.mode === 'other' ? 'other' : 'off'); m.style.aspectRatio = kitchen ? '4 / 3' : '16 / 9';
+      const m = $('#tc-mini'); m.className = 'tv-mini ' + (n.mode === 'on' ? 'on' : n.mode === 'other' ? 'other' : 'off'); m.style.aspectRatio = kitchen ? '4 / 3' : '16 / 9'; m.style.maxWidth = kitchen ? '250px' : '330px';
       $('#tc-big').textContent = n.big; $('#tc-small').textContent = n.small;
       $('#tc-clock').textContent = n.mode === 'on' && i.clock ? i.clock : '';
       const on = !!(i.tv && i.tv.on);
@@ -2856,9 +2875,12 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       const snd = i.sound || {};
       fillSel($('#tc-music'), MUSIC, snd.music || '', 'No music'); fillSel($('#tc-amb'), AMB, snd.amb || '', 'None');
       const c = i.cast || {};
-      $('#tc-vol').hidden = !(kitchen && i.id && n.mode !== 'off' && n.mode !== 'unknown');
-      $('#tc-mute').textContent = c.muted ? 'Unmute' : 'Mute'; $('#tc-mute').classList.toggle('is-sel', !!c.muted);
-      $('#tc-play').hidden = !c.media; $('#tc-play').textContent = c.media && c.media.state === 'PAUSED' ? 'Play' : 'Pause';
+      // volume: the kitchen Chromecast's own volume; the living room is Phosphor TV's music and sound levels
+      const vo = tvVol(id);
+      $('#tc-vol').hidden = !vo;
+      if (vo) { const v = vo.muted ? 0 : Math.round(vo.level); $('#tc-vfill').style.width = v + '%'; $('#tc-vnum').textContent = vo.muted ? 'Muted' : v;
+        $('#tc-mute').setAttribute('aria-pressed', String(!!vo.muted)); $('#tc-mute').setAttribute('aria-label', vo.muted ? 'Unmute' : 'Mute'); }
+      $('#tc-play').hidden = !(kitchen && c.media); $('#tc-play').setAttribute('aria-label', c.media && c.media.state === 'PAUSED' ? 'Play' : 'Pause');
       const note = tvState === 'down' ? tvErr : tvState === 'none' ? 'Phosphor TV needs tv_control.py on the relay (see the TV app).' : '';
       $('#tc-note').textContent = note; $('#tc-note').hidden = !note;
     }
@@ -2907,10 +2929,39 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     tvDo('/tv/say', cardId, { text: t }).then(() => { const i = infoOf(cardId); if (i && i.tv && i.tv.screen !== 'board') tvOpen('board', cardId); }); }
   $('#tc-send').addEventListener('click', tvSay);
   $('#tc-say').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); tvSay(); } });
-  $('#tc-vol').addEventListener('click', e => { const b = e.target.closest('[data-vol]'); if (!b) return; const v = b.dataset.vol, c = (tvInfo && tvInfo.cast) || {};
-    if (v === 'play') tvDo('/tv/media', 'crt', { cmd: c.media && c.media.state === 'PAUSED' ? 'play' : 'pause' });
-    else if (v === 'mute') { c.muted = !c.muted; renderCard(); tvDo('/tv/volume', 'crt', { mute: c.muted }, true); }
-    else tvDo('/tv/volume', 'crt', { delta: +v }, true); });
+  function tvVol(id) {
+    const i = infoOf(id) || {};
+    if (id === 'crt') { const c = i.cast; return i.id && c && c.volume != null && tvNow(id).mode !== 'off' ? { level: c.volume, muted: !!c.muted } : (i.id && tvNow(id).mode !== 'off' && tvNow(id).mode !== 'unknown' ? { level: 0, muted: false } : null); }
+    if (!(i.tv && i.tv.on && i.tv.linked)) return null;
+    const s = i.sound || {}; return { level: s.mv == null ? 70 : s.mv, muted: !s.mv && !s.av };
+  }
+  $('#tc-vol').addEventListener('click', e => {
+    const b = e.target.closest('[data-vol]'); if (!b) return; const v = b.dataset.vol, id = cardId;
+    if (id === 'crt') { const c = (tvInfo && tvInfo.cast) || {};
+      if (v === 'play') tvDo('/tv/media', 'crt', { cmd: c.media && c.media.state === 'PAUSED' ? 'play' : 'pause' });
+      else if (v === 'mute') { c.muted = !c.muted; renderCard(); tvDo('/tv/volume', 'crt', { mute: c.muted }, true); }
+      else { if (c.volume != null) { c.volume = clamp(c.volume + +v, 0, 100); c.muted = false; renderCard(); } tvDo('/tv/volume', 'crt', { delta: +v }, true); }
+      return; }
+    // the living room: music and background sound levels together, as the TV app does
+    const i = pcInfo; if (!i) return; const s = i.sound = i.sound || { mv: 70, av: 60 }; let body;
+    if (v === 'mute') { if (s.mv || s.av) { save('pc-unmute', { mv: s.mv, av: s.av }); body = { mv: 0, av: 0 }; } else body = load('pc-unmute', null) || { mv: 70, av: 60 }; }
+    else if (v === 'play') return;
+    else { const mv = clamp((s.mv || 0) + +v, 0, 100), k = s.mv ? mv / s.mv : 1; body = { mv, av: clamp(Math.round(s.mv ? (s.av || 0) * k : (s.av || 0) + +v), 0, 100) }; }
+    Object.assign(s, body); renderCard(); tvDo('/tv/sound', 'tv', body, true);
+  });
+  // swipe up on the remote (or tap its handle) opens the full TV remote app
+  function openFullRemote() { try { localStorage.setItem('phosphor-tv:data:room', JSON.stringify(TVS[cardId] ? TVS[cardId].room : 'pc')); } catch {} openTVApp(); }
+  $('#tc-full').addEventListener('click', openFullRemote);
+  {
+    let y0 = null, x0 = 0;
+    $('#tc').addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse' || e.target.closest('input, select, .tc-scroll')) { y0 = null; return; } y0 = e.clientY; x0 = e.clientX; });
+    $('#tc').addEventListener('pointerup', e => { if (y0 == null) return; const dy = e.clientY - y0, dx = Math.abs(e.clientX - x0); y0 = null; if (dy < -50 && dx < Math.abs(dy)) openFullRemote(); });
+    $('#tc').addEventListener('pointercancel', () => { y0 = null; });
+    // iOS: a swipe can become a scroll and cancel the pointer; touch events still finish
+    let t0 = null;
+    $('#tc').addEventListener('touchstart', e => { t0 = e.target.closest('input, select, .tc-scroll') ? null : [e.touches[0].clientX, e.touches[0].clientY]; }, { passive: true });
+    $('#tc').addEventListener('touchend', e => { if (!t0) return; const t = e.changedTouches[0], dy = t.clientY - t0[1], dx = Math.abs(t.clientX - t0[0]); t0 = null; if (dy < -50 && dx < Math.abs(dy)) openFullRemote(); });
+  }
   $('#rc-btn').addEventListener('click', () => { if (isTVid(cardId)) openCard(null); else openRemote(); });
 
   /* ---------- Every light in one list ---------- */
@@ -3021,8 +3072,8 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       const f = mirs[id].frame, T = G.tvs[id]; if (!f || !T) continue;
       if (cardId === id) {   // in the TV card
         const r = $('#tc-mini').getBoundingClientRect();
-        const x = r.left - view.left + 6, y = r.top - view.top + 6, w = r.width - 12, h = r.height - 12;
-        f.style.transform = `translate(${x}px, ${y}px) scale(${w / T.pw}, ${h / T.ph})`; f.hidden = false; f.classList.add('in-card'); continue;
+        const w = r.width - 12, h = r.height - 12, k = Math.min(w / T.pw, h / T.ph), x = r.left - view.left + 6 + (w - T.pw * k) / 2, y = r.top - view.top + 6 + (h - T.ph * k) / 2;
+        f.style.transform = `translate(${x}px, ${y}px) scale(${k})`; f.hidden = false; f.classList.add('in-card'); continue;
       }
       f.classList.remove('in-card');
       const q = T.qs;
