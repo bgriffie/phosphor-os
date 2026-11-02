@@ -243,6 +243,8 @@
     #v-dim { display: none; }
     #v-dim.on { display: grid; place-items: center; background: #000; }
     body.night .dim-time { opacity: .07; font-size: calc(3 * var(--u)); }
+    body.black .screen * { visibility: hidden !important; }
+    body.black { cursor: none; }
     .dim-time { color: var(--accent); opacity: .22; font-size: calc(4 * var(--u)); letter-spacing: .1em; text-shadow: none; transition: transform 2s steps(8); }
     /* Watch: poster rows from What to Watch. The phone sends them; the arrows move the green frame. */
     #v-watch { padding-bottom: 0; }
@@ -1275,7 +1277,7 @@ const Sound = (() => {
     relayPos() { return relay && mId && !au.paused && au.src.includes('/radio/') ? au.currentTime : null; },
     setRate(r) { au.playbackRate = r; },
     skip(s) {   // jump forward up to s seconds, within what the player already holds (the relay asks again for the rest)
-      try { const b = au.buffered, j = b.length ? Math.min(s, b.end(b.length - 1) - au.currentTime - .3) : 0; if (j > .1) { au.currentTime += j; return true; } } catch (e) {}
+      try { const b = au.buffered, j = b.length ? Math.min(s, b.end(b.length - 1) - au.currentTime - 1.5) : 0; if (j > .1) { au.currentTime += j; return true; } } catch (e) {}
       return false;
     },
     resync() { if (mId && MUSIC[mId]) { clearTimeout(mRetry); mTry = 0; load(); } },
@@ -1313,7 +1315,7 @@ const Sound = (() => {
    Everything shown that came from outside goes in with textContent, never as HTML. */
 (() => {
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-  const SCREENS = ['home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim', 'night', 'watch', 'alarm'];
+  const SCREENS = ['home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim', 'night', 'black', 'watch', 'alarm'];
   let alarmT = 0;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let watch = [], wRow = 0, wCol = [], screen = 'home', weather = null, tileAt = 0, lightAt = 0, lights = null, lightsErr = '', hasLights = true, board = [], linked = false, idleT = 0;
@@ -1462,8 +1464,10 @@ const Sound = (() => {
   function go(name, art = null) {
     if (!SCREENS.includes(name)) return;
     if (name === 'rain') { name = 'art'; art = Art.pieces().indexOf('Matrix rain'); }   // Rain is one of the art pieces now
-    const night = name === 'night'; if (night) name = 'dim';   // Night (Bedtime) = the dark screen with an even fainter clock
+    const night = name === 'night', black = name === 'black'; if (night || black) name = 'dim';   // Night (Bedtime) = the dark screen with an even fainter clock; Black = nothing at all, silent
     document.body.classList.toggle('night', night);
+    document.body.classList.toggle('black', black);
+    if (black) { stopFade(); Sound.set({ music: '', amb: '' }); }
     if (screen === 'art' && name !== 'art') Art.stop();
     screen = name;
     $$('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + name));

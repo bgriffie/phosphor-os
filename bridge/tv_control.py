@@ -48,7 +48,7 @@ FIRE_DIR = HERE / 'tv_fire'
 FIRE_VF = 'fps=24,scale=192:108:flags=area,scale=1920:1080:flags=neighbor'   # 108 rows of chunky pixels, sharp edges at 1080p
 FIRE_MAX = 300 * 2**20     # largest download accepted, in bytes
 PAGE_MAX_AGE = 600         # seconds before the TV page is fetched again
-SCREENS = ('home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim', 'watch', 'alarm')   # alarm = Home Map's Intruder mode
+SCREENS = ('home', 'today', 'art', 'clock', 'lights', 'board', 'rain', 'dim', 'watch', 'alarm', 'black')   # alarm = Home Map's Intruder mode; black = 'off': nothing drawn, no sound
 # Background sound. The TV page makes the rain/fire/ocean sounds itself. Music is internet radio: the relay fetches
 # each station once and passes the same stream to every TV (7790 /radio/<id>), so two TVs playing the same station
 # stay in step; the TV page falls back to the station's own address if that doesn't work. Same list as sound.js.
@@ -62,7 +62,7 @@ RADIO = {
     'secret-agent': ['https://nonstopcasiopea.radioca.st/', 'https://nonstopcasiopea.radioca.st/stream'],
 }
 MUSIC = tuple(RADIO) + ('pc',)   # 'pc' = PC audio: whatever this PC plays on one output (Floyd's Spotify), sent to the kitchen
-PC_AUDIO_LAG = 3.5                # seconds behind live for PC audio (radio uses RADIO_LAG); the living room hears it directly
+PC_AUDIO_LAG = 5.0                # seconds behind live for PC audio (radio uses RADIO_LAG); the living room hears it directly
 RADIO_LAG = 4.0            # seconds behind the live edge every listener starts, so all TVs line up
 RADIO_KEEP = 20.0          # seconds of each station kept, for the lag, the sync offset and JOIN_SPARE
 JOIN_SPARE = 5.0           # extra seconds a TV gets on joining, so the relay can skip it forward to the exact spot
@@ -75,13 +75,13 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '4.8'           # the phone app compares this to know which features the relay has
+VERSION = '5.0'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
 # all of it is Floyd's to change. off = Phosphor TV off.
 SCENES = ('morning', 'away', 'home', 'romantic', 'bedtime', 'off')
-SCENE_PAGES = ('today', 'fire', 'dim', 'night', 'art', 'clock', 'board', 'watch', 'lights')   # 'fire' = the fireplace, full screen
+SCENE_PAGES = ('today', 'fire', 'dim', 'night', 'black', 'art', 'clock', 'board', 'watch', 'lights')   # 'fire' = the fireplace, full screen
 SCENE_DEFAULTS = {
     'morning': {'page': 'fire', 'music': 'swiss-classic', 'amb': 'fire', 'glow': '', 'lights': []},   # Floyd 2026-10-28
     'away': {'page': 'dim', 'music': 'swiss-classic', 'amb': '', 'glow': '', 'lights': []},
@@ -612,14 +612,15 @@ class PcAudio(Station):
             # audio ("data discontinuity") and the kitchen heard it garbled. soundcard itself returns silence while
             # nothing plays, so the stream keeps going.
             with mic.recorder(samplerate=self.RATE, channels=self.CH, blocksize=self.RATE // 5) as rec:
-                peak, said = 0.0, time.time()
+                heard, warned = time.time(), False
                 while not stop.is_set():
                     data = rec.record(numframes=self.RATE // 20)
                     ff.stdin.write((numpy.clip(data, -1, 1) * 32767).astype('<i2').tobytes()); ff.stdin.flush()
-                    peak = max(peak, float(numpy.abs(data).max()) if len(data) else 0.0)
-                    if time.time() - said > 10:   # a level now and then, so a silent source is easy to spot
-                        print(f'TV: PC audio level {round(peak * 100)}%' + ('  (silent: is anything playing into it?)' if peak < .001 else ''))
-                        peak, said = 0.0, time.time()
+                    if len(data) and float(numpy.abs(data).max()) >= .001:
+                        heard, warned = time.time(), False
+                    elif not warned and time.time() - heard > 30:   # said once, so a silent source is easy to spot
+                        print('TV: PC audio has been silent for 30 s. Is anything playing into it?')
+                        warned = True
         except ImportError:
             self.error = 'PC audio needs:  py -m pip install soundcard numpy'
         except Exception as e:
@@ -1091,6 +1092,8 @@ def setup(app, demo=False, lights=None, cast=False):
             raise web.HTTPBadRequest(text='Unknown screen.')
         if not await send_tv(room, {'open': s}):
             raise web.HTTPConflict(text='Phosphor TV isn\'t on the TV right now.')
+        if s == 'black':
+            await set_sound(room, {'music': '', 'amb': ''})   # 'off' means silent too
         return web.json_response({'ok': True})
 
     async def say(request):
@@ -1161,7 +1164,7 @@ def setup(app, demo=False, lights=None, cast=False):
 
     def scene_screen(name):
         page = scenes().get(name, {}).get('page', '')
-        return 'art' if page == 'fire' else 'dim' if page == 'night' else page
+        return 'art' if page == 'fire' else 'dim' if page in ('night', 'black') else page
 
     def schedule():
         return cfg['schedule'] if isinstance(cfg.get('schedule'), list) else [dict(r, room='cast') for r in DEFAULT_SCHEDULE]
