@@ -889,6 +889,8 @@ dialog.sheet.dropdown::backdrop { background: rgba(20, 17, 12, .35); }
     .pcv-view { background: #000; display: flex; flex-direction: column; }
     .pcv-wrap { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; display: grid; place-items: center; }
     .pcv-wrap canvas { display: block; max-width: none; }
+    .pcv-wrap #pcv-hi { position: absolute; pointer-events: none; }
+    .pcv-wrap #pcv-hi[hidden] { display: none; }
     .pcv-wrap .strip { position: absolute; left: var(--sp-2); right: var(--sp-2); top: var(--sp-2); }
     .pcv-wrap .strip[hidden] { display: none; }
     .pcv-bar { display: flex; gap: var(--sp-2); align-items: center; padding: var(--sp-2); }
@@ -933,7 +935,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Home Map</h1>
-      <span class="app-meta">v1.16.3</span>
+      <span class="app-meta">v1.16.4</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1125,7 +1127,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
       </section>
 
       <section class="view fill pcv-view" data-route="/pc" data-title="PC screen">
-        <div class="pcv-wrap" id="pcv-wrap"><canvas id="pcv-cv" width="16" height="9"></canvas><p class="strip" id="pcv-msg">Connecting to the PC…</p></div>
+        <div class="pcv-wrap" id="pcv-wrap"><canvas id="pcv-cv" width="16" height="9"></canvas><canvas id="pcv-hi" hidden></canvas><p class="strip" id="pcv-msg">Connecting to the PC…</p></div>
         <div class="pcv-bar">
           <div class="chips" id="pcv-mons" role="radiogroup" aria-label="Monitor"></div>
           <button class="rm-b" id="pcv-esc">Esc</button>
@@ -1232,7 +1234,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.16.3</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.16.4</span></a>
           </div>
         </div>
       </section>
@@ -3090,7 +3092,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   let pcMons = load('pc-mons', null), pcLive = {}, monQs = {}, pcBack = 0;   // pcBack: don't retry the stream before this
   async function refreshPCMons() {
     if (!ready()) return;
-    try { const d = await call('/pc'); pcMons = d.monitors || []; save('pc-mons', pcMons); monCache.clear(); }
+    try { const d = await call('/pc'); pcCrop = !!d.crop; pcMons = d.monitors || []; save('pc-mons', pcMons); monCache.clear(); }
     catch (e) { if (e.missing) pcMons = []; }
     if (route() === '/place') renderPlace();
     req();
@@ -3140,6 +3142,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   /* ---------- PC screen: the PC app's live view, inside the map ----------
      One monitor full size over /pc/ws. Tap = click, hold = right-click, one finger drag = scroll, two fingers = zoom and pan,
      Keys = the phone keyboard types on the PC. */
+  var pcCrop;   // the relay can send part of a monitor (set by refreshPCMons, which can run before this line)
   let pcv = { mon: load('pcv-mon', 1), ws: null, meta: null, got: false, z: 1, x: 0, y: 0, back: 0 };
   function pcvOpen(mon) { if (mon) { pcv.mon = mon; save('pcv-mon', mon); } if (route() === '/pc') pcvRestart(); else PH.go('/pc'); }
   function pcvSync() {
@@ -3166,6 +3169,16 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
       if (!!meta.locked !== pcv.locked || !pcv.got) { pcv.locked = !!meta.locked; pcvMsg(pcv.locked ? 'The PC is locked. Unlock it at the PC.' : ''); }
       let bmp; try { bmp = await toBmp(e.data.type ? e.data : new Blob([e.data], { type: meta.type || 'image/jpeg' })); } catch { return; }
       if (pcv.ws !== ws) { bmp.close && bmp.close(); return; }
+      if (meta.crop) pcCrop = true;   // relays that can crop say which part each frame is
+      if (meta.crop && !(meta.crop[0] <= 0 && meta.crop[1] <= 0 && meta.crop[2] >= 1 && meta.crop[3] >= 1)) {
+        const want = pcv.want, hi = $('#pcv-hi');
+        if (want && want.crop.every((v, i) => Math.abs(v - meta.crop[i]) < 0.0002)) {
+          if (hi.width !== bmp.width || hi.height !== bmp.height) { hi.width = bmp.width; hi.height = bmp.height; }
+          const b = want.box; Object.assign(hi.style, { left: b[0] + 'px', top: b[1] + 'px', width: b[2] + 'px', height: b[3] + 'px' });
+          hi.getContext('2d').drawImage(bmp, 0, 0); hi.hidden = false;
+        }
+        bmp.close && bmp.close(); pcv.got = true; return;
+      }
       const cv = $('#pcv-cv'); if (cv.width !== bmp.width || cv.height !== bmp.height) { cv.width = bmp.width; cv.height = bmp.height; pcvFit(); }
       cv.getContext('2d').drawImage(bmp, 0, 0); bmp.close && bmp.close();
       pcv.got = true;
@@ -3193,8 +3206,27 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     const cv = $('#pcv-cv'), w = $('#pcv-wrap'), k = Math.min(w.clientWidth / cv.width, w.clientHeight / cv.height) || 1;
     cv.style.width = Math.floor(cv.width * k) + 'px'; cv.style.height = Math.floor(cv.height * k) + 'px';
   }
-  addEventListener('resize', () => { if (route() === '/pc') pcvFit(); });
-  function pcvZoom() { pcv.z = clamp(pcv.z, 1, 6); if (pcv.z === 1) pcv.x = pcv.y = 0; $('#pcv-cv').style.transform = pcv.z === 1 ? '' : `translate(${pcv.x}px, ${pcv.y}px) scale(${pcv.z})`; $('#pcv-cv').style.transformOrigin = '50% 50%'; }
+  addEventListener('resize', () => { if (route() === '/pc') { pcvFit(); pcvCfg(); } });
+  function pcvZoom() { pcv.z = clamp(pcv.z, 1, 6); if (pcv.z === 1) pcv.x = pcv.y = 0; $('#pcv-cv').style.transform = pcv.z === 1 ? '' : `translate(${pcv.x}px, ${pcv.y}px) scale(${pcv.z})`; $('#pcv-cv').style.transformOrigin = '50% 50%'; pcvCfg(); }
+  // Zoomed in, the relay sends just the part on screen at the PC's own pixels, so text stays sharp
+  function pcvCrop() {
+    if (!pcCrop || pcv.z <= 1.01) return null;
+    const r = $('#pcv-cv').getBoundingClientRect(), w = $('#pcv-wrap').getBoundingClientRect();
+    const L = Math.max(r.left, w.left), T = Math.max(r.top, w.top), R = Math.min(r.right, w.right), B = Math.min(r.bottom, w.bottom);
+    if (R - L < 8 || B - T < 8) return null;
+    const q = v => Math.round(clamp(v, 0, 1) * 10000) / 10000;
+    return { crop: [q((L - r.left) / r.width), q((T - r.top) / r.height), q((R - r.left) / r.width), q((B - r.top) / r.height)], box: [L - w.left, T - w.top, R - L, B - T] };
+  }
+  const pcvW = () => Math.min(1600, Math.round($('#pcv-wrap').clientWidth * Math.min(2, devicePixelRatio || 1)) || 1280);
+  var pcvCfgT = 0;
+  function pcvCfg() {
+    clearTimeout(pcvCfgT); $('#pcv-hi').hidden = true; pcv.want = null;
+    pcvCfgT = setTimeout(() => {
+      const ws = pcv.ws; if (!ws || ws.readyState !== 1) return;
+      const c = pcv.want = pcvCrop(), dpr = Math.min(3, devicePixelRatio || 1);
+      ws.send(JSON.stringify([{ stream: c ? { mon: pcv.mon, w: Math.round(Math.min(1600, c.box[2] * dpr)), q: 70, crop: c.crop } : { mon: pcv.mon, w: pcvW(), q: 60 } }]));
+    }, 150);
+  }
   {
     const wrap = $('#pcv-wrap'), pts = new Map(); let t0 = null, holdT = 0, held = false, moved = false, sy = 0, sx = 0, pin = null;
     wrap.addEventListener('pointerdown', e => {
@@ -3224,15 +3256,23 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
     wrap.addEventListener('dblclick', e => e.preventDefault());
     // typing: the hidden field takes the phone keyboard; each change goes to the PC
     const inp = $('#pcv-in');
-    $('#pcv-kb').addEventListener('click', () => { inp.value = ''; inp.focus(); });
+    const SENT = '  ', resetIn = () => { inp.value = SENT; try { inp.setSelectionRange(SENT.length, SENT.length); } catch {} };
+    $('#pcv-kb').addEventListener('click', () => { resetIn(); inp.focus(); });
+    inp.addEventListener('focus', resetIn);
+    // when iOS doesn't let the change be stopped (autocorrect, some deletes), work out what changed instead
+    inp.addEventListener('input', () => { const v = inp.value;
+      if (v.length < SENT.length) for (let i = v.length; i < SENT.length; i++) pcvSend([{ k: ['backspace'] }]);
+      else if (v.startsWith(SENT) && v.length > SENT.length) pcvSend([{ t: v.slice(SENT.length) }]);
+      resetIn(); });
     $('#pcv-esc').addEventListener('click', () => pcvSend([{ k: ['esc'] }]));
     inp.addEventListener('beforeinput', e => {
+      if (!e.cancelable) return;   // the input handler above catches it
       e.preventDefault();
       if (e.inputType === 'insertText' || e.inputType === 'insertReplacementText') { if (e.data) pcvSend([{ t: e.data }]); }
-      else if (e.inputType === 'deleteContentBackward') pcvSend([{ k: ['backspace'] }]);
+      else if (e.inputType.startsWith('deleteContentBackward') || e.inputType === 'deleteWordBackward') pcvSend([{ k: ['backspace'] }]);
       else if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') pcvSend([{ k: ['enter'] }]);
     });
-    inp.addEventListener('keydown', e => { const k = { Enter: 'enter', Tab: 'tab', Escape: 'esc', ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[e.key];
+    inp.addEventListener('keydown', e => { const k = { Backspace: 'backspace', Enter: 'enter', Tab: 'tab', Escape: 'esc', ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[e.key];
       if (k) { e.preventDefault(); pcvSend([{ k: [k] }]); } });
   }
 
@@ -3992,7 +4032,7 @@ PH.init({ walls: 'half', furn: 'off', labels: false, view: '3d', live: true, sun
   build();
   cam = load('cam', null);
   if (cam && !(cam.dist > 0)) cam = null;
-  place(); setTimeout(() => { sync(); if (route() === '/buttons') btLoad(); }, 0);
+  place(); setTimeout(() => { sync(); pcvSync(); if (route() === '/buttons') btLoad(); }, 0);
 })();
 /* service worker: provided by Phosphor OS */
 
