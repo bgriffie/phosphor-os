@@ -1344,7 +1344,7 @@ const Sound = (() => {
     if (d.fit && typeof d.fit === 'object') setFit(d.fit);
     if (typeof d.shape === 'string') setShape(d.shape, d.test === true);
     // Music comes through the relay, which hands both TVs the same stream, lined up (see /radio in tv_control.py)
-    if (d.radio === true && tvKey) Sound.viaRelay(id => '/radio/' + id + '?k=' + encodeURIComponent(tvKey) + (onPc ? '&room=pc' : ''));
+    if (d.radio === true && tvKey) Sound.viaRelay(id => '/radio/' + id + '?k=' + encodeURIComponent(tvKey) + (onPc ? '&room=' + pcRoom : ''));
     if (typeof d.sink === 'string') Sound.setSink(d.sink);
     if (d.sound && typeof d.sound === 'object') { stopFade(); Sound.set(d.sound); showSound(); }
     if (d.resync === true) Sound.resync();
@@ -1399,7 +1399,7 @@ const Sound = (() => {
   function startSocket(k) {
     let tries = 0;
     const open = () => {
-      const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?k=' + encodeURIComponent(k) + (onPc ? '&room=pc' : ''));
+      const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?k=' + encodeURIComponent(k) + (onPc ? '&room=' + pcRoom : ''));
       ws.onopen = () => { tries = 0; send = d => ws.readyState === 1 && ws.send(JSON.stringify(d)); status(); if (onPc) sendOuts(); };
       ws.onmessage = e => { try { onMsg(JSON.parse(e.data)); } catch {} };
       ws.onclose = () => { send = () => {}; linked = false; showLinked(); setTimeout(open, Math.min(15000, 1000 * 2 ** tries++)); };
@@ -1409,7 +1409,7 @@ const Sound = (() => {
   const tvKey = new URLSearchParams(location.search).get('k');
   // The living room TV is a monitor on the PC, showing this page in a full-screen window (?room=pc). Its sound can
   // go to the TV's speakers rather than the PC's: the page lists the PC's sound outputs and the phone picks one.
-  const onPc = new URLSearchParams(location.search).get('room') === 'pc';
+  const pcRoom = new URLSearchParams(location.search).get('room'), onPc = pcRoom === 'pc' || pcRoom === 'proj';   // living room or projector
   async function sendOuts() {
     const outs = await Sound.outputs();
     if (outs.length) send({ outs });

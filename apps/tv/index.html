@@ -892,7 +892,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
   <main class="app">
     <header class="app-header">
       <h1 class="app-title" data-view-title>Phosphor TV</h1>
-      <span class="app-meta">v1.36</span>
+      <span class="app-meta">v1.37</span>
     </header>
     <div class="screen">
       <canvas class="rain" aria-hidden="true" hidden></canvas>
@@ -1106,7 +1106,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
           <span class="label">General</span>
           <div class="menu">
             <a class="menu-item" href="#/settings/cast"><span class="mi-label">Chromecast</span><span class="mi-value" id="set-cast">—</span></a>
-            <a class="menu-item" href="#/settings/pc" id="set-pc-row" hidden><span class="mi-label">Living room TV<small>The TV on the PC, and syncing it with the kitchen</small></span><span class="mi-value" id="set-pc">—</span></a>
+            <a class="menu-item" href="#/settings/pc" id="set-pc-row" hidden><span class="mi-label"><span id="set-pc-name">Living room TV</span><small>Its monitor, speakers, and syncing with the kitchen</small></span><span class="mi-value" id="set-pc">—</span></a>
             <a class="menu-item" href="#/settings/shape"><span class="mi-label">TV screen shape<small>Widescreen or an old 4:3 TV</small></span><span class="mi-value" id="set-shape">—</span></a>
             <a class="menu-item" href="#/settings/weather"><span class="mi-label">Weather<small>For the Today page</small></span><span class="mi-value" id="set-weather">—</span></a>
             <a class="menu-item" href="#/settings/relay"><span class="mi-label">Relay</span><span class="mi-value" id="set-relay"></span></a>
@@ -1128,7 +1128,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
         <div class="menu-group">
           <span class="label">About</span>
           <div class="menu">
-            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.36</span></a>
+            <a class="menu-item" href="#/settings/about"><span class="mi-label">About</span><span class="mi-value">v1.37</span></a>
           </div>
         </div>
       </section>
@@ -1163,7 +1163,7 @@ html.os-embed .os-path-cmd svg { width: 12px; height: 12px; }
             <div class="menu-item"><span class="mi-label">Line up<small id="pc-off-note">In step</small></span>
               <span class="offset"><button class="rm-b" data-off="-50" aria-label="Living room earlier">−</button><b id="pc-off">0.00 s</b><button class="rm-b" data-off="50" aria-label="Living room later">+</button></span></div>
           </div>
-          <p class="menu-note">Stand where you hear both. If the living room is ahead, tap + until they match; if it's behind, tap −. Each tap is 0.05 s. With Auto line-up on, the relay measures both TVs and puts each in place, so −/+ only covers what the TVs themselves add. With it off, each tap moves the living room by exactly that much and nothing else.</p>
+          <p class="menu-note">Stand where you hear both. If this TV is ahead, tap + until they match; if it's behind, tap −. Each tap is 0.05 s. With Auto line-up on, the relay measures both TVs and puts each in place, so −/+ only covers what the TVs themselves add. With it off, each tap moves this TV by exactly that much and nothing else.</p>
         </div>
       </section>
 
@@ -1519,7 +1519,7 @@ PH.init({});
   let state = 'idle';                              // idle | ok | old (relay has no TV control) | down
   let lastErr = '', pollT = 0, busyPower = false, sleepAt = 0;
   const ready = () => !!(link && link.url && link.key);
-  const RELAY_WANTS = '5.1';   // tv_control.py version this app expects
+  const RELAY_WANTS = '5.2';   // tv_control.py version this app expects
   const relayOld = () => !!(info && info.ok && (info.version || '1.0') < RELAY_WANTS);
   // Error toasts normally stay until tapped; here they clear by themselves after a few seconds (Floyd)
   const toast = PH.toast;
@@ -1567,7 +1567,7 @@ PH.init({});
     if (!ready()) { state = 'idle'; render(); return; }
     try {
       info = await call('/tv');
-      if (room === 'pc' && !hasPc()) { room = 'cast'; save('room', room); info = await call('/tv'); }   // older relay, or not on Windows
+      if (room !== 'cast' && !(info.rooms || []).some(r => r.id === room)) { room = 'cast'; save('room', room); info = await call('/tv'); }   // older relay, or not on Windows
       save('info', info); state = 'ok'; lastErr = ''; sleepAt = info.sleep ? Date.now() + info.sleep * 1000 : 0;
     }
     catch (e) { state = e.old ? 'old' : 'down'; lastErr = e.message; }
@@ -1578,11 +1578,12 @@ PH.init({});
   const isOn = () => !!tv().on;
   const castName = () => { const d = info && (info.devices || []).find(x => x.id === info.id); return d ? d.name : ''; };
   const hasPc = () => !!(info && Array.isArray(info.rooms) && info.rooms.some(r => r.id === 'pc'));
-  const onPc = () => room === 'pc' && hasPc();
+  const onPc = () => (room === 'pc' || room === 'proj') && hasPc();   // a TV that is a window on the PC: living room or projector
   const pcReady = () => !!(info && info.pc && Number.isInteger(info.pc.monitor));
-  const roomName = r => r === 'pc' ? 'Living room' : 'Kitchen';
+  const roomName = r => ({ pc: 'Living room', proj: 'Projector' })[r] || 'Kitchen';
+  const nextRoom = () => { const ids = ((info && info.rooms) || []).map(r => r.id); return ids.length > 1 ? ids[(ids.indexOf(room) + 1) % ids.length] : room === 'pc' ? 'cast' : 'pc'; };
   $('#tv-swap').addEventListener('click', () => {
-    room = room === 'pc' ? 'cast' : 'pc'; save('room', room);
+    room = nextRoom(); save('room', room);
     if (info) { info.tv = {}; info.art = info.heard = null; }
     PH.toast('Remote: ' + roomName(room) + ' TV'); render(); check();
   });
@@ -1843,7 +1844,7 @@ PH.init({});
       if (hasPc()) {   // which TV this time is for
         top.classList.add('rooms');
         const rs = el('select', 'select'); rs.setAttribute('aria-label', 'TV');
-        [['cast', 'Kitchen'], ['pc', 'Living rm']].forEach(([v, n]) => { const o = el('option', '', n); o.value = v; rs.appendChild(o); });
+        [['cast', 'Kitchen'], ['pc', 'Living rm']].concat((info.rooms || []).some(x => x.id === 'proj') ? [['proj', 'Projector']] : []).forEach(([v, n]) => { const o = el('option', '', n); o.value = v; rs.appendChild(o); });
         rs.value = r.room || 'cast'; rs.addEventListener('change', () => edit({ room: rs.value })); top.appendChild(rs);
       }
       const del = el('button', 'rm-b'); del.setAttribute('aria-label', 'Remove this time');
@@ -2101,7 +2102,7 @@ PH.init({});
   async function power(on) {
     if (busyPower) return;
     if (!ready()) { PH.go('/settings/relay'); return; }
-    if (on && onPc() && !pcReady()) { PH.toast('Pick which monitor is the living room TV first.', 'warn'); PH.go('/settings/pc'); return; }
+    if (on && onPc() && !pcReady()) { PH.toast('Pick which monitor is the ' + roomName(room).toLowerCase() + ' first.', 'warn'); PH.go('/settings/pc'); return; }
     if (on && !onPc() && info && !info.id) { PH.toast('Pick your Chromecast first.', 'warn'); PH.go('/settings/cast'); return; }
     busyPower = true; render();
     try {
@@ -2248,11 +2249,11 @@ PH.init({});
   $$('#wx-units [data-u]').forEach(b => b.addEventListener('click', () => savePlace({ units: b.dataset.u })));
   /* ---------- Living room TV: its monitor, its speakers, and syncing its music with the kitchen ---------- */
   async function pcSave(body, done) {
-    try { const d = await call('/tv/pc', body, 20000); if (info && info.pc) Object.assign(info.pc, { monitor: d.monitor, sink: d.sink, loop: d.loop }); if (info) Object.assign(info, { sync: d.sync, auto: d.auto, offset: d.offset }); if (done) done(); }
+    try { const d = await call('/tv/pc', body, 20000); if (info && info.pc) Object.assign(info.pc, { monitor: d.monitor, sink: d.sink, loop: d.loop }); if (info) Object.assign(info, { sync: d.sync, autoSync: d.auto, offset: d.offset }); if (done) done(); }
     catch (e) { PH.toast(e.message, 'warn'); }
     render();
   }
-  $('#pc-auto').addEventListener('change', e => pcSave({ auto: e.target.checked }, () => PH.toast(e.target.checked ? 'Line-up adjusts itself.' : 'Line-up is by hand: each tap moves the living room by exactly that much.')));
+  $('#pc-auto').addEventListener('change', e => pcSave({ auto: e.target.checked }, () => PH.toast(e.target.checked ? 'Line-up adjusts itself.' : 'Line-up is by hand: each tap moves this TV by exactly that much.')));
   $('#pc-sync').addEventListener('change', e => pcSave({ sync: e.target.checked }, () => PH.toast(e.target.checked ? 'Both TVs now play the same music.' : 'Each TV plays its own music again.')));
   $$('[data-off]').forEach(b => b.addEventListener('click', () => {
     const v = Math.max(-3000, Math.min(3000, ((info && info.offset) || 0) + +b.dataset.off));
@@ -2262,14 +2263,15 @@ PH.init({});
   function renderPc() {
     $('#set-pc-row').hidden = !hasPc();
     if (!hasPc() || !info.pc) return;
-    const p = info.pc, mons = p.monitors || [], outs = p.outs || [];
+    const p = info.pc, mons = p.monitors || [], outs = p.outs || [], me = roomName(p.room || 'pc');   // this TV, or the living room's settings from the kitchen
+    $('[data-route="/settings/pc"]').dataset.title = me + ' TV'; $('#set-pc-name').textContent = me + ' TV';
     $('#set-pc').textContent = pcReady() ? 'Monitor ' + p.monitor : 'Not set';
     if (!$('#pc-mons').contains(document.activeElement)) {
       $('#pc-mons').textContent = '';
       mons.forEach(m => {
         const b = el('button', 'menu-item'); b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String(p.monitor === m.n));
         const lab = el('span', 'mi-label', 'Monitor ' + m.n); lab.appendChild(el('small', '', m.w + ' × ' + m.h + (m.primary ? ' · main monitor' : ''))); b.appendChild(lab);
-        b.addEventListener('click', () => { b.blur(); pcSave({ monitor: m.n }, () => PH.toast('The living room TV is monitor ' + m.n + '.')); });
+        b.addEventListener('click', () => { b.blur(); pcSave({ monitor: m.n }, () => PH.toast('The ' + me.toLowerCase() + ' is monitor ' + m.n + '.')); });
         $('#pc-mons').appendChild(b);
       });
       if (!mons.length) $('#pc-mons').appendChild(el('p', 'menu-note', 'The PC didn\'t list any monitors.'));
@@ -2293,12 +2295,12 @@ PH.init({});
     }
     $('#pc-loops-note').textContent = p.audioErr || 'In Windows, set Spotify\'s output to the living room TV (Settings › System › Sound › Volume mixer), then pick that same output here. Kitchen › Sound › PC audio plays it on the kitchen TV.';
     $('#pc-sync').checked = !!info.sync;
-    $('#pc-auto').checked = info.auto !== false;
+    $('#pc-auto').checked = info.autoSync !== false;
     const off = info.offset || 0;
     $('#pc-off').textContent = (off > 0 ? '+' : off < 0 ? '−' : '') + (Math.abs(off) / 1000).toFixed(2) + ' s';
     const bh = info.behind || {}, sec = v => typeof v === 'number' ? v.toFixed(1) + ' s' : '–';
-    $('#pc-off-note').textContent = (!info.sync ? 'Turn on "Same music on both" first' : off > 0 ? 'Living room plays later' : off < 0 ? 'Kitchen plays later' : 'In step')
-      + (info.sync && (bh.cast != null || bh.pc != null) ? ' · behind live: kitchen ' + sec(bh.cast) + ', living room ' + sec(bh.pc) : '');
+    $('#pc-off-note').textContent = (!info.sync ? 'Turn on "Same music on both" first' : off > 0 ? me + ' plays later than the kitchen' : off < 0 ? 'Kitchen plays later' : 'In step')
+      + (info.sync && Object.values(bh).some(v => v != null) ? ' · behind live: ' + Object.keys(bh).filter(x => bh[x] != null).map(x => roomName(x).toLowerCase() + ' ' + sec(bh[x])).join(', ') : '');
     $$('[data-off]').forEach(b => b.disabled = !info.sync);
   }
 
@@ -2337,7 +2339,7 @@ PH.init({});
     // On the living room TV, "media" is a streaming site moved there from the kitchen (Move to living room)
     const media = pcRoom ? (t.app && !on ? { title: t.app, app: true } : null) : c && c.media && !on ? c.media : null;
     $('#tv-name').textContent = hasPc() ? roomName(room) + ' TV' : castName() || (info && info.id ? 'Chromecast' : 'No Chromecast picked');
-    $('#tv-swap').hidden = !hasPc(); $('#tv-swap').setAttribute('aria-label', 'Switch to the ' + roomName(room === 'pc' ? 'cast' : 'pc').toLowerCase() + ' TV');
+    $('#tv-swap').hidden = !hasPc(); $('#tv-swap').setAttribute('aria-label', 'Switch to the ' + roomName(nextRoom()).toLowerCase() + ' TV');
     let sub, led = '', note = '', noteErr = false;
     if (pcRoom && !pcReady()) { sub = 'Pick its monitor in Settings'; }
     else if (pcRoom && media) { sub = t.app + ' is on'; led = 'on'; }
