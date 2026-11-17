@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>MTG Table</title>
 <style>
 /* ---------- control ---------- */
@@ -63,7 +64,24 @@ body.phone{margin:0;background:#101216;color:#eee;font:16px system-ui,sans-serif
 #ph .msg{margin-top:40vh;transform:translateY(-50%);text-align:center;color:#aaa;font-size:18px}
 #ph .turn{text-align:center;color:#999;font-weight:700;letter-spacing:.05em}
 #ph .turn.on{color:#ffd34a;font-size:20px}
-#ph .life{text-align:center;font-size:110px;font-weight:900;line-height:1.1;font-variant-numeric:tabular-nums}
+#ph .life{text-align:center;font-size:min(30vw,130px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+#ph .lifebox{display:flex;flex-direction:column;align-items:stretch;gap:6px;margin:8px 0}
+#ph .arr{height:min(18vh,120px);border-radius:18px;display:flex;align-items:center;justify-content:center}
+#ph .arr svg{width:64px;height:64px}
+#ph .run{text-align:center;font-size:28px;font-weight:900;min-height:34px;color:#888;font-variant-numeric:tabular-nums}
+#ph .run.loss{color:#ff8a80}#ph .run.gain{color:#9be7a0}
+#ph button.hit{filter:brightness(1.6);transform:scale(.97)}
+#ph .cmdd{margin:14px 0 0;color:#999;font-size:14px}
+#ph .cmdd summary{cursor:pointer;text-transform:uppercase;letter-spacing:.08em;padding:8px 0}
+#ph .cmdd .prow.small button{width:40px;font-size:18px;padding:4px 0}
+#ph .cmdd .prow b{font-size:18px}
+#ph .set{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0}
+#ph .set span{color:#bbb}
+#ph .set select{min-width:9em}
+#ph .set input[type=range]{width:55%;padding:0}
+#ph .mrow{flex-wrap:wrap}
+body.phone,#ph button,#ph select,#ph input{touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+#ph input#nm{-webkit-user-select:text;user-select:text}
 #ph .life.lethal{color:#ff5252}
 #ph .prow{display:flex;gap:8px;justify-content:center;align-items:center;margin:8px 0}
 #ph .prow button{flex:1;font-size:26px;padding:14px 0;border-radius:12px}
@@ -119,6 +137,8 @@ body.phone{margin:0;background:#101216;color:#eee;font:16px system-ui,sans-serif
   background:linear-gradient(var(--fill,#000),var(--fill,#000)) padding-box,conic-gradient(from var(--a),var(--grad)) border-box;animation:rot 14s linear infinite;transition:opacity .6s,filter .6s}
 @keyframes rot{to{--a:360deg}}
 .mat.dead{filter:grayscale(1);opacity:.25;animation:none}
+.mat.b-still{animation:none}
+.mat.b-off{background:linear-gradient(var(--fill,#000),var(--fill,#000)) padding-box,linear-gradient(#000,#000) border-box;animation:none}
 .mat.e-open,.mat.e-open .mact,.mat.e-open .mfl{border-bottom-width:0;border-bottom-left-radius:0;border-bottom-right-radius:0}
 .mat.e-fade{-webkit-mask-image:linear-gradient(to top,transparent 0,#000 45%);mask-image:linear-gradient(to top,transparent 0,#000 45%)}
 .mact,.mfl{position:absolute;inset:-4px;border:4px solid var(--c);border-radius:16px;opacity:0;pointer-events:none}
@@ -132,8 +152,12 @@ body.phone{margin:0;background:#101216;color:#eee;font:16px system-ui,sans-serif
 .cz{position:absolute;width:73px;height:101px;box-sizing:border-box;border:2px dashed color-mix(in srgb,var(--c) 40%,#000);border-radius:5px;
   font-size:15px;letter-spacing:.1em;color:color-mix(in srgb,var(--c) 55%,#000);display:flex;align-items:center;justify-content:center}
 .cz.cmd{left:12px;top:14px}
-.cz.lib{right:12px;top:14px}
-.cz.gy{right:12px;top:127px}
+.cz.gy{right:12px;top:14px}
+.cz.lib{right:12px;top:127px}
+.cz.ex{right:97px;top:14px}
+.czr{position:absolute;left:97px;right:97px;top:50%;border-top:2px dashed color-mix(in srgb,var(--c) 22%,#000);pointer-events:none}
+.czr b{position:absolute;left:0;font-size:13px;letter-spacing:.2em;font-weight:400;color:color-mix(in srgb,var(--c) 35%,#000)}
+.czr b:first-child{bottom:6px}.czr b:last-child{top:6px}
 .tf{position:absolute;width:0;height:0;pointer-events:none}
 .slash{position:absolute;inset:-25%;pointer-events:none}
 .slash i{position:absolute;left:5%;width:90%;height:calc(var(--s)*6px);border-radius:4px;background:linear-gradient(90deg,transparent,#fff 30%,var(--sc) 70%,transparent);transform:rotate(-28deg) scaleX(0);animation:slash .6s ease-out forwards;filter:drop-shadow(0 0 6px var(--sc))}
@@ -2763,7 +2787,7 @@ function freshState(prev) {
     active: 0, turn: 1, monarch: -1, initiative: -1, dayNight: '', banner: '', flash: 0,
     phone: prev?.phone ?? null, layout: prev?.layout ?? emptyLayout(), layouts: prev?.layouts ?? {}, seats: prev?.seats ?? {}, started: false, introId: prev?.introId ?? 0,
     game: prev?.game ?? 'mtg', board: prev?.board ?? { ...DEF_BOARD },
-    view: prev?.view ?? { L: 72, W: 60, hub: 1, zones: true, fx: true, edit: false, illum: 0, names: false, bborder: true, falloff: 0, bright: 'bottom', calibrate: false, cx0: 0, cy0: 0, cx1: 60, cy1: 72 }
+    view: prev?.view ?? { L: 72, W: 60, hub: 1, zones: true, fx: true, edit: false, illum: 0.3, names: false, bborder: true, falloff: 0, bright: 'bottom', calibrate: false, cx0: 0, cy0: 0, cx1: 60, cy1: 72 }
   };
 }
 
@@ -2774,6 +2798,8 @@ if (MODE === 'control') {
   let state;
   try { state = JSON.parse(localStorage.getItem(SKEY)); } catch {}
   state ||= freshState();
+  // v26: lit play areas by default (a new address starts with no saved settings, which left them dark)
+  if (!state.view.lit26) { if (!state.view.illum) state.view.illum = 0.3; state.view.lit26 = true; }
   let disp = null, lastSeen = 0, sel = 0;
   const undo = [];
 
@@ -3011,6 +3037,9 @@ if (MODE === 'control') {
     else if (a.type === 'name') commit(st => st.players[i].name = String(a.v).slice(0, 24) || `Player ${i + 1}`);
     else if (a.type === 'mana' && MANA[a.k]) toggleMana(i, a.k);
     else if (a.type === 'edge' && ['closed', 'fade', 'open'].includes(a.v)) commit(st => st.players[i].edge = a.v, { undoable: false });
+    else if (a.type === 'light' && ['table', 'off', 'white', 'mana'].includes(a.v)) commit(st => st.players[i].light = a.v, { undoable: false });
+    else if (a.type === 'lightLv') commit(st => st.players[i].lightLv = Math.max(0.05, Math.min(1, +a.v || 0.3)), { undoable: false });
+    else if (a.type === 'border' && ['spin', 'still', 'off'].includes(a.v)) commit(st => st.players[i].border = a.v, { undoable: false });
     else if (a.type === 'pass' && s.active === i) nextTurn(1);
   }
   fetch('api/info').then(r => r.ok ? r.json() : null).then(j => {
@@ -3133,7 +3162,7 @@ if (MODE === 'control') {
     app.innerHTML = `<header>
       <div class="row">${gameSwitch()}${btn('Open projector window', 'open', 'primary')}<span id="conn" class="conn"></span><span class="sep"></span>
         ${btn(v.edit ? 'Editing layout: ON' : 'Edit layout', 'edit', v.edit ? 'on' : '')}${btn('Reset layout', 'resetLayout')}<span class="sep"></span>
-        ${serverOK ? btn(s.phone?.show ? '📱 QR codes: ON' : '📱 Show QR codes', 'qr', s.phone?.show ? 'on' : '') + btn('Reset phones', 'qrreset') : '<span class="seatname">Run server.py for phone control</span>'}<span class="sep"></span>
+        ${serverOK ? btn(s.phone?.show ? '📱 QR codes: ON' : '📱 Show QR codes', 'qr', s.phone?.show ? 'on' : '') + btn('Reset phones', 'qrreset') : '<span class="seatname">Start the Phosphor relay for phone control</span>'}<span class="sep"></span>
         ${btn(v.calibrate ? 'Calibrating: ON' : 'Calibrate', 'cal', v.calibrate ? 'on' : '')}${btn('Undo', 'undo')}<span class="sep"></span>${btn(v.sound === false ? '🔇 Sound off' : '🔊 Sound on', 'snd', v.sound === false ? '' : 'on')}<input type="range" min="0" max="1" step="0.05" data-vset="vol" value="${v.vol ?? 0.7}" title="Volume"><span class="sep"></span>${btn(v.music === false ? '♫ Music off' : '♫ Music on', 'music', v.music === false ? '' : 'on')}<input type="range" min="0" max="1" step="0.05" data-vset="mvol" value="${v.mvol ?? 0.5}" title="Music volume"><span id="nowp" class="seatname">${esc(themeName(musicKey()))}</span><span class="sep"></span>${btn(s.started ? '▶ Restart game' : '▶ Start game', 'start', 'primary')}${btn('Black screen', 'black', s.started ? '' : 'on')}
         <label>Start life <input type="number" data-set="startLife" value="${s.startLife}" style="width:4em"></label></div>
       <div class="row">${btn('◀', 'prev')}<b>Turn ${s.turn}</b> · ${esc(P[s.active]?.name)} ${btn('Next turn ▶', 'next', 'primary')}<span class="sep"></span>
@@ -3292,50 +3321,97 @@ if (MODE === 'phone') {
   if (!dev) { dev = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2); try { localStorage.setItem('mtgDev', dev); } catch {} }
   document.body.innerHTML = '<div id="ph">Connecting…</div>';
   const ph = document.getElementById('ph');
-  let S = null, lastKey = '', claimT = 0, tries = 0;
-  const act = (type, extra = {}) => fetch('api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, seat, dev, ...extra }) }).then(() => setTimeout(poll, 250)).catch(() => {});
+  let S = null, claimT = 0, tries = 0, lastHtml = '';
+  // life taps: shown at once (pending), sent one by one, and summed for the current run of presses
+  let pend = 0, run = 0, runT = 0, sending = false;
+  const post = (type, extra = {}) => fetch('api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, seat, dev, ...extra }) });
+  const act = (type, extra = {}) => post(type, extra).then(() => setTimeout(poll, 250)).catch(() => {});
+  async function flush() {
+    if (sending || !pend) return;
+    sending = true;
+    const d = pend; pend = 0;
+    try { await post('life', { d }); } catch { pend += d; }
+    sending = false;
+    setTimeout(poll, 200);
+    if (pend) flush();
+  }
+  let want = null, wantT = 0;   // the life total this phone expects, shown until the table catches up (no jumping back)
   const pb = (label, a, cls = '') => `<button class="${cls}" data-a="${a}">${label}</button>`;
+  const ARROW = up => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${up ? 'M4 17 12 7l8 10z' : 'M4 7l8 10 8-10z'}" fill="currentColor"/></svg>`;
+  const opt = (id, cur, list) => `<select id="${id}">${list.map(([k, l]) => `<option value="${k}" ${cur === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+  let openCmd = false;
   function render() {
     const s = S, p = s?.players?.[seat];
-    if (!p || seat >= s.count) { ph.innerHTML = '<p class="msg">This seat isn\'t part of the current game.</p>'; return; }
-    const mine = p.devTag && dev.startsWith(p.devTag);
-    if (!mine) {
+    let h;
+    if (!p || seat >= s.count) h = '<p class="msg">This seat isn\'t part of the current game.</p>';
+    else if (!(p.devTag && dev.startsWith(p.devTag))) {
       if (Date.now() - claimT > 2000) { claimT = Date.now(); tries++; act('claim', { key }); }
-      ph.innerHTML = p.devTag ? `<p class="msg">This seat is already taken by another phone.<br>Ask the game master to reset phones if that's wrong.</p>` : tries > 3 ? '<p class="msg">Couldn\'t join this seat.<br>Scan the QR code on the table again.</p>' : '<p class="msg">Joining seat…</p>';
-      return;
-    }
-    if (document.activeElement?.tagName === 'INPUT') return;
-    const c = MANA[p.mana[0]].c, active = s.active === seat, lethal = p.life <= 0 || p.poison >= 10 || p.cmd.some(v => v >= 21);
-    const opp = [...Array(s.count).keys()].filter(j => j !== seat);
-    ph.innerHTML = `<div class="bar" style="background:${c}"></div>
+      h = p.devTag ? `<p class="msg">This seat is already taken by another phone.<br>Ask the game master to reset phones if that's wrong.</p>` : tries > 3 ? '<p class="msg">Couldn\'t join this seat.<br>Scan the QR code on the table again.</p>' : '<p class="msg">Joining seat…</p>';
+    } else {
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'SELECT') return;
+      const c = MANA[p.mana[0]].c, active = s.active === seat, lethal = p.life <= 0 || p.poison >= 10 || p.cmd.some(v => v >= 21);
+      const opp = [...Array(s.count).keys()].filter(j => j !== seat);
+      if (want !== null && (p.life === want || Date.now() - wantT > 2500)) want = null;
+      const life = want ?? p.life;
+      const runOn = run && Date.now() - runT < 3000;
+      const cmdTot = p.cmd.reduce((x, y) => x + y, 0);
+      h = `<div class="bar" style="background:${c}"></div>
       <div class="turn ${active ? 'on' : ''}">${active ? 'YOUR TURN' : esc(s.players[s.active].name) + "'s turn"} · Turn ${s.turn}</div>
-      <div class="life ${lethal ? 'lethal' : ''}">${p.dead ? 'OUT' : p.life}</div>
-      <div class="prow">${[-5, -1, 1, 5].map(d => pb((d > 0 ? '+' : '') + d, 'life:' + d, d > 0 ? 'plus' : 'minus')).join('')}</div>
+      <div class="lifebox">
+        <button class="arr plus" data-a="up" aria-label="Gain 1 life">${ARROW(true)}</button>
+        <div class="life ${lethal ? 'lethal' : ''}" id="lifeN">${p.dead ? 'OUT' : life}</div>
+        <div class="run ${runOn ? (run > 0 ? 'gain' : 'loss') : ''}" id="runN">${runOn ? (run > 0 ? '+' : '−') + Math.abs(run) : '&nbsp;'}</div>
+        <button class="arr minus" data-a="down" aria-label="Lose 1 life">${ARROW(false)}</button>
+      </div>
       ${pb('End my turn ▶', 'pass', 'pass' + (active ? '' : ' off'))}
-      <h3>Poison</h3><div class="prow small">${pb('−', 'poison:-1')}<b>${p.poison}</b>${pb('+', 'poison:1')}</div>
-      <h3>Commander damage taken</h3>${opp.map(j => `<div class="prow small"><span class="who" style="color:${MANA[s.players[j].mana[0]].c}">${esc(s.players[j].name)}</span>${pb('−', `cmd:${j}:-1`)}<b>${p.cmd[j]}</b>${pb('+', `cmd:${j}:1`)}</div>`).join('')}
+      <div class="prow small"><span class="who">Poison</span>${pb('−', 'poison:-1')}<b>${p.poison}</b>${pb('+', 'poison:1')}</div>
+      <details class="cmdd" ${openCmd ? 'open' : ''}><summary>Commander damage${cmdTot ? ' · ' + cmdTot : ''}</summary>
+      ${opp.map(j => `<div class="prow small"><span class="who" style="color:${MANA[s.players[j].mana[0]].c}">${esc(s.players[j].name)}</span>${pb('−', `cmd:${j}:-1`)}<b>${p.cmd[j]}</b>${pb('+', `cmd:${j}:1`)}</div>`).join('')}</details>
       <h3>My play area</h3>
-      <input id="nm" value="${esc(p.name)}" maxlength="24">
-      <div class="prow small">${Object.keys(MANA).map(k => `<button class="mana ${p.mana.includes(k) ? 'on' : ''}" data-a="mana:${k}" style="--m:${MANA[k].c}">${glyph(k)}</button>`).join('')}</div>
-      <div class="prow small">Near edge <select id="edge">${[['closed', 'Closed'], ['fade', 'Fade out'], ['open', 'Open']].map(([k, l]) => `<option value="${k}" ${(p.edge ?? 'closed') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`;
+      <input id="nm" value="${esc(p.name)}" maxlength="24" aria-label="Name">
+      <div class="prow small mrow">${Object.keys(MANA).map(k => `<button class="mana ${p.mana.includes(k) ? 'on' : ''}" data-a="mana:${k}" style="--m:${MANA[k].c}">${glyph(k)}</button>`).join('')}</div>
+      <div class="set"><span>Light</span>${opt('light', p.light ?? 'table', [['table', 'Table setting'], ['mana', 'My colour'], ['white', 'White'], ['off', 'Off']])}</div>
+      ${['mana', 'white'].includes(p.light) ? `<div class="set"><span>Brightness</span><input type="range" id="lightLv" min="0.05" max="1" step="0.05" value="${p.lightLv ?? 0.3}"></div>` : ''}
+      <div class="set"><span>Border</span>${opt('border', p.border ?? 'spin', [['spin', 'Spinning'], ['still', 'Still'], ['off', 'Off']])}</div>
+      <div class="set"><span>Near edge</span>${opt('edge', p.edge ?? 'closed', [['closed', 'Closed'], ['fade', 'Fade out'], ['open', 'Open']])}</div>`;
+    }
+    if (h !== lastHtml) { lastHtml = h; ph.innerHTML = h; }   // only touch the page when something changed, so taps land
+  }
+  function bump(d) {
+    if (Date.now() - runT >= 3000) run = 0;
+    run += d; runT = Date.now(); pend += d;
+    const p = S?.players?.[seat]; if (!p) return;
+    want = (want ?? p.life) + d; wantT = Date.now();
+    const n = document.getElementById('lifeN'), r = document.getElementById('runN');
+    if (n) n.textContent = want;
+    if (r) { r.textContent = (run > 0 ? '+' : run < 0 ? '−' : '') + (run ? Math.abs(run) : ''); r.className = 'run ' + (run > 0 ? 'gain' : run < 0 ? 'loss' : ''); }
+    clearTimeout(bump.t); bump.t = setTimeout(() => { lastHtml = ''; render(); }, 3100);
+    flush();
   }
   async function poll() {
-    try {
-      const j = await (await fetch('api/state')).json(), k = JSON.stringify(j.state);
-      if (k !== lastKey) { lastKey = k; S = j.state; render(); } else if (S) render();
-    } catch {}
+    try { const j = await (await fetch('api/state', { cache: 'no-store' })).json(); S = j.state; render(); } catch {}
   }
-  ph.addEventListener('click', e => {
-    const b = e.target.closest('[data-a]'); if (!b || b.classList.contains('off')) return;
+  // pointerdown, not click: fires on first touch, no double-tap delay, and isn't lost if the page redraws
+  ph.addEventListener('pointerdown', e => {
+    const b = e.target.closest('button[data-a]'); if (!b || b.classList.contains('off')) return;
+    e.preventDefault();
+    b.classList.add('hit'); setTimeout(() => b.classList.remove('hit'), 120);
+    navigator.vibrate?.(8);
     const [a, x, y] = b.dataset.a.split(':');
-    if (a === 'life' || a === 'poison') act(a, { d: +x });
+    if (a === 'up') bump(1);
+    else if (a === 'down') bump(-1);
+    else if (a === 'poison') act(a, { d: +x });
     else if (a === 'cmd') act('cmd', { from: +x, d: +y });
     else if (a === 'mana') act('mana', { k: x });
     else if (a === 'pass') act('pass');
   });
+  ph.addEventListener('toggle', e => { if (e.target.classList?.contains('cmdd')) openCmd = e.target.open; }, true);
   ph.addEventListener('change', e => {
-    if (e.target.id === 'nm') { act('name', { v: e.target.value }); e.target.blur(); }
-    if (e.target.id === 'edge') act('edge', { v: e.target.value });
+    const t = e.target;
+    if (t.id === 'nm') act('name', { v: t.value });
+    else if (['edge', 'light', 'border'].includes(t.id)) act(t.id, { v: t.value });
+    else if (t.id === 'lightLv') act('lightLv', { v: +t.value });
+    t.blur();
   });
   act('claim', { key }); claimT = Date.now();
   poll(); setInterval(poll, 800);
@@ -3361,7 +3437,7 @@ if (MODE === 'display' || MODE === 'preview') {
 
   const mats = DEF_MANA.map(() => {
     const el = document.createElement('div'); el.className = 'mat';
-    el.innerHTML = '<div class="mact"></div><div class="mfl"></div><div class="cz cmd">CMD</div><div class="cz lib">LIB</div><div class="cz gy">GY</div>';
+    el.innerHTML = '<div class="mact"></div><div class="mfl"></div><div class="cz cmd">CMD</div><div class="cz ex">EXILE</div><div class="cz gy">GY</div><div class="cz lib">LIB</div><div class="cz czr"><b>CREATURES</b><b>LANDS</b></div>';
     $('mats').appendChild(el); return el;
   });
   const mtops = DEF_MANA.map(() => {
@@ -3401,7 +3477,26 @@ if (MODE === 'display' || MODE === 'preview') {
     return { r, b, rot: ROTC[edge], bw, bd };
   }
   const layOf = n => n.layouts?.[n.count] ?? (n.count === 6 ? n.layout : null);
-  const matOf = (i, n) => layOf(n)?.mats?.[i] ?? geom(slotOf(i, n), n.view).r;
+  // Default play areas: all the same size and shape (the smallest seat's), pushed to the player's edge and
+  // centred along it, so they sit further from the centre and from each other (Floyd, v26).
+  const SPREAD = 1.2;
+  let evenKey = '', evenR = [];
+  function evenMats(n) {
+    const k = JSON.stringify([n.count, seatsOf(n), n.view.W, n.view.L, n.view.hub]);
+    if (k === evenKey) return evenR;
+    const gs = [...Array(n.count).keys()].map(i => geom(slotOf(i, n), n.view));
+    const dims = gs.map(g => { const w = g.r[2] - g.r[0], h = g.r[3] - g.r[1]; return g.rot % 180 ? [h, w] : [w, h]; });   // [along edge, depth]
+    const A = Math.min(...dims.map(d => d[0])) - SPREAD, D = Math.min(...dims.map(d => d[1])) - SPREAD;
+    evenR = gs.map(g => {
+      const [x0, y0, x1, y1] = g.r, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+      if (g.rot === 0) return [cx - A / 2, y1 - D, cx + A / 2, y1];
+      if (g.rot === 180) return [cx - A / 2, y0, cx + A / 2, y0 + D];
+      if (g.rot === 90) return [x0, cy - A / 2, x0 + D, cy + A / 2];
+      return [x1 - D, cy - A / 2, x1, cy + A / 2];
+    });
+    evenKey = k; return evenR;
+  }
+  const matOf = (i, n) => layOf(n)?.mats?.[i] ?? evenMats(n)[i];
   function badgeOf(i, n) {
     const g = geom(slotOf(i, n), n.view), c = layOf(n)?.badges?.[i];
     return { x: c?.x ?? g.b[0], y: c?.y ?? g.b[1], s: c?.s ?? 1, bw: g.bw, bd: g.bd, rot: g.rot };
@@ -3875,8 +3970,11 @@ if (MODE === 'display' || MODE === 'preview') {
       mat.style.setProperty('--c', c); mat.style.setProperty('--grad', grad);
       mat.classList.toggle('active', i === n.active && !p.dead);
       mat.classList.toggle('dead', p.dead);
-      const lv = v.illum ?? 0;
-      const lc = (v.lightColor ?? '#ffffff').match(/\w\w/g).map(h => Math.round(parseInt(h, 16) * lv));
+      // play area light: the table's setting, or the player's own choice from their phone
+      const lm = p.light ?? 'table', lv = lm === 'off' ? 0 : lm === 'table' ? (v.illum ?? 0) : (p.lightLv ?? v.illum ?? 0.3);
+      const lhex = lm === 'mana' ? (c.startsWith('#') && c.length === 7 ? c : '#ffffff') : lm === 'white' ? '#ffffff' : (v.lightColor ?? '#ffffff');
+      const lc = lhex.match(/\w\w/g).map(h => Math.round(parseInt(h, 16) * lv));
+      mat.classList.toggle('b-still', p.border === 'still'); mat.classList.toggle('b-off', p.border === 'off');
       mat.style.setProperty('--fill', `rgb(${lc.join(',')})`);
       ['closed', 'fade', 'open'].forEach(m => mat.classList.toggle('e-' + m, (p.edge ?? 'closed') === m));
       const mt = mtops[i];
