@@ -2803,7 +2803,7 @@ if (MODE === 'control') {
   state ||= freshState();
   // v26: lit play areas by default (a new address starts with no saved settings, which left them dark)
   if (!state.view.lit26) { if (!state.view.illum) state.view.illum = 0.3; state.view.lit26 = true; }
-  let disp = null, lastSeen = 0, sel = 0;
+  let disp = null, lastSeen = 0, sel = Math.min(state.active ?? 0, state.count - 1);
   const undo = [];
 
   const save = () => { try { localStorage.setItem(SKEY, JSON.stringify(state)); } catch {} };
@@ -3053,7 +3053,10 @@ if (MODE === 'control') {
   function commit(fn, { undoable = true, rerender = true } = {}) {
     const snap = JSON.stringify(state);
     if (undoable) { undo.push(snap); if (undo.length > 200) undo.shift(); }
-    fn(state); save(); send({ type: 'state', state }); clearTimeout(postT); postT = setTimeout(postState, 80);
+    const was = state.active;
+    fn(state);
+    if (state.active !== was) sel = state.active;   // turn-based effects (extra turn, counterspell, summon) follow whose turn it is
+    save(); send({ type: 'state', state }); clearTimeout(postT); postT = setTimeout(postState, 80);
     try { sfx(JSON.parse(snap), state); } catch {}
     try { updateMusic(); } catch {}
     if (rerender) renderControl();
