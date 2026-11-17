@@ -149,15 +149,18 @@ body.phone,#ph button,#ph select,#ph input{touch-action:manipulation;-webkit-tap
 @keyframes mfl{0%{opacity:1}100%{opacity:0}}
 .crest{position:absolute;left:50%;top:0;transform:translate(-50%,-50%);display:flex;gap:6px;background:#000;padding:3px 10px;border-radius:24px}
 .crest .gl{width:30px;height:30px}
-.cz{position:absolute;width:73px;height:101px;box-sizing:border-box;border:2px dashed color-mix(in srgb,var(--c) 40%,#000);border-radius:5px;
-  font-size:15px;letter-spacing:.1em;color:color-mix(in srgb,var(--c) 55%,#000);display:flex;align-items:center;justify-content:center}
-.cz.cmd{left:12px;top:14px}
-.cz.gy{right:12px;top:14px}
-.cz.lib{right:12px;top:127px}
-.cz.ex{right:97px;top:14px}
-.czr{position:absolute;left:97px;right:97px;top:50%;border-top:2px dashed color-mix(in srgb,var(--c) 22%,#000);pointer-events:none}
-.czr b{position:absolute;left:0;font-size:13px;letter-spacing:.2em;font-weight:400;color:color-mix(in srgb,var(--c) 35%,#000)}
-.czr b:first-child{bottom:6px}.czr b:last-child{top:6px}
+.czw{position:absolute;inset:10px;pointer-events:none}
+.cz{position:absolute;box-sizing:border-box;border:2px solid color-mix(in srgb,var(--c) 38%,#000);border-radius:10px;
+  font-size:13px;letter-spacing:.14em;color:color-mix(in srgb,var(--c) 50%,#000);display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;overflow:hidden}
+/* Floyd's Commander mat (v27): battlefield over lands on the left; tax, command, library, exile in the middle; life over graveyard on the right */
+.cz.bf{left:0;top:0;width:63.7%;height:62.9%}
+.cz.ld{left:0;top:65.5%;width:63.7%;height:34.5%}
+.cz.tax{left:65%;top:0;width:18.2%;height:20.9%}
+.cz.cmd{left:65%;top:23.6%;width:18.2%;height:23.8%}
+.cz.lib{left:65%;top:49.5%;width:18.2%;height:24.1%}
+.cz.ex{left:65%;top:75.9%;width:18.2%;height:24.1%}
+.cz.lf{left:84.1%;top:0;width:15.9%;height:48.9%}
+.cz.gy{left:84.1%;top:50.9%;width:15.9%;height:49.1%}
 .tf{position:absolute;width:0;height:0;pointer-events:none}
 .slash{position:absolute;inset:-25%;pointer-events:none}
 .slash i{position:absolute;left:5%;width:90%;height:calc(var(--s)*6px);border-radius:4px;background:linear-gradient(90deg,transparent,#fff 30%,var(--sc) 70%,transparent);transform:rotate(-28deg) scaleX(0);animation:slash .6s ease-out forwards;filter:drop-shadow(0 0 6px var(--sc))}
@@ -3437,7 +3440,7 @@ if (MODE === 'display' || MODE === 'preview') {
 
   const mats = DEF_MANA.map(() => {
     const el = document.createElement('div'); el.className = 'mat';
-    el.innerHTML = '<div class="mact"></div><div class="mfl"></div><div class="cz cmd">CMD</div><div class="cz ex">EXILE</div><div class="cz gy">GY</div><div class="cz lib">LIB</div><div class="cz czr"><b>CREATURES</b><b>LANDS</b></div>';
+    el.innerHTML = '<div class="mact"></div><div class="mfl"></div><div class="czw cz-all"><div class="cz bf">BATTLEFIELD</div><div class="cz ld">LANDS</div><div class="cz tax">TAX</div><div class="cz cmd">COMMAND</div><div class="cz lib">LIBRARY</div><div class="cz ex">EXILE</div><div class="cz lf">LIFE</div><div class="cz gy">GRAVEYARD</div></div>';
     $('mats').appendChild(el); return el;
   });
   const mtops = DEF_MANA.map(() => {
@@ -3983,7 +3986,7 @@ if (MODE === 'display' || MODE === 'preview') {
       mt.classList.toggle('dead', p.dead);
       mt.querySelector('.crest').innerHTML = p.mana.map(glyph).join('');
       tPt[i] = [rot === 0 ? (x0 + x1) / 2 : rot === 180 ? (x0 + x1) / 2 : rot === 90 ? x1 : x0, rot === 0 ? y0 : rot === 180 ? y1 : (y0 + y1) / 2].map(z => z * PX);
-      mat.querySelectorAll('.cz').forEach(z => z.style.display = v.zones ? '' : 'none');
+      mat.querySelector('.czw').style.display = v.zones ? '' : 'none';
       mRect[i] = [x0 * PX, y0 * PX, x1 * PX, y1 * PX];
 
       const b = badgeOf(i, n);
