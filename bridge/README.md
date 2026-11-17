@@ -67,3 +67,9 @@ instead of the .bat file and run `./start-lights.sh` in Terminal. On a Pi, insta
 - **A bulb is missing**: make sure the PC is on the same Wi-Fi as the bulbs, then tap
   **Rescan for lights** in Setup. Newer bulbs need your Kasa login: run `kasa_bridge.py --login`.
 - **Try the app with no bulbs**: `kasa_bridge.py --demo` shows four pretend lights.
+
+## Game table (the projector table)
+
+1. Download [game_table.py](https://raw.githubusercontent.com/bgriffie/phosphor-os/main/bridge/game_table.py), [game_table.html](https://raw.githubusercontent.com/bgriffie/phosphor-os/main/bridge/game_table.html) and the new `kasa_bridge.py` into the relay folder, then restart the relay. It should print "Game table: on this PC open http://localhost:7792/game/".
+2. If Windows asks whether Python may use the network, allow **Private** networks only, so phones on the Wi-Fi can join.
+3. Open the Table tile in phosphor.os and tap **Open on PC**, or open http://localhost:7792/game/ on the PC. The first time on the new address, redo the projector calibration and seat setup.

@@ -454,6 +454,26 @@
         <p class="menu-note">Your iPhone only shows here after Spotify has played something on it recently. Open Spotify, start any song, come back and tap Refresh.</p>
       </section>
 
+      <!-- ===== Game Table (projector table on the PC, through the relay) ===== -->
+      <section class="view" data-route="/table" data-title="Game Table">
+        <section class="panel" data-title="Status">
+          <div class="kv"><span>Relay</span><span id="tb-relay">…</span></div>
+          <div class="kv"><span>Table</span><span id="tb-state">…</span></div>
+          <div class="kv"><span>Phones</span><span id="tb-phones">…</span></div>
+          <p class="hint" id="tb-err" hidden></p>
+        </section>
+        <button class="btn btn-primary btn-block" data-act="table-open" style="margin-top:var(--sp-4)">Open on PC</button>
+        <button class="btn btn-ghost btn-block" data-act="table-refresh" style="margin-top:var(--sp-3)">Refresh</button>
+        <section class="panel" data-title="At the table" style="margin-top:var(--sp-5)">
+          <ol class="steps">
+            <li>Open on PC opens the game master window on the PC.</li>
+            <li>There, click Open projector window, move it to the projector and make it full screen.</li>
+            <li>Players scan their seat's code on the table to join from their phone (same Wi-Fi).</li>
+          </ol>
+          <p class="hint" id="tb-url"></p>
+        </section>
+      </section>
+
       <section class="view" data-route="/music/setup" data-title="Spotify setup">
         <section class="panel" data-title="Status">
           <div class="kv"><span>Spotify</span><span id="mu-status">Not connected</span></div>
