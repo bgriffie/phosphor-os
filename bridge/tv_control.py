@@ -30,7 +30,7 @@ Security (agreed with Floyd's security review):
 import asyncio, json, os, re, secrets, socket, subprocess, time
 from pathlib import Path
 
-from aiohttp import web, WSMsgType, ClientSession, ClientTimeout
+from aiohttp import web, WSMsgType, ClientSession, ClientTimeout, TCPConnector
 
 TV_PORT = 7790
 PAGE_URL = 'https://bgriffie.github.io/phosphor-os/tv/'
@@ -76,7 +76,7 @@ AMBIENCE = ('rain', 'storm', 'fire', 'ocean', 'wind', 'brown')
 ART_MAX = 32               # the TV page checks the real number of art pieces
 KEYS = ('up', 'down', 'left', 'right', 'ok', 'back', 'home')
 DASHCAST = '84912283'
-VERSION = '5.2'           # the phone app compares this to know which features the relay has
+VERSION = '5.3'           # the phone app compares this to know which features the relay has
 WEATHER_EVERY = 900       # seconds between weather updates while the TV is on
 # Scenes: what the TV does at a set time, or when the phone (or an iPhone Shortcut) asks.
 # Each scene has a page to land on, a music station, a background sound and, optionally, a look for some lights;
@@ -131,7 +131,8 @@ async def forecast(place, units):
          'hourly': 'temperature_2m,precipitation_probability,weather_code,is_day',
          'daily': 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,weather_code',
          'temperature_unit': 'fahrenheit' if f else 'celsius', 'wind_speed_unit': 'mph' if f else 'kmh'}
-    async with ClientSession(timeout=ClientTimeout(total=12)) as s:
+    # IPv4 only: on some Windows PCs a half-working IPv6 route makes every request hang until the timeout
+    async with ClientSession(timeout=ClientTimeout(total=25), connector=TCPConnector(family=socket.AF_INET)) as s:
         async with s.get('https://api.open-meteo.com/v1/forecast', params=q) as r:
             if r.status != 200:
                 raise RuntimeError(f'weather service said {r.status}')
@@ -774,8 +775,12 @@ def setup(app, demo=False, lights=None, cast=False):
         else:
             try:
                 hub['weather'] = fake_forecast(p, units()) if demo else await forecast(p, units())
+                if hub.pop('weather_failing', None):
+                    print('  Weather is back.')
             except Exception as e:
-                print('  Weather failed:', e)
+                if not hub.get('weather_failing'):   # said once, not every 15 minutes
+                    print('  Weather failed:', str(e) or type(e).__name__ + ' (no answer from api.open-meteo.com)')
+                hub['weather_failing'] = True
                 old = hub.get('weather')
                 if not old or time.time() - old.get('at', 0) > 3 * 3600:
                     hub['weather'] = {'error': 'couldn\'t get the forecast', 'place': p['name']}
@@ -1632,12 +1637,18 @@ def setup(app, demo=False, lights=None, cast=False):
                         pc['want'] = None
             room = rooms['cast']
             cid = room['want']
-            if not cid or room['socks'] or time.time() - room['started'] < 40:
+            if room['socks'] or not cid:
+                room['reopens'] = 0
+            # Waits longer after each try (40 s, 80 s, 160 s… up to 10 min): relaunching every 40 s restarts a page that
+            # is still loading on a slow morning network, so it never gets there
+            if not cid or room['socks'] or time.time() - room['started'] < min(600, 40 * 2 ** room.get('reopens', 0)):
                 continue
             try:
                 st = await asyncio.to_thread(casts.status, cid)
                 if st['idle'] or st['appId'] == DASHCAST:
-                    print('TV (Kitchen): the screen dropped off, opening it again.')
+                    if not room.get('reopens'):
+                        print('TV (Kitchen): the screen dropped off, opening it again.')
+                    room['reopens'] = room.get('reopens', 0) + 1
                     room['started'] = time.time()
                     await asyncio.to_thread(casts.start, cid, tv_url('cast'))
                 else:
